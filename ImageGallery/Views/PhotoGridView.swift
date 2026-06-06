@@ -140,117 +140,141 @@ struct PhotoGridView: View {
     //   Eagle 原则要求单一主工具栏。V3.0 工具栏优化时彻底合并。）
 
     // ─── 多选顶部栏 ───
+    // V3.5.19 改造：3 段式分组（状态+上下文 │ 常规操作 │ 危险+取消）
+    // + 体积上下文（"已选 N 张 · 12.3 MB"）
+    // + 上下文感知（无文件夹/无标签时按钮完全隐藏，而非禁用）
     private var multiSelectTopBar: some View {
         HStack(spacing: 12) {
-            // 已选提示
+            // ─── 段 1：状态 + 上下文 ───
             HStack(spacing: 6) {
                 Image(systemName: "checkmark.circle.fill")
                     .foregroundStyle(.tint)
-                Text("已选 \(selectedIDs.count) 张")
+                Text(selectionStatusText)
                     .font(.headline)
             }
 
             Spacer()
 
-            // 全选按钮
-            Button {
-                selectedIDs = Set(photos.map { $0.id })
-            } label: {
-                Image(systemName: "checkmark.circle")
-            }
-            .buttonStyle(.pressable)
-            .buttonStyle(.borderless)
-            .help("全选当前可见 (⌘A)")
-
-            // 批量移动到文件夹
-            Menu {
+            // ─── 段 2：常规操作 ───
+            HStack(spacing: 8) {
+                // 全选按钮
                 Button {
-                    batchMove(to: nil)
+                    selectedIDs = Set(photos.map { $0.id })
                 } label: {
-                    Label("移出文件夹", systemImage: "tray")
+                    Image(systemName: "checkmark.circle")
                 }
+                .buttonStyle(.pressable)
+                .buttonStyle(.borderless)
+                .help("全选当前可见 (⌘A)")
+
+                // 批量移动到文件夹（无文件夹时完全隐藏）
                 if !folders.isEmpty {
-                    Divider()
-                }
-                ForEach(folders) { folder in
-                    Button {
-                        batchMove(to: folder)
-                    } label: {
-                        Label(folder.name, systemImage: folder.icon)
-                    }
-                }
-            } label: {
-                Label("移动到", systemImage: "folder")
-            }
-            .buttonStyle(.pressable)
-            .buttonStyle(.bordered)
-            .help("批量移动到文件夹")
-            .disabled(folders.isEmpty && selectedIDs.count > 0)
-
-            // 批量加标签
-            Menu {
-                if allTags.isEmpty {
-                    Text("还没有标签，去详情面板创建")
-                } else {
-                    ForEach(allTags) { tag in
+                    Menu {
                         Button {
-                            batchAddTag(tag)
+                            batchMove(to: nil)
                         } label: {
-                            Label(tag.name, systemImage: "tag.fill")
+                            Label("移出文件夹", systemImage: "tray")
                         }
+                        Divider()
+                        ForEach(folders) { folder in
+                            Button {
+                                batchMove(to: folder)
+                            } label: {
+                                Label(folder.name, systemImage: folder.icon)
+                            }
+                        }
+                    } label: {
+                        Label("移动到", systemImage: "folder")
                     }
+                    .buttonStyle(.pressable)
+                    .buttonStyle(.bordered)
+                    .help("批量移动到文件夹")
                 }
-            } label: {
-                Label("加标签", systemImage: "tag")
-            }
-            .buttonStyle(.pressable)
-            .buttonStyle(.bordered)
-            .help("批量添加标签")
-            .disabled(allTags.isEmpty)
 
-            // 批量导出到文件夹
-            Button {
-                batchExport()
-            } label: {
-                Label("导出", systemImage: "square.and.arrow.up")
-            }
-            .buttonStyle(.pressable)
-            .buttonStyle(.bordered)
-            .help("批量导出到文件夹")
+                // 批量加标签（无标签时完全隐藏）
+                if !allTags.isEmpty {
+                    Menu {
+                        ForEach(allTags) { tag in
+                            Button {
+                                batchAddTag(tag)
+                            } label: {
+                                Label(tag.name, systemImage: "tag.fill")
+                            }
+                        }
+                    } label: {
+                        Label("加标签", systemImage: "tag")
+                    }
+                    .buttonStyle(.pressable)
+                    .buttonStyle(.bordered)
+                    .help("批量添加标签")
+                }
 
-            // 批量收藏/取消收藏
-            Button {
-                batchToggleFavorite()
-            } label: {
-                Label("收藏", systemImage: "star")
-            }
-            .buttonStyle(.pressable)
-            .buttonStyle(.bordered)
-            .help("批量收藏/取消收藏")
+                // 批量收藏/取消收藏
+                Button {
+                    batchToggleFavorite()
+                } label: {
+                    Label("收藏", systemImage: "star")
+                }
+                .buttonStyle(.pressable)
+                .buttonStyle(.bordered)
+                .help("批量收藏/取消收藏")
 
-            // 批量删除
-            Button(role: .destructive) {
-                onBatchDelete()
-            } label: {
-                Label("删除", systemImage: "trash")
+                // 批量导出到文件夹
+                Button {
+                    batchExport()
+                } label: {
+                    Label("导出", systemImage: "square.and.arrow.up")
+                }
+                .buttonStyle(.pressable)
+                .buttonStyle(.bordered)
+                .help("批量导出到文件夹")
             }
-            .buttonStyle(.pressable)
-            .buttonStyle(.bordered)
-            .tint(Palette.destructive)
 
-            // 取消多选
-            Button {
-                onClearMultiSelect()
-            } label: {
-                Image(systemName: "xmark.circle.fill")
-                    .foregroundStyle(.secondary)
+            // 危险区与常规操作之间的视觉分隔
+            Divider()
+                .frame(height: 18)
+
+            // ─── 段 3：危险 + 取消 ───
+            HStack(spacing: 8) {
+                // 批量删除
+                Button(role: .destructive) {
+                    onBatchDelete()
+                } label: {
+                    Label("删除", systemImage: "trash")
+                }
+                .buttonStyle(.pressable)
+                .buttonStyle(.bordered)
+                .tint(Palette.destructive)
+
+                // 取消多选
+                Button {
+                    onClearMultiSelect()
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.pressable)
+                .buttonStyle(.borderless)
+                .help("取消多选 (Esc)")
             }
-            .buttonStyle(.pressable)
-            .buttonStyle(.borderless)
-            .help("取消多选 (Esc)")
         }
         .padding()
         .background(Palette.selectionOverlayMulti)
+    }
+
+    // 状态文本：已选 N 张 · 12.3 MB
+    private var selectionStatusText: String {
+        let count = selectedIDs.count
+        let size = selectedTotalSize
+        let sizeStr = ByteCountFormatter.string(fromByteCount: size, countStyle: .file)
+        return "已选 \(count) 张 · \(sizeStr)"
+    }
+
+    // 当前选中图片的总大小（字节）
+    private var selectedTotalSize: Int64 {
+        photos
+            .filter { selectedIDs.contains($0.id) }
+            .reduce(0) { $0 + $1.fileSize }
     }
 
     // （原 titleText 已删除：与系统顶栏的 status "共 N 张" 重复信息。）
