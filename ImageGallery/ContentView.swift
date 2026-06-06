@@ -93,6 +93,8 @@ struct ContentView: View {
 
     // SwiftData：获取所有图片（用于状态栏显示总数）
     @Query private var allPhotos: [Photo]
+    @Query(sort: \Folder.createdAt, order: .forward) private var folders: [Folder]
+    @Query(sort: \Tag.createdAt, order: .forward) private var allTags: [Tag]
 
     // SwiftData 上下文
     @Environment(\.modelContext) private var modelContext
@@ -183,6 +185,14 @@ struct ContentView: View {
     private var totalSizeFormatted: String {
         let bytes = allPhotos.reduce(Int64(0)) { $0 + $1.fileSize }
         return ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)
+    }
+
+    // V3.5.19：当前选中图片的总大小（字节）
+    // 用于多选详情面板显示 "已选 N 张 · 12.3 MB"
+    private var selectedTotalSize: Int64 {
+        visiblePhotos
+            .filter { selectedIDs.contains($0.id) }
+            .reduce(0) { $0 + $1.fileSize }
     }
 
     // V3.5.17：把 6 个宽度 state vars + 4 个约束 + 2 个 AppStorage 钩子打包
@@ -458,13 +468,23 @@ struct ContentView: View {
                             singleSelectedPhoto: singleSelectedPhoto,
                             isMultiSelect: isMultiSelect,
                             count: selectedIDs.count,
+                            totalSize: selectedTotalSize,
+                            folders: folders,
+                            allTags: allTags,
                             onDelete: deleteSinglePhoto,
                             onPrev: goPrev,
                             onNext: goNext,
                             canPrev: canPrev,
                             canNext: canNext,
                             currentIndex: currentIndex,
-                            totalCount: visiblePhotos.count
+                            totalCount: visiblePhotos.count,
+                            // V3.5.19：多选 batch 动作从原 PhotoGridView.multiSelectTopBar 搬过来
+                            onBatchMove: { folder in batchMove(to: folder) },
+                            onBatchAddTag: { tag in batchAddTag(tag) },
+                            onBatchToggleFavorite: batchToggleFavorite,
+                            onBatchExport: batchExport,
+                            onBatchDelete: { showingBatchDeleteConfirm = true },
+                            onClearSelection: { selectedIDs = []; selectedPhoto = nil }
                         )
                     }
                 )
@@ -666,6 +686,111 @@ struct ContentView: View {
             try? modelContext.save()
             showToast("已恢复 \(count) 张图片", type: .success)
         }
+    }
+
+    // V3.5.19：从 PhotoGridView 搬上来的 4 个 batch 方法
+    // 原因：multi-select 顶部栏被移到详情面板里，详情面板的 MultiSelectDetailView
+    // 需要直接调用这些方法。
+
+    // ─── 批量移动到文件夹 ───
+    private func batchMove(to folder: Folder?) {
+        let photosToMove = visiblePhotos.filter { selectedIDs.contains($0.id) }
+        guard !photosToMove.isEmpty else { return }
+
+        // 快照：移动前的 folder 列表
+        let oldFolders = photosToMove.map { $0.folder }
+        let count = photosToMove.count
+        let folderName = folder?.name ?? "待整理"
+
+        undoManager.registerAction(
+            description: "移动 \(count) 张照片到 \(folderName)"
+        ) {
+            for photo in photosToMove {
+                photo.folder = folder
+            }
+            try? modelContext.save()
+            // 移动后清空多选
+            selectedIDs = []
+            selectedPhoto = nil
+        } undo: {
+            for (photo, oldFolder) in zip(photosToMove, oldFolders) {
+                photo.folder = oldFolder
+            }
+            try? modelContext.save()
+        }
+    }
+
+    // ─── 批量加标签 ───
+    private func batchAddTag(_ tag: Tag) {
+        let photosToTag = visiblePhotos.filter { selectedIDs.contains($0.id) }
+        for photo in photosToTag {
+            if !photo.tags.contains(where: { $0.id == tag.id }) {
+                photo.tags.append(tag)
+            }
+        }
+        try? modelContext.save()
+        // 加标签后保留多选（用户可能想加多个标签）
+    }
+
+    // ─── 批量导出 ───
+    private func batchExport() {
+        let photosToExport = visiblePhotos.filter { selectedIDs.contains($0.id) }
+        guard !photosToExport.isEmpty else { return }
+
+        let panel = NSOpenPanel()
+        panel.title = "选择导出位置"
+        panel.prompt = "导出"
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.canCreateDirectories = true
+
+        guard panel.runModal() == .OK, let destDir = panel.url else { return }
+
+        var successCount = 0
+        for photo in photosToExport {
+            let destURL = destDir.appendingPathComponent(photo.filename)
+            do {
+                if FileManager.default.fileExists(atPath: destURL.path) {
+                    let uniqueDest = uniqueDestinationForBatchExport(for: destURL)
+                    try FileManager.default.copyItem(at: photo.fileURL, to: uniqueDest)
+                } else {
+                    try FileManager.default.copyItem(at: photo.fileURL, to: destURL)
+                }
+                successCount += 1
+            } catch {
+                print("❌ 导出失败: \(photo.filename) - \(error)")
+            }
+        }
+        showToast("已导出 \(successCount) 张图片", type: .success)
+    }
+
+    /// 避免导出时文件名冲突
+    private func uniqueDestinationForBatchExport(for url: URL) -> URL {
+        let dir = url.deletingLastPathComponent()
+        let baseName = url.deletingPathExtension().lastPathComponent
+        let ext = url.pathExtension
+        var counter = 1
+        while true {
+            let newName = ext.isEmpty ? "\(baseName)_\(counter)" : "\(baseName)_\(counter).\(ext)"
+            let candidate = dir.appendingPathComponent(newName)
+            if !FileManager.default.fileExists(atPath: candidate.path) {
+                return candidate
+            }
+            counter += 1
+        }
+    }
+
+    // ─── 批量收藏切换 ───
+    private func batchToggleFavorite() {
+        let photosToToggle = visiblePhotos.filter { selectedIDs.contains($0.id) }
+        guard !photosToToggle.isEmpty else { return }
+        // 全部已收藏 → 全部取消；否则 → 全部收藏
+        let allFavorited = photosToToggle.allSatisfy { $0.isFavorite }
+        for photo in photosToToggle {
+            photo.isFavorite = !allFavorited
+        }
+        try? modelContext.save()
     }
 
     // ─── 序列化 SidebarSelection ───

@@ -16,7 +16,11 @@ import SwiftUI
 struct DetailPane: View {
     let singleSelectedPhoto: Photo?
     let isMultiSelect: Bool
-    let count: Int  // selectedIDs.count（用于多选视图）
+    let count: Int
+    let totalSize: Int64
+    let folders: [Folder]
+    let allTags: [Tag]
+    // 单图操作
     let onDelete: () -> Void
     let onPrev: () -> Void
     let onNext: () -> Void
@@ -24,6 +28,13 @@ struct DetailPane: View {
     let canNext: Bool
     let currentIndex: Int
     let totalCount: Int
+    // 多选操作（V3.5.19：从 mainLayout 接过来）
+    let onBatchMove: (Folder?) -> Void
+    let onBatchAddTag: (Tag) -> Void
+    let onBatchToggleFavorite: () -> Void
+    let onBatchExport: () -> Void
+    let onBatchDelete: () -> Void
+    let onClearSelection: () -> Void
 
     var body: some View {
         if let photo = singleSelectedPhoto {
@@ -38,7 +49,18 @@ struct DetailPane: View {
                 totalCount: totalCount
             )
         } else if isMultiSelect {
-            MultiSelectDetailView(count: count)
+            MultiSelectDetailView(
+                count: count,
+                totalSize: totalSize,
+                folders: folders,
+                allTags: allTags,
+                onMove: onBatchMove,
+                onAddTag: onBatchAddTag,
+                onToggleFavorite: onBatchToggleFavorite,
+                onExport: onBatchExport,
+                onDelete: onBatchDelete,
+                onClearSelection: onClearSelection
+            )
         } else {
             EmptyDetailView()
         }
