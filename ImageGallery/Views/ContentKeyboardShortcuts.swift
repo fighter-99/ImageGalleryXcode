@@ -1,0 +1,91 @@
+//
+//  ContentKeyboardShortcuts.swift
+//  ImageGallery
+//
+//  ContentView 的全局键盘快捷键集合。
+//  V3.5.17：从 ContentView.swift 拆出。
+//
+//  设计：用 `.background { ... }` 挂载隐藏的 Button + keyboardShortcut，
+//  真正的 UI 是 macOS 标准快捷键，Button 只是 SwiftUI 触发键位的机制。
+//
+
+import SwiftUI
+
+extension View {
+    /// ContentView 的全局快捷键：
+    /// - ⌘1-6: 切换侧栏智能文件夹
+    /// - ⌘O: 导入
+    /// - ⌘N: 新建文件夹
+    /// - ⌘R: 重置筛选
+    /// - ⌘F: 收藏/取消收藏
+    /// - ⌘C: 复制到剪贴板
+    /// - ⌘⇧S: 切换排序方向
+    /// - ⌘⌃S: 切换侧栏显隐（macOS 标准）
+    /// - ⌘Z / ⌘⇧Z: 撤销 / 重做
+    func contentKeyboardShortcuts(
+        sidebarSelection: Binding<SidebarSelection?>,
+        onImport: @escaping () -> Void,
+        onNewFolder: @escaping () -> Void,
+        onResetFilters: @escaping () -> Void,
+        onToggleFavorite: @escaping () -> Void,
+        onCopy: @escaping () -> Void,
+        onToggleSortDirection: @escaping () -> Void,
+        onToggleSidebar: @escaping () -> Void,
+        onUndo: @escaping () -> Void,
+        onRedo: @escaping () -> Void
+    ) -> some View {
+        background {
+            Group {
+                Button("") { onImport() }
+                    .keyboardShortcut("o", modifiers: .command)
+                    .hidden()
+                Button("") { sidebarSelection.wrappedValue = .all }
+                    .keyboardShortcut("1", modifiers: .command)
+                    .hidden()
+                Button("") { sidebarSelection.wrappedValue = .favorites }
+                    .keyboardShortcut("2", modifiers: .command)
+                    .hidden()
+                Button("") { sidebarSelection.wrappedValue = .unfiled }
+                    .keyboardShortcut("3", modifiers: .command)
+                    .hidden()
+                Button("") { sidebarSelection.wrappedValue = .duplicates }
+                    .keyboardShortcut("4", modifiers: .command)
+                    .hidden()
+                Button("") { sidebarSelection.wrappedValue = .recent7Days }
+                    .keyboardShortcut("5", modifiers: .command)
+                    .hidden()
+                Button("") { sidebarSelection.wrappedValue = .largeFiles }
+                    .keyboardShortcut("6", modifiers: .command)
+                    .hidden()
+
+                Button("") { onNewFolder() }
+                    .keyboardShortcut("n", modifiers: .command)
+                    .hidden()
+                Button("") { onResetFilters() }
+                    .keyboardShortcut("r", modifiers: .command)
+                    .hidden()
+                Button("") { onToggleFavorite() }
+                    .keyboardShortcut("f", modifiers: .command)
+                    .hidden()
+                Button("") { onCopy() }
+                    .keyboardShortcut("c", modifiers: .command)
+                    .hidden()
+                Button("") { onToggleSortDirection() }
+                    .keyboardShortcut("s", modifiers: [.command, .shift])
+                    .hidden()
+                // V3.5.12：⌘⌃+S 切换侧栏显隐（macOS 标准）
+                Button("") { onToggleSidebar() }
+                    .keyboardShortcut("s", modifiers: [.command, .control])
+                    .hidden()
+
+                // V3.5 Phase 1 Step 4：⌘Z 撤销 / ⌘⇧Z 重做
+                Button("") { onUndo() }
+                    .keyboardShortcut("z", modifiers: .command)
+                    .hidden()
+                Button("") { onRedo() }
+                    .keyboardShortcut("z", modifiers: [.command, .shift])
+                    .hidden()
+            }
+        }
+    }
+}
