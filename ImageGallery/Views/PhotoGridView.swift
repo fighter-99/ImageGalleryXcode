@@ -430,10 +430,34 @@ struct PhotoThumbnailView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var showingDeleteConfirm = false
     @State private var isHovered = false
+    // V3.6.10: 按压反馈（@GestureState 在 gesture 结束时自动 reset）
+    @GestureState private var isPressed: Bool = false
+    // V3.6.10: 键盘聚焦状态（SwiftUI 默认 focus ring，但 macOS 上系统不显示时手动加）
+    @FocusState private var isFocused: Bool
 
     /// V3.6.6: 距离永久删除的剩余天数（nil = 未在回收站）
     private var daysLeft: Int? {
         PhotoStats.daysUntilPurge(trashedAt: photo.trashedAt, retentionDays: retentionDays)
+    }
+
+    /// V3.6.10: 缩略图 hover 时显示的 tooltip（文件名 + 尺寸 + 文件大小）
+    private var tooltipText: String {
+        var parts: [String] = [photo.filename]
+        if photo.width > 0 && photo.height > 0 {
+            parts.append("\(photo.width) × \(photo.height)")
+        }
+        if photo.fileSize > 0 {
+            parts.append(ByteCountFormatter.string(fromByteCount: photo.fileSize, countStyle: .file))
+        }
+        return parts.joined(separator: " · ")
+    }
+
+    /// V3.6.10: 当前缩放比例（按压 > 选中 > hover > 默认）
+    private var currentScale: CGFloat {
+        if isPressed { return 0.95 }              // 按下：缩 5%
+        if isActive { return 1.015 }              // 单选：轻微放大
+        if isHovered && !isInMultiSelect { return 1.02 }  // hover：放大 2%
+        return 1.0
     }
 
     private var aspectRatio: CGFloat {
@@ -547,8 +571,9 @@ struct PhotoThumbnailView: View {
                     lineWidth: isInMultiSelect ? 2 : 0
                 )
         }
-        // V3.1：缩放更克制（1.04 → 1.02），避免视觉跳动
-        .scaleEffect(isActive ? 1.015 : (isHovered && !isInMultiSelect ? 1.02 : 1.0))
+        // V3.6.10: 按压 scale (0.95) > 选中 (1.015) > hover (1.02) > 默认
+        // 优先级：isPressed > isActive > isHovered
+        .scaleEffect(currentScale)
         // V3.1：用 Elevation 阴影系统
         //   resting：subtle（始终有微弱阴影，浮起感）
         //   hover：strong（明显浮起）
@@ -560,7 +585,9 @@ struct PhotoThumbnailView: View {
         )
         .animation(.easeInOut(duration: 0.2), value: isActive)
         .animation(.easeInOut(duration: 0.2), value: isHovered)
+        .animation(.easeInOut(duration: 0.1), value: isPressed)  // V3.6.10: 按压更短
         .animation(.easeInOut(duration: 0.15), value: isInMultiSelect)
+        .animation(.easeInOut(duration: 0.15), value: isFocused)  // V3.6.10
         // hover 检测（仅用于缩放动画）
         .onHover { hovering in
             isHovered = hovering
@@ -572,6 +599,19 @@ struct PhotoThumbnailView: View {
         .onTapGesture(count: 2) {
             onDoubleTap()
         }
+        // V3.6.10: 按压检测（DragGesture(minimumDistance: 0) + @GestureState）
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .updating($isPressed) { _, state, _ in
+                    state = true
+                }
+        )
+        // V3.6.10: 键盘聚焦绑定（方向键导航时高亮）
+        .focused($isFocused)
+        .focusable(true)
+        .focusEffectDisabled(false)  // 启用 macOS 系统 focus ring
+        // V3.6.10: hover tooltip（文件名 + 尺寸 + 文件大小）
+        .help(tooltipText)
         // 拖拽：支持内部文件夹移动（V3.5.20 修复崩溃）
         .onDrag {
             let provider = NSItemProvider()
