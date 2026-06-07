@@ -458,6 +458,8 @@ struct PhotoThumbnailView: View {
     var body: some View {
         ZStack(alignment: .topTrailing) {
             // 图片（垂直居中 + 按原比例）
+            // V3.6.8: trash 视图下加灰度 + 降低不透明度，让"已删除"感更强
+            //（仿 Photos.app 对"最近删除"视觉处理：灰度 + 约 50% 透明度）
             VStack(spacing: 0) {
                 Spacer(minLength: 0)
                 Group {
@@ -465,6 +467,8 @@ struct PhotoThumbnailView: View {
                         Image(nsImage: nsImage)
                             .resizable()
                             .aspectRatio(aspectRatio, contentMode: .fit)
+                            .saturation(photo.isInTrash ? 0.05 : 1)
+                            .opacity(photo.isInTrash ? 0.55 : 1)
                     } else {
                         RoundedRectangle(cornerRadius: Radius.md)
                             .fill(Palette.cellEmpty)
