@@ -26,6 +26,8 @@ struct PhotoGridPane: View {
     let filterLargeFiles: Bool
     // V3.6 NEW: 回收站筛选（true = 只显示 trashedAt != nil 的项）
     let filterInTrash: Bool
+    // V3.6.6: 保留时长（透传给 PhotoThumbnailView 显示剩余天数 badge）
+    let retentionDays: Int
     let thumbnailSize: CGFloat
     let sortOption: SortOption
     let onVisiblePhotosChange: ([Photo]) -> Void
@@ -49,6 +51,7 @@ struct PhotoGridPane: View {
             filterRecent7Days: filterRecent7Days,
             filterLargeFiles: filterLargeFiles,
             filterInTrash: filterInTrash,
+            retentionDays: retentionDays,
             thumbnailSize: thumbnailSize,
             sortOption: sortOption,
             onVisiblePhotosChange: onVisiblePhotosChange,

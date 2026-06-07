@@ -46,6 +46,8 @@ struct PhotoGridView: View {
     let filterLargeFiles: Bool
     // V3.6 NEW: 回收站筛选
     let filterInTrash: Bool
+    // V3.6.6: 保留时长（用于缩略图剩余天数 badge）
+    let retentionDays: Int
     let thumbnailSize: CGFloat
     let sortOption: SortOption
 
@@ -301,6 +303,8 @@ struct PhotoGridView: View {
                         folders: folders,
                         allTags: allTags,
                         cellHeight: thumbnailSize,
+                        // V3.6.6: 传 retentionDays（用于显示剩余天数 badge）
+                        retentionDays: retentionDays,
                         onDelete: { deletePhoto(photo) },
                         onTap: { handleTap(photo) },
                         onDoubleTap: { onDoubleTap(photo) }
@@ -429,6 +433,8 @@ struct PhotoThumbnailView: View {
     let folders: [Folder]
     let allTags: [Tag]
     let cellHeight: CGFloat
+    // V3.6.6: 保留时长（用于显示 trash 视图下的剩余天数 badge）
+    let retentionDays: Int
     let onDelete: () -> Void
     let onTap: () -> Void
     let onDoubleTap: () -> Void
@@ -436,6 +442,11 @@ struct PhotoThumbnailView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var showingDeleteConfirm = false
     @State private var isHovered = false
+
+    /// V3.6.6: 距离永久删除的剩余天数（nil = 未在回收站）
+    private var daysLeft: Int? {
+        PhotoStats.daysUntilPurge(trashedAt: photo.trashedAt, retentionDays: retentionDays)
+    }
 
     private var aspectRatio: CGFloat {
         if photo.width > 0 && photo.height > 0 {
@@ -481,6 +492,29 @@ struct PhotoThumbnailView: View {
                     .padding(6)
                     .background(.ultraThinMaterial, in: Circle())
                     .padding(6)
+            }
+
+            // V3.6.6: 回收站剩余天数 badge（仅 trash 视图下显示）
+            // topLeading 不与右上角的多选 ✓ / 左上角的 star 冲突
+            if let days = daysLeft, photo.isInTrash {
+                HStack(spacing: 2) {
+                    Image(systemName: "clock")
+                        .font(.caption2)
+                    Text("\(days)")
+                        .font(.caption.monospacedDigit())
+                }
+                .foregroundStyle(days <= 3 ? .white : .primary)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 3)
+                .background(
+                    Capsule().fill(
+                        days <= 3
+                        ? Color.orange
+                        : Color(nsColor: .controlBackgroundColor).opacity(0.9)
+                    )
+                )
+                .padding(6)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
 
             // 多选 ✓ 圆点
@@ -675,6 +709,7 @@ struct PhotoThumbnailView: View {
         filterRecent7Days: false,
         filterLargeFiles: false,
         filterInTrash: false,
+        retentionDays: 30,  // V3.6.6
         thumbnailSize: 170,
         sortOption: .importedAtDesc,
         onVisiblePhotosChange: { _ in },

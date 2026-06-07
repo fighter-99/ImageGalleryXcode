@@ -92,6 +92,38 @@ struct PhotoStatsTests {
         #expect(PhotoStats.inLibraryCount(folder) == 0)
     }
 
+    // MARK: - daysUntilPurge（V3.6.6 Trash UX 增强）
+
+    @Test func daysUntilPurgeReturnsNilForNonTrashed() {
+        #expect(PhotoStats.daysUntilPurge(trashedAt: nil, retentionDays: 30) == nil)
+    }
+
+    @Test func daysUntilPurgeReturnsFullRetentionForFreshTrash() {
+        let now = Date()
+        let justNow = now.addingTimeInterval(-10)  // 10 秒前
+        #expect(PhotoStats.daysUntilPurge(trashedAt: justNow, retentionDays: 30, now: now) == 29)
+    }
+
+    @Test func daysUntilPurgeCountsDown() {
+        let now = Date()
+        let tenDaysAgo = now.addingTimeInterval(-86400 * 10)
+        #expect(PhotoStats.daysUntilPurge(trashedAt: tenDaysAgo, retentionDays: 30, now: now) == 20)
+    }
+
+    @Test func daysUntilPurgeHandlesExpired() {
+        let now = Date()
+        let fortyDaysAgo = now.addingTimeInterval(-86400 * 40)
+        // 30 - 40 = -10，已过期
+        #expect(PhotoStats.daysUntilPurge(trashedAt: fortyDaysAgo, retentionDays: 30, now: now) == -10)
+    }
+
+    @Test func daysUntilPurgeHandlesBoundary() {
+        let now = Date()
+        let exactlyRetention = now.addingTimeInterval(-86400 * 30)
+        // 30 - 30 = 0，恰好到期
+        #expect(PhotoStats.daysUntilPurge(trashedAt: exactlyRetention, retentionDays: 30, now: now) == 0)
+    }
+
     // MARK: - helpers
 
     private func makePhotos(trashed: [Bool]) -> [Photo] {

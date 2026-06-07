@@ -65,6 +65,9 @@ struct ContentView: View {
     // 批量删除确认
     @State private var showingBatchDeleteConfirm = false
 
+    // V3.6.6: 清空回收站二次确认（防误操作：永久删除所有 trashed 项）
+    @State private var showingEmptyTrashConfirm = false
+
     // 批量移动
     // （showingBatchMoveSheet 已移除：批量移动流程当前在 PhotoGridView 内联实现，
     //   该状态从未被读。如未来要重新走 sheet 流程再加回。）
@@ -330,6 +333,17 @@ struct ContentView: View {
                 showSettings: $showSettings,
                 tintColor: accentColor.color
             )
+            // V3.6.6: 清空回收站二次确认
+            .confirmationDialog(
+                "确定要清空回收站吗？",
+                isPresented: $showingEmptyTrashConfirm,
+                titleVisibility: .visible
+            ) {
+                Button("清空", role: .destructive) { emptyTrash() }
+                Button("取消", role: .cancel) {}
+            } message: {
+                Text("回收站里的所有照片将被永久删除，无法恢复。")
+            }
     }
 
     // ⌘N 触发的创建文件夹
@@ -485,6 +499,8 @@ struct ContentView: View {
                             filterRecent7Days: filterRecent7Days,
                             filterLargeFiles: filterLargeFiles,
                             filterInTrash: filterInTrash,  // V3.6 NEW
+                            // V3.6.6: 透传 retentionDays 给缩略图 badge
+                            retentionDays: retentionDays,
                             thumbnailSize: thumbnailSize,
                             sortOption: sortOption,
                             onVisiblePhotosChange: { visiblePhotos = $0 },
@@ -524,7 +540,8 @@ struct ContentView: View {
                             retentionDays: retentionDays,
                             onTrashRestore: restoreSelectedFromTrash,
                             onTrashPermanentDelete: permanentDeleteSelected,
-                            onEmptyTrash: emptyTrash
+                            // V3.6.6: 改弹二次确认（不再直接调 emptyTrash）
+                            onEmptyTrash: { showingEmptyTrashConfirm = true }
                         )
                     }
                 )

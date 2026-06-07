@@ -62,4 +62,26 @@ enum PhotoStats {
     static func inLibraryCount(_ tag: ImageGallery.Tag) -> Int {
         tag.photos.lazy.filter { !$0.isInTrash }.count
     }
+
+    // MARK: - 剩余天数（V3.6.6 Trash UX 增强）
+
+    /// 计算距离永久删除还剩多少天
+    /// - Parameters:
+    ///   - trashedAt: 进入回收站的时间（nil = 未在回收站）
+    ///   - retentionDays: 保留时长（来自 @AppStorage）
+    ///   - now: 当前时间（默认 Date()，测试可注入）
+    /// - Returns: 剩余天数，nil = 未在回收站
+    ///   - 0 = 即将过期（< 1 天）
+    ///   - 负数 = 已过期（> retentionDays 天未清理）
+    static func daysUntilPurge(
+        trashedAt: Date?,
+        retentionDays: Int,
+        now: Date = Date()
+    ) -> Int? {
+        guard let trashedAt = trashedAt else { return nil }
+        let elapsed = now.timeIntervalSince(trashedAt)
+        let total = Double(retentionDays) * 86400
+        let remaining = total - elapsed
+        return Int(remaining / 86400)
+    }
 }

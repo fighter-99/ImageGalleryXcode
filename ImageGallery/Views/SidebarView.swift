@@ -78,7 +78,14 @@ struct SidebarView: View {
                     sidebarRow(icon: "doc.on.doc", label: "重复图", count: duplicateCount, target: .duplicates, iconColor: .orange)
                 }
                 // V3.6 NEW: 回收站入口（始终显示，包括 0 张时；不显示空状态可能让用户找不到入口）
-                sidebarRow(icon: "trash", label: "最近删除", count: libraryCounts.trashed, target: .recentlyDeleted)
+                // V3.6.6: count > 0 时图标橙色高亮，提醒有待处理项
+                sidebarRow(
+                    icon: "trash",
+                    label: "最近删除",
+                    count: libraryCounts.trashed,
+                    target: .recentlyDeleted,
+                    iconColor: libraryCounts.trashed > 0 ? .orange : nil
+                )
             } header: {
                 SidebarSectionHeader("我的图馆")
             }
