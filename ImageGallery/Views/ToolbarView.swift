@@ -257,7 +257,7 @@ struct ToolbarView: View {
         )
     }
 
-    /// 导入按钮（V3.6.16：加 hover 反馈，主操作 L1）
+    /// 导入按钮（V3.6.19：改 .borderedProminent + accent 色背景，Photos.app 主操作风格）
     private var importButton: some View {
         Button {
             onImport()
@@ -268,10 +268,11 @@ struct ToolbarView: View {
                 Text("导入")
                     .font(.callout.weight(.medium))
             }
-            .foregroundStyle(Color.accentColor)
-            .padding(.horizontal, 4)  // 让 hover 背景更明显
+            .padding(.horizontal, 6)
         }
-        .buttonStyle(.borderless)
+        .buttonStyle(.borderedProminent)
+        .controlSize(.small)
+        .tint(Color.accentColor)
         .help("导入图片 (⌘O)")
     }
 }
