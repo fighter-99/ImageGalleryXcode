@@ -22,6 +22,14 @@ struct SettingsView: View {
     @AppStorage("viewModeRaw") private var defaultViewModeRaw: String = ViewMode.grid.rawValue
     // V3.6.13: 默认排序
     @AppStorage("sortOption") private var defaultSortOption: String = SortOption.importedAtDesc.rawValue
+    // V3.6.22: 应用外观（@AppStorage 持久化）
+    @AppStorage("appearanceMode") private var appearanceModeRaw: Int = AppearanceMode.defaultValue.rawValue
+    private var appearanceModeBinding: Binding<AppearanceMode> {
+        Binding(
+            get: { AppearanceMode(rawValue: appearanceModeRaw) ?? .system },
+            set: { appearanceModeRaw = $0.rawValue }
+        )
+    }
 
     // V3.6.13: 用 let 显式类型避免 Swift 推断循环
     private let defaultViewModeOptions: [ViewMode] = ViewMode.allCases
@@ -126,6 +134,23 @@ struct SettingsView: View {
                 .pickerStyle(.menu)
             }
 
+            // V3.6.22 NEW: 外观 section
+            VStack(alignment: .leading, spacing: Spacing.md) {
+                Text("外观")
+                    .font(Typography.headline)
+
+                Text("应用整体外观。\"跟随系统\" 会随 macOS 切换自动调整。")
+                    .font(Typography.caption)
+                    .foregroundStyle(Surface.textSecondary)
+
+                Picker("外观", selection: appearanceModeBinding) {
+                    ForEach(AppearanceMode.allCases) { mode in
+                        Label(mode.displayName, systemImage: mode.icon).tag(mode)
+                    }
+                }
+                .pickerStyle(.segmented)
+            }
+
             Spacer()
 
             // 底部
@@ -138,7 +163,7 @@ struct SettingsView: View {
             }
         }
         .padding(Spacing.xl)
-        .frame(width: 480, height: 600)  // V3.6.13: 加高以容纳新增 3 个 section
+        .frame(width: 480, height: 700)  // V3.6.22: 加高以容纳新增"外观"section
         .background(Surface.canvas)
     }
 }

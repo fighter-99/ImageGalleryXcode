@@ -96,6 +96,12 @@ struct ContentView: View {
     // V3.6 NEW: 回收站保留时长（默认 30 天）
     @AppStorage("trashRetentionDays") private var retentionDays: Int = TrashRetentionDays.defaultValue.rawValue
 
+    // V3.6.22: 应用外观（默认跟随系统）
+    @AppStorage("appearanceMode") private var appearanceModeRaw: Int = AppearanceMode.defaultValue.rawValue
+    private var appearanceMode: AppearanceMode {
+        AppearanceMode(rawValue: appearanceModeRaw) ?? .system
+    }
+
     // V3.6 NEW: 启动时清理过期回收站项的"只跑一次"标记
     // ContentView 可能多次出现（开关窗口、切 sidebar），用 flag 避免重复清理
     @State private var hasPurgedExpiredTrash = false
@@ -276,6 +282,8 @@ struct ContentView: View {
 
     var body: some View {
         mainLayout
+            // V3.6.22: 应用外观（浅色/深色/跟随系统）
+            .preferredColorScheme(appearanceMode.colorScheme)
             .onAppear {
                 thumbnailSize = CGFloat(storedThumbnailSize)
                 sidebarSelection = restoreSelection(storedSidebarKey)
