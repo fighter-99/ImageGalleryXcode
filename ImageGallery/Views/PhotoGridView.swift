@@ -188,32 +188,20 @@ struct PhotoGridView: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: 20) {
-            // 插图：渐变图标 + 微妙阴影
-            Image(systemName: emptyIcon)
-                .font(.system(size: 80, weight: .light))
-                .foregroundStyle(.tint.opacity(0.6))
-                .symbolRenderingMode(.hierarchical)
-            Text(emptyText)
-                .font(.title2.weight(.medium))
-                .foregroundStyle(.primary)
-            Text(emptyHint)
-                .font(.callout)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-            if emptyShowImport {
-                Button {
-                    onImport()
-                } label: {
-                    Label("导入图片", systemImage: "square.and.arrow.down")
-                }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
-                .buttonStyle(.pressable)  // 按压反馈
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(40)
+        // V3.6.9：用统一 EmptyStateView 组件
+        EmptyStateView(
+            icon: emptyIcon,
+            title: emptyText,
+            subtitle: emptyHint,
+            iconColor: Color.accentColor.opacity(0.6),
+            action: emptyShowImport
+                ? EmptyStateView.Action(
+                    label: "导入图片",
+                    systemImage: "square.and.arrow.down",
+                    onTap: onImport
+                )
+                : nil
+        )
     }
 
     private var emptyIcon: String {
