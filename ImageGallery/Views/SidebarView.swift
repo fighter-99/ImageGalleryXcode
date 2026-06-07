@@ -99,8 +99,8 @@ struct SidebarView: View {
                 )
                 .animation(Animations.quick, value: isTrashDropTargeted)
             } header: {
-                // V3.6.21: 加 SF Symbol 小图标做视觉锚点
-                SidebarSectionHeader("我的图馆", icon: "photo.on.rectangle.angled")
+                // V3.6.25: 隐藏 section header（"我的图馆"）
+                EmptyView()
             }
 
             // ─── 智能文件夹 ───
