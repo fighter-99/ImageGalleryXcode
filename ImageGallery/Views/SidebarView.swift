@@ -287,6 +287,11 @@ struct SidebarView: View {
         selectedIDs: Set<UUID>,
         context: ModelContext
     ) {
+        // V3.5.20 修复崩溃：performMove 不再走 ImageGalleryUndoManager.registerAction
+        // 原代码调用 registerAction → 立即执行 action() 修改 SwiftData → 崩溃源（待查）
+        // 原注释也说 "暂不支持：移动到文件夹"，所以这本来就该用直接修改 SwiftData 的方式
+        // 撤销功能后续可以单独实现一个针对"移动到文件夹"的轻量级机制
+
         // 确定要移动的 ID 集合
         let idsToMove: Set<UUID>
         if !selectedIDs.isEmpty && selectedIDs.contains(draggedUUID) {
@@ -295,34 +300,21 @@ struct SidebarView: View {
             idsToMove = [draggedUUID]
         }
 
-        // 快照：每个 photo 移动前的 folder
-        var snapshots: [(id: UUID, oldFolder: Folder?)] = []
+        // 拉取要移动的 photos
         var photos: [Photo] = []
         for id in idsToMove {
             let descriptor = FetchDescriptor<Photo>(predicate: #Predicate { $0.id == id })
             if let photo = try? context.fetch(descriptor).first {
-                snapshots.append((id, photo.folder))
                 photos.append(photo)
             }
         }
         guard !photos.isEmpty else { return }
 
-        // 注册撤销（用捕获的 String 名字，避免再访问 SwiftData @Model）
-        let count = photos.count
-        undoManager?.registerAction(
-            description: "移动 \(count) 张照片到 \(folderName)"
-        ) {
-            for photo in photos {
-                photo.folder = folder
-            }
-            try? context.save()
-            // V3.5.18 修复：删除 selectedIDs = []（在异步闭包里设 @Binding 会崩）
-        } undo: {
-            for (snapshot, photo) in zip(snapshots, photos) {
-                photo.folder = snapshot.oldFolder
-            }
-            try? context.save()
+        // 直接修改 + 保存（不走 undoManager）
+        for photo in photos {
+            photo.folder = folder
         }
+        try? context.save()
     }
 
     // 拖拽高亮背景（V3.5.17：fill + border，Photos.app 风格）

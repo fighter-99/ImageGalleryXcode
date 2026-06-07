@@ -510,7 +510,7 @@ struct PhotoThumbnailView: View {
         .onTapGesture(count: 2) {
             onDoubleTap()
         }
-        // 拖拽：支持内部文件夹移动 + 外部 Finder 导出
+        // 拖拽：支持内部文件夹移动（V3.5.20 修复崩溃）
         .onDrag {
             let provider = NSItemProvider()
 
@@ -518,32 +518,22 @@ struct PhotoThumbnailView: View {
             // 1. 提前捕获所有值（photo 是 SwiftData @Model，deferred 访问失效对象会崩）
             // 2. 用 registerDataRepresentation 替代 registerObject
             //    （registerObject 提供对象，loadDataRepresentation 要数据，两者不兼容会抛 NSException）
-            let photoName = photo.filename
-            let photoURL = photo.fileURL
+            //
+            // V3.5.20 修复：删除 registerFileRepresentation
+            // 原因：.openInPlace 模式下系统会在 drop 时主动访问文件，文件不可访问时崩溃
+            // 现在只注册 "public.text" UUID 数据供 Sidebar 文件夹 drop 使用
+            // Finder 导出改用 context menu "导出" 按钮（如未来需要再加）
             let photoUUID = photo.id.uuidString
             let uuidData = photoUUID.data(using: .utf8) ?? Data()
 
-            provider.suggestedName = photoName
-
-            // 类型 1: 文件 URL（Finder 接收 → 导出文件）
-            provider.registerFileRepresentation(
-                forTypeIdentifier: UTType.fileURL.identifier,
-                fileOptions: [.openInPlace],
-                visibility: .all
-            ) { completion in
-                completion(photoURL, false, nil)
-                return nil
-            }
-
-            // 类型 2: UUID 数据（Sidebar 文件夹接收 → 移动到文件夹）
-            // 用 registerDataRepresentation 直接提供数据，
+            // UUID 数据（Sidebar 文件夹接收 → 移动到文件夹）
             // 跟 SidebarView 的 loadDataRepresentation(forTypeIdentifier: "public.text") 匹配
             provider.registerDataRepresentation(
                 forTypeIdentifier: "public.text",
                 visibility: .all
             ) { completion in
                 completion(uuidData, nil)
-                return nil
+                return Progress()
             }
 
             return provider
