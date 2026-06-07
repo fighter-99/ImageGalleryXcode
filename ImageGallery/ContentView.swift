@@ -348,7 +348,11 @@ struct ContentView: View {
                 onToggleSortDirection: toggleSortDirection,
                 onToggleSidebar: { showSidebar.toggle() },
                 onUndo: undoManager.undo,
-                onRedo: undoManager.redo
+                onRedo: undoManager.redo,
+                // V3.6.23: ⌘F 聚焦搜索框（通过 notification 桥接，避免 ContentView body 改动）
+                onFocusSearch: {
+                    NotificationCenter.default.post(name: .focusSearchField, object: nil)
+                }
             )
             .confirmationDialog(
                 "确定要删除 \(selectedIDs.count) 张图片吗？",

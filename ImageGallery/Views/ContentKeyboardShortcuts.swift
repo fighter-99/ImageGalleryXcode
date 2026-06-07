@@ -32,7 +32,8 @@ extension View {
         onToggleSortDirection: @escaping () -> Void,
         onToggleSidebar: @escaping () -> Void,
         onUndo: @escaping () -> Void,
-        onRedo: @escaping () -> Void
+        onRedo: @escaping () -> Void,
+        onFocusSearch: @escaping () -> Void = {}  // V3.6.23: ⌘F 聚焦搜索框（V3.5 ⌘F 之前给收藏，移除避免冲突 — 收藏快捷键改 ⌘D）
     ) -> some View {
         background {
             Group {
@@ -64,7 +65,8 @@ extension View {
                 Button("") { onResetFilters() }
                     .keyboardShortcut("r", modifiers: .command)
                     .hidden()
-                Button("") { onToggleFavorite() }
+                // V3.6.23: ⌘F 改为聚焦搜索框（V3.5 Phase 1 之前 ⌘F 是收藏/取消收藏，现在让位给更常用的搜索）
+                Button("") { onFocusSearch() }
                     .keyboardShortcut("f", modifiers: .command)
                     .hidden()
                 Button("") { onCopy() }

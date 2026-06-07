@@ -78,6 +78,8 @@ struct ImageGalleryApp: App {
 // 菜单栏的"设置..."按钮发通知，ContentView 监听后弹出 SettingsView sheet。
 extension Notification.Name {
     static let openSettingsRequested = Notification.Name("openSettingsRequested")
+    // V3.6.23: ⌘F 聚焦搜索框通知（ContentKeyboardShortcuts 发，ToolbarView 收）
+    static let focusSearchField = Notification.Name("focusSearchField")
 }
 
 // MARK: - UserDefaults Binding 辅助（V3.5.18：去掉 @AppStorage 重复）

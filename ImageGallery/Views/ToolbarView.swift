@@ -56,6 +56,9 @@ struct ToolbarView: View {
     // V3.5.5 方向 C2：所有图标统一 SF Symbol weight
     private let iconWeight: Font.Weight = .medium
 
+    // V3.6.23: ⌘F 聚焦搜索框的 @FocusState
+    @FocusState private var searchFieldFocused: Bool
+
     // V3.6.18: 组之间视觉分隔符（0.5pt × 16pt vertical line，Surface.separator 色）
     private var toolbarSeparator: some View {
         Rectangle()
@@ -141,6 +144,7 @@ struct ToolbarView: View {
     // MARK: - 子组件
 
     /// 搜索框（V3.6.20：容器改 Capsule，跟 viewMode/density/sortMenu 一致）
+    /// V3.6.23: 加 .focused($searchFieldFocused)，让 ⌘F 快捷键能聚焦
     private var searchField: some View {
         HStack(spacing: 6) {
             Image(systemName: "magnifyingglass")
@@ -149,6 +153,7 @@ struct ToolbarView: View {
             TextField("搜索文件名、标签、备注", text: $searchText)
                 .textFieldStyle(.plain)
                 .font(.caption)
+                .focused($searchFieldFocused)  // V3.6.23: ⌘F focus 目标
             if !searchText.isEmpty {
                 Button {
                     searchText = ""
@@ -164,6 +169,10 @@ struct ToolbarView: View {
         .padding(.horizontal, Spacing.sm)
         .padding(.vertical, 4)
         .background(Surface.toolbarControl, in: Capsule())
+        // V3.6.23: 监听 ⌘F notification 设 focus
+        .onReceive(NotificationCenter.default.publisher(for: .focusSearchField)) { _ in
+            searchFieldFocused = true
+        }
     }
 
     /// 视图模式 3 档（V3.6.18：加 text 标签 — 让用户清楚当前选的是什么）
