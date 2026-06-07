@@ -16,6 +16,16 @@ struct SettingsView: View {
     @AppStorage("accentColorID") private var accentColorID: String = AccentColor.system.rawValue
     // V3.6 NEW: 回收站保留时长（rawValue 用 @AppStorage 持久化）
     @AppStorage("trashRetentionDays") private var retentionDays: Int = TrashRetentionDays.defaultValue.rawValue
+    // V3.6.13: 默认缩略图大小（同一 key 共享 ContentView 的 storedThumbnailSize）
+    @AppStorage("thumbnailSize") private var defaultThumbnailSize: Double = 170
+    // V3.6.13: 默认视图模式（PhotoGridView 用的 viewModeRaw key）
+    @AppStorage("viewModeRaw") private var defaultViewModeRaw: String = ViewMode.grid.rawValue
+    // V3.6.13: 默认排序
+    @AppStorage("sortOption") private var defaultSortOption: String = SortOption.importedAtDesc.rawValue
+
+    // V3.6.13: 用 let 显式类型避免 Swift 推断循环
+    private let defaultViewModeOptions: [ViewMode] = ViewMode.allCases
+    private let defaultSortOptions: [SortOption] = SortOption.allCases
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.xl) {
@@ -68,6 +78,54 @@ struct SettingsView: View {
                 .pickerStyle(.segmented)
             }
 
+            // V3.6.13 NEW: 缩略图 section
+            VStack(alignment: .leading, spacing: Spacing.md) {
+                Text("缩略图")
+                    .font(Typography.headline)
+
+                Text("设置默认缩略图大小（拖动 slider 调整）。当前会话用 toolbar 临时改的会在重启后恢复默认值。")
+                    .font(Typography.caption)
+                    .foregroundStyle(Surface.textSecondary)
+
+                HStack {
+                    Slider(value: $defaultThumbnailSize, in: 100...250, step: 10)
+                    Text("\(Int(defaultThumbnailSize))")
+                        .font(Typography.captionMono)
+                        .foregroundStyle(Surface.textSecondary)
+                        .frame(width: 40, alignment: .trailing)
+                }
+            }
+
+            // V3.6.13 NEW: 视图模式 section
+            VStack(alignment: .leading, spacing: Spacing.md) {
+                Text("默认视图模式")
+                    .font(Typography.headline)
+
+                // V3.6.13: 不用 ForEach + enum，避免 Swift 推断循环
+                Picker("视图模式", selection: $defaultViewModeRaw) {
+                    Text("网格").tag(ViewMode.grid.rawValue)
+                    Text("列表").tag(ViewMode.list.rawValue)
+                    Text("时间线").tag(ViewMode.timeline.rawValue)
+                }
+                .pickerStyle(.segmented)
+            }
+
+            // V3.6.13 NEW: 默认排序 section
+            VStack(alignment: .leading, spacing: Spacing.md) {
+                Text("默认排序")
+                    .font(Typography.headline)
+
+                Picker("排序", selection: $defaultSortOption) {
+                    Text("导入时间 ↓").tag(SortOption.importedAtDesc.rawValue)
+                    Text("导入时间 ↑").tag(SortOption.importedAtAsc.rawValue)
+                    Text("文件名 A-Z").tag(SortOption.filenameAsc.rawValue)
+                    Text("文件大小 ↓").tag(SortOption.fileSizeDesc.rawValue)
+                    Text("文件大小 ↑").tag(SortOption.fileSizeAsc.rawValue)
+                    Text("自定义顺序").tag(SortOption.customOrder.rawValue)
+                }
+                .pickerStyle(.menu)
+            }
+
             Spacer()
 
             // 底部
@@ -80,7 +138,7 @@ struct SettingsView: View {
             }
         }
         .padding(Spacing.xl)
-        .frame(width: 480, height: 420)  // V3.6: 加高以容纳回收站 section
+        .frame(width: 480, height: 600)  // V3.6.13: 加高以容纳新增 3 个 section
         .background(Surface.canvas)
     }
 }

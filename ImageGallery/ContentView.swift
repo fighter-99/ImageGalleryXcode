@@ -47,8 +47,13 @@ struct ContentView: View {
     @State private var searchText = ""
 
     // 缩略图大小
-    @State private var thumbnailSize: CGFloat = 170
-    @State private var viewMode: ViewMode = .grid
+    @State private var thumbnailSize: CGFloat = 170  // V3.6.13: 保留 @State 用 toolbar 临时调，onChange 同步 stored
+    // V3.6.13: viewMode 改用 @AppStorage 持久化（SettingsView 可设默认）
+    @AppStorage("viewModeRaw") private var viewModeRaw: String = ViewMode.grid.rawValue
+    private var viewMode: ViewMode {
+        get { ViewMode(rawValue: viewModeRaw) ?? .grid }
+        nonmutating set { viewModeRaw = newValue.rawValue }
+    }
 
     // 排序方式（Eagle 化工具栏新增）
     @State private var sortOption: SortOption = .importedAtDesc
@@ -258,6 +263,16 @@ struct ContentView: View {
                     purgeExpiredTrashOnStartup()
                 }
             }
+            // V3.6.13: 监听 SettingsView 修改 storedThumbnailSize，实时同步当前 session
+            // 避免\"重启后生效\"的尴尬
+            .onChange(of: storedThumbnailSize) { _, new in
+                thumbnailSize = CGFloat(new)
+            }
+            .onChange(of: storedSortOption) { _, new in
+                sortOption = SortOption(rawValue: new) ?? .importedAtDesc
+            }
+            // V3.6.13: viewModeRaw 通过 computed property 自动响应 AppStorage 变化
+            .onChange(of: viewModeRaw) { _, _ in }
             .onChange(of: thumbnailSize) { _, new in
                 storedThumbnailSize = Double(new)
             }
@@ -442,7 +457,11 @@ struct ContentView: View {
                 ToolbarView(
                     searchText: $searchText,
                     onImport: startImport,
-                    viewMode: $viewMode,
+                    // V3.6.13: viewMode 通过 computed property 包装，构造 Binding 传给 ToolbarView
+                    viewMode: Binding(
+                        get: { self.viewMode },
+                        set: { self.viewMode = $0 }
+                    ),
                     thumbnailSize: $thumbnailSize,
                     sortOption: $sortOption,
                     // V3.5.15：侧栏显隐按钮已移至 title bar（ToolbarItem .navigation）
