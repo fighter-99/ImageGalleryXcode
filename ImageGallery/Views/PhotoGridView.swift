@@ -428,6 +428,7 @@ struct PhotoThumbnailView: View {
     let onDoubleTap: () -> Void
 
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.colorScheme) private var colorScheme  // V3.6.14: 暗色适配 trash opacity
     @State private var showingDeleteConfirm = false
     @State private var isHovered = false
     // V3.6.10: 按压反馈（@GestureState 在 gesture 结束时自动 reset）
@@ -471,7 +472,7 @@ struct PhotoThumbnailView: View {
         ZStack(alignment: .topTrailing) {
             // 图片（垂直居中 + 按原比例）
             // V3.6.8: trash 视图下加灰度 + 降低不透明度，让"已删除"感更强
-            //（仿 Photos.app 对"最近删除"视觉处理：灰度 + 约 50% 透明度）
+            // V3.6.14: 暗色下 opacity 0.65（暗背景下半透明不会"黑掉"）
             VStack(spacing: 0) {
                 Spacer(minLength: 0)
                 Group {
@@ -480,7 +481,7 @@ struct PhotoThumbnailView: View {
                             .resizable()
                             .aspectRatio(aspectRatio, contentMode: .fit)
                             .saturation(photo.isInTrash ? 0.05 : 1)
-                            .opacity(photo.isInTrash ? 0.55 : 1)
+                            .opacity(photo.isInTrash ? (colorScheme == .dark ? 0.65 : 0.55) : 1)
                     } else {
                         RoundedRectangle(cornerRadius: Radius.md)
                             .fill(Palette.cellEmpty)

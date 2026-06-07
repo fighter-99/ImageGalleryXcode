@@ -71,7 +71,8 @@ enum Surface {
 
     // ─── 卡片 ───
     static let cardBackground = Color(NSColor.controlBackgroundColor)
-    static let cardBorder = Color.primary.opacity(0.06)
+    // V3.6.14: 暗色下用 NSColor.separatorColor 系统色（自动适配亮/暗）
+    static let cardBorder = Color(nsColor: .separatorColor)
 
     // ─── 工具栏专用（V3.1 Phase 1.5） ───
     /// 工具栏内分组背景（segments、菜单、搜索）
@@ -82,7 +83,8 @@ enum Surface {
 // MARK: - 阴影（V3.1 NEW：微妙阴影系统）
 //
 // 4 个标准层级。取代直接 .shadow() 调用。
-// 所有阴影都是黑色低透明度，在两种模式下都自然。
+// V3.6.14 暗色适配：shadow 改用 NSColor.shadowColor 系统色 + 不同 alpha
+// （之前 .black.opacity 暗色下几乎不可见）
 
 struct ElevationStyle {
     let color: Color
@@ -93,9 +95,10 @@ struct ElevationStyle {
 
 enum Elevation {
     /// 极轻：缩略图、按钮的 resting 状态
-    static let subtle  = ElevationStyle(color: .black.opacity(0.04), radius: 2,  x: 0, y: 1)
+    /// V3.6.14: 暗色下用更高 alpha（0.10）让阴影可见
+    static let subtle  = ElevationStyle(color: Color(nsColor: .shadowColor).opacity(0.08), radius: 2,  x: 0, y: 1)
     /// 强：hover 状态的缩略图
-    static let strong  = ElevationStyle(color: .black.opacity(0.10), radius: 12, x: 0, y: 4)
+    static let strong  = ElevationStyle(color: Color(nsColor: .shadowColor).opacity(0.20), radius: 12, x: 0, y: 4)
 }
 
 // MARK: - 字体（V3.1 NEW：语义化字体层级）
@@ -128,11 +131,13 @@ enum Typography {
 enum Palette {
     // 背景层级
     static let cellBackground = Surface.elevated
-    static let cellEmpty = Color.gray.opacity(0.3)
-    static let cellFilled = Color.gray.opacity(0.2)
+    // V3.6.14: 暗色下用 NSColor.quaternaryLabelColor 系统色（自动适配）
+    static let cellEmpty = Color(nsColor: .quaternaryLabelColor)
+    static let cellFilled = Color(nsColor: .quaternaryLabelColor).opacity(0.7)
 
     // 分隔线 / 边框
-    static let chipBackground = Color.gray.opacity(0.15)
+    // V3.6.14: 暗色下用 NSColor.controlBackgroundColor 系统色
+    static let chipBackground = Color(nsColor: .controlBackgroundColor)
 
     // 强调色
     static let selectionOverlayMulti = Surface.selectedStrong
