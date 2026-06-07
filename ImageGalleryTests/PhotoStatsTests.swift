@@ -92,6 +92,50 @@ struct PhotoStatsTests {
         #expect(PhotoStats.inLibraryCount(folder) == 0)
     }
 
+    // MARK: - 重复图分组（V3.6.15 清理工具用）
+
+    @Test func duplicateGroupsGroupsByHash() {
+        let p1 = makePhoto(fileHash: "abc", importedAt: .now.addingTimeInterval(-100))
+        let p2 = makePhoto(fileHash: "abc", importedAt: .now)
+        let p3 = makePhoto(fileHash: "xyz", importedAt: .now)
+        let groups = PhotoStats.duplicateGroups(in: [p1, p2, p3])
+        // 只 1 组（abc 有 2 张；xyz 单独 1 张不算重复）
+        #expect(groups.count == 1)
+        #expect(groups[0].count == 2)
+    }
+
+    @Test func duplicateGroupsSkipsNilHashAndSingles() {
+        let p1 = makePhoto(fileHash: nil)
+        let p2 = makePhoto(fileHash: "abc")
+        let p3 = makePhoto(fileHash: nil)  // nil hash 跳过
+        let groups = PhotoStats.duplicateGroups(in: [p1, p2, p3])
+        #expect(groups.isEmpty)
+    }
+
+    @Test func duplicateGroupsSortsByImportedDesc() {
+        let p1 = makePhoto(fileHash: "abc", importedAt: .now.addingTimeInterval(-100))  // 旧
+        let p2 = makePhoto(fileHash: "abc", importedAt: .now)                              // 新
+        let groups = PhotoStats.duplicateGroups(in: [p1, p2])
+        #expect(groups[0][0].id == p2.id)  // 最新在前
+        #expect(groups[0][1].id == p1.id)
+    }
+
+    @Test func duplicatesToPurgeKeepsNewestPerGroup() {
+        let oldest = makePhoto(fileHash: "abc", importedAt: .now.addingTimeInterval(-100))
+        let newest = makePhoto(fileHash: "abc", importedAt: .now)
+        let orphan = makePhoto(fileHash: "xyz", importedAt: .now)  // 单独不重复
+        let toPurge = PhotoStats.duplicatesToPurge(in: [oldest, newest, orphan])
+        // 1 张（oldest）；newest 保留；orphan 不动
+        #expect(toPurge.count == 1)
+        #expect(toPurge[0].id == oldest.id)
+    }
+
+    @Test func duplicatesToPurgeHandlesEmptyAndSingles() {
+        #expect(PhotoStats.duplicatesToPurge(in: []).isEmpty)
+        let p = makePhoto(fileHash: "abc", importedAt: .now)
+        #expect(PhotoStats.duplicatesToPurge(in: [p]).isEmpty)  // 单张不算重复
+    }
+
     // MARK: - daysUntilPurge（V3.6.6 Trash UX 增强）
 
     @Test func daysUntilPurgeReturnsNilForNonTrashed() {

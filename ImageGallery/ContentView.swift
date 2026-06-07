@@ -180,6 +180,12 @@ struct ContentView: View {
         return false
     }
 
+    // V3.6.15 NEW: 重复图筛选（用于 .duplicates 视图的 count/totalSize 区分）
+    private var filterInDuplicates: Bool {
+        if case .duplicates = sidebarSelection { return true }
+        return false
+    }
+
     // 派生属性
     private var currentIndex: Int {
         guard let id = selectedIDs.first ?? selectedPhoto?.id,
@@ -228,6 +234,23 @@ struct ContentView: View {
 
     private var trashedTotalSize: Int64 {
         PhotoStats.trashedSize(allPhotos)
+    }
+
+    // V3.6.15 NEW: 重复图视图用的 group count + purgeable count + size
+    // DetailPane 在 .duplicates 模式下显示这些值
+    /// 重复组数（fileHash 相同且 ≥ 2 张）
+    private var duplicateGroupCount: Int {
+        PhotoStats.duplicateGroups(in: visiblePhotos).count
+    }
+
+    /// 可清理照片数（每组保留最新，其他）
+    private var duplicatePurgeableCount: Int {
+        PhotoStats.duplicatesToPurge(in: visiblePhotos).count
+    }
+
+    /// 可清理照片总大小
+    private var duplicatePurgeableSize: Int64 {
+        PhotoStats.duplicatesToPurge(in: visiblePhotos).reduce(0) { $0 + $1.fileSize }
     }
 
     // V3.5.17：把 6 个宽度 state vars + 4 个约束 + 2 个 AppStorage 钩子打包
@@ -536,8 +559,8 @@ struct ContentView: View {
                         DetailPane(
                             singleSelectedPhoto: singleSelectedPhoto,
                             isMultiSelect: isMultiSelect,
-                            count: filterInTrash ? trashedCount : selectedIDs.count,
-                            totalSize: filterInTrash ? trashedTotalSize : selectedTotalSize,
+                            count: filterInTrash ? trashedCount : (filterInDuplicates ? duplicatePurgeableCount : selectedIDs.count),
+                            totalSize: filterInTrash ? trashedTotalSize : (filterInDuplicates ? duplicatePurgeableSize : selectedTotalSize),
                             folders: folders,
                             allTags: allTags,
                             onDelete: deleteSinglePhoto,
@@ -560,7 +583,9 @@ struct ContentView: View {
                             onTrashRestore: restoreSelectedFromTrash,
                             onTrashPermanentDelete: permanentDeleteSelected,
                             // V3.6.6: 改弹二次确认（不再直接调 emptyTrash）
-                            onEmptyTrash: { showingEmptyTrashConfirm = true }
+                            onEmptyTrash: { showingEmptyTrashConfirm = true },
+                            // V3.6.15: 重复图清理（一键保留每组最新）
+                            onKeepNewestPerDuplicateGroup: keepNewestPerDuplicateGroup
                         )
                     }
                 )
@@ -881,6 +906,17 @@ struct ContentView: View {
         selectedIDs = []
         selectedPhoto = nil
         showToast("已清空回收站（\(count) 张）", type: .info)
+    }
+
+    /// V3.6.15 NEW: 重复图清理 — 每组保留 importedAt 最新的，其他移到回收站
+    private func keepNewestPerDuplicateGroup() {
+        // 找所有可见图（应用当前 filter 后的子集）里可清理的
+        let visible = visiblePhotos.filter { !$0.isInTrash }
+        let purgeable = PhotoStats.duplicatesToPurge(in: visible)
+        guard !purgeable.isEmpty else { return }
+        let service = RecycleBinService(storage: .shared, modelContext: modelContext)
+        for photo in purgeable { service.recycle(photo) }
+        showToast("已移到「最近删除」 \(purgeable.count) 张重复图", type: .info)
     }
 
     // ─── 序列化 SidebarSelection ───

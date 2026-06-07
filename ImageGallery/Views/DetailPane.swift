@@ -42,6 +42,8 @@ struct DetailPane: View {
     let onTrashRestore: () -> Void
     let onTrashPermanentDelete: () -> Void
     let onEmptyTrash: () -> Void
+    // V3.6.15 NEW: 重复图模式操作
+    let onKeepNewestPerDuplicateGroup: () -> Void
 
     var body: some View {
         // V3.6: 回收站模式优先于其他（回收站视图里没有"单图操作"概念）
@@ -53,6 +55,14 @@ struct DetailPane: View {
                 onRestore: onTrashRestore,
                 onPermanentDelete: onTrashPermanentDelete,
                 onEmptyTrash: onEmptyTrash
+            )
+        // V3.6.15: 重复图模式（仿 TrashDetailView 的"操作中心"模式）
+        } else if sidebarSelection == .duplicates {
+            DuplicatesDetailView(
+                duplicateGroupCount: count,
+                purgeableCount: count,  // 重复图视图下 count = purgeable count（从 ContentView 传）
+                purgeableSize: totalSize,
+                onKeepNewestPerGroup: onKeepNewestPerDuplicateGroup
             )
         } else if let photo = singleSelectedPhoto {
             DetailView(

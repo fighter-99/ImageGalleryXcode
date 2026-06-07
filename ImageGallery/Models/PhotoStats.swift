@@ -49,6 +49,27 @@ enum PhotoStats {
         trashed(photos).reduce(0) { $0 + $1.fileSize }
     }
 
+    // MARK: - 重复图分组（V3.6.15 清理工具用）
+
+    /// 按 fileHash 分组，每组 ≥ 2 张为重复组
+    /// - 返回：[[Photo]]，每组内按 importedAt 降序（最新优先）
+    /// - fileHash == nil 的照片跳过（无法判断重复）
+    static func duplicateGroups(in photos: [Photo]) -> [[Photo]] {
+        let groups = Dictionary(grouping: photos) { $0.fileHash }
+        return groups
+            .compactMap { (hash, photos) -> [Photo]? in
+                guard hash != nil, photos.count >= 2 else { return nil }
+                return photos.sorted { $0.importedAt > $1.importedAt }
+            }
+            .sorted { $0.count > $1.count }  // 重复多的组排前面
+    }
+
+    /// 每组保留 importedAt 最新的，其他返回（待清理候选）
+    static func duplicatesToPurge(in photos: [Photo]) -> [Photo] {
+        duplicateGroups(in: photos)
+            .flatMap { $0.dropFirst() }  // 每组跳过最新的（[0]）
+    }
+
     // MARK: - 关系对象上的 count
 
     /// 文件夹下"图库"照片数（排除 trashed 的）
