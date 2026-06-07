@@ -177,7 +177,9 @@ struct PhotoStatsTests {
     private func makePhoto(
         isFavorite: Bool = false,
         inTrash: Bool = false,
-        fileSize: Int64 = 0
+        fileSize: Int64 = 0,
+        fileHash: String? = nil,
+        importedAt: Date = Date()
     ) -> Photo {
         let photo = Photo(
             filename: "t.jpg",
@@ -188,6 +190,8 @@ struct PhotoStatsTests {
         )
         photo.isFavorite = isFavorite
         photo.trashedAt = inTrash ? Date() : nil
+        photo.fileHash = fileHash
+        photo.importedAt = importedAt
         return photo
     }
 

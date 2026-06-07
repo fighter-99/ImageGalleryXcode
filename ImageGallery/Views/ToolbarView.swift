@@ -154,49 +154,49 @@ struct ToolbarView: View {
         .cornerRadius(Radius.sm)
     }
 
-    /// 视图模式 3 档（V3.4 极简：完全无背景，仅图标颜色区分 active）
+    /// 视图模式 3 档（V3.6.16：加 segmented Capsule 背景 + hover 反馈）
     private var viewModeSegment: some View {
         HStack(spacing: 0) {
             ForEach(ViewMode.allCases) { mode in
-                Button {
+                ToolbarSegmentItem(
+                    isActive: viewMode == mode,
+                    systemImage: mode.icon,
+                    help: mode.label
+                ) {
                     viewMode = mode
-                } label: {
-                    Image(systemName: mode.icon)
-                        .font(.system(size: 14, weight: iconWeight))  // V3.5.5 C2：统一 weight
-                        .frame(width: 26, height: 22)
                 }
-                .buttonStyle(.plain)
-                .foregroundStyle(viewMode == mode ? Color.accentColor : Color.secondary)
-                .help(mode.label)
             }
         }
         .frame(height: 28)
+        .background(Surface.toolbarControl, in: Capsule())
     }
 
-    /// 缩放（缩略图大小）3 档（同 viewModeSegment 风格）
+    /// 缩放（缩略图大小）3 档（V3.6.16：加 segmented Capsule 背景 + hover 反馈）
     private var densitySegment: some View {
         HStack(spacing: 0) {
             ForEach(ThumbnailDensity.allCases) { density in
-                Button {
+                ToolbarSegmentItem(
+                    isActive: currentDensity == density,
+                    systemImage: density.icon,
+                    help: "缩略图大小：\(density.label)（\(Int(density.size))pt）"
+                ) {
                     thumbnailSize.wrappedValue = density.size
-                } label: {
-                    Image(systemName: density.icon)
-                        .font(.system(size: 14, weight: iconWeight))  // V3.5.5 C2
-                        .frame(width: 24, height: 22)
                 }
-                .buttonStyle(.plain)
-                .foregroundStyle(currentDensity == density ? Color.accentColor : Color.secondary)
-                .help("缩略图大小：\(density.label)（\(Int(density.size))pt）")
             }
         }
         .frame(height: 28)
+        .background(Surface.toolbarControl, in: Capsule())
     }
 
-    /// 排序菜单（V3.5 Phase 1：加回；V3.5.5 C3：去掉 chevron 与图标按钮统一）
+    /// 排序菜单（V3.6.16：加 hover 反馈 + segmented 容器视觉）
     /// 显示当前排序方式（方向图标 + 简短文字）
     /// 点击展开 6 种排序选项
     private var sortMenu: some View {
-        Menu {
+        ToolbarSortMenu(
+            currentLabel: sortOption.shortLabel,
+            directionIcon: sortOption.directionIcon,
+            fullHelp: "排序方式：\(sortOption.label)（⌘⇧S 切换方向）"
+        ) {
             ForEach(SortOption.allCases) { option in
                 Button {
                     sortOption = option
@@ -209,86 +209,167 @@ struct ToolbarView: View {
                     }
                 }
             }
-        } label: {
-            HStack(spacing: 4) {
-                Image(systemName: sortOption.directionIcon)
-                    .font(.system(size: 14, weight: iconWeight))  // V3.5.5 D3：与其他图标一致
-                Text(sortOption.shortLabel)
-                    .font(.caption)
-            }
-            .padding(.horizontal, 6)              // V3.5.5 D3：紧凑 padding
-            .frame(height: 22)                     // V3.5.5 D3：与图标按钮 frame 对齐
-            .foregroundStyle(.primary)
-            .contentShape(Rectangle())
         }
-        .menuStyle(.automatic)
-        .menuIndicator(.hidden)
-        .help("排序方式：\(sortOption.label)（⌘⇧S 切换方向）")
     }
 
-    /// 撤销按钮（V3.5 Phase 1 Step 4）
-    /// macOS 标准位置：工具栏最左
+    /// 撤销按钮（V3.6.16：加 hover 反馈）
     private var undoButton: some View {
-        Button {
-            onUndo()
-        } label: {
-            Image(systemName: "arrow.uturn.backward")
-                .font(.system(size: 14, weight: iconWeight))  // V3.5.5 C2
-                .frame(width: 26, height: 22)  // V3.5.5 D1
-                .foregroundStyle(canUndo ? Color.primary : Color.secondary.opacity(0.4))  // V3.5.5 D2：统一灰显
-        }
-        .buttonStyle(.plain)
-        .disabled(!canUndo)
-        .help("撤销 (⌘Z)")
+        ToolbarIconButton(
+            systemImage: "arrow.uturn.backward",
+            isEnabled: canUndo,
+            help: "撤销 (⌘Z)",
+            action: onUndo
+        )
     }
 
-    /// 重做按钮（V3.5 Phase 1 Step 4）
+    /// 重做按钮（V3.6.16：加 hover 反馈）
     private var redoButton: some View {
-        Button {
-            onRedo()
-        } label: {
-            Image(systemName: "arrow.uturn.forward")
-                .font(.system(size: 14, weight: iconWeight))  // V3.5.5 C2
-                .frame(width: 26, height: 22)  // V3.5.5 D1
-                .foregroundStyle(canRedo ? Color.primary : Color.secondary.opacity(0.4))  // V3.5.5 D2
-        }
-        .buttonStyle(.plain)
-        .disabled(!canRedo)
-        .help("重做 (⌘⇧Z)")
+        ToolbarIconButton(
+            systemImage: "arrow.uturn.forward",
+            isEnabled: canRedo,
+            help: "重做 (⌘⇧Z)",
+            action: onRedo
+        )
     }
 
-    /// 分享按钮（V3.5 Phase 1 Step 3）
+    /// 分享按钮（V3.6.16：加 hover 反馈）
     /// Context-sensitive：未选中照片时灰显
-    /// 当前实现：触发 NSWorkspace 分享面板（系统标准分享）
     private var shareButton: some View {
-        Button {
-            onShare()
-        } label: {
-            Image(systemName: "square.and.arrow.up")
-                .font(.system(size: 14, weight: iconWeight))  // V3.5.5 C2
-                .frame(width: 26, height: 22)  // V3.5.5 D1
-                .foregroundStyle(hasSelection ? Color.primary : Color.secondary.opacity(0.4))  // V3.5.5 D2
-        }
-        .buttonStyle(.plain)
-        .disabled(!hasSelection)
-        .help(hasSelection ? "分享选中的照片" : "请先选中照片")
+        ToolbarIconButton(
+            systemImage: "square.and.arrow.up",
+            isEnabled: hasSelection,
+            help: hasSelection ? "分享选中的照片" : "请先选中照片",
+            action: onShare
+        )
     }
 
-    /// 导入按钮（主操作 L1）
-    /// V3.5.5 C5：图标用 accent 色 + weight 略大（L1 视觉锚点）
+    /// 导入按钮（V3.6.16：加 hover 反馈，主操作 L1）
     private var importButton: some View {
         Button {
             onImport()
         } label: {
             HStack(spacing: 5) {
                 Image(systemName: "square.and.arrow.down")
-                    .font(.system(size: 14, weight: .semibold))  // L1：略重
+                    .font(.system(size: 14, weight: .semibold))
                 Text("导入")
                     .font(.callout.weight(.medium))
             }
-            .foregroundStyle(Color.accentColor)  // L1：accent 色
+            .foregroundStyle(Color.accentColor)
+            .padding(.horizontal, 4)  // 让 hover 背景更明显
         }
         .buttonStyle(.borderless)
         .help("导入图片 (⌘O)")
+    }
+}
+
+// MARK: - V3.6.16 NEW: 工具栏 segment + icon 按钮组件
+//
+// 抽这两个组件是为了让 4 个 segments + 4 个 icon 按钮共享：
+// 1. 14pt medium weight SF Symbol（统一 icon 风格）
+// 2. 26x22 frame 按钮命中区
+// 3. hover 反馈（Surface.hover 圆角背景）
+// 4. disabled 灰显（.secondary.opacity(0.4)）
+// 5. active 项 accent.opacity(0.15) 高亮（仅 segment）
+// 6. accent 色 / secondary 色（仅 segment）
+
+/// 工具栏 segmented item（带 hover + active 背景）
+/// - isActive: 当前选中此项（accent 背景）
+/// - 非 active + hover: Surface.hover 背景
+/// - 非 active + 非 hover: 透明
+private struct ToolbarSegmentItem: View {
+    let isActive: Bool
+    let systemImage: String
+    let help: String
+    let action: () -> Void
+
+    @State private var isHovered = false
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: systemImage)
+                .font(.system(size: 14, weight: .medium))
+                .frame(width: 26, height: 22)
+                .foregroundStyle(isActive ? Color.accentColor : Color.secondary)
+        }
+        .buttonStyle(.plain)
+        .background(
+            Capsule()
+                .fill(backgroundColor)
+                .padding(2)  // 让 active/hover 圆角背景在 segment 容器内略缩进
+        )
+        .onHover { hovering in isHovered = hovering }
+        .animation(Animations.quick, value: isHovered)
+        .animation(Animations.quick, value: isActive)
+        .help(help)
+    }
+
+    private var backgroundColor: Color {
+        if isActive { return Color.accentColor.opacity(0.15) }
+        if isHovered { return Surface.hover }
+        return .clear
+    }
+}
+
+/// 工具栏普通 icon 按钮（带 hover 反馈）
+private struct ToolbarIconButton: View {
+    let systemImage: String
+    let isEnabled: Bool
+    let help: String
+    let action: () -> Void
+
+    @State private var isHovered = false
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: systemImage)
+                .font(.system(size: 14, weight: .medium))
+                .frame(width: 26, height: 22)
+                .foregroundStyle(isEnabled ? Color.primary : Color.secondary.opacity(0.4))
+        }
+        .buttonStyle(.plain)
+        .background(
+            RoundedRectangle(cornerRadius: Radius.sm)
+                .fill(isHovered && isEnabled ? Surface.hover : .clear)
+                .padding(2)
+        )
+        .onHover { hovering in isHovered = hovering }
+        .animation(Animations.quick, value: isHovered)
+        .disabled(!isEnabled)
+        .help(help)
+    }
+}
+
+/// 工具栏排序 menu 按钮（带 hover 反馈 + segmented 容器视觉）
+private struct ToolbarSortMenu<MenuContent: View>: View {
+    let currentLabel: String
+    let directionIcon: String
+    let fullHelp: String
+    @ViewBuilder let menuContent: () -> MenuContent
+
+    @State private var isHovered = false
+
+    var body: some View {
+        Menu(content: menuContent) {
+            HStack(spacing: 4) {
+                Image(systemName: directionIcon)
+                    .font(.system(size: 14, weight: .medium))
+                Text(currentLabel)
+                    .font(.caption)
+            }
+            .padding(.horizontal, 6)
+            .frame(height: 22)
+            .foregroundStyle(.primary)
+            .contentShape(Rectangle())
+        }
+        .menuStyle(.automatic)
+        .menuIndicator(.hidden)
+        .background(
+            RoundedRectangle(cornerRadius: Radius.sm)
+                .fill(isHovered ? Surface.hover : .clear)
+                .padding(2)
+        )
+        .onHover { hovering in isHovered = hovering }
+        .animation(Animations.quick, value: isHovered)
+        .help(fullHelp)
     }
 }
