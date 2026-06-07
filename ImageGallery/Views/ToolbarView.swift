@@ -56,6 +56,13 @@ struct ToolbarView: View {
     // V3.5.5 方向 C2：所有图标统一 SF Symbol weight
     private let iconWeight: Font.Weight = .medium
 
+    // V3.6.18: 组之间视觉分隔符（0.5pt × 16pt vertical line，Surface.separator 色）
+    private var toolbarSeparator: some View {
+        Rectangle()
+            .fill(Surface.separator)
+            .frame(width: 0.5, height: 16)
+    }
+
     init(
         searchText: Binding<String>,
         onImport: @escaping () -> Void,
@@ -92,6 +99,9 @@ struct ToolbarView: View {
             undoButton
             redoButton
 
+            // V3.6.18: A | B 分隔符
+            toolbarSeparator
+
             // ─── B 组：搜索 + 显示控制（输入 + 视图） ───
             // 组内 8pt
             HStack(spacing: Spacing.sm) {
@@ -101,6 +111,9 @@ struct ToolbarView: View {
                 densitySegment
                 sortMenu             // V3.5 Phase 1：排序
             }
+
+            // V3.6.18: B | C 分隔符
+            toolbarSeparator
 
             // ─── C 组：工具操作 ───
             // 组内 8pt
@@ -154,13 +167,14 @@ struct ToolbarView: View {
         .cornerRadius(Radius.sm)
     }
 
-    /// 视图模式 3 档（V3.6.16：加 segmented Capsule 背景 + hover 反馈）
+    /// 视图模式 3 档（V3.6.18：加 text 标签 — 让用户清楚当前选的是什么）
     private var viewModeSegment: some View {
         HStack(spacing: 0) {
             ForEach(ViewMode.allCases) { mode in
                 ToolbarSegmentItem(
                     isActive: viewMode == mode,
-                    systemImage: mode.icon,
+                    iconName: mode.icon,
+                    label: mode.label,
                     help: mode.label
                 ) {
                     viewMode = mode
@@ -177,7 +191,7 @@ struct ToolbarView: View {
             ForEach(ThumbnailDensity.allCases) { density in
                 ToolbarSegmentItem(
                     isActive: currentDensity == density,
-                    systemImage: density.icon,
+                    iconName: density.icon,
                     help: "缩略图大小：\(density.label)（\(Int(density.size))pt）"
                 ) {
                     thumbnailSize.wrappedValue = density.size
@@ -272,13 +286,15 @@ struct ToolbarView: View {
 // 5. active 项 accent.opacity(0.15) 高亮（仅 segment）
 // 6. accent 色 / secondary 色（仅 segment）
 
-/// 工具栏 segmented item（带 hover + active 背景）
-/// - isActive: 当前选中此项（accent 背景）
+/// 工具栏 segmented item（带 hover + active 背景 + 可选 text 标签）
+/// - isActive: 当前选中此项（accent 背景 + accent 色 label）
 /// - 非 active + hover: Surface.hover 背景
 /// - 非 active + 非 hover: 透明
+/// - label: nil = 纯 icon；非 nil = icon + text（text 用 caption 字号）
 private struct ToolbarSegmentItem: View {
     let isActive: Bool
-    let systemImage: String
+    let iconName: String
+    var label: String? = nil
     let help: String
     let action: () -> Void
 
@@ -286,10 +302,17 @@ private struct ToolbarSegmentItem: View {
 
     var body: some View {
         Button(action: action) {
-            Image(systemName: systemImage)
-                .font(.system(size: 14, weight: .medium))
-                .frame(width: 26, height: 22)
-                .foregroundStyle(isActive ? Color.accentColor : Color.secondary)
+            HStack(spacing: 4) {
+                Image(systemName: iconName)
+                    .font(.system(size: 14, weight: .medium))
+                if let label {
+                    Text(label)
+                        .font(Typography.caption)
+                }
+            }
+            .padding(.horizontal, label == nil ? 0 : 8)
+            .frame(height: 22)
+            .foregroundStyle(isActive ? Color.accentColor : Color.secondary)
         }
         .buttonStyle(.plain)
         .background(
