@@ -44,6 +44,8 @@ struct SidebarView: View {
 
     // 拖拽目标高亮
     @State private var dropTargetFolderID: UUID?
+    // V3.6.12: 拖到 trash 行的高亮状态
+    @State private var isTrashDropTargeted: Bool = false
 
     // ─── 计算重复图数量 ───
     private var duplicateCount: Int {
@@ -79,6 +81,7 @@ struct SidebarView: View {
                 }
                 // V3.6 NEW: 回收站入口（始终显示，包括 0 张时；不显示空状态可能让用户找不到入口）
                 // V3.6.6: count > 0 时图标橙色高亮，提醒有待处理项
+                // V3.6.12: 拖拽缩略图到 trash 行直接 recycle（Photos.app 习惯动作）
                 sidebarRow(
                     icon: "trash",
                     label: "最近删除",
@@ -86,6 +89,15 @@ struct SidebarView: View {
                     target: .recentlyDeleted,
                     iconColor: libraryCounts.trashed > 0 ? .orange : nil
                 )
+                .onDrop(of: [.text], isTargeted: $isTrashDropTargeted) { providers in
+                    handleTrashDrop(providers: providers)
+                }
+                .background(
+                    RoundedRectangle(cornerRadius: Radius.sm)
+                        .fill(isTrashDropTargeted ? Color.orange.opacity(0.25) : Color.clear)
+                        .padding(-4)
+                )
+                .animation(Animations.quick, value: isTrashDropTargeted)
             } header: {
                 SidebarSectionHeader("我的图馆")
             }
@@ -328,6 +340,64 @@ struct SidebarView: View {
             photo.folder = folder
         }
         try? context.save()
+    }
+
+    // V3.6.12: 拖到 trash 行的处理器（类似 handlePhotoDrop 但调 recycle）
+    private func handleTrashDrop(providers: [NSItemProvider]) -> Bool {
+        // 主线程上捕获状态（参考 handlePhotoDrop 的 V3.5.18 crash 修复模式）
+        let capturedSelectedIDs = selectedIDs
+        let capturedContext = modelContext
+
+        var anyHandled = false
+        for provider in providers {
+            guard provider.hasItemConformingToTypeIdentifier("public.text") else { continue }
+            anyHandled = true
+
+            provider.loadDataRepresentation(forTypeIdentifier: "public.text") { data, error in
+                guard error == nil,
+                      let data = data,
+                      let str = String(data: data, encoding: .utf8),
+                      let uuid = UUID(uuidString: str) else { return }
+
+                DispatchQueue.main.async {
+                    performTrash(
+                        draggedUUID: uuid,
+                        selectedIDs: capturedSelectedIDs,
+                        context: capturedContext
+                    )
+                }
+            }
+        }
+        return anyHandled
+    }
+
+    /// 实际执行 recycle（trash drop 用）
+    private func performTrash(
+        draggedUUID: UUID,
+        selectedIDs: Set<UUID>,
+        context: ModelContext
+    ) {
+        // 多选时整组 trash
+        let idsToTrash: Set<UUID>
+        if !selectedIDs.isEmpty && selectedIDs.contains(draggedUUID) {
+            idsToTrash = selectedIDs
+        } else {
+            idsToTrash = [draggedUUID]
+        }
+
+        // 拉取 photos
+        var photos: [Photo] = []
+        for id in idsToTrash {
+            let descriptor = FetchDescriptor<Photo>(predicate: #Predicate { $0.id == id })
+            if let photo = try? context.fetch(descriptor).first, !photo.isInTrash {
+                photos.append(photo)
+            }
+        }
+        guard !photos.isEmpty else { return }
+
+        // recycle（软删）
+        let service = RecycleBinService(storage: .shared, modelContext: context)
+        for photo in photos { service.recycle(photo) }
     }
 
     // 拖拽高亮背景（V3.5.17：fill + border，Photos.app 风格）
