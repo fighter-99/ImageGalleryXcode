@@ -435,6 +435,8 @@ struct PhotoThumbnailView: View {
     @GestureState private var isPressed: Bool = false
     // V3.6.10: 键盘聚焦状态（SwiftUI 默认 focus ring，但 macOS 上系统不显示时手动加）
     @FocusState private var isFocused: Bool
+    // V3.6.26: 异步缩略图加载状态（避免主线程阻塞）
+    @State private var loadedImage: NSImage?
 
     /// V3.6.6: 距离永久删除的剩余天数（nil = 未在回收站）
     private var daysLeft: Int? {
@@ -473,10 +475,11 @@ struct PhotoThumbnailView: View {
             // 图片（垂直居中 + 按原比例）
             // V3.6.8: trash 视图下加灰度 + 降低不透明度，让"已删除"感更强
             // V3.6.14: 暗色下 opacity 0.65（暗背景下半透明不会"黑掉"）
+            // V3.6.26: 改用 .task + 异步加载，主线程不阻塞
             VStack(spacing: 0) {
                 Spacer(minLength: 0)
                 Group {
-                    if let nsImage = ImageLoader.loadImage(at: photo.fileURL, maxPixelSize: 600) {
+                    if let nsImage = loadedImage {
                         Image(nsImage: nsImage)
                             .resizable()
                             .aspectRatio(aspectRatio, contentMode: .fit)
@@ -495,6 +498,14 @@ struct PhotoThumbnailView: View {
                 Spacer(minLength: 0)
             }
             .frame(maxWidth: .infinity)
+            // V3.6.26: 异步加载缩略图（缓存命中立即返回；未命中后台线程解码）
+            // .task 在 view 出现时触发，photo.id 变化时重新加载
+            .task(id: photo.id) {
+                loadedImage = await ImageLoader.loadImageAsync(
+                    at: photo.fileURL,
+                    maxPixelSize: 600
+                )
+            }
 
             // 多选蒙层
             if isInMultiSelect {
