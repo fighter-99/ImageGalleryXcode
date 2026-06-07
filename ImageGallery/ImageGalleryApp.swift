@@ -25,6 +25,22 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 struct ImageGalleryApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
+    // V3.6.7: 手动建 ModelContainer（SwiftData 26.5 SDK 的 modelContainer modifier 没 VersionedSchema 重载）
+    let modelContainer: ModelContainer
+
+    init() {
+        // V3.6.7: 显式 VersionedSchema + MigrationPlan
+        // 之前用 [Photo.self, Folder.self, Tag.self] 隐式 schema，依赖 SwiftData 轻量级自动迁移
+        // 显式后：schema 版本可追溯 + 未来加字段有安全迁移路径
+        let schema = Schema(versionedSchema: ImageGallerySchemaV1.self)
+        // ModelConfiguration() 默认值：sqlite store 在 Application Support/ 目录
+        modelContainer = try! ModelContainer(
+            for: schema,
+            migrationPlan: ImageGalleryMigrationPlan.self,
+            configurations: ModelConfiguration()
+        )
+    }
+
     // View 菜单的 Toggle 通过 UserDefaults binding 与 ContentView 共享
     // （@AppStorage 重复定义被移除——ContentView 是唯一持有者，菜单项通过 Binding<Bool>(userDefaults:) 监听）
     private let showSidebarBinding = Binding<Bool>(userDefaults: "showSidebar", default: true)
@@ -37,7 +53,7 @@ struct ImageGalleryApp: App {
             ContentView()
         }
         .defaultSize(width: 1280, height: 800)  // V3.5.D：首次启动合理尺寸
-        .modelContainer(for: [Photo.self, Folder.self, Tag.self])
+        .modelContainer(modelContainer)  // V3.6.7：显式 VersionedSchema 容器
         .commands {
             // macOS 原生 View 菜单（在 View 菜单里加 Toggle 项）
             CommandGroup(after: .sidebar) {
