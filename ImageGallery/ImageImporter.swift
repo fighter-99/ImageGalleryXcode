@@ -52,11 +52,12 @@ struct ImageImporter {
 
     /// 扫现有 photo 的 fileHash + 算新 urls 的 fileHash，找出已存在的
     /// 性能：fileHash 算 SHA256（小文件几十 ms），50 张图 ~2s
-    /// 异步：不在 main thread 跑算 hash（V3.6.24 简单版同步跑）
+    /// 异步：不在 main thread 跑算 hash（V3.6.27 NEW：后台 actor）
     static func checkDuplicates(
         newURLs: [URL],
         in modelContext: ModelContext
     ) -> DuplicateCheckResult {
+        // V3.6.27: 同步版本仍保留（向后兼容），实际推荐用 checkDuplicatesAsync
         // 1. 收集所有现有 photo 的 fileHash → URL 映射
         let existingHashes = (try? modelContext.fetch(
             FetchDescriptor<Photo>()
@@ -87,6 +88,59 @@ struct ImageImporter {
             existing: existing,
             newCount: newCount,
             totalCount: newURLs.count
+        )
+    }
+
+    /// V3.6.27 NEW: 异步版本（在后台 actor 跑 SHA256，不阻塞 main thread）
+    /// - 进度回调 onProgress(current, total) — 算完一张调一次
+    /// - onProgress 在 @MainActor 上下文调用（content view 用 await + 闭包自动 MainActor 跳）
+    static func checkDuplicatesAsync(
+        newURLs: [URL],
+        in modelContext: ModelContext,
+        onProgress: @MainActor @Sendable @escaping (Int, Int) -> Void = { _, _ in }
+    ) async -> DuplicateCheckResult {
+        // 1. 先在主线程拉现有 photo（SwiftData 限制）
+        let existingHashes = (try? modelContext.fetch(
+            FetchDescriptor<Photo>()
+        )) ?? []
+        let existingByHash = Dictionary(
+            grouping: existingHashes.compactMap { photo -> (String, Photo)? in
+                guard let hash = photo.fileHash else { return nil }
+                return (hash, photo)
+            },
+            by: { $0.0 }
+        )
+
+        // 2. 后台 actor 算新 urls 的 fileHash（V3.6.27 关键：不阻塞主线程）
+        let total = newURLs.count
+        var existing: [URL] = []
+        var newCount = 0
+
+        await withTaskGroup(of: (Int, URL?, String?).self) { group in
+            // 2a. 并发派发所有 hash 任务（actor 隔离 + 并行）
+            for (index, url) in newURLs.enumerated() {
+                group.addTask(priority: .userInitiated) {
+                    let hash = Self.computeFileHashSync(at: url)
+                    return (index, url, hash)
+                }
+            }
+            // 2b. 串行收集结果 + 报告进度
+            for await (index, url, hash) in group {
+                guard let url = url else { continue }
+                if let hash = hash, existingByHash[hash] != nil {
+                    existing.append(url)
+                } else {
+                    newCount += 1
+                }
+                // 报告进度（MainActor）
+                await onProgress(index + 1, total)
+            }
+        }
+
+        return DuplicateCheckResult(
+            existing: existing,
+            newCount: newCount,
+            totalCount: total
         )
     }
 

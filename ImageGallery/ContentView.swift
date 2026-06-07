@@ -729,15 +729,24 @@ struct ContentView: View {
     }
 
     /// V3.6.24: 扫现有 photo + 算新 url fileHash，弹 dialog 让用户选
+    /// V3.6.27: 改用 async 版本（后台 actor 算 SHA256，不阻塞 main thread）
     private func runImportWithDuplicateCheck(urls: [URL]) {
-        let check = ImageImporter.checkDuplicates(newURLs: urls, in: modelContext)
-        if check.hasDuplicates {
-            // 弹 dialog 让用户选（暂存 url 等 dialog 后再用）
-            pendingImportURLs = urls
-            importDuplicateCheck = check
-        } else {
-            // 无重复，直接导入
-            importPhotos(urls: urls)
+        Task { @MainActor in
+            let check = await ImageImporter.checkDuplicatesAsync(
+                newURLs: urls,
+                in: modelContext
+            ) { current, total in
+                // V3.6.27: 进度反馈（"检测重复中... 5/12"）
+                importProgress = ImportProgress(current: current, total: total, isImporting: true)
+            }
+            // 算完后清进度
+            importProgress = nil
+            if check.hasDuplicates {
+                pendingImportURLs = urls
+                importDuplicateCheck = check
+            } else {
+                importPhotos(urls: urls)
+            }
         }
     }
 

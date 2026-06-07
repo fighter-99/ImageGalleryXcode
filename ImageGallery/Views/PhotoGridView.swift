@@ -624,7 +624,8 @@ struct PhotoThumbnailView: View {
         .focusEffectDisabled(false)  // 启用 macOS 系统 focus ring
         // V3.6.10: hover tooltip（文件名 + 尺寸 + 文件大小）
         .help(tooltipText)
-        // 拖拽：支持内部文件夹移动（V3.5.20 修复崩溃）
+        // 拖拽：支持内部文件夹移动 + 拖到 Finder 导出原图
+        // V3.6.27: 加 public.file-url 注册（coordinate: false 不走 in-place，避免 V3.5.20 崩溃根因）
         .onDrag {
             let provider = NSItemProvider()
 
@@ -633,15 +634,16 @@ struct PhotoThumbnailView: View {
             // 2. 用 registerDataRepresentation 替代 registerObject
             //    （registerObject 提供对象，loadDataRepresentation 要数据，两者不兼容会抛 NSException）
             //
-            // V3.5.20 修复：删除 registerFileRepresentation
-            // 原因：.openInPlace 模式下系统会在 drop 时主动访问文件，文件不可访问时崩溃
-            // 现在只注册 "public.text" UUID 数据供 Sidebar 文件夹 drop 使用
-            // Finder 导出改用 context menu "导出" 按钮（如未来需要再加）
+            // V3.5.20 修复：删除 registerFileRepresentation（openInPlace 模式崩溃）
+            // V3.6.27 重新加：用 coordinate: false（系统拷一份给 drop target，不走 in-place 模式）
+            //              V3.6 PhotoStorage 把 Photo.fileURL 放到 Application Support/ImageGallery/Photos/
+            //              标准路径，文件可访问，不再有跨进程问题
             let photoUUID = photo.id.uuidString
             let uuidData = photoUUID.data(using: .utf8) ?? Data()
+            let photoFileURL = photo.fileURL
+            let suggestedName = photo.filename
 
-            // UUID 数据（Sidebar 文件夹接收 → 移动到文件夹）
-            // 跟 SidebarView 的 loadDataRepresentation(forTypeIdentifier: "public.text") 匹配
+            // 1. UUID 数据（Sidebar 文件夹接收 → 移动到文件夹）
             provider.registerDataRepresentation(
                 forTypeIdentifier: "public.text",
                 visibility: .all
@@ -649,6 +651,19 @@ struct PhotoThumbnailView: View {
                 completion(uuidData, nil)
                 return Progress()
             }
+
+            // 2. 原图文件 URL（拖到 Finder / 其他 app 时拷贝原图）
+            // coordinate: false = 系统读完整文件传给 drop target（不走 in-place 模式）
+            provider.registerFileRepresentation(
+                forTypeIdentifier: "public.file-url",
+                fileOptions: [],
+                visibility: .all
+            ) { completion in
+                completion(photoFileURL, false, nil)  // (url, isInPlace: false, error)
+                return nil  // SwiftData @Model 没用 Progress
+            }
+            // 改默认文件名（去掉 UUID 前缀，让 Finder 显示真实文件名）
+            provider.suggestedName = suggestedName
 
             return provider
         }
