@@ -65,6 +65,33 @@ struct PhotoStatsTests {
         #expect(PhotoStats.trashedSize([]) == 0)
     }
 
+    // MARK: - 关系对象 count（V3.6.4 修复 sidebar count 与 grid 显示不一致）
+
+    @Test func folderInLibraryCountExcludesTrashed() {
+        let folder = makeFolder()
+        folder.photos = [
+            makePhoto(inTrash: false),
+            makePhoto(inTrash: true),   // 应排除
+            makePhoto(inTrash: false),
+            makePhoto(inTrash: true),   // 应排除
+        ]
+        #expect(PhotoStats.inLibraryCount(folder) == 2)
+    }
+
+    @Test func tagInLibraryCountExcludesTrashed() {
+        let tag = makeTag()
+        tag.photos = [
+            makePhoto(inTrash: false),
+            makePhoto(inTrash: true),   // 应排除
+        ]
+        #expect(PhotoStats.inLibraryCount(tag) == 1)
+    }
+
+    @Test func folderInLibraryCountHandlesEmpty() {
+        let folder = makeFolder()
+        #expect(PhotoStats.inLibraryCount(folder) == 0)
+    }
+
     // MARK: - helpers
 
     private func makePhotos(trashed: [Bool]) -> [Photo] {
@@ -86,5 +113,13 @@ struct PhotoStatsTests {
         photo.isFavorite = isFavorite
         photo.trashedAt = inTrash ? Date() : nil
         return photo
+    }
+
+    private func makeFolder() -> Folder {
+        Folder(name: "test_folder_\(UUID().uuidString)")
+    }
+
+    private func makeTag() -> ImageGallery.Tag {
+        ImageGallery.Tag(name: "test_tag_\(UUID().uuidString)", colorHex: "#5B8FF9")
     }
 }

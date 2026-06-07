@@ -126,7 +126,8 @@ struct SidebarView: View {
                         sidebarRow(
                             icon: "tag",
                             label: tag.name,
-                            count: tag.photos.count,
+                            // V3.6.4：用 PhotoStats 排除 trashed 的（之前 tag.photos.count 包含 trashed）
+                            count: PhotoStats.inLibraryCount(tag),
                             target: .tag(tag),
                             iconColor: Color(hex: tag.colorHex)  // 标签用 tag 颜色
                         )
@@ -346,7 +347,9 @@ struct SidebarView: View {
         sidebarRow(
             icon: folder.icon,
             label: folder.name,
-            count: folder.photos.count,
+            // V3.6.4：用 PhotoStats 排除 trashed 的（之前 folder.photos.count 包含 trashed，
+            // 跟 grid 在 .folder 视图下显示的图数不一致）
+            count: PhotoStats.inLibraryCount(folder),
             target: .folder(folder)
         )
         .background(folderDropHighlight(folder))

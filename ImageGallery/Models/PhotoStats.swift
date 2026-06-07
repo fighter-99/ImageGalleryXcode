@@ -48,4 +48,18 @@ enum PhotoStats {
     static func trashedSize(_ photos: [Photo]) -> Int64 {
         trashed(photos).reduce(0) { $0 + $1.fileSize }
     }
+
+    // MARK: - 关系对象上的 count
+
+    /// 文件夹下"图库"照片数（排除 trashed 的）
+    /// V3.6.4 修复：之前 folder.photos.count 包括 trashed 的，跟 grid 实际显示数不一致
+    static func inLibraryCount(_ folder: Folder) -> Int {
+        folder.photos.lazy.filter { !$0.isInTrash }.count
+    }
+
+    /// 标签下"图库"照片数（排除 trashed 的）
+    /// V3.6.4 修复：同上，tag.photos.count 也包括 trashed 的
+    static func inLibraryCount(_ tag: ImageGallery.Tag) -> Int {
+        tag.photos.lazy.filter { !$0.isInTrash }.count
+    }
 }
