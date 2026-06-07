@@ -199,7 +199,7 @@ struct ContentView: View {
 
     // V3.5.6 Finder 化：总占用空间格式化
     private var totalSizeFormatted: String {
-        let bytes = allPhotos.reduce(Int64(0)) { $0 + $1.fileSize }
+        let bytes = PhotoStats.totalSize(allPhotos)
         return ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)
     }
 
@@ -213,14 +213,13 @@ struct ContentView: View {
 
     // V3.6 NEW: 回收站视图用的 count + totalSize
     // DetailPane 在 .recentlyDeleted 模式下显示这两个值
+    // V3.6.1：用 PhotoStats 纯函数（之前在 SidebarView 也重复算过 trashed）
     private var trashedCount: Int {
-        allPhotos.filter { $0.isInTrash }.count
+        PhotoStats.trashed(allPhotos).count
     }
 
     private var trashedTotalSize: Int64 {
-        allPhotos
-            .filter { $0.isInTrash }
-            .reduce(0) { $0 + $1.fileSize }
+        PhotoStats.trashedSize(allPhotos)
     }
 
     // V3.5.17：把 6 个宽度 state vars + 4 个约束 + 2 个 AppStorage 钩子打包

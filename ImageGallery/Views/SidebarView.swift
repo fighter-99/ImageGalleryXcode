@@ -56,13 +56,14 @@ struct SidebarView: View {
     }
 
     // 各 section 的 item 数（用于显示在 section header 上）
-    // V3.6: 加 trashed 计数（"最近删除" 行用）
+    // V3.6.1：用 PhotoStats 纯函数集合（之前每行各自 filter，4 次遍历）
     private var libraryCounts: (all: Int, favorites: Int, unfiled: Int, trashed: Int) {
-        let favorites = allPhotos.filter { $0.isFavorite }.count
-        let unfiled = allPhotos.filter { $0.folder == nil && !$0.isInTrash }.count
-        let allInLibrary = allPhotos.filter { !$0.isInTrash }.count
-        let trashed = allPhotos.filter { $0.isInTrash }.count
-        return (allInLibrary, favorites, unfiled, trashed)
+        (
+            all: PhotoStats.inLibrary(allPhotos).count,
+            favorites: PhotoStats.favorites(allPhotos).count,
+            unfiled: PhotoStats.unfiled(allPhotos).count,
+            trashed: PhotoStats.trashed(allPhotos).count
+        )
     }
 
     var body: some View {
