@@ -304,7 +304,7 @@ struct PhotoGridView: View {
                 }
             }
             .padding()
-            .animation(.easeInOut(duration: 0.25), value: photos.count)
+            .animation(Animations.medium, value: photos.count)
         }
     }
 
@@ -583,11 +583,11 @@ struct PhotoThumbnailView: View {
             x: 0,
             y: isHovered ? Elevation.strong.y : Elevation.subtle.y
         )
-        .animation(.easeInOut(duration: 0.2), value: isActive)
-        .animation(.easeInOut(duration: 0.2), value: isHovered)
-        .animation(.easeInOut(duration: 0.1), value: isPressed)  // V3.6.10: 按压更短
-        .animation(.easeInOut(duration: 0.15), value: isInMultiSelect)
-        .animation(.easeInOut(duration: 0.15), value: isFocused)  // V3.6.10
+        .animation(Animations.standard, value: isActive)
+        .animation(Animations.standard, value: isHovered)
+        .animation(Animations.press, value: isPressed)
+        .animation(Animations.quick, value: isInMultiSelect)
+        .animation(Animations.quick, value: isFocused)
         // hover 检测（仅用于缩放动画）
         .onHover { hovering in
             isHovered = hovering

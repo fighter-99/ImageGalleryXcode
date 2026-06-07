@@ -345,7 +345,7 @@ struct SidebarView: View {
                         lineWidth: 2)
                 .padding(-4)
         }
-        .animation(.easeInOut(duration: 0.15), value: dropTargetFolderID == folder.id)
+        .animation(Animations.quick, value: dropTargetFolderID == folder.id)
     }
 
     // V3.5.8：把 ForEach 里的复杂修饰符链抽出（修类型检查超时）

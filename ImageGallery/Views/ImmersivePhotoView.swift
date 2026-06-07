@@ -55,7 +55,7 @@ struct ImmersivePhotoView: View {
                 Spacer()
             }
             .opacity(isChromeVisible ? 1 : 0)
-            .animation(.easeInOut(duration: 0.2), value: isChromeVisible)
+            .animation(Animations.standard, value: isChromeVisible)
 
             // 4. 底部 chrome（翻页 + 索引）
             VStack {
@@ -63,7 +63,7 @@ struct ImmersivePhotoView: View {
                 bottomChrome
             }
             .opacity(isChromeVisible ? 1 : 0)
-            .animation(.easeInOut(duration: 0.2), value: isChromeVisible)
+            .animation(Animations.standard, value: isChromeVisible)
         }
         .contentShape(Rectangle())
         .onTapGesture {
@@ -198,14 +198,14 @@ struct ImmersivePhotoView: View {
 
     private func goPrev() {
         guard canPrev else { return }
-        withAnimation(.easeInOut(duration: 0.15)) {
+        withAnimation(Animations.quick) {
             currentIndex -= 1
         }
     }
 
     private func goNext() {
         guard canNext else { return }
-        withAnimation(.easeInOut(duration: 0.15)) {
+        withAnimation(Animations.quick) {
             currentIndex += 1
         }
     }

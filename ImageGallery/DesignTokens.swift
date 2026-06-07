@@ -159,3 +159,29 @@ extension EnvironmentValues {
         set { self[AppAccentEnvironmentKey.self] = newValue }
     }
 }
+
+// MARK: - 动效（V3.6.11 NEW：统一动画 token）
+//
+// 设计原则：
+// - 5 个标准时长（按"感知速度"命名，不用"slow/medium"等模糊词）
+// - 1 个 spring 曲线（toast 弹出专用，比 easeInOut 更有"物理感"）
+// - 集中调整一处即可全局影响（如未来调成更"快"或更"慢"风格）
+//
+// 用法：
+// ```
+// .animation(Animations.standard, value: isHovered)
+// withAnimation(Animations.quick) { ... }
+// ```
+
+enum Animations {
+    /// 最快：100ms，按压反馈（最高即时性）
+    static let press: Animation = .easeInOut(duration: 0.1)
+    /// 快：150ms，多选 toggle、焦点切换、沉浸式淡入
+    static let quick: Animation = .easeInOut(duration: 0.15)
+    /// 标准：200ms，hover、选中、Chrome 显示
+    static let standard: Animation = .easeInOut(duration: 0.2)
+    /// 中等：250ms，视图模式切换、sidebar 显隐
+    static let medium: Animation = .easeInOut(duration: 0.25)
+    /// 弹性 spring：toast 弹出（带"物理感"）
+    static let springGentle: Animation = .spring(response: 0.35, dampingFraction: 0.85)
+}

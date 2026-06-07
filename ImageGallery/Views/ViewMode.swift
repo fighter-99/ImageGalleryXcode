@@ -381,6 +381,6 @@ struct TimelineThumbnail: View {
                 )
         }
         .scaleEffect(isActive ? 1.02 : 1.0)
-        .animation(.easeInOut(duration: 0.2), value: isActive)
+        .animation(Animations.standard, value: isActive)
     }
 }

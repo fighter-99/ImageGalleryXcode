@@ -76,7 +76,7 @@ struct MainLayoutView<Toolbar: View, PathBar: View, Split: View, StatusBarView: 
         .toolbar {
             ToolbarItem(placement: .navigation) {
                 Button {
-                    withAnimation(.easeInOut(duration: 0.25)) {
+                    withAnimation(Animations.medium) {
                         showSidebar.toggle()
                     }
                 } label: {
@@ -97,7 +97,7 @@ struct MainLayoutView<Toolbar: View, PathBar: View, Split: View, StatusBarView: 
                     .transition(.move(edge: .top).combined(with: .opacity))
             }
         }
-        .animation(.spring(response: 0.35, dampingFraction: 0.85), value: toast)
+        .animation(Animations.springGentle, value: toast)
         // 沉浸式全屏看图
         .overlay {
             if immersivePhoto != nil {
@@ -110,6 +110,6 @@ struct MainLayoutView<Toolbar: View, PathBar: View, Split: View, StatusBarView: 
                 .zIndex(1000)
             }
         }
-        .animation(.easeInOut(duration: 0.25), value: immersivePhoto)
+        .animation(Animations.medium, value: immersivePhoto)
     }
 }
