@@ -97,17 +97,8 @@ struct PhotoGridView: View {
             // 非回收站视图：永远排除已删项
             result = result.filter { $0.trashedAt == nil }
         }
-        let trimmed = searchText.trimmingCharacters(in: .whitespaces)
-        if !trimmed.isEmpty {
-            result = result.filter { photo in
-                if photo.filename.localizedCaseInsensitiveContains(trimmed) { return true }
-                if photo.note.localizedCaseInsensitiveContains(trimmed) { return true }
-                if photo.tags.contains(where: { $0.name.localizedCaseInsensitiveContains(trimmed) }) {
-                    return true
-                }
-                return false
-            }
-        }
+        // V3.6.3：用 PhotoSearch 纯函数（含 folder.name 匹配，修复前只匹配 filename/note/tag）
+        result = PhotoSearch.filter(result, query: searchText)
         // 排序（Eagle 化工具栏新增：覆盖 @Query 默认顺序）
         return sortOption.apply(to: result)
     }
