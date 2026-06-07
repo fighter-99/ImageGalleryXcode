@@ -14,6 +14,8 @@ import SwiftUI
 struct SettingsView: View {
     @Environment(\.dismiss) var dismiss
     @AppStorage("accentColorID") private var accentColorID: String = AccentColor.system.rawValue
+    // V3.6 NEW: 回收站保留时长（rawValue 用 @AppStorage 持久化）
+    @AppStorage("trashRetentionDays") private var retentionDays: Int = TrashRetentionDays.defaultValue.rawValue
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.xl) {
@@ -49,6 +51,23 @@ struct SettingsView: View {
                 }
             }
 
+            // V3.6 NEW: 回收站 section
+            VStack(alignment: .leading, spacing: Spacing.md) {
+                Text("回收站")
+                    .font(Typography.headline)
+
+                Text("删除的图片会先进入回收站，超过下面设置的天数后会被自动永久删除。")
+                    .font(Typography.caption)
+                    .foregroundStyle(Surface.textSecondary)
+
+                Picker("自动清理", selection: $retentionDays) {
+                    ForEach(TrashRetentionDays.allCases) { days in
+                        Text(days.displayName).tag(days.rawValue)
+                    }
+                }
+                .pickerStyle(.segmented)
+            }
+
             Spacer()
 
             // 底部
@@ -61,7 +80,7 @@ struct SettingsView: View {
             }
         }
         .padding(Spacing.xl)
-        .frame(width: 480, height: 320)
+        .frame(width: 480, height: 420)  // V3.6: 加高以容纳回收站 section
         .background(Surface.canvas)
     }
 }

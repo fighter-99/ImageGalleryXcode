@@ -35,9 +35,26 @@ struct DetailPane: View {
     let onBatchExport: () -> Void
     let onBatchDelete: () -> Void
     let onClearSelection: () -> Void
+    // V3.6 NEW: 回收站模式（nil = 非回收站）
+    let sidebarSelection: SidebarSelection?
+    let retentionDays: Int
+    // 回收站操作
+    let onTrashRestore: () -> Void
+    let onTrashPermanentDelete: () -> Void
+    let onEmptyTrash: () -> Void
 
     var body: some View {
-        if let photo = singleSelectedPhoto {
+        // V3.6: 回收站模式优先于其他（回收站视图里没有"单图操作"概念）
+        if sidebarSelection == .recentlyDeleted {
+            TrashDetailView(
+                count: count,
+                totalSize: totalSize,
+                retentionDays: retentionDays,
+                onRestore: onTrashRestore,
+                onPermanentDelete: onTrashPermanentDelete,
+                onEmptyTrash: onEmptyTrash
+            )
+        } else if let photo = singleSelectedPhoto {
             DetailView(
                 photo: photo,
                 onDelete: onDelete,

@@ -47,13 +47,20 @@ struct SidebarSelectionTests {
         #expect(serialized == "largeFiles")
     }
 
+    // V3.6 NEW: 回收站 case 序列化
+    @Test func recentlyDeletedCaseRoundTripsCorrectly() {
+        let serialized = serializeSelectionForTesting(.recentlyDeleted)
+        #expect(serialized == "recentlyDeleted")
+    }
+
     // MARK: - 枚举完整性
 
     @Test func allSimpleCasesAreInEnum() {
         // 防止以后删 case 时漏改其他 switch
         // (编译期 exhaustive switch 也会强制检查)
-        let simple: [SidebarSelection] = [.all, .favorites, .unfiled, .duplicates, .recent7Days, .largeFiles]
-        #expect(simple.count == 6)
+        // V3.6: 加 .recentlyDeleted
+        let simple: [SidebarSelection] = [.all, .favorites, .unfiled, .duplicates, .recent7Days, .largeFiles, .recentlyDeleted]
+        #expect(simple.count == 7)
     }
 
     // MARK: - 测试辅助函数(模拟 ContentView 中的逻辑)
@@ -69,6 +76,7 @@ struct SidebarSelectionTests {
         case .largeFiles: return "largeFiles"
         case .folder: return "folder:skip"  // 简化
         case .tag: return "tag:skip"  // 简化
+        case .recentlyDeleted: return "recentlyDeleted"  // V3.6 NEW
         }
     }
 }

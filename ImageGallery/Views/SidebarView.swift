@@ -57,10 +57,13 @@ struct SidebarView: View {
     }
 
     // 各 section 的 item 数（用于显示在 section header 上）
-    private var libraryCounts: (all: Int, favorites: Int, unfiled: Int) {
+    // V3.6: 加 trashed 计数（"最近删除" 行用）
+    private var libraryCounts: (all: Int, favorites: Int, unfiled: Int, trashed: Int) {
         let favorites = allPhotos.filter { $0.isFavorite }.count
-        let unfiled = allPhotos.filter { $0.folder == nil }.count
-        return (allPhotos.count, favorites, unfiled)
+        let unfiled = allPhotos.filter { $0.folder == nil && $0.trashedAt == nil }.count
+        let allInLibrary = allPhotos.filter { $0.trashedAt == nil }.count
+        let trashed = allPhotos.filter { $0.trashedAt != nil }.count
+        return (allInLibrary, favorites, unfiled, trashed)
     }
 
     var body: some View {
@@ -74,6 +77,8 @@ struct SidebarView: View {
                 if duplicateCount > 0 {
                     sidebarRow(icon: "doc.on.doc", label: "重复图", count: duplicateCount, target: .duplicates, iconColor: .orange)
                 }
+                // V3.6 NEW: 回收站入口（始终显示，包括 0 张时；不显示空状态可能让用户找不到入口）
+                sidebarRow(icon: "trash", label: "最近删除", count: libraryCounts.trashed, target: .recentlyDeleted)
             } header: {
                 SidebarSectionHeader("我的图馆")
             }

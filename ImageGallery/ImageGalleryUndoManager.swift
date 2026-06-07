@@ -3,21 +3,22 @@
 //  ImageGallery
 //
 //  V3.5 Phase 1 Step 4：撤销/重做管理器。
+//  V3.6：删除走回收站（RecycleBinService），撤销管理器只服务于其他写操作。
 //
 //  设计要点：
 //  - 基于 Foundation UndoManager
 //  - 使用 Swift 5.9+ @Observable（自动观察）
-//  - 写操作（删除/移动等）前调用 registerAction
+//  - 写操作（移动/打标签/重命名等）前调用 registerAction
 //  - 工具栏 ↶ / ↷ 按钮观察 canUndo / canRedo
 //
-//  支持的撤销操作（最小可行版本）：
-//  - 删除照片（移到备份目录 + SwiftData 软删）→ 撤销：从备份恢复 + 重建 SwiftData
-//
-//  暂不支持：
+//  V3.6 之后支持的撤销操作：
 //  - 重命名
 //  - 打标签
 //  - 收藏切换
 //  - 移动到文件夹
+//
+//  V3.6 不再支持（被回收站取代）：
+//  - 删除照片（→ 移到回收站；恢复从回收站恢复）
 //
 
 import Foundation
@@ -156,37 +157,6 @@ struct PhotoSnapshot {
 
         context.insert(photo)
     }
-}
-
-// MARK: - 文件备份辅助
-
-/// 备份目录 URL（Application Support/ImageGallery/Trash）
-@MainActor
-func backupDirectory() -> URL {
-    let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-    return appSupport.appendingPathComponent("ImageGallery/Trash", isDirectory: true)
-}
-
-/// 把文件移到备份目录，返回备份路径（失败返回 nil）
-@MainActor
-func moveToBackup(_ fileURL: URL) -> URL? {
-    let dir = backupDirectory()
-    try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-    let backupURL = dir.appendingPathComponent("\(UUID().uuidString)_\(fileURL.lastPathComponent)")
-    do {
-        try FileManager.default.moveItem(at: fileURL, to: backupURL)
-        return backupURL
-    } catch {
-        return nil
-    }
-}
-
-/// 从备份恢复文件到原位置
-@MainActor
-func restoreFromBackup(_ backupURL: URL, to originalURL: URL) {
-    let parentDir = originalURL.deletingLastPathComponent()
-    try? FileManager.default.createDirectory(at: parentDir, withIntermediateDirectories: true)
-    try? FileManager.default.moveItem(at: backupURL, to: originalURL)
 }
 
 // MARK: - SwiftUI Environment 集成

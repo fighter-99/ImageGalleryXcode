@@ -45,6 +45,8 @@ struct PhotoGridView: View {
     let filterDuplicates: Bool
     let filterRecent7Days: Bool
     let filterLargeFiles: Bool
+    // V3.6 NEW: 回收站筛选
+    let filterInTrash: Bool
     let thumbnailSize: CGFloat
     let sortOption: SortOption
 
@@ -88,6 +90,13 @@ struct PhotoGridView: View {
         // V2: 大图 > 5MB
         if filterLargeFiles {
             result = result.filter { $0.fileSize > 5_000_000 }
+        }
+        // V3.6: 回收站筛选（与 folder/tag 互斥——只有 .recentlyDeleted 时才进此分支）
+        if filterInTrash {
+            result = result.filter { $0.trashedAt != nil }
+        } else {
+            // 非回收站视图：永远排除已删项
+            result = result.filter { $0.trashedAt == nil }
         }
         let trimmed = searchText.trimmingCharacters(in: .whitespaces)
         if !trimmed.isEmpty {
@@ -149,6 +158,7 @@ struct PhotoGridView: View {
         if filterDuplicates { return "重复图" }
         if filterRecent7Days { return "最近 7 天" }
         if filterLargeFiles { return "大图" }
+        if filterInTrash { return "最近删除" }  // V3.6 NEW
         return "全部"
     }
 
@@ -190,6 +200,7 @@ struct PhotoGridView: View {
         if filterDuplicates { return "doc.on.doc" }
         if filterRecent7Days { return "clock.arrow.circlepath" }
         if filterLargeFiles { return "large.circle" }
+        if filterInTrash { return "trash" }  // V3.6 NEW
         return "photo.on.rectangle.angled"
     }
 
@@ -202,6 +213,7 @@ struct PhotoGridView: View {
         if filterDuplicates { return "没有重复的图片" }
         if filterRecent7Days { return "最近 7 天没有新图" }
         if filterLargeFiles { return "没有大于 5MB 的图" }
+        if filterInTrash { return "回收站是空的" }  // V3.6 NEW
         return "还没有图片"
     }
 
@@ -212,6 +224,7 @@ struct PhotoGridView: View {
         if folder != nil { return "导入图片后会自动放到此文件夹" }
         if tag != nil { return "在图片详情中添加此标签" }
         if filterDuplicates { return "重复图会自动出现在这里" }
+        if filterInTrash { return "删除的图片会出现在这里，\(TrashRetentionDays.defaultValue.rawValue) 天后自动永久清除" }  // V3.6 NEW
         return "拖入图片，或点击\"导入图片\"开始添加"
     }
 
@@ -219,6 +232,7 @@ struct PhotoGridView: View {
         let trimmed = searchText.trimmingCharacters(in: .whitespaces)
         return trimmed.isEmpty && !filterFavorites && !filterUnfiled
             && folder == nil && tag == nil && !filterDuplicates
+            && !filterInTrash  // V3.6 NEW: 回收站空状态不显示导入按钮
     }
 
     // ─── 根据视图模式切换 ───
@@ -638,6 +652,7 @@ struct PhotoThumbnailView: View {
         filterDuplicates: false,
         filterRecent7Days: false,
         filterLargeFiles: false,
+        filterInTrash: false,
         thumbnailSize: 170,
         sortOption: .importedAtDesc,
         onVisiblePhotosChange: { _ in },

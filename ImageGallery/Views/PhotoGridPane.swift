@@ -24,6 +24,8 @@ struct PhotoGridPane: View {
     let filterDuplicates: Bool
     let filterRecent7Days: Bool
     let filterLargeFiles: Bool
+    // V3.6 NEW: 回收站筛选（true = 只显示 trashedAt != nil 的项）
+    let filterInTrash: Bool
     let thumbnailSize: CGFloat
     let sortOption: SortOption
     let onVisiblePhotosChange: ([Photo]) -> Void
@@ -46,6 +48,7 @@ struct PhotoGridPane: View {
             filterDuplicates: filterDuplicates,
             filterRecent7Days: filterRecent7Days,
             filterLargeFiles: filterLargeFiles,
+            filterInTrash: filterInTrash,
             thumbnailSize: thumbnailSize,
             sortOption: sortOption,
             onVisiblePhotosChange: onVisiblePhotosChange,

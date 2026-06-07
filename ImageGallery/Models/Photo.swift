@@ -42,6 +42,13 @@ final class Photo {
     /// 老照片迁移时由 PhotoGridView 一次性补值
     var sortOrder: Int = 0
 
+    // ─── 回收站时间戳（V3.6 NEW：App-Owned Storage + 回收站）───
+    /// nil = 在图库中；非 nil = 在回收站中（等待恢复或被永久删除）
+    /// 回收站视图通过 `trashedAt != nil` 过滤
+    /// 自动清理：trashedAt < now - retentionDays 的项会被永久删除
+    /// SwiftData 轻量级自动迁移（新增 Optional 属性）
+    var trashedAt: Date?
+
     init(filename: String, fileURL: URL, fileSize: Int64, width: Int, height: Int) {
         self.id = UUID()
         self.filename = filename

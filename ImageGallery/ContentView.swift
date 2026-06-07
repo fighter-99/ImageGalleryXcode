@@ -26,6 +26,9 @@ enum SidebarSelection: Hashable {
 
     case folder(Folder)
     case tag(Tag)
+
+    // V3.6 NEW: 回收站
+    case recentlyDeleted
 }
 
 struct ContentView: View {
@@ -81,6 +84,13 @@ struct ContentView: View {
     // 设置面板
     @State private var showSettings = false
     @AppStorage("accentColorID") private var accentColorID: String = AccentColor.system.rawValue
+
+    // V3.6 NEW: 回收站保留时长（默认 30 天）
+    @AppStorage("trashRetentionDays") private var retentionDays: Int = TrashRetentionDays.defaultValue.rawValue
+
+    // V3.6 NEW: 启动时清理过期回收站项的"只跑一次"标记
+    // ContentView 可能多次出现（开关窗口、切 sidebar），用 flag 避免重复清理
+    @State private var hasPurgedExpiredTrash = false
 
     // 当前选中的强调色（从 accentColorID 解析）
     private var accentColor: AccentColor {
@@ -156,6 +166,12 @@ struct ContentView: View {
         return false
     }
 
+    // V3.6 NEW: 回收站筛选
+    private var filterInTrash: Bool {
+        if case .recentlyDeleted = sidebarSelection { return true }
+        return false
+    }
+
     // 派生属性
     private var currentIndex: Int {
         guard let id = selectedIDs.first ?? selectedPhoto?.id,
@@ -195,6 +211,18 @@ struct ContentView: View {
             .reduce(0) { $0 + $1.fileSize }
     }
 
+    // V3.6 NEW: 回收站视图用的 count + totalSize
+    // DetailPane 在 .recentlyDeleted 模式下显示这两个值
+    private var trashedCount: Int {
+        allPhotos.filter { $0.trashedAt != nil }.count
+    }
+
+    private var trashedTotalSize: Int64 {
+        allPhotos
+            .filter { $0.trashedAt != nil }
+            .reduce(0) { $0 + $1.fileSize }
+    }
+
     // V3.5.17：把 6 个宽度 state vars + 4 个约束 + 2 个 AppStorage 钩子打包
     // 给 MainSplitView 使用
     private var columnLayout: ColumnLayoutState {
@@ -222,6 +250,11 @@ struct ContentView: View {
                 thumbnailSize = CGFloat(storedThumbnailSize)
                 sidebarSelection = restoreSelection(storedSidebarKey)
                 sortOption = SortOption(rawValue: storedSortOption) ?? .importedAtDesc
+                // V3.6 NEW: 启动时清理过期回收站项（只跑一次）
+                if !hasPurgedExpiredTrash {
+                    hasPurgedExpiredTrash = true
+                    purgeExpiredTrashOnStartup()
+                }
             }
             .onChange(of: thumbnailSize) { _, new in
                 storedThumbnailSize = Double(new)
@@ -277,7 +310,8 @@ struct ContentView: View {
                 Button("删除", role: .destructive) { batchDelete() }
                 Button("取消", role: .cancel) {}
             } message: {
-                Text("选中的图片将从图库中移除，文件也会被永久删除。")
+                // V3.6 改：删除走回收站，N 天后才永久清除
+                Text("选中的图片会移到「最近删除」，\(retentionDays) 天后自动永久清除。可在「最近删除」中恢复。")
             }
             // ⌘N 新建文件夹
             .alert("新建文件夹", isPresented: $showingNewFolderAlert) {
@@ -451,6 +485,7 @@ struct ContentView: View {
                             filterDuplicates: filterDuplicates,
                             filterRecent7Days: filterRecent7Days,
                             filterLargeFiles: filterLargeFiles,
+                            filterInTrash: filterInTrash,  // V3.6 NEW
                             thumbnailSize: thumbnailSize,
                             sortOption: sortOption,
                             onVisiblePhotosChange: { visiblePhotos = $0 },
@@ -467,8 +502,8 @@ struct ContentView: View {
                         DetailPane(
                             singleSelectedPhoto: singleSelectedPhoto,
                             isMultiSelect: isMultiSelect,
-                            count: selectedIDs.count,
-                            totalSize: selectedTotalSize,
+                            count: filterInTrash ? trashedCount : selectedIDs.count,
+                            totalSize: filterInTrash ? trashedTotalSize : selectedTotalSize,
                             folders: folders,
                             allTags: allTags,
                             onDelete: deleteSinglePhoto,
@@ -484,7 +519,13 @@ struct ContentView: View {
                             onBatchToggleFavorite: batchToggleFavorite,
                             onBatchExport: batchExport,
                             onBatchDelete: { showingBatchDeleteConfirm = true },
-                            onClearSelection: { selectedIDs = []; selectedPhoto = nil }
+                            onClearSelection: { selectedIDs = []; selectedPhoto = nil },
+                            // V3.6 NEW: 回收站模式
+                            sidebarSelection: sidebarSelection,
+                            retentionDays: retentionDays,
+                            onTrashRestore: restoreSelectedFromTrash,
+                            onTrashPermanentDelete: permanentDeleteSelected,
+                            onEmptyTrash: emptyTrash
                         )
                     }
                 )
@@ -558,6 +599,13 @@ struct ContentView: View {
         lastSelectedID = newID
     }
 
+    // ─── 启动时清理过期回收站项（V3.6 NEW）───
+    private func purgeExpiredTrashOnStartup() {
+        let days = TrashRetentionDays(rawValue: retentionDays) ?? .defaultValue
+        let service = RecycleBinService(storage: .shared, modelContext: modelContext)
+        service.purgeExpired(retentionDays: days.rawValue)
+    }
+
     // ─── 启动导入 ───
     private func startImport() {
         let panel = NSOpenPanel()
@@ -626,66 +674,27 @@ struct ContentView: View {
         return true
     }
 
-    // ─── 删除单张（V3.5 Phase 1 Step 4：支持撤销）───
+    // ─── 删除单张（V3.6：走 RecycleBinService，不再调 undoManager）───
     private func deleteSinglePhoto() {
         guard let photo = singleSelectedPhoto else { return }
-        let snapshot = PhotoSnapshot(photo: photo)
-        var backupURL: URL? = nil
-
-        undoManager.registerAction(
-            description: "删除照片"
-        ) {
-            // 执行：移动到备份 + 删除 SwiftData
-            backupURL = moveToBackup(photo.fileURL)
-            modelContext.delete(photo)
-            try? modelContext.save()
-            selectedIDs = []
-            selectedPhoto = nil
-            showToast("已删除 1 张图片（⌘Z 撤销）", type: .info)
-        } undo: {
-            // 撤销：恢复文件 + SwiftData
-            if let backup = backupURL {
-                restoreFromBackup(backup, to: snapshot.fileURL)
-            }
-            snapshot.restore(in: modelContext)
-            try? modelContext.save()
-            showToast("已恢复 1 张图片", type: .success)
-        }
+        // V3.6：删除 = 移到回收站（软删），文件保留在 Photos/ 原位
+        RecycleBinService(storage: .shared, modelContext: modelContext).recycle(photo)
+        // 清选择（与旧行为一致）
+        selectedIDs = []
+        selectedPhoto = nil
+        showToast("已移到「最近删除」（\(retentionDays) 天后永久删除）", type: .info)
     }
 
-    // ─── 批量删除（V3.5 Phase 1 Step 4：支持撤销）───
+    // ─── 批量删除（V3.6：走 RecycleBinService，不再调 undoManager）───
     private func batchDelete() {
         let photosToDelete = visiblePhotos.filter { selectedIDs.contains($0.id) }
+        guard !photosToDelete.isEmpty else { return }
+        let service = RecycleBinService(storage: .shared, modelContext: modelContext)
+        for photo in photosToDelete { service.recycle(photo) }
         let count = photosToDelete.count
-        guard count > 0 else { return }
-
-        let snapshots = photosToDelete.map { PhotoSnapshot(photo: $0) }
-        var backupURLs: [URL] = []
-
-        undoManager.registerAction(
-            description: "删除 \(count) 张照片"
-        ) {
-            // 执行：移动到备份 + 删除 SwiftData
-            for photo in photosToDelete {
-                backupURLs.append(moveToBackup(photo.fileURL) ?? URL(fileURLWithPath: "/dev/null"))
-                modelContext.delete(photo)
-            }
-            try? modelContext.save()
-            selectedIDs = []
-            selectedPhoto = nil
-            showToast("已删除 \(count) 张图片（⌘Z 撤销）", type: .info)
-        } undo: {
-            // 撤销：恢复文件 + SwiftData
-            for (i, snapshot) in snapshots.enumerated() {
-                let backup = backupURLs[i]
-                if backup.path != "/dev/null" {
-                    restoreFromBackup(backup, to: snapshot.fileURL)
-                }
-                snapshot.restore(in: modelContext)
-            }
-            try? modelContext.save()
-            showToast("已恢复 \(count) 张图片", type: .success)
-        }
+        selectedIDs = []
+        selectedPhoto = nil
+        showToast("已移到「最近删除」 \(count) 张", type: .info)
     }
 
     // V3.5.19：从 PhotoGridView 搬上来的 4 个 batch 方法
@@ -793,6 +802,44 @@ struct ContentView: View {
         try? modelContext.save()
     }
 
+    // ─── 回收站操作（V3.6 NEW）───
+
+    /// 恢复选中的照片（从回收站 → 图库）
+    private func restoreSelectedFromTrash() {
+        let photosToRestore = visiblePhotos.filter { selectedIDs.contains($0.id) }
+        guard !photosToRestore.isEmpty else { return }
+        let service = RecycleBinService(storage: .shared, modelContext: modelContext)
+        for photo in photosToRestore { service.restore(photo) }
+        let count = photosToRestore.count
+        selectedIDs = []
+        selectedPhoto = nil
+        showToast("已恢复 \(count) 张图片", type: .success)
+    }
+
+    /// 永久删除选中的照片（文件 + SwiftData）
+    private func permanentDeleteSelected() {
+        let photosToDelete = visiblePhotos.filter { selectedIDs.contains($0.id) }
+        guard !photosToDelete.isEmpty else { return }
+        let service = RecycleBinService(storage: .shared, modelContext: modelContext)
+        service.purgeAll(photosToDelete)
+        let count = photosToDelete.count
+        selectedIDs = []
+        selectedPhoto = nil
+        showToast("已永久删除 \(count) 张图片", type: .info)
+    }
+
+    /// 清空回收站（永久删除所有 trashed 项）
+    private func emptyTrash() {
+        let trashed = allPhotos.filter { $0.trashedAt != nil }
+        guard !trashed.isEmpty else { return }
+        let service = RecycleBinService(storage: .shared, modelContext: modelContext)
+        service.purgeAll(trashed)
+        let count = trashed.count
+        selectedIDs = []
+        selectedPhoto = nil
+        showToast("已清空回收站（\(count) 张）", type: .info)
+    }
+
     // ─── 序列化 SidebarSelection ───
     private func serializeSelection(_ selection: SidebarSelection?) -> String {
         guard let selection = selection else { return "all" }
@@ -805,6 +852,7 @@ struct ContentView: View {
         case .largeFiles: return "largeFiles"
         case .folder(let f): return "folder:\(f.id.uuidString)"
         case .tag(let t): return "tag:\(t.id.uuidString)"
+        case .recentlyDeleted: return "recentlyDeleted"  // V3.6 NEW
         }
     }
 
@@ -817,6 +865,7 @@ struct ContentView: View {
         case "duplicates": return .duplicates
         case "recent7Days": return .recent7Days
         case "largeFiles": return .largeFiles
+        case "recentlyDeleted": return .recentlyDeleted  // V3.6 NEW
         default:
             if key.hasPrefix("folder:") {
                 let uuidStr = String(key.dropFirst(7))

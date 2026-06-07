@@ -94,19 +94,10 @@ struct ImageImporter {
             return
         }
 
-        guard let appSupport = FileManager.default.urls(
-            for: .applicationSupportDirectory,
-            in: .userDomainMask
-        ).first else { return }
-
-        let photosDir = appSupport.appendingPathComponent("ImageGallery/Photos", isDirectory: true)
-        try? FileManager.default.createDirectory(at: photosDir, withIntermediateDirectories: true)
-
-        let uniqueName = "\(UUID().uuidString)_\(url.lastPathComponent)"
-        let destURL = photosDir.appendingPathComponent(uniqueName)
-
+        // V3.6: 用 PhotoStorage 服务复制文件（替代原硬编码路径）
+        let destURL: URL
         do {
-            try FileManager.default.copyItem(at: url, to: destURL)
+            destURL = try PhotoStorage.shared.importFile(from: url)
         } catch {
             print("❌ 复制失败: \(url.lastPathComponent) - \(error.localizedDescription)")
             return
