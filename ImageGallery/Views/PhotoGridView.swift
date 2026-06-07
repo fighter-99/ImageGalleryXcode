@@ -59,7 +59,32 @@ struct PhotoGridView: View {
     let onExportComplete: (Int) -> Void
 
     // ─── 综合筛选 ───
-    private var photos: [Photo] {
+    // V3.6.5：从 computed property 改为 @State 缓存 + filterSignature 失效
+    // 原因：computed property 每次 body 求值都跑 9 遍 filter + 1 sort；且
+    // `.onChange(of: photos)` 因为总是返回新数组（filter 链）会无限触发
+    @State private var photos: [Photo] = []
+
+    /// 全部 filter inputs 的 hash 签名
+    /// 任何一个变化都触发 recomputePhotos（避免 N 个 onChange）
+    /// 注意：只用 allPhotos.count 而非 allPhotos 本身，避免大数组 hash
+    private var filterSignature: Int {
+        var hasher = Hasher()
+        hasher.combine(allPhotos.count)
+        hasher.combine(allPhotos.first?.id)  // 引用变化 proxy
+        hasher.combine(folder?.id)
+        hasher.combine(tag?.id)
+        hasher.combine(searchText)
+        hasher.combine(sortOption)
+        hasher.combine(filterFavorites)
+        hasher.combine(filterUnfiled)
+        hasher.combine(filterDuplicates)
+        hasher.combine(filterRecent7Days)
+        hasher.combine(filterLargeFiles)
+        hasher.combine(filterInTrash)
+        return hasher.finalize()
+    }
+
+    private func recomputePhotos() {
         var result = allPhotos
 
         if let folder = folder {
@@ -100,7 +125,7 @@ struct PhotoGridView: View {
         // V3.6.3：用 PhotoSearch 纯函数（含 folder.name 匹配，修复前只匹配 filename/note/tag）
         result = PhotoSearch.filter(result, query: searchText)
         // 排序（Eagle 化工具栏新增：覆盖 @Query 默认顺序）
-        return sortOption.apply(to: result)
+        photos = sortOption.apply(to: result)
     }
 
     // ─── 列数 ───
@@ -128,8 +153,16 @@ struct PhotoGridView: View {
             }
         }
         .navigationTitle(navigationTitle)
-        .onAppear { onVisiblePhotosChange(photos) }
-        .onChange(of: photos) { _, new in onVisiblePhotosChange(new) }
+        .onAppear {
+            // V3.6.5：首次出现时算一次 photos（之前 photos 是 computed，每次 re-render 重算）
+            recomputePhotos()
+            onVisiblePhotosChange(photos)
+        }
+        // V3.6.5：filterSignature 变化时（任一 filter input）触发重算 + 通知父视图
+        .onChange(of: filterSignature) { _, _ in
+            recomputePhotos()
+            onVisiblePhotosChange(photos)
+        }
     }
 
     // （原 defaultTopBar 已删除：与系统顶栏的视图模式/导入按钮重复。

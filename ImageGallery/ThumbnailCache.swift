@@ -32,9 +32,10 @@ final class ThumbnailCache {
     /// 存储图片到缓存
     func set(_ image: NSImage, url: URL, maxPixelSize: CGFloat) {
         let key = makeKey(url: url, maxPixelSize: maxPixelSize)
-        // 用像素大小估算成本（RGBA = 4 bytes/pixel）
-        let pixelCount = Int(image.size.width * image.size.height)
-        let cost = pixelCount * 4
+        // V3.6.5 修正：image.size 是 points（不是 pixels）。HiDPI 屏幕像素数 = points² × scaleFactor²
+        // 用 maxPixelSize（请求的像素上限）做 cost 上界估算更准
+        let maxPixels = Int(maxPixelSize * maxPixelSize)
+        let cost = maxPixels * 4  // RGBA = 4 bytes/pixel
         cache.setObject(image, forKey: key, cost: cost)
     }
 
