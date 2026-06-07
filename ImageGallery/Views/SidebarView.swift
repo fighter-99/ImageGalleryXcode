@@ -99,7 +99,8 @@ struct SidebarView: View {
                 )
                 .animation(Animations.quick, value: isTrashDropTargeted)
             } header: {
-                SidebarSectionHeader("我的图馆")
+                // V3.6.21: 加 SF Symbol 小图标做视觉锚点
+                SidebarSectionHeader("我的图馆", icon: "photo.on.rectangle.angled")
             }
 
             // ─── 智能文件夹 ───
@@ -107,7 +108,7 @@ struct SidebarView: View {
                 sidebarRow(icon: "clock.arrow.circlepath", label: "最近 7 天", target: .recent7Days)
                 sidebarRow(icon: "large.circle", label: "大图 (>5MB)", target: .largeFiles)
             } header: {
-                SidebarSectionHeader("智能文件夹")
+                SidebarSectionHeader("智能文件夹", icon: "sparkles")
             }
 
             // ─── 用户文件夹 ───
@@ -130,16 +131,20 @@ struct SidebarView: View {
                 }
                 .buttonStyle(.plain)
             } header: {
-                SidebarSectionHeader("我的文件夹")
+                SidebarSectionHeader("我的文件夹", icon: "folder")
             }
 
             // ─── 标签 ───
             Section {
                 if tags.isEmpty {
-                    Text("还没有标签")
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
-                        .padding(.leading, 26)  // 对齐图标位置
+                    // V3.6.21: 改用 EmptyStateView 统一空状态（替代之前灰色小字）
+                    EmptyStateView(
+                        icon: "tag",
+                        title: "还没有标签",
+                        subtitle: "新建一个标签，给照片打上分类标记",
+                        iconColor: .secondary
+                    )
+                    .frame(height: 100)  // 紧凑版（避免在 List row 内占太多空间）
                 } else {
                     ForEach(tags) { tag in
                         sidebarRow(
@@ -174,7 +179,7 @@ struct SidebarView: View {
                 }
                 .buttonStyle(.plain)
             } header: {
-                SidebarSectionHeader("标签")
+                SidebarSectionHeader("标签", icon: "tag")
             }
         }
         .listStyle(.sidebar)
