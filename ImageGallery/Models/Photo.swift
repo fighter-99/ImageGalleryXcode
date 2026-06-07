@@ -49,6 +49,10 @@ final class Photo {
     /// SwiftData 轻量级自动迁移（新增 Optional 属性）
     var trashedAt: Date?
 
+    /// V3.6 convenience：是否在回收站（等价于 `trashedAt != nil`）
+    /// 唯一真相源仍是 `trashedAt`；这是只读 computed property，不引入存储冗余
+    var isInTrash: Bool { trashedAt != nil }
+
     init(filename: String, fileURL: URL, fileSize: Int64, width: Int, height: Int) {
         self.id = UUID()
         self.filename = filename

@@ -214,12 +214,12 @@ struct ContentView: View {
     // V3.6 NEW: 回收站视图用的 count + totalSize
     // DetailPane 在 .recentlyDeleted 模式下显示这两个值
     private var trashedCount: Int {
-        allPhotos.filter { $0.trashedAt != nil }.count
+        allPhotos.filter { $0.isInTrash }.count
     }
 
     private var trashedTotalSize: Int64 {
         allPhotos
-            .filter { $0.trashedAt != nil }
+            .filter { $0.isInTrash }
             .reduce(0) { $0 + $1.fileSize }
     }
 
@@ -687,14 +687,10 @@ struct ContentView: View {
 
     // ─── 批量删除（V3.6：走 RecycleBinService，不再调 undoManager）───
     private func batchDelete() {
-        let photosToDelete = visiblePhotos.filter { selectedIDs.contains($0.id) }
-        guard !photosToDelete.isEmpty else { return }
-        let service = RecycleBinService(storage: .shared, modelContext: modelContext)
-        for photo in photosToDelete { service.recycle(photo) }
-        let count = photosToDelete.count
-        selectedIDs = []
-        selectedPhoto = nil
-        showToast("已移到「最近删除」 \(count) 张", type: .info)
+        performOnSelectedTrash(
+            { svc, photos in photos.forEach { svc.recycle($0) } },
+            message: { "已移到「最近删除」 \($0) 张" }
+        )
     }
 
     // V3.5.19：从 PhotoGridView 搬上来的 4 个 batch 方法
@@ -804,36 +800,48 @@ struct ContentView: View {
 
     // ─── 回收站操作（V3.6 NEW）───
 
-    /// 恢复选中的照片（从回收站 → 图库）
-    private func restoreSelectedFromTrash() {
-        let photosToRestore = visiblePhotos.filter { selectedIDs.contains($0.id) }
-        guard !photosToRestore.isEmpty else { return }
+    /// 在 visiblePhotos ∩ selectedIDs 上执行 trash 操作（3 个 batch 方法的共用骨架）
+    /// - Parameters:
+    ///   - operation: 实际的 SwiftData 变更（recycle / restore / purge）
+    ///   - message: toast 消息生成器（接收处理数量）
+    ///   - type: toast 类型（默认 .info；恢复用 .success）
+    private func performOnSelectedTrash(
+        _ operation: (RecycleBinService, [Photo]) -> Void,
+        message: (Int) -> String,
+        type: ToastView.ToastType = .info
+    ) {
+        let photos = visiblePhotos.filter { selectedIDs.contains($0.id) }
+        guard !photos.isEmpty else { return }
         let service = RecycleBinService(storage: .shared, modelContext: modelContext)
-        for photo in photosToRestore { service.restore(photo) }
-        let count = photosToRestore.count
+        operation(service, photos)
+        let count = photos.count
         selectedIDs = []
         selectedPhoto = nil
-        showToast("已恢复 \(count) 张图片", type: .success)
+        showToast(message(count), type: type)
+    }
+
+    /// 恢复选中的照片（从回收站 → 图库）
+    private func restoreSelectedFromTrash() {
+        performOnSelectedTrash(
+            { svc, photos in photos.forEach { svc.restore($0) } },
+            message: { "已恢复 \($0) 张图片" },
+            type: .success
+        )
     }
 
     /// 永久删除选中的照片（文件 + SwiftData）
     private func permanentDeleteSelected() {
-        let photosToDelete = visiblePhotos.filter { selectedIDs.contains($0.id) }
-        guard !photosToDelete.isEmpty else { return }
-        let service = RecycleBinService(storage: .shared, modelContext: modelContext)
-        service.purgeAll(photosToDelete)
-        let count = photosToDelete.count
-        selectedIDs = []
-        selectedPhoto = nil
-        showToast("已永久删除 \(count) 张图片", type: .info)
+        performOnSelectedTrash(
+            { svc, photos in svc.purgeAll(photos) },
+            message: { "已永久删除 \($0) 张图片" }
+        )
     }
 
-    /// 清空回收站（永久删除所有 trashed 项）
+    /// 清空回收站（永久删除所有 trashed 项；不走 selectedIDs）
     private func emptyTrash() {
-        let trashed = allPhotos.filter { $0.trashedAt != nil }
+        let trashed = allPhotos.filter { $0.isInTrash }
         guard !trashed.isEmpty else { return }
-        let service = RecycleBinService(storage: .shared, modelContext: modelContext)
-        service.purgeAll(trashed)
+        RecycleBinService(storage: .shared, modelContext: modelContext).purgeAll(trashed)
         let count = trashed.count
         selectedIDs = []
         selectedPhoto = nil

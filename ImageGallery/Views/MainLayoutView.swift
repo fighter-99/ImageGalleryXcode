@@ -87,7 +87,7 @@ struct MainLayoutView<Toolbar: View, PathBar: View, Split: View, StatusBarView: 
                 .help(showSidebar ? "隐藏侧栏 (⌘⌃+S)" : "显示侧栏 (⌘⌃+S)")
             }
         }
-        // V3.5 Phase 2：把 undoManager 注入环境，让 SidebarView/PhotoGridView/DetailView 都能用
+        // V3.5 Phase 2：把 undoManager 注入环境，让 DetailView 的撤销逻辑（添加/移除标签、重命名）能用
         .environment(\.undoManager, undoManager)
         // Toast 浮层（中央上方）
         .overlay(alignment: .top) {

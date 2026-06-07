@@ -386,10 +386,9 @@ struct DetailView: View {
         }
     }
 
-    // ─── 删除图片 ───
+    // ─── 删除图片（V3.6：走 RecycleBinService.recycle，移到回收站）───
     private func deletePhoto() {
-        let deleter = ImageDeleter(modelContext: modelContext)
-        deleter.delete(photo)
+        RecycleBinService(storage: .shared, modelContext: modelContext).recycle(photo)
         onDelete()
     }
 

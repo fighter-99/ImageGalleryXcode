@@ -153,30 +153,3 @@ struct ImageImporter {
         return digest.map { String(format: "%02x", $0) }.joined()
     }
 }
-
-// MARK: - 图片删除器
-
-struct ImageDeleter {
-    let modelContext: ModelContext
-
-    /// 删除图片（包括磁盘上的文件）
-    @discardableResult
-    func delete(_ photo: Photo) -> UUID {
-        let id = photo.id
-        let fileURL = photo.fileURL.standardizedFileURL
-        let path = fileURL.path
-
-        if FileManager.default.fileExists(atPath: path) {
-            do {
-                try FileManager.default.removeItem(at: fileURL)
-            } catch {
-                // 兜底：用 unlink 系统调用
-                _ = unlink(path)
-            }
-        }
-
-        modelContext.delete(photo)
-        try? modelContext.save()
-        return id
-    }
-}

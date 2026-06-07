@@ -22,7 +22,6 @@
 //
 
 import Foundation
-import SwiftData
 import SwiftUI
 import Observation
 
@@ -93,75 +92,10 @@ final class ImageGalleryUndoManager {
     }
 }
 
-// MARK: - PhotoSnapshot（撤销用的数据快照）
-
-/// 照片数据的不可变快照，用于撤销删除等操作
-struct PhotoSnapshot {
-    let id: UUID
-    let filename: String
-    let fileURL: URL
-    let importedAt: Date
-    let fileSize: Int64
-    let width: Int
-    let height: Int
-    let isFavorite: Bool
-    let note: String
-    let fileHash: String?
-    let folderID: UUID?
-    let tagIDs: [UUID]
-
-    init(photo: Photo) {
-        self.id = photo.id
-        self.filename = photo.filename
-        self.fileURL = photo.fileURL
-        self.importedAt = photo.importedAt
-        self.fileSize = photo.fileSize
-        self.width = photo.width
-        self.height = photo.height
-        self.isFavorite = photo.isFavorite
-        self.note = photo.note
-        self.fileHash = photo.fileHash
-        self.folderID = photo.folder?.id
-        self.tagIDs = photo.tags.map { $0.id }
-    }
-
-    /// 在指定 ModelContext 中重建 Photo
-    @MainActor
-    func restore(in context: ModelContext) {
-        let photo = Photo(
-            filename: filename,
-            fileURL: fileURL,
-            fileSize: fileSize,
-            width: width,
-            height: height
-        )
-        photo.id = id
-        photo.importedAt = importedAt
-        photo.isFavorite = isFavorite
-        photo.note = note
-        photo.fileHash = fileHash
-
-        // 恢复文件夹关联
-        if let folderID = folderID {
-            let descriptor = FetchDescriptor<Folder>(predicate: #Predicate { $0.id == folderID })
-            photo.folder = try? context.fetch(descriptor).first
-        }
-
-        // 恢复标签关联
-        for tagID in tagIDs {
-            let descriptor = FetchDescriptor<Tag>(predicate: #Predicate { $0.id == tagID })
-            if let tag = try? context.fetch(descriptor).first {
-                photo.tags.append(tag)
-            }
-        }
-
-        context.insert(photo)
-    }
-}
-
 // MARK: - SwiftUI Environment 集成
 
 /// 让任何子 View 通过 @Environment 拿到 undoManager
+/// （V3.5 Phase 2：被 DetailView 的"添加/移除标签"、"重命名" 撤销逻辑使用）
 private struct UndoManagerEnvironmentKey: EnvironmentKey {
     @MainActor static let defaultValue: ImageGalleryUndoManager? = nil
 }

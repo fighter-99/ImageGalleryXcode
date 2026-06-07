@@ -30,7 +30,6 @@ struct SidebarView: View {
 
     // SwiftData 上下文
     @Environment(\.modelContext) private var modelContext
-    @Environment(\.undoManager) private var undoManager
 
     // 选中项（双向绑定）
     @Binding var selection: SidebarSelection?
@@ -60,9 +59,9 @@ struct SidebarView: View {
     // V3.6: 加 trashed 计数（"最近删除" 行用）
     private var libraryCounts: (all: Int, favorites: Int, unfiled: Int, trashed: Int) {
         let favorites = allPhotos.filter { $0.isFavorite }.count
-        let unfiled = allPhotos.filter { $0.folder == nil && $0.trashedAt == nil }.count
-        let allInLibrary = allPhotos.filter { $0.trashedAt == nil }.count
-        let trashed = allPhotos.filter { $0.trashedAt != nil }.count
+        let unfiled = allPhotos.filter { $0.folder == nil && !$0.isInTrash }.count
+        let allInLibrary = allPhotos.filter { !$0.isInTrash }.count
+        let trashed = allPhotos.filter { $0.isInTrash }.count
         return (allInLibrary, favorites, unfiled, trashed)
     }
 

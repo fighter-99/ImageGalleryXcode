@@ -19,7 +19,6 @@ import UniformTypeIdentifiers
 struct PhotoGridView: View {
     // SwiftData
     @Environment(\.modelContext) private var modelContext
-    @Environment(\.undoManager) private var undoManager  // V3.5 Phase 2
     @Query(sort: \Photo.importedAt, order: .reverse) private var allPhotos: [Photo]
     @Query(sort: \Folder.createdAt, order: .forward) private var folders: [Folder]
     @Query(sort: \Tag.createdAt, order: .forward) private var allTags: [Tag]
@@ -338,10 +337,9 @@ struct PhotoGridView: View {
         lastSelectedID = id
     }
 
-    // ─── 删除 ───
+    // ─── 删除（V3.6：走 RecycleBinService.recycle，移到回收站）───
     private func deletePhoto(_ photo: Photo) {
-        let deleter = ImageDeleter(modelContext: modelContext)
-        deleter.delete(photo)
+        RecycleBinService(storage: .shared, modelContext: modelContext).recycle(photo)
         selectedIDs.remove(photo.id)
         if selectedPhoto?.id == photo.id {
             selectedPhoto = nil
