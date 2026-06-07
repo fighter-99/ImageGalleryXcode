@@ -140,7 +140,7 @@ struct ToolbarView: View {
 
     // MARK: - 子组件
 
-    /// 搜索框
+    /// 搜索框（V3.6.20：容器改 Capsule，跟 viewMode/density/sortMenu 一致）
     private var searchField: some View {
         HStack(spacing: 6) {
             Image(systemName: "magnifyingglass")
@@ -163,8 +163,7 @@ struct ToolbarView: View {
         }
         .padding(.horizontal, Spacing.sm)
         .padding(.vertical, 4)
-        .background(Surface.toolbarControl)
-        .cornerRadius(Radius.sm)
+        .background(Surface.toolbarControl, in: Capsule())
     }
 
     /// 视图模式 3 档（V3.6.18：加 text 标签 — 让用户清楚当前选的是什么）
@@ -388,7 +387,7 @@ private struct ToolbarSortMenu<MenuContent: View>: View {
         .menuStyle(.automatic)
         .menuIndicator(.hidden)
         .background(
-            RoundedRectangle(cornerRadius: Radius.sm)
+            Capsule()
                 .fill(isHovered ? Surface.hover : .clear)
                 .padding(2)
         )
