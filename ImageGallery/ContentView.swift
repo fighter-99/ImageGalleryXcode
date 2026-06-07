@@ -73,6 +73,10 @@ struct ContentView: View {
     // V3.6.6: 清空回收站二次确认（防误操作：永久删除所有 trashed 项）
     @State private var showingEmptyTrashConfirm = false
 
+    // V3.6.24: 导入时重复检测 dialog（防止 fileHash 重复的图片被再次导入）
+    @State private var importDuplicateCheck: ImageImporter.DuplicateCheckResult?
+    @State private var pendingImportURLs: [URL] = []
+
     // 批量移动
     // （showingBatchMoveSheet 已移除：批量移动流程当前在 PhotoGridView 内联实现，
     //   该状态从未被读。如未来要重新走 sheet 流程再加回。）
@@ -394,6 +398,21 @@ struct ContentView: View {
             } message: {
                 Text("回收站里的所有照片将被永久删除，无法恢复。")
             }
+            // V3.6.24: 导入时重复检测 dialog
+            .confirmationDialog(
+                duplicateDialogTitle,
+                isPresented: Binding(
+                    get: { importDuplicateCheck != nil },
+                    set: { if !$0 { importDuplicateCheck = nil } }
+                ),
+                titleVisibility: .visible
+            ) {
+                Button("全部跳过（保留现有）") { confirmSkipDuplicates() }
+                Button("全部导入（可能重复）", role: .destructive) { confirmImportAllDuplicates() }
+                Button("取消", role: .cancel) { cancelDuplicateImport() }
+            } message: {
+                Text("选\"跳过\"避免重复导入。")
+            }
     }
 
     // ⌘N 触发的创建文件夹
@@ -705,7 +724,64 @@ struct ContentView: View {
                 }
             }
         }
-        importer.importURLs(panel.urls)
+        // V3.6.24: 导入前重复检测（fileHash 重复弹 dialog 让用户选跳过/副本）
+        runImportWithDuplicateCheck(urls: panel.urls)
+    }
+
+    /// V3.6.24: 扫现有 photo + 算新 url fileHash，弹 dialog 让用户选
+    private func runImportWithDuplicateCheck(urls: [URL]) {
+        let check = ImageImporter.checkDuplicates(newURLs: urls, in: modelContext)
+        if check.hasDuplicates {
+            // 弹 dialog 让用户选（暂存 url 等 dialog 后再用）
+            pendingImportURLs = urls
+            importDuplicateCheck = check
+        } else {
+            // 无重复，直接导入
+            importPhotos(urls: urls)
+        }
+    }
+
+    // V3.6.24: 重复检测 dialog 的动态 title（避免 body message: 闭包触发 type-check）
+    private var duplicateDialogTitle: String {
+        guard let check = importDuplicateCheck else { return "检测到重复文件" }
+        return "发现 \(check.existing.count) 张已存在 / \(check.newCount) 张新文件"
+    }
+
+    private func confirmSkipDuplicates() {
+        let existing = Set(importDuplicateCheck?.existing ?? [])
+        let newURLs = pendingImportURLs.filter { !existing.contains($0) }
+        importDuplicateCheck = nil
+        pendingImportURLs = []
+        if !newURLs.isEmpty { importPhotos(urls: newURLs) }
+    }
+
+    private func confirmImportAllDuplicates() {
+        let allURLs = pendingImportURLs
+        importDuplicateCheck = nil
+        pendingImportURLs = []
+        importPhotos(urls: allURLs)
+    }
+
+    private func cancelDuplicateImport() {
+        importDuplicateCheck = nil
+        pendingImportURLs = []
+    }
+
+    /// V3.6.24: 实际跑导入（dialog 确认后调用，或无重复时直接调）
+    private func importPhotos(urls: [URL]) {
+        importProgress = ImportProgress(current: 0, total: 0, isImporting: true)
+        let importer = ImageImporter(modelContext: modelContext, folder: currentFolder) { current, total in
+            Task { @MainActor in
+                importProgress = ImportProgress(current: current, total: total, isImporting: true)
+                if current >= total && total > 0 {
+                    try? await Task.sleep(nanoseconds: 1_500_000_000)
+                    if let p = importProgress, p.current >= p.total {
+                        importProgress = nil
+                    }
+                }
+            }
+        }
+        importer.importURLs(urls)
     }
 
     // ─── 拖拽导入 ───
@@ -728,19 +804,8 @@ struct ContentView: View {
 
         group.notify(queue: .main) {
             guard !urls.isEmpty else { return }
-            importProgress = ImportProgress(current: 0, total: 0, isImporting: true)
-            let importer = ImageImporter(modelContext: modelContext, folder: currentFolder) { current, total in
-                Task { @MainActor in
-                    importProgress = ImportProgress(current: current, total: total, isImporting: true)
-                    if current >= total && total > 0 {
-                        try? await Task.sleep(nanoseconds: 1_500_000_000)
-                        if let p = importProgress, p.current >= p.total {
-                            importProgress = nil
-                        }
-                    }
-                }
-            }
-            importer.importURLs(urls)
+            // V3.6.24: 拖拽导入也走重复检测
+            runImportWithDuplicateCheck(urls: urls)
         }
 
         return true

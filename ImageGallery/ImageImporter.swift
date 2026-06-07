@@ -38,6 +38,81 @@ struct ImageImporter {
         "jpg", "jpeg", "png", "heic", "heif", "tiff", "tif", "gif", "bmp", "webp"
     ]
 
+    // MARK: - V3.6.24 NEW: 重复检测
+
+    /// 重复检测结果（V3.6.24）
+    /// 导入前扫现有 photo 的 fileHash + 算新 urls 的 fileHash，返回已存在的 URL
+    struct DuplicateCheckResult {
+        let existing: [URL]   // 已存在（fileHash 匹配）的源 URL
+        let newCount: Int      // 真正新文件的数量
+        let totalCount: Int    // 总数
+
+        var hasDuplicates: Bool { !existing.isEmpty }
+    }
+
+    /// 扫现有 photo 的 fileHash + 算新 urls 的 fileHash，找出已存在的
+    /// 性能：fileHash 算 SHA256（小文件几十 ms），50 张图 ~2s
+    /// 异步：不在 main thread 跑算 hash（V3.6.24 简单版同步跑）
+    static func checkDuplicates(
+        newURLs: [URL],
+        in modelContext: ModelContext
+    ) -> DuplicateCheckResult {
+        // 1. 收集所有现有 photo 的 fileHash → URL 映射
+        let existingHashes = (try? modelContext.fetch(
+            FetchDescriptor<Photo>()
+        )) ?? []
+        let existingByHash = Dictionary(
+            grouping: existingHashes.compactMap { photo -> (String, Photo)? in
+                guard let hash = photo.fileHash else { return nil }
+                return (hash, photo)
+            },
+            by: { $0.0 }
+        )
+
+        // 2. 算新 urls 的 fileHash
+        var existing: [URL] = []
+        var newCount = 0
+        for url in newURLs {
+            guard let hash = computeFileHashSync(at: url) else {
+                newCount += 1  // 算不了 hash 当成新文件
+                continue
+            }
+            if existingByHash[hash] != nil {
+                existing.append(url)
+            } else {
+                newCount += 1
+            }
+        }
+        return DuplicateCheckResult(
+            existing: existing,
+            newCount: newCount,
+            totalCount: newURLs.count
+        )
+    }
+
+    /// 同步算 SHA256（V3.6.24 简单版，不做 actor 隔离）
+    /// 复用现有 computeFileHash 逻辑但不需要 Photo context
+    private static func computeFileHashSync(at url: URL) -> String? {
+        var hasher = SHA256()
+        guard let handle = try? FileHandle(forReadingFrom: url) else { return nil }
+        defer { try? handle.close() }
+
+        let chunkSize = 1024 * 1024
+        while true {
+            let chunk: Data?
+            if #available(macOS 10.15.4, *) {
+                chunk = try? handle.read(upToCount: chunkSize)
+            } else {
+                chunk = handle.readData(ofLength: chunkSize)
+            }
+            guard let data = chunk, !data.isEmpty else { break }
+            hasher.update(data: data)
+        }
+
+        let digest = hasher.finalize()
+        return digest.map { String(format: "%02x", $0) }.joined()
+    }
+
     /// 导入一组 URL，自动处理文件和文件夹
     func importURLs(_ urls: [URL]) {
         print("📥 importURLs 收到 \(urls.count) 个 URL")
