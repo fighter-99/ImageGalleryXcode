@@ -46,50 +46,67 @@ struct DetailPane: View {
     let onKeepNewestPerDuplicateGroup: () -> Void
 
     var body: some View {
-        // V3.6: 回收站模式优先于其他（回收站视图里没有"单图操作"概念）
-        if sidebarSelection == .recentlyDeleted {
-            TrashDetailView(
-                count: count,
-                totalSize: totalSize,
-                retentionDays: retentionDays,
-                onRestore: onTrashRestore,
-                onPermanentDelete: onTrashPermanentDelete,
-                onEmptyTrash: onEmptyTrash
-            )
-        // V3.6.15: 重复图模式（仿 TrashDetailView 的"操作中心"模式）
-        } else if sidebarSelection == .duplicates {
-            DuplicatesDetailView(
-                duplicateGroupCount: count,
-                purgeableCount: count,  // 重复图视图下 count = purgeable count（从 ContentView 传）
-                purgeableSize: totalSize,
-                onKeepNewestPerGroup: onKeepNewestPerDuplicateGroup
-            )
-        } else if let photo = singleSelectedPhoto {
-            DetailView(
-                photo: photo,
-                onDelete: onDelete,
-                onPrev: onPrev,
-                onNext: onNext,
-                canPrev: canPrev,
-                canNext: canNext,
-                currentIndex: currentIndex,
-                totalCount: totalCount
-            )
-        } else if isMultiSelect {
-            MultiSelectDetailView(
-                count: count,
-                totalSize: totalSize,
-                folders: folders,
-                allTags: allTags,
-                onMove: onBatchMove,
-                onAddTag: onBatchAddTag,
-                onToggleFavorite: onBatchToggleFavorite,
-                onExport: onBatchExport,
-                onDelete: onBatchDelete,
-                onClearSelection: onClearSelection
-            )
-        } else {
-            EmptyDetailView()
+        // V3.6.44: 加 .id(viewKind) 让 SwiftUI 知道是"不同视图"（不是同一 view 内部状态变化）
+        //   这样 .transition 才会触发；.animation 驱动 spring 过渡
+        //   viewKind 字符串反映当前显示的是哪种详情面板
+        let viewKind: String = {
+            if sidebarSelection == .recentlyDeleted { return "trash" }
+            if sidebarSelection == .duplicates { return "duplicates" }
+            if let photo = singleSelectedPhoto { return "photo-\(photo.id)" }
+            if isMultiSelect { return "multi" }
+            return "empty"
+        }()
+
+        return Group {
+            // V3.6: 回收站模式优先于其他（回收站视图里没有"单图操作"概念）
+            if sidebarSelection == .recentlyDeleted {
+                TrashDetailView(
+                    count: count,
+                    totalSize: totalSize,
+                    retentionDays: retentionDays,
+                    onRestore: onTrashRestore,
+                    onPermanentDelete: onTrashPermanentDelete,
+                    onEmptyTrash: onEmptyTrash
+                )
+            // V3.6.15: 重复图模式（仿 TrashDetailView 的"操作中心"模式）
+            } else if sidebarSelection == .duplicates {
+                DuplicatesDetailView(
+                    duplicateGroupCount: count,
+                    purgeableCount: count,
+                    purgeableSize: totalSize,
+                    onKeepNewestPerGroup: onKeepNewestPerDuplicateGroup
+                )
+            } else if let photo = singleSelectedPhoto {
+                DetailView(
+                    photo: photo,
+                    onDelete: onDelete,
+                    onPrev: onPrev,
+                    onNext: onNext,
+                    canPrev: canPrev,
+                    canNext: canNext,
+                    currentIndex: currentIndex,
+                    totalCount: totalCount
+                )
+            } else if isMultiSelect {
+                MultiSelectDetailView(
+                    count: count,
+                    totalSize: totalSize,
+                    folders: folders,
+                    allTags: allTags,
+                    onMove: onBatchMove,
+                    onAddTag: onBatchAddTag,
+                    onToggleFavorite: onBatchToggleFavorite,
+                    onExport: onBatchExport,
+                    onDelete: onBatchDelete,
+                    onClearSelection: onClearSelection
+                )
+            } else {
+                EmptyDetailView()
+            }
         }
+        .id(viewKind)  // V3.6.44: 视图类型变化时强制 transition
+        .transition(.opacity.combined(with: .move(edge: .trailing)))
+        // V3.6.44: 驱动 transition 动画（springGentle 让详情面板切换有'翻页'感）
+        .animation(Animations.springGentle, value: viewKind)
     }
 }
