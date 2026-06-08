@@ -20,7 +20,6 @@
 
 import SwiftUI
 import SwiftData
-import UniformTypeIdentifiers
 
 struct SidebarView: View {
     // SwiftData 查询
@@ -89,8 +88,12 @@ struct SidebarView: View {
                     target: .recentlyDeleted,
                     iconColor: libraryCounts.trashed > 0 ? .orange : nil
                 )
-                .onDrop(of: [.text], isTargeted: $isTrashDropTargeted) { providers in
-                    handleTrashDrop(providers: providers)
+                // V3.6.33: .onDrop(of: [.text]) → .dropDestination(for: URL.self)
+                // 配对 .draggable(URL) 现代 API 对
+                .dropDestination(for: URL.self) { urls, _ in
+                    handleTrashDrop(urls: urls)
+                } isTargeted: { isTargeted in
+                    isTrashDropTargeted = isTargeted
                 }
                 .background(
                     RoundedRectangle(cornerRadius: Radius.sm)
@@ -264,73 +267,62 @@ struct SidebarView: View {
         }
     }
 
-    private func handlePhotoDrop(providers: [NSItemProvider], to folder: Folder) -> Bool {
-        // V3.5.18 修复 crash：
-        // 1. 闭包捕获了 self（struct 副本），里面的 selectedIDs/folder/modelContext 是陈旧值
-        // 2. SwiftData @Model 对象在异步闭包里访问可能 EXC_BAD_ACCESS
-        // 3. loadObject(ofClass:) 在 macOS 14+ 不稳定，用 loadDataRepresentation
-        // 修复：主线程上捕获 persistentID/IDs/context，异步回调里重新获取 folder
+    private func handlePhotoDrop(urls: [URL], to folder: Folder) -> Bool {
+        // V3.6.33: 从 [NSItemProvider] + public.text UUID 改为 [URL] + fileURL 查找
+        //   .dropDestination(for: URL.self) 直接给 [URL]（已 deserialized）
+        //   按 fileURL 在 allPhotos 找 Photo 对象（fileURL 是 SwiftData @Model 字段，unique）
+        //   比旧版本少一层 NSItemProvider + 异步 loadDataRepresentation
+        //
+        // V3.5.18 修复 crash 模式仍然适用：捕获持久化 ID（folderID）+ context，
+        // SwiftData @Model 对象在主线程上操作。
 
         // 主线程上捕获所有需要的状态
         let folderID = folder.persistentModelID
-        let folderName = folder.name  // String 是值类型，安全
-        let capturedSelectedIDs = selectedIDs
         let capturedContext = modelContext
+        let capturedAllPhotos = allPhotos  // 查 photo 用的快照
+        let capturedSelectedIDs = selectedIDs
 
-        var anyHandled = false
-        for provider in providers {
-            // 用 hasItemConformingToTypeIdentifier 检查（比 canLoadObject 更可靠）
-            guard provider.hasItemConformingToTypeIdentifier("public.text") else { continue }
-            anyHandled = true
+        // 找到拖动的 photo（按 fileURL 匹配）
+        // 多选时：拖动的是单张（.draggable 是 per-view），但如果用户在多选状态拖了被选中的那张，
+        // 我们把整个 selectedIDs 一起移动到 folder
+        let draggedFileURLs = Set(urls)
+        let draggedPhotos = capturedAllPhotos.filter { draggedFileURLs.contains($0.fileURL) }
+        guard !draggedPhotos.isEmpty else { return false }
 
-            // 用 loadDataRepresentation（macOS 14+ 推荐）
-            provider.loadDataRepresentation(forTypeIdentifier: "public.text") { data, error in
-                guard error == nil,
-                      let data = data,
-                      let str = String(data: data, encoding: .utf8),
-                      let uuid = UUID(uuidString: str) else { return }
-
-                // 回到主线程执行 SwiftData 操作
-                DispatchQueue.main.async {
-                    // 重新获取 folder（如果原对象已删除，这里会返回 nil）
-                    guard let folder = capturedContext.model(for: folderID) as? Folder else { return }
-
-                    // 执行移动
-                    performMove(
-                        draggedUUID: uuid,
-                        to: folder,
-                        folderName: folderName,
-                        selectedIDs: capturedSelectedIDs,
-                        context: capturedContext
-                    )
-                }
-            }
-        }
-        return anyHandled
+        performMove(
+            draggedPhotos: draggedPhotos,
+            folderID: folderID,
+            folderName: folder.name,
+            selectedIDs: capturedSelectedIDs,
+            context: capturedContext
+        )
+        return true
     }
 
     /// 实际执行移动（主线程，已验证所有对象有效）
     private func performMove(
-        draggedUUID: UUID,
-        to folder: Folder,
+        draggedPhotos: [Photo],
+        folderID: PersistentIdentifier,
         folderName: String,
         selectedIDs: Set<UUID>,
         context: ModelContext
     ) {
         // V3.5.20 修复崩溃：performMove 不再走 ImageGalleryUndoManager.registerAction
-        // 原代码调用 registerAction → 立即执行 action() 修改 SwiftData → 崩溃源（待查）
-        // 原注释也说 "暂不支持：移动到文件夹"，所以这本来就该用直接修改 SwiftData 的方式
-        // 撤销功能后续可以单独实现一个针对"移动到文件夹"的轻量级机制
+        // V3.6.33: 多选时整组移动：拖动的是被选中的图，就移动整个 selectedIDs
 
-        // 确定要移动的 ID 集合
+        // 重新获取 folder（如果原对象已删除，这里会返回 nil）
+        guard let folder = context.model(for: folderID) as? Folder else { return }
+
+        // 多选判断：被拖的任一 photo 在 selectedIDs 中 → 移动整组
+        let draggedIDs = Set(draggedPhotos.map { $0.id })
         let idsToMove: Set<UUID>
-        if !selectedIDs.isEmpty && selectedIDs.contains(draggedUUID) {
+        if !selectedIDs.isEmpty && !draggedIDs.intersection(selectedIDs).isEmpty {
             idsToMove = selectedIDs
         } else {
-            idsToMove = [draggedUUID]
+            idsToMove = draggedIDs
         }
 
-        // 拉取要移动的 photos
+        // 拉取要移动的 photos（按 ID 查 SwiftData）
         var photos: [Photo] = []
         for id in idsToMove {
             let descriptor = FetchDescriptor<Photo>(predicate: #Predicate { $0.id == id })
@@ -347,50 +339,41 @@ struct SidebarView: View {
         try? context.save()
     }
 
-    // V3.6.12: 拖到 trash 行的处理器（类似 handlePhotoDrop 但调 recycle）
-    private func handleTrashDrop(providers: [NSItemProvider]) -> Bool {
-        // 主线程上捕获状态（参考 handlePhotoDrop 的 V3.5.18 crash 修复模式）
-        let capturedSelectedIDs = selectedIDs
+    // V3.6.12 + V3.6.33: 拖到 trash 行的处理器
+    private func handleTrashDrop(urls: [URL]) -> Bool {
+        // 主线程上捕获状态
         let capturedContext = modelContext
+        let capturedAllPhotos = allPhotos
+        let capturedSelectedIDs = selectedIDs
 
-        var anyHandled = false
-        for provider in providers {
-            guard provider.hasItemConformingToTypeIdentifier("public.text") else { continue }
-            anyHandled = true
+        let draggedFileURLs = Set(urls)
+        let draggedPhotos = capturedAllPhotos.filter { draggedFileURLs.contains($0.fileURL) }
+        guard !draggedPhotos.isEmpty else { return false }
 
-            provider.loadDataRepresentation(forTypeIdentifier: "public.text") { data, error in
-                guard error == nil,
-                      let data = data,
-                      let str = String(data: data, encoding: .utf8),
-                      let uuid = UUID(uuidString: str) else { return }
-
-                DispatchQueue.main.async {
-                    performTrash(
-                        draggedUUID: uuid,
-                        selectedIDs: capturedSelectedIDs,
-                        context: capturedContext
-                    )
-                }
-            }
-        }
-        return anyHandled
+        performTrash(
+            draggedPhotos: draggedPhotos,
+            selectedIDs: capturedSelectedIDs,
+            context: capturedContext
+        )
+        return true
     }
 
     /// 实际执行 recycle（trash drop 用）
     private func performTrash(
-        draggedUUID: UUID,
+        draggedPhotos: [Photo],
         selectedIDs: Set<UUID>,
         context: ModelContext
     ) {
-        // 多选时整组 trash
+        // 多选时整组 trash：拖动的是被选中的图，就 trash 整组
+        let draggedIDs = Set(draggedPhotos.map { $0.id })
         let idsToTrash: Set<UUID>
-        if !selectedIDs.isEmpty && selectedIDs.contains(draggedUUID) {
+        if !selectedIDs.isEmpty && !draggedIDs.intersection(selectedIDs).isEmpty {
             idsToTrash = selectedIDs
         } else {
-            idsToTrash = [draggedUUID]
+            idsToTrash = draggedIDs
         }
 
-        // 拉取 photos
+        // 拉取 photos（按 ID 查 SwiftData，过滤掉已在 trash 的）
         var photos: [Photo] = []
         for id in idsToTrash {
             let descriptor = FetchDescriptor<Photo>(predicate: #Predicate { $0.id == id })
@@ -435,17 +418,16 @@ struct SidebarView: View {
             target: .folder(folder)
         )
         .background(folderDropHighlight(folder))
-        .onDrop(of: [.text], isTargeted: Binding(
-            get: { dropTargetFolderID == folder.id },
-            set: { isTargeted in
-                if isTargeted {
-                    dropTargetFolderID = folder.id
-                } else if dropTargetFolderID == folder.id {
-                    dropTargetFolderID = nil
-                }
+        // V3.6.33: .onDrop(of: [.text]) → .dropDestination(for: URL.self)
+        // 配对 .draggable(URL) 现代 API 对
+        .dropDestination(for: URL.self) { urls, _ in
+            handlePhotoDrop(urls: urls, to: folder)
+        } isTargeted: { isTargeted in
+            if isTargeted {
+                dropTargetFolderID = folder.id
+            } else if dropTargetFolderID == folder.id {
+                dropTargetFolderID = nil
             }
-        )) { providers in
-            handlePhotoDrop(providers: providers, to: folder)
         }
         .contextMenu {
             Button(role: .destructive) {

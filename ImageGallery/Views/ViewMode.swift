@@ -150,9 +150,9 @@ struct PhotoListRow: View {
         .onHover { hovering in
             isHovered = hovering
         }
-        // V3.6.31 撤销 V3.6.29: List 视图先不挂 .onDrag
-        // 原因：DragPayload refactor 在用户环境导致 drag 失败（详见 PhotoGridView .onDrag 注释）
-        // PhotoListRow 暂时只响应点击（单选/多选），拖出功能等 DragPayload 修复后重做
+        // V3.6.33: List 视图也支持拖出到 Finder / 侧栏
+        // .draggable(URL) 是 macOS 13+ 现代 API，跟 grid 一样用同一份代码
+        .draggable(photo.fileURL)
     }
 
     /// 行背景：选中 > 多选 > hover > 默认
@@ -385,6 +385,7 @@ struct TimelineThumbnail: View {
         }
         .scaleEffect(isActive ? 1.02 : 1.0)
         .animation(Animations.standard, value: isActive)
-        // V3.6.31 撤销 V3.6.29: Timeline 视图先不挂 .onDrag（详见 PhotoGridView .onDrag 注释）
+        // V3.6.33: Timeline 视图也支持拖出到 Finder / 侧栏
+        .draggable(photo.fileURL)
     }
 }
