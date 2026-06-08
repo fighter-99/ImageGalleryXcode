@@ -39,9 +39,6 @@ struct ContentView: View {
     @State private var selectedIDs: Set<UUID> = []
     @State private var lastSelectedID: UUID?  // 范围选择起点
     @State private var isBoxSelecting = false
-    // V3.6.28: 框选 V2 新增——拖动期间的 selectionRect（overlay 绘制用）+ 收集到的 cell frames
-    @State private var cellFrames: [UUID: CGRect] = [:]
-    @State private var selectionRect: CGRect = .zero
 
     // 侧边栏的选中项
     @State private var sidebarSelection: SidebarSelection? = .all
@@ -553,8 +550,6 @@ struct ContentView: View {
                     showDetail: $showDetail,
                     isDropTargeted: $isDropTargeted,
                     isBoxSelecting: $isBoxSelecting,
-                    // V3.6.28: 框选 V2——overlay 绘制
-                    selectionRect: $selectionRect,
                     onDrop: handleDrop,
                     sidebar: {
                         SidebarView(
@@ -627,19 +622,10 @@ struct ContentView: View {
                 )
                 .boxSelectionGesture(
                     isBoxSelecting: $isBoxSelecting,
-                    selectionRect: $selectionRect,
-                    cellFrames: cellFrames,
                     selectedIDs: $selectedIDs,
                     lastSelectedID: $lastSelectedID,
                     visiblePhotos: visiblePhotos
-                    // isShiftHeld: 默认 false；需要时调用方从 NSEvent 传入
                 )
-                // V3.6.28: 收集 cell 上报的 frame——只在 isBoxSelecting == true 时记录
-                // 避免每帧重算（onPreferenceChange 在 cell layout 变化时会频繁触发）
-                .onPreferenceChange(BoxSelectionFramePreferenceKey.self) { frames in
-                    guard isBoxSelecting else { return }
-                    cellFrames = frames
-                }
             },
             statusBar: {
                 // V3.5.6 Finder 化：Status Bar（底部信息条）

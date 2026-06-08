@@ -667,18 +667,6 @@ struct PhotoThumbnailView: View {
 
             return provider
         }
-        // V3.6.28: 框选 V2——上报 cell frame 到 BoxSelectionFramePreferenceKey
-        // 用 .background(GeometryReader) 模式：background 与 cell 同尺寸，
-        // proxy.frame(in: .named("boxSelectSpace")) 给出在 MainSplitView 命名坐标系下的 frame。
-        // 放在 .onDrag 之后、.contextMenu 之前——layout 已定，gestures 已设。
-        .background(
-            GeometryReader { proxy in
-                Color.clear.preference(
-                    key: BoxSelectionFramePreferenceKey.self,
-                    value: [photo.id: proxy.frame(in: .named("boxSelectSpace"))]
-                )
-            }
-        )
         .contextMenu {
             Menu {
                 Button {
