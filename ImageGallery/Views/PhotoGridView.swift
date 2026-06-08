@@ -438,8 +438,6 @@ struct PhotoThumbnailView: View {
     @Environment(\.colorScheme) private var colorScheme  // V3.6.14: 暗色适配 trash opacity
     @State private var showingDeleteConfirm = false
     @State private var isHovered = false
-    // V3.6.10: 按压反馈（@GestureState 在 gesture 结束时自动 reset）
-    @GestureState private var isPressed: Bool = false
     // V3.6.10: 键盘聚焦状态（SwiftUI 默认 focus ring，但 macOS 上系统不显示时手动加）
     @FocusState private var isFocused: Bool
     // V3.6.26: 异步缩略图加载状态（避免主线程阻塞）
@@ -462,9 +460,8 @@ struct PhotoThumbnailView: View {
         return parts.joined(separator: " · ")
     }
 
-    /// V3.6.10: 当前缩放比例（按压 > 选中 > hover > 默认）
+    /// V3.6.35: 当前缩放比例（按压 scale 撤销，hover > 选中 > 默认）
     private var currentScale: CGFloat {
-        if isPressed { return 0.95 }              // 按下：缩 5%
         if isActive { return 1.015 }              // 单选：轻微放大
         if isHovered && !isInMultiSelect { return 1.02 }  // hover：放大 2%
         return 1.0
@@ -594,8 +591,8 @@ struct PhotoThumbnailView: View {
                     lineWidth: isInMultiSelect ? 2 : 0
                 )
         }
-        // V3.6.10: 按压 scale (0.95) > 选中 (1.015) > hover (1.02) > 默认
-        // 优先级：isPressed > isActive > isHovered
+        // V3.6.35: 缩放优先级 选中 (1.015) > hover (1.02) > 默认
+        //   按压 0.95 scale 撤销（避免跟 .draggable 抢事件）
         .scaleEffect(currentScale)
         // V3.1：用 Elevation 阴影系统
         //   resting：subtle（始终有微弱阴影，浮起感）
@@ -608,7 +605,7 @@ struct PhotoThumbnailView: View {
         )
         .animation(Animations.standard, value: isActive)
         .animation(Animations.standard, value: isHovered)
-        .animation(Animations.press, value: isPressed)
+        // V3.6.35: 撤销 isPressed 的 animation（已删除 @GestureState）
         .animation(Animations.quick, value: isInMultiSelect)
         .animation(Animations.quick, value: isFocused)
         // hover 检测（仅用于缩放动画）
@@ -622,13 +619,11 @@ struct PhotoThumbnailView: View {
         .onTapGesture(count: 2) {
             onDoubleTap()
         }
-        // V3.6.10: 按压检测（DragGesture(minimumDistance: 0) + @GestureState）
-        .simultaneousGesture(
-            DragGesture(minimumDistance: 0)
-                .updating($isPressed) { _, state, _ in
-                    state = true
-                }
-        )
+        // V3.6.35: 撤销 V3.6.10 的按压 scale .simultaneousGesture
+        //   原因：DragGesture(minimumDistance: 0) 在 macOS 26.5 上抢占 .draggable 事件，
+        //   导致拖出完全失效（V3.6.27-V3.6.34 都因为这个 gesture 坏 drag）
+        //   牺牲按压 5% 缩放效果，换回 drag 功能
+        //   按住仍可通过 .onLongPressGesture 之类后续恢复
         // V3.6.10: 键盘聚焦绑定（方向键导航时高亮）
         .focused($isFocused)
         .focusable(true)
