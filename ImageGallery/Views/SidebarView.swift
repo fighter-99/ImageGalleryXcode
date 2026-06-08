@@ -97,10 +97,11 @@ struct SidebarView: View {
                 }
                 .background(
                     RoundedRectangle(cornerRadius: Radius.sm)
-                        .fill(isTrashDropTargeted ? Color.orange.opacity(0.25) : Color.clear)
+                        .fill(isTrashDropTargeted ? Color.orange.opacity(0.28) : Color.clear)
                         .padding(-4)
                 )
-                .animation(Animations.quick, value: isTrashDropTargeted)
+                // V3.6.36: 改用 springGentle 让高亮动画更平滑
+                .animation(Animations.springGentle, value: isTrashDropTargeted)
             } header: {
                 // V3.6.25: 隐藏 section header（"我的图馆"）
                 EmptyView()
@@ -389,11 +390,13 @@ struct SidebarView: View {
     }
 
     // 拖拽高亮背景（V3.5.17：fill + border，Photos.app 风格）
+    // V3.6.36: 改用 springGentle 替换 quick（0.15s 太快，视觉像突现）
+    //   + 0.20 → 0.28 透明度（更明显）+ 加 .shadow 让高亮有"抬起"感
     private func folderDropHighlight(_ folder: Folder) -> some View {
         ZStack {
             RoundedRectangle(cornerRadius: Radius.sm)
                 .fill(dropTargetFolderID == folder.id
-                      ? Color.accentColor.opacity(0.20)
+                      ? Color.accentColor.opacity(0.28)
                       : Color.clear)
                 .padding(-4)
             RoundedRectangle(cornerRadius: Radius.sm)
@@ -402,8 +405,14 @@ struct SidebarView: View {
                         : Color.clear,
                         lineWidth: 2)
                 .padding(-4)
+                .shadow(
+                    color: dropTargetFolderID == folder.id
+                        ? Color.accentColor.opacity(0.4)
+                        : .clear,
+                    radius: 6
+                )
         }
-        .animation(Animations.quick, value: dropTargetFolderID == folder.id)
+        .animation(Animations.springGentle, value: dropTargetFolderID == folder.id)
     }
 
     // V3.5.8：把 ForEach 里的复杂修饰符链抽出（修类型检查超时）
