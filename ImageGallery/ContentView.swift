@@ -620,12 +620,9 @@ struct ContentView: View {
                         )
                     }
                 )
-                .boxSelectionGesture(
-                    isBoxSelecting: $isBoxSelecting,
-                    selectedIDs: $selectedIDs,
-                    lastSelectedID: $lastSelectedID,
-                    visiblePhotos: visiblePhotos
-                )
+                // V3.6.28 R2: box-selection gesture 现在封装在 PhotoGridView.photoGrid 内部
+                // 不需要在 ContentView 顶层再加。grid 内部用 .local coordinate space +
+                // onGeometryChange 上报 cell frame，跟 cell .onDrag 不冲突。
             },
             statusBar: {
                 // V3.5.6 Finder 化：Status Bar（底部信息条）
