@@ -473,10 +473,18 @@ struct PhotoThumbnailView: View {
     }
 
     /// V3.6.35: 当前缩放比例（按压 scale 撤销，hover > 选中 > 默认）
+    /// V3.6.47: scale priority 修——选中 1.025 > hover 1.02
+    ///   之前选中 1.015 < hover 1.02，点击 cell 反而变小（反 UX）
     private var currentScale: CGFloat {
-        if isActive { return 1.015 }              // 单选：轻微放大
+        if isActive { return 1.025 }              // 单选：放大 2.5%
         if isHovered && !isInMultiSelect { return 1.02 }  // hover：放大 2%
         return 1.0
+    }
+
+    /// V3.6.47: 选中背景色——选中时加 accentColor 微染色（5% opacity）
+    ///   跟边框 + scale 一起加强'被选中'的视觉信号
+    private var selectionBackground: Color {
+        isActive ? Color.accentColor.opacity(0.10) : .clear
     }
 
     /// V3.6.46: 浅色边框——选中/多选时隐藏（避免浅色 + 深蓝两层叠）
@@ -592,6 +600,8 @@ struct PhotoThumbnailView: View {
         .frame(maxWidth: .infinity)
         .frame(height: cellHeight)
         .background(Palette.cellBackground)
+        // V3.6.47: 选中时加 accentColor 微染色（在原背景上叠加）
+        .background(selectionBackground)
         .cornerRadius(Radius.md)
         .clipped()
         // V3.1：1pt 微妙边框（暗色下也能看清缩略图边界）
@@ -634,6 +644,8 @@ struct PhotoThumbnailView: View {
             x: 0,
             y: isHovered ? Elevation.strong.y : Elevation.subtle.y
         )
+        // V3.6.47: 选中背景色动画——让 selectionBackground 平滑淡入/淡出
+        .animation(Animations.standard, value: selectionBackground)
         // V3.6.45: 选中 isActive 用 standard（0.2s 极快），hover/focus 仍 springGentle（环境反馈可以 Q 弹）
         .animation(Animations.standard, value: isActive)
         .animation(Animations.springGentle, value: isHovered)
