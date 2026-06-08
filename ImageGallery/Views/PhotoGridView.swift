@@ -626,46 +626,10 @@ struct PhotoThumbnailView: View {
         .help(tooltipText)
         // 拖拽：支持内部文件夹移动 + 拖到 Finder 导出原图
         // V3.6.27: 加 public.file-url 注册（coordinate: false 不走 in-place，避免 V3.5.20 崩溃根因）
+        // V3.6.29: 抽成 DragPayload.build + makeNSItemProvider()——便于 list/timeline 复用 + 单元测试
+        //          行为完全等价（与 V3.6.27 inline 实现对比）
         .onDrag {
-            let provider = NSItemProvider()
-
-            // V3.5.19 修复 NSException：
-            // 1. 提前捕获所有值（photo 是 SwiftData @Model，deferred 访问失效对象会崩）
-            // 2. 用 registerDataRepresentation 替代 registerObject
-            //    （registerObject 提供对象，loadDataRepresentation 要数据，两者不兼容会抛 NSException）
-            //
-            // V3.5.20 修复：删除 registerFileRepresentation（openInPlace 模式崩溃）
-            // V3.6.27 重新加：用 coordinate: false（系统拷一份给 drop target，不走 in-place 模式）
-            //              V3.6 PhotoStorage 把 Photo.fileURL 放到 Application Support/ImageGallery/Photos/
-            //              标准路径，文件可访问，不再有跨进程问题
-            let photoUUID = photo.id.uuidString
-            let uuidData = photoUUID.data(using: .utf8) ?? Data()
-            let photoFileURL = photo.fileURL
-            let suggestedName = photo.filename
-
-            // 1. UUID 数据（Sidebar 文件夹接收 → 移动到文件夹）
-            provider.registerDataRepresentation(
-                forTypeIdentifier: "public.text",
-                visibility: .all
-            ) { completion in
-                completion(uuidData, nil)
-                return Progress()
-            }
-
-            // 2. 原图文件 URL（拖到 Finder / 其他 app 时拷贝原图）
-            // coordinate: false = 系统读完整文件传给 drop target（不走 in-place 模式）
-            provider.registerFileRepresentation(
-                forTypeIdentifier: "public.file-url",
-                fileOptions: [],
-                visibility: .all
-            ) { completion in
-                completion(photoFileURL, false, nil)  // (url, isInPlace: false, error)
-                return nil  // SwiftData @Model 没用 Progress
-            }
-            // 改默认文件名（去掉 UUID 前缀，让 Finder 显示真实文件名）
-            provider.suggestedName = suggestedName
-
-            return provider
+            DragPayload.build(for: photo).makeNSItemProvider()
         }
         .contextMenu {
             Menu {

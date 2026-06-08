@@ -150,6 +150,11 @@ struct PhotoListRow: View {
         .onHover { hovering in
             isHovered = hovering
         }
+        // V3.6.29: List 视图补齐拖出到 Finder（grid 已有，V3.6.27）
+        // 复用 grid 的 DragPayload——同一 NSItemProvider 构造逻辑（public.text UUID + public.file-url 原图）
+        .onDrag {
+            DragPayload.build(for: photo).makeNSItemProvider()
+        }
     }
 
     /// 行背景：选中 > 多选 > hover > 默认
@@ -382,5 +387,10 @@ struct TimelineThumbnail: View {
         }
         .scaleEffect(isActive ? 1.02 : 1.0)
         .animation(Animations.standard, value: isActive)
+        // V3.6.29: Timeline 视图补齐拖出到 Finder（grid 已有，V3.6.27）
+        // 复用 grid 的 DragPayload——同一 NSItemProvider 构造逻辑
+        .onDrag {
+            DragPayload.build(for: photo).makeNSItemProvider()
+        }
     }
 }
