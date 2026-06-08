@@ -73,7 +73,9 @@ struct PhotoListRow: View {
     @State private var isHovered = false
 
     var body: some View {
-        HStack(spacing: Spacing.md) {
+        // V3.6.34: 同样 capture @Model 属性到 local（详见 PhotoGridView 同名注释）
+        let capturedFileURL = photo.fileURL
+        return HStack(spacing: Spacing.md) {
             // 缩略图（紧凑：44x44，比之前的 56 更小）
             ZStack(alignment: .topTrailing) {
                 if let nsImage = ImageLoader.loadImage(at: photo.fileURL, maxPixelSize: 100) {
@@ -151,8 +153,8 @@ struct PhotoListRow: View {
             isHovered = hovering
         }
         // V3.6.33: List 视图也支持拖出到 Finder / 侧栏
-        // .draggable(URL) 是 macOS 13+ 现代 API，跟 grid 一样用同一份代码
-        .draggable(photo.fileURL)
+        // V3.6.34: 同样 capture @Model 属性到 local（详见 PhotoGridView 同名注释）
+        .draggable(capturedFileURL)
     }
 
     /// 行背景：选中 > 多选 > hover > 默认
@@ -340,7 +342,9 @@ struct TimelineThumbnail: View {
     let isActive: Bool
 
     var body: some View {
-        ZStack(alignment: .topTrailing) {
+        // V3.6.34: 同样 capture @Model 属性到 local（详见 PhotoGridView 同名注释）
+        let capturedFileURL = photo.fileURL
+        return ZStack(alignment: .topTrailing) {
             if let nsImage = ImageLoader.loadImage(at: photo.fileURL, maxPixelSize: 400) {
                 Image(nsImage: nsImage)
                     .resizable()
@@ -386,6 +390,7 @@ struct TimelineThumbnail: View {
         .scaleEffect(isActive ? 1.02 : 1.0)
         .animation(Animations.standard, value: isActive)
         // V3.6.33: Timeline 视图也支持拖出到 Finder / 侧栏
-        .draggable(photo.fileURL)
+        // V3.6.34: 同样 capture @Model 属性到 local（详见 PhotoGridView 同名注释）
+        .draggable(capturedFileURL)
     }
 }

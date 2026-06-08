@@ -478,7 +478,11 @@ struct PhotoThumbnailView: View {
     }
 
     var body: some View {
-        ZStack(alignment: .topTrailing) {
+        // V3.6.34: capture @Model 属性到 local（避免 payload 闭包在 background thread 访问）
+        //   详见 .draggable 注释
+        let capturedFileURL = photo.fileURL
+        let capturedPreviewImage = loadedImage
+        return ZStack(alignment: .topTrailing) {
             // 图片（垂直居中 + 按原比例）
             // V3.6.8: trash 视图下加灰度 + 降低不透明度，让"已删除"感更强
             // V3.6.14: 暗色下 opacity 0.65（暗背景下半透明不会"黑掉"）
@@ -638,20 +642,30 @@ struct PhotoThumbnailView: View {
         //   - URL 自带 Transferable，自动注册 public.file-url，Finder 直接拷原图
         //   - Sidebar 用 .dropDestination(for: URL.self) 接收后按 fileURL 查 photo
         //
-        // V3.6.30: 拖出语义决策
+        // V3.6.34: 关键修复
         // ─────────────────────────────────────────────────────────
+        // .draggable 的 payload 是 @autoclosure @escaping，drag-start 时才求值
+        // macOS 26.5 上 drag-start 可能在 background thread，SwiftData @Model
+        // 属性访问（photo.fileURL）要求 main thread，会拿到 stale data 或失效
+        // 修复：把 SwiftData @Model 属性 capture 到 local let，payload 闭包只
+        // 返回已捕获的 URL 值（值类型，thread-safe），不再访问 @Model
+        // preview 闭包里的 loadedImage (@State) 同理
+        // 验证：用户用 10 行 .draggable 测试 view work，但 ImageGallery 不 work
+        // → 区别就是 ImageGallery 用了 SwiftData @Model 属性作 payload
+        // ─────────────────────────────────────────────────────────
+        //
+        // V3.6.30: 拖出语义决策
         // 本 .draggable 编码的是"被拖的那张"原图，**不**展开到整个 selectedIDs。
         // 这与 computeDragReorder 的"展开到整组"语义形成对比——
         // 本路径走 Finder 导出，单图语义与 Photos.app 一致：
         //   多选状态下拖任意一张 = 导出那一张（不是整组一起导出）
-        // ─────────────────────────────────────────────────────────
-        .draggable(photo.fileURL) {
-            // 拖动预览：缩略图（用已加载的 loadedImage 避免重读盘）
+        .draggable(capturedFileURL) {
+            // 拖动预览：缩略图（用已加载的 capturedPreviewImage 避免重读盘 + @State 访问）
             ZStack {
                 RoundedRectangle(cornerRadius: Radius.md)
                     .fill(Palette.cellBackground)
                     .frame(width: 80, height: 80)
-                if let nsImage = loadedImage {
+                if let nsImage = capturedPreviewImage {
                     Image(nsImage: nsImage)
                         .resizable()
                         .aspectRatio(contentMode: .fill)
