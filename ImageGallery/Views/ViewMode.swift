@@ -150,6 +150,17 @@ struct PhotoListRow: View {
         .onHover { hovering in
             isHovered = hovering
         }
+        // V3.6.28: 框选 V2——上报 cell frame 到 BoxSelectionFramePreferenceKey
+        // 与 grid 的 PhotoThumbnailView 用同一命名坐标系 ".named("boxSelectSpace")"
+        // 这样无论视图模式是 grid / list / timeline，框选都能命中正确的 cell
+        .background(
+            GeometryReader { proxy in
+                Color.clear.preference(
+                    key: BoxSelectionFramePreferenceKey.self,
+                    value: [photo.id: proxy.frame(in: .named("boxSelectSpace"))]
+                )
+            }
+        )
     }
 
     /// 行背景：选中 > 多选 > hover > 默认
@@ -382,5 +393,15 @@ struct TimelineThumbnail: View {
         }
         .scaleEffect(isActive ? 1.02 : 1.0)
         .animation(Animations.standard, value: isActive)
+        // V3.6.28: 框选 V2——上报 cell frame 到 BoxSelectionFramePreferenceKey
+        // 与 grid 的 PhotoThumbnailView 用同一命名坐标系
+        .background(
+            GeometryReader { proxy in
+                Color.clear.preference(
+                    key: BoxSelectionFramePreferenceKey.self,
+                    value: [photo.id: proxy.frame(in: .named("boxSelectSpace"))]
+                )
+            }
+        )
     }
 }

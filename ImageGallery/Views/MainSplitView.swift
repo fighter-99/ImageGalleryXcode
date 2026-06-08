@@ -24,6 +24,8 @@ struct MainSplitView<Sidebar: View, Center: View, Detail: View>: View {
     @Binding var showDetail: Bool
     @Binding var isDropTargeted: Bool
     @Binding var isBoxSelecting: Bool
+    // V3.6.28: 框选 V2——拖动期间的 selectionRect（用于 overlay 绘制 + 命中计算）
+    @Binding var selectionRect: CGRect
 
     let onDrop: ([NSItemProvider]) -> Bool
 
@@ -37,6 +39,8 @@ struct MainSplitView<Sidebar: View, Center: View, Detail: View>: View {
         showDetail: Binding<Bool>,
         isDropTargeted: Binding<Bool>,
         isBoxSelecting: Binding<Bool>,
+        // V3.6.28: 框选 V2 新增参数
+        selectionRect: Binding<CGRect>,
         onDrop: @escaping ([NSItemProvider]) -> Bool,
         @ViewBuilder sidebar: () -> Sidebar,
         @ViewBuilder center: () -> Center,
@@ -47,6 +51,8 @@ struct MainSplitView<Sidebar: View, Center: View, Detail: View>: View {
         self._showDetail = showDetail
         self._isDropTargeted = isDropTargeted
         self._isBoxSelecting = isBoxSelecting
+        // V3.6.28
+        self._selectionRect = selectionRect
         self.onDrop = onDrop
         self.sidebar = sidebar()
         self.center = center()
@@ -117,6 +123,24 @@ struct MainSplitView<Sidebar: View, Center: View, Detail: View>: View {
                 .transition(.opacity)
             }
         }
+        // V3.6.28: 框选 V2——拖动期间绘制 selectionRect overlay
+        // 放在 drop target overlay 之后，更高层（视觉上盖在拖入提示之上，万一同时触发）
+        .overlay {
+            if isBoxSelecting && !selectionRect.isEmpty {
+                // 蓝色 1pt 边框 + 10% 不透明度填充，模拟 macOS Finder 框选视觉
+                Rectangle()
+                    .strokeBorder(Color.accentColor, lineWidth: 1)
+                    .background(
+                        Rectangle().fill(Color.accentColor.opacity(0.1))
+                    )
+                    .frame(width: selectionRect.width, height: selectionRect.height)
+                    .position(x: selectionRect.midX, y: selectionRect.midY)
+                    .allowsHitTesting(false)  // 不能挡住手势
+            }
+        }
+        // V3.6.28: 命名坐标系 "boxSelectSpace"——DragGesture 和 cell frame 上报共用此空间
+        // 必须设在 HStack 这一层（cells 都在 HStack 内），保证 frame 坐标一致
+        .coordinateSpace(name: "boxSelectSpace")
         .scrollDisabled(isBoxSelecting)
     }
 }
