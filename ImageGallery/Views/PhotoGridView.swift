@@ -154,6 +154,8 @@ struct PhotoGridView: View {
                 contentView
             }
         }
+        // V3.6.39: 触发视图模式切换的 transition 动画
+        .animation(Animations.medium, value: viewMode)
         .navigationTitle(navigationTitle)
         .onAppear {
             // V3.6.5：首次出现时算一次 photos（之前 photos 是 computed，每次 re-render 重算）
@@ -249,11 +251,13 @@ struct PhotoGridView: View {
     }
 
     // ─── 根据视图模式切换 ───
+    // V3.6.39: 加 .transition(.opacity) + .animation 让模式切换平滑
     @ViewBuilder
     private var contentView: some View {
         switch viewMode {
         case .grid:
             photoGrid
+                .transition(.opacity)
         case .list:
             PhotoListView(
                 photos: photos,
@@ -262,6 +266,7 @@ struct PhotoGridView: View {
                 onTap: handleTap,
                 onDoubleTap: onDoubleTap
             )
+            .transition(.opacity)
         case .timeline:
             PhotoTimelineView(
                 photos: photos,
@@ -270,6 +275,7 @@ struct PhotoGridView: View {
                 onTap: handleTap,
                 onDoubleTap: onDoubleTap
             )
+            .transition(.opacity)
         }
     }
 
@@ -554,6 +560,7 @@ struct PhotoThumbnailView: View {
             }
 
             // 多选 ✓ 圆点
+            // V3.6.38: 加 .animation 触发 transition（之前 transition 写了但没 animation 所以不生效）
             if isInMultiSelect {
                 Image(systemName: "checkmark.circle.fill")
                     .font(.title2)
@@ -565,6 +572,8 @@ struct PhotoThumbnailView: View {
                     .transition(.scale.combined(with: .opacity))
             }
         }
+        // V3.6.38: 触发 ✓ 圆点 transition 动画（springGentle 让"出现/消失"更自然）
+        .animation(Animations.springGentle, value: isInMultiSelect)
         .frame(maxWidth: .infinity)
         .frame(height: cellHeight)
         .background(Palette.cellBackground)
@@ -605,7 +614,6 @@ struct PhotoThumbnailView: View {
         )
         .animation(Animations.standard, value: isActive)
         .animation(Animations.standard, value: isHovered)
-        // V3.6.35: 撤销 isPressed 的 animation（已删除 @GestureState）
         .animation(Animations.quick, value: isInMultiSelect)
         .animation(Animations.quick, value: isFocused)
         // hover 检测（仅用于缩放动画）
@@ -619,11 +627,6 @@ struct PhotoThumbnailView: View {
         .onTapGesture(count: 2) {
             onDoubleTap()
         }
-        // V3.6.35: 撤销 V3.6.10 的按压 scale .simultaneousGesture
-        //   原因：DragGesture(minimumDistance: 0) 在 macOS 26.5 上抢占 .draggable 事件，
-        //   导致拖出完全失效（V3.6.27-V3.6.34 都因为这个 gesture 坏 drag）
-        //   牺牲按压 5% 缩放效果，换回 drag 功能
-        //   按住仍可通过 .onLongPressGesture 之类后续恢复
         // V3.6.10: 键盘聚焦绑定（方向键导航时高亮）
         .focused($isFocused)
         .focusable(true)
@@ -673,7 +676,58 @@ struct PhotoThumbnailView: View {
                 }
             }
         }
-        .contextMenu {
+        // V3.6.37: 把 contextMenu + confirmationDialog 抽到独立 view
+        //   原因：cell 主体 + 30+ modifier + 这两个复杂 modifier 让 Swift 编译器 type-check 超时
+        //   V3.6.17/V3.6.23 教训：ContentView 110+ 行也踩过同样的坑
+        //   解决：拆子 view，Swift 编译器每个 view 独立 type-check
+        .background(
+            EmptyView()
+        )
+        .modifier(CellContextMenuModifier(
+            photo: photo,
+            folders: folders,
+            allTags: allTags,
+            modelContext: modelContext,
+            toggleTag: toggleTag,
+            showingDeleteConfirm: $showingDeleteConfirm,
+            onDelete: onDelete
+        ))
+        .confirmationDialog(
+            "确定要删除这张图片吗？",
+            isPresented: $showingDeleteConfirm,
+            titleVisibility: .visible
+        ) {
+            Button("删除", role: .destructive) {
+                onDelete()
+            }
+            Button("取消", role: .cancel) {}
+        } message: {
+            Text("图片将从图库中移除，文件也会被永久删除。")
+        }
+    }
+
+    private func toggleTag(_ tag: Tag, on photo: Photo) {
+        if let index = photo.tags.firstIndex(where: { $0.id == tag.id }) {
+            photo.tags.remove(at: index)
+        } else {
+            photo.tags.append(tag)
+        }
+        try? modelContext.save()
+    }
+}
+
+// V3.6.37: cell contextMenu 抽出独立 ViewModifier（V3.6.17/6.23 type-check timeout 教训）
+struct CellContextMenuModifier: ViewModifier {
+    let photo: Photo
+    let folders: [Folder]
+    let allTags: [Tag]
+    let modelContext: ModelContext
+    let toggleTag: (Tag, Photo) -> Void
+    @Binding var showingDeleteConfirm: Bool
+    let onDelete: () -> Void
+
+    func body(content: Content) -> some View {
+        content.contextMenu {
             Menu {
                 Button {
                     photo.folder = nil
@@ -703,7 +757,7 @@ struct PhotoThumbnailView: View {
             Menu {
                 ForEach(allTags) { tag in
                     Button {
-                        toggleTag(tag, on: photo)
+                        toggleTag(tag, photo)
                     } label: {
                         if photo.tags.contains(where: { $0.id == tag.id }) {
                             Label(tag.name, systemImage: "checkmark")
@@ -736,27 +790,6 @@ struct PhotoThumbnailView: View {
                 Label("删除", systemImage: "trash")
             }
         }
-        .confirmationDialog(
-            "确定要删除这张图片吗？",
-            isPresented: $showingDeleteConfirm,
-            titleVisibility: .visible
-        ) {
-            Button("删除", role: .destructive) {
-                onDelete()
-            }
-            Button("取消", role: .cancel) {}
-        } message: {
-            Text("图片将从图库中移除，文件也会被永久删除。")
-        }
-    }
-
-    private func toggleTag(_ tag: Tag, on photo: Photo) {
-        if let index = photo.tags.firstIndex(where: { $0.id == tag.id }) {
-            photo.tags.remove(at: index)
-        } else {
-            photo.tags.append(tag)
-        }
-        try? modelContext.save()
     }
 }
 
