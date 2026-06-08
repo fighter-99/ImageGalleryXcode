@@ -487,14 +487,6 @@ struct PhotoThumbnailView: View {
         isActive ? Color.accentColor.opacity(0.10) : .clear
     }
 
-    /// V3.6.46: 浅色边框——选中/多选时隐藏（避免浅色 + 深蓝两层叠）
-    private var lightBorderColor: Color {
-        (isActive || isInMultiSelect) ? .clear : Surface.cardBorder
-    }
-    private var lightBorderWidth: CGFloat {
-        (isActive || isInMultiSelect) ? 0 : 1
-    }
-
     private var aspectRatio: CGFloat {
         if photo.width > 0 && photo.height > 0 {
             return CGFloat(photo.width) / CGFloat(photo.height)
@@ -604,14 +596,10 @@ struct PhotoThumbnailView: View {
         .background(selectionBackground)
         .cornerRadius(Radius.md)
         .clipped()
-        // V3.1：1pt 微妙边框（暗色下也能看清缩略图边界）
-        // V3.6.46: 选中时隐藏（之前选中时浅色 + 深蓝两层叠）
-        .overlay {
-            RoundedRectangle(cornerRadius: Radius.md)
-                .strokeBorder(lightBorderColor, lineWidth: lightBorderWidth)
-        }
-        .animation(Animations.standard, value: lightBorderColor)
-        .animation(Animations.standard, value: lightBorderWidth)
+        // V3.6.48: 彻底删除 V3.1 的 1pt 浅色边框
+        //   之前 V3.6.46 是'选中时隐藏'，但 0.2s 淡出动画期间用户看到'浅色变深蓝'过渡感
+        //   现在直接不要这层边框——cells 视觉分离靠 background + shadow
+        //   （resting 状态下也有 subtle 阴影，V3.1 引入）
         // 边框：单选激活显示蓝色边框（V3.1：4pt → 3pt，更克制）
         // V3.6.40: 加 .animation 让边框线宽 / 颜色过渡平滑
         // V3.6.45: standard（0.2s easeInOut）替换 springGentle——选中是高频操作要 snappy
