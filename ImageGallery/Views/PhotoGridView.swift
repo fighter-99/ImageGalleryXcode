@@ -313,44 +313,45 @@ struct PhotoGridView: View {
         selectedIDs.count <= 1 ? (selectedIDs.first ?? selectedPhoto?.id) : nil
     }
 
-    // ─── 处理点击 ───
+    // ─── 处理点击（V3.6.30：抽成 MultiSelectMath.handleTap 纯函数 thin wrapper）───
     private func handleTap(_ photo: Photo) {
         let modifiers = NSEvent.modifierFlags
-        if modifiers.contains(.command) {
-            // ⌘+点击：toggle 多选
-            if selectedIDs.contains(photo.id) {
-                selectedIDs.remove(photo.id)
-            } else {
-                selectedIDs.insert(photo.id)
-            }
-            lastSelectedID = photo.id
-            // ⌘+点击不改变 selectedPhoto
-        } else if modifiers.contains(.shift) {
-            // ⇧+点击：范围选择
-            rangeSelect(to: photo.id)
-            selectedPhoto = nil
-        } else {
-            // 普通单击：单选 + 清空多选
-            selectedIDs = [photo.id]
-            selectedPhoto = photo
-            lastSelectedID = photo.id
-        }
+        let modifier: ClickModifier = {
+            if modifiers.contains(.command) { return .command }
+            if modifiers.contains(.shift) { return .shift }
+            return .plain
+        }()
+        let state = SelectionState(
+            selectedIDs: selectedIDs,
+            lastSelectedID: lastSelectedID,
+            selectedPhotoID: selectedPhoto?.id
+        )
+        let photoIDs = photos.map { $0.id }
+        let outcome = MultiSelectMath.handleTap(
+            state: state,
+            photoID: photo.id,
+            modifier: modifier,
+            photoIDs: photoIDs
+        )
+        applyTapOutcome(outcome, clickedPhoto: photo)
     }
 
-    // ─── 范围选择 ───
-    private func rangeSelect(to id: UUID) {
-        guard let lastID = lastSelectedID,
-              let lastIdx = photos.firstIndex(where: { $0.id == lastID }),
-              let currentIdx = photos.firstIndex(where: { $0.id == id }) else {
-            selectedIDs = [id]
-            lastSelectedID = id
-            return
+    // ─── 应用 TapOutcome 到 @State（V3.6.30：handleTap 拆出来后必要的 glue）───
+    private func applyTapOutcome(_ outcome: TapOutcome, clickedPhoto: Photo) {
+        let s: SelectionState
+        switch outcome {
+        case .singleSelect(let x), .toggleMultiSelect(let x), .rangeSelect(let x):
+            s = x
         }
-        let lower = min(lastIdx, currentIdx)
-        let upper = max(lastIdx, currentIdx)
-        let range = photos[lower...upper]
-        selectedIDs = Set(range.map { $0.id })
-        lastSelectedID = id
+        selectedIDs = s.selectedIDs
+        lastSelectedID = s.lastSelectedID
+        // selectedPhoto 只在 .singleSelect 时设（保持与原 handleTap 行为一致）
+        switch outcome {
+        case .singleSelect:
+            selectedPhoto = clickedPhoto
+        case .toggleMultiSelect, .rangeSelect:
+            selectedPhoto = nil
+        }
     }
 
     // ─── 删除（V3.6：走 RecycleBinService.recycle，移到回收站）───
@@ -628,6 +629,20 @@ struct PhotoThumbnailView: View {
         // V3.6.27: 加 public.file-url 注册（coordinate: false 不走 in-place，避免 V3.5.20 崩溃根因）
         // V3.6.29: 抽成 DragPayload.build + makeNSItemProvider()——便于 list/timeline 复用 + 单元测试
         //          行为完全等价（与 V3.6.27 inline 实现对比）
+        //
+        // V3.6.30: 拖出语义决策落地
+        // ─────────────────────────────────────────────────────────
+        // 本 .onDrag 编码的是"被拖的那张"原图，**不**展开到整个 selectedIDs。
+        //
+        // 这与 computeDragReorder 的"展开到整组"语义形成对比——后者是为未来的
+        // grid 内部 reorder 准备的（目前无 UI 接入，PhotoGridView.swift:384-413）。
+        // 本 .onDrag 走 Finder 导出路径，单图语义与 Photos.app 一致：
+        //   多选状态下拖任意一张 = 导出那一张（不是整组一起导出）
+        //
+        // 若未来要支持"多选一起导"：在此 .onDrag 内遍历 selectedIDs 调
+        // DragPayload.build（同一 NSItemProvider 可 register 多次 file-url），
+        // 并已在 List / Timeline cell 同样加 .onDrag（V3.6.29 已补齐）。
+        // ─────────────────────────────────────────────────────────
         .onDrag {
             DragPayload.build(for: photo).makeNSItemProvider()
         }

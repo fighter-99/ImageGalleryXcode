@@ -48,3 +48,4 @@ Pods/
 
 # Carthage (unused here, but standard)
 Carthage/Build/
+default.profraw
