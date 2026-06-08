@@ -105,8 +105,9 @@ struct DetailPane: View {
             }
         }
         .id(viewKind)  // V3.6.44: 视图类型变化时强制 transition
-        .transition(.opacity.combined(with: .move(edge: .trailing)))
-        // V3.6.44: 驱动 transition 动画（springGentle 让详情面板切换有'翻页'感）
-        .animation(Animations.springGentle, value: viewKind)
+        .transition(.opacity)
+        // V3.6.46: 用户反馈详情面板"向右翻页"感太重，去掉 .move，只保留 .opacity
+        //   切到 .standard（0.2s easeInOut）—— 详情面板切换不需 Q 弹，平滑即可
+        .animation(Animations.standard, value: viewKind)
     }
 }
