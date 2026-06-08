@@ -687,9 +687,48 @@ struct PhotoThumbnailView: View {
         // 若未来要支持"多选一起导"：在此 .onDrag 内遍历 selectedIDs 调
         // DragPayload.build（同一 NSItemProvider 可 register 多次 file-url），
         // 并已在 List / Timeline cell 同样加 .onDrag（V3.6.29 已补齐）。
+        //
+        // V3.6.31 撤销：回滚到 V3.6.27 的 inline .onDrag 实现
+        // 原因：V3.6.29 的 DragPayload 抽函数 refactor 在 macOS 26.5 用户环境
+        // 导致 drag 行为异常（拖到侧栏文件夹/回收站/Finder 都失效）
+        // DragPayloadTests 5 个 pass，但 NSItemProvider 实际行为在用户环境失败
+        // 推测：extension 中的 instance method 调用时机有问题（V3.6.27 inline
+        // closure 直接 capture photo.* 到 let，跟现在的 .onDrag 闭包调用
+        // DragPayload.build + makeNSItemProvider() 的两步式调用在某些边缘场景下
+        // SwiftData @Model 的 capture 顺序导致 NSItemProvider 注册时序异常）
+        // DragPayload.swift + DragPayloadTests.swift 保留为 dormant
         // ─────────────────────────────────────────────────────────
         .onDrag {
-            DragPayload.build(for: photo).makeNSItemProvider()
+            let provider = NSItemProvider()
+            // V3.6.27 原文：提前 capture 到 let（SwiftData @Model deferred 访问安全）
+            let photoUUID = photo.id.uuidString
+            let uuidData = photoUUID.data(using: .utf8) ?? Data()
+            let photoFileURL = photo.fileURL
+            let suggestedName = photo.filename
+
+            // 1. UUID 数据（Sidebar 文件夹接收 → 移动到文件夹）
+            provider.registerDataRepresentation(
+                forTypeIdentifier: "public.text",
+                visibility: .all
+            ) { completion in
+                completion(uuidData, nil)
+                return Progress()
+            }
+
+            // 2. 原图文件 URL（拖到 Finder / 其他 app 时拷贝原图）
+            // coordinate: false = 系统读完整文件传给 drop target（不走 in-place 模式）
+            provider.registerFileRepresentation(
+                forTypeIdentifier: "public.file-url",
+                fileOptions: [],
+                visibility: .all
+            ) { completion in
+                completion(photoFileURL, false, nil)
+                return nil
+            }
+            // 改默认文件名（去掉 UUID 前缀，让 Finder 显示真实文件名）
+            provider.suggestedName = suggestedName
+
+            return provider
         }
         .contextMenu {
             Menu {

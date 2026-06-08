@@ -3,8 +3,17 @@
 //  ImageGallery
 //
 //  V3.6.29：把 V3.6.27 的 .onDrag NSItemProvider 构造抽成可测试的纯函数 seam。
+//  V3.6.31：DORMANT——撤销 refactor 回 V3.6.27 inline .onDrag 实现
 //
-//  设计要点：
+//  ⚠️ dormant 模块原因：
+//  V3.6.29 refactor 后用户在 macOS 26.5 GUI session 下报告 drag 全坏（4 种都坏）。
+//  V3.6.31 把所有调用方（PhotoGridView / ViewMode）回滚到 V3.6.27 inline 实现，
+//  DragPayload 结构 / makeNSItemProvider 不再被任何生产代码调用。
+//  推测根因：extension 中的 instance method 调用时机在某些边缘场景下，
+//  SwiftData @Model 的 capture 顺序导致 NSItemProvider 注册时序异常。
+//  DragPayloadTests 5 个仍 pass（只测结构字段，不测 NSItemProvider 实际行为）。
+//
+//  ─── 设计要点（保留供未来参考）───
 //  - 纯数据结构：uuidData / fileURL / suggestedName 三个字段，Equatable 可单测
 //  - 关键不变量（从 V3.6.27 抽出来，必须保持）：
 //    1. 提前捕获所有 photo 字段到 let（SwiftData @Model deferred 访问安全）
