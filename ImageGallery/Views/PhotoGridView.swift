@@ -578,8 +578,9 @@ struct PhotoThumbnailView: View {
                     .transition(.scale.combined(with: .opacity))
             }
         }
-        // V3.6.38: 触发 ✓ 圆点 transition 动画（springGentle 让"出现/消失"更自然）
-        .animation(Animations.springGentle, value: isInMultiSelect)
+        // V3.6.45: 选中（isInMultiSelect）用 standard（0.2s easeInOut）——springGentle 0.35s 太慢
+        //   多选点击是高频操作，spring 反弹感在选择场景下反而像'卡顿'
+        .animation(Animations.standard, value: isInMultiSelect)
         .frame(maxWidth: .infinity)
         .frame(height: cellHeight)
         .background(Palette.cellBackground)
@@ -591,7 +592,8 @@ struct PhotoThumbnailView: View {
                 .strokeBorder(Surface.cardBorder, lineWidth: 1)
         }
         // 边框：单选激活显示蓝色边框（V3.1：4pt → 3pt，更克制）
-        // V3.6.40: 加 .animation 让边框线宽 / 颜色过渡平滑（之前是突现）
+        // V3.6.40: 加 .animation 让边框线宽 / 颜色过渡平滑
+        // V3.6.45: standard（0.2s easeInOut）替换 springGentle——选中是高频操作要 snappy
         .overlay {
             RoundedRectangle(cornerRadius: Radius.md)
                 .stroke(
@@ -599,7 +601,7 @@ struct PhotoThumbnailView: View {
                     lineWidth: isActive ? 3 : 0
                 )
         }
-        .animation(Animations.springGentle, value: isActive)
+        .animation(Animations.standard, value: isActive)
         // 多选选中显示蓝色蒙层 + 边框
         // V3.6.40: 同样 spring 动画（多选/单选切换不突现）
         .overlay {
@@ -621,8 +623,8 @@ struct PhotoThumbnailView: View {
             x: 0,
             y: isHovered ? Elevation.strong.y : Elevation.subtle.y
         )
-        // V3.6.40: 升级所有 cell 状态切换动画到 springGentle（统一"Q 弹"感）
-        .animation(Animations.springGentle, value: isActive)
+        // V3.6.45: 选中 isActive 用 standard（0.2s 极快），hover/focus 仍 springGentle（环境反馈可以 Q 弹）
+        .animation(Animations.standard, value: isActive)
         .animation(Animations.springGentle, value: isHovered)
         .animation(Animations.springGentle, value: isFocused)
         // hover 检测（仅用于缩放动画）
