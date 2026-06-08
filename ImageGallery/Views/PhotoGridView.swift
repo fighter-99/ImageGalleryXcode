@@ -35,11 +35,6 @@ struct PhotoGridView: View {
     @Binding var selectedIDs: Set<UUID>
     @Binding var lastSelectedID: UUID?
 
-    // V3.6.28 R2: 框选 V2 状态（grid 内部用，不上抛到 ContentView）
-    @State private var cellFrames: [UUID: CGRect] = [:]
-    @State private var selectionRect: CGRect = .zero
-    @State private var isBoxSelecting: Bool = false
-
     // 筛选条件
     let folder: Folder?
     let tag: Tag?
@@ -302,14 +297,6 @@ struct PhotoGridView: View {
                         onTap: { handleTap(photo) },
                         onDoubleTap: { onDoubleTap(photo) }
                     )
-                    // V3.6.28 R2: 框选 V2——cell 上报自己的 frame
-                    // 用 onGeometryChange 比 .background(GeometryReader) 性能好（V3.6.28 教训）
-                    // .local = cell 所在 ScrollView 的坐标系
-                    .onGeometryChange(for: CGRect.self) { proxy in
-                        proxy.frame(in: .local)
-                    } action: { newFrame, _ in
-                        cellFrames[photo.id] = newFrame
-                    }
                     .transition(.asymmetric(
                         insertion: .scale(scale: 0.8).combined(with: .opacity),
                         removal: .scale(scale: 0.6).combined(with: .opacity)
@@ -319,38 +306,12 @@ struct PhotoGridView: View {
             .padding()
             .animation(Animations.medium, value: photos.count)
         }
-        // V3.6.28 R2: 框选 V2 手势——只加在 grid ScrollView，不加 MainSplitView
-        // 这样作用域只在 grid 区域，sidebar / detail 的 drag 完全不受影响
-        .boxSelectionGesture(
-            isBoxSelecting: $isBoxSelecting,
-            selectionRect: $selectionRect,
-            cellFrames: cellFrames,
-            selectedIDs: $selectedIDs,
-            lastSelectedID: $lastSelectedID,
-            visiblePhotos: photos
-        )
-        // V3.6.28 R2: 框选矩形 overlay
-        .overlay {
-            if isBoxSelecting && !selectionRect.isEmpty {
-                Rectangle()
-                    .strokeBorder(Color.accentColor, lineWidth: 1)
-                    .background(
-                        Rectangle().fill(Color.accentColor.opacity(0.1))
-                    )
-                    .frame(
-                        width: selectionRect.width,
-                        height: selectionRect.height
-                    )
-                    .position(x: selectionRect.midX, y: selectionRect.midY)
-                    .allowsHitTesting(false)  // 不能挡住手势
-            }
-        }
-        // V3.6.28 R2: 框选期间锁滚动
-        .scrollDisabled(isBoxSelecting)
-        // V3.6.28 R2: 切换视图模式时清空 cellFrames（list/timeline 用自己的坐标系）
-        .onChange(of: viewMode) { _, _ in
-            cellFrames.removeAll()
-        }
+        // V3.6.32: 撤销 V3.6.28 R2 的所有 UI 接入
+        // 原因：simultaneousGesture(DragGesture) 在 macOS 26.5 上仍抢占 cell 的 .onDrag，
+        // 即使 minimumDistance: 24 也不行。同时 onGeometryChange 给每个 cell 加了 .background
+        // GeometryReader 路径上的 performance 开销（每次 scroll 都更新 cellFrames）。
+        // BoxSelectionMath + BoxSelectionMathTests 保留为 dormant
+        // 等未来找到不跟 cell .onDrag 抢的方法再启用
     }
 
     // 当前单选 ID（用于蓝色边框）
