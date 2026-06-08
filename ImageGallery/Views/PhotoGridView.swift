@@ -481,12 +481,6 @@ struct PhotoThumbnailView: View {
         return 1.0
     }
 
-    /// V3.6.47: 选中背景色——选中时加 accentColor 微染色（5% opacity）
-    ///   跟边框 + scale 一起加强'被选中'的视觉信号
-    private var selectionBackground: Color {
-        isActive ? Color.accentColor.opacity(0.10) : .clear
-    }
-
     private var aspectRatio: CGFloat {
         if photo.width > 0 && photo.height > 0 {
             return CGFloat(photo.width) / CGFloat(photo.height)
@@ -592,8 +586,9 @@ struct PhotoThumbnailView: View {
         .frame(maxWidth: .infinity)
         .frame(height: cellHeight)
         .background(Palette.cellBackground)
-        // V3.6.47: 选中时加 accentColor 微染色（在原背景上叠加）
-        .background(selectionBackground)
+        // V3.6.50: 删除 V3.6.47 加的 5% accent 背景染色
+        //   之前用户反馈'先出现淡色框再出现深蓝框'——淡色框就是这个 5% accent
+        //   选中视觉现在只靠 3pt 深蓝边框 + scale 1.025 + hover 阴影
         .cornerRadius(Radius.md)
         .clipped()
         // V3.6.48: 彻底删除 V3.1 的 1pt 浅色边框
@@ -634,8 +629,7 @@ struct PhotoThumbnailView: View {
             x: 0,
             y: isHovered ? Elevation.strong.y : Elevation.subtle.y
         )
-        // V3.6.47: 选中背景色动画——让 selectionBackground 平滑淡入/淡出
-        .animation(Animations.standard, value: selectionBackground)
+        // V3.6.50: 删除 V3.6.47 加的 selectionBackground 动画（属性本身也删了）
         // V3.6.45: 选中 isActive 用 standard（0.2s 极快），hover/focus 仍 springGentle（环境反馈可以 Q 弹）
         .animation(Animations.standard, value: isActive)
         .animation(Animations.springGentle, value: isHovered)
