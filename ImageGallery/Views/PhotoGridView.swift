@@ -602,22 +602,24 @@ struct PhotoThumbnailView: View {
         //   （resting 状态下也有 subtle 阴影，V3.1 引入）
         // 边框：单选激活显示蓝色边框（V3.1：4pt → 3pt，更克制）
         // V3.6.40: 加 .animation 让边框线宽 / 颜色过渡平滑
-        // V3.6.45: standard（0.2s easeInOut）替换 springGentle——选中是高频操作要 snappy
+        // V3.6.49: 边框从 lineWidth 0→3 改为 opacity 0→1
+        //   之前 lineWidth 增长动画早期看起来'细线'，被用户读成'浅色→深蓝'两层
+        //   现在保持 lineWidth=3 一直绘制，只 toggle opacity——单层均匀淡入淡出
         .overlay {
             RoundedRectangle(cornerRadius: Radius.md)
                 .stroke(
-                    isActive ? Palette.selectionBorder : Color.clear,
-                    lineWidth: isActive ? 3 : 0
+                    Palette.selectionBorder.opacity(isActive ? 1 : 0),
+                    lineWidth: 3
                 )
         }
         .animation(Animations.standard, value: isActive)
         // 多选选中显示蓝色蒙层 + 边框
-        // V3.6.40: 同样 spring 动画（多选/单选切换不突现）
+        // V3.6.49: 同样 lineWidth=2 一直绘制，toggle opacity
         .overlay {
             RoundedRectangle(cornerRadius: Radius.md)
                 .stroke(
-                    isInMultiSelect ? Palette.selectionBorder : Color.clear,
-                    lineWidth: isInMultiSelect ? 2 : 0
+                    Palette.selectionBorder.opacity(isInMultiSelect ? 1 : 0),
+                    lineWidth: 2
                 )
         }
         // V3.6.35: 缩放优先级 选中 (1.015) > hover (1.02) > 默认
