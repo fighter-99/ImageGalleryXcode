@@ -169,6 +169,9 @@ struct ToolbarView: View {
         .padding(.horizontal, Spacing.sm)
         .padding(.vertical, 4)
         .background(Surface.toolbarControl, in: Capsule())
+        // V3.6.43: 搜索框 focus 时加微阴影，提示当前可输入
+        .shadow(color: searchFieldFocused ? Color.accentColor.opacity(0.3) : .clear, radius: 4)
+        .animation(Animations.springGentle, value: searchFieldFocused)
         // V3.6.23: 监听 ⌘F notification 设 focus
         .onReceive(NotificationCenter.default.publisher(for: .focusSearchField)) { _ in
             searchFieldFocused = true

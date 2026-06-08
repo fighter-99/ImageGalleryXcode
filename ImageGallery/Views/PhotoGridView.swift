@@ -150,12 +150,18 @@ struct PhotoGridView: View {
 
             if photos.isEmpty && !isMultiSelect {
                 emptyState
+                    // V3.6.43: 空状态 fade in/out（之前是突现）
+                    .transition(.opacity)
             } else {
                 contentView
+                    // V3.6.43: 内容 fade in/out
+                    .transition(.opacity)
             }
         }
         // V3.6.39: 触发视图模式切换的 transition 动画
         .animation(Animations.medium, value: viewMode)
+        // V3.6.43: 触发空状态切换的 transition 动画
+        .animation(Animations.medium, value: photos.isEmpty && !isMultiSelect)
         .navigationTitle(navigationTitle)
         .onAppear {
             // V3.6.5：首次出现时算一次 photos（之前 photos 是 computed，每次 re-render 重算）
