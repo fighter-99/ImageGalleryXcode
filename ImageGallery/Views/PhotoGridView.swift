@@ -585,6 +585,7 @@ struct PhotoThumbnailView: View {
                 .strokeBorder(Surface.cardBorder, lineWidth: 1)
         }
         // 边框：单选激活显示蓝色边框（V3.1：4pt → 3pt，更克制）
+        // V3.6.40: 加 .animation 让边框线宽 / 颜色过渡平滑（之前是突现）
         .overlay {
             RoundedRectangle(cornerRadius: Radius.md)
                 .stroke(
@@ -592,7 +593,9 @@ struct PhotoThumbnailView: View {
                     lineWidth: isActive ? 3 : 0
                 )
         }
+        .animation(Animations.springGentle, value: isActive)
         // 多选选中显示蓝色蒙层 + 边框
+        // V3.6.40: 同样 spring 动画（多选/单选切换不突现）
         .overlay {
             RoundedRectangle(cornerRadius: Radius.md)
                 .stroke(
@@ -612,10 +615,10 @@ struct PhotoThumbnailView: View {
             x: 0,
             y: isHovered ? Elevation.strong.y : Elevation.subtle.y
         )
-        .animation(Animations.standard, value: isActive)
-        .animation(Animations.standard, value: isHovered)
-        .animation(Animations.quick, value: isInMultiSelect)
-        .animation(Animations.quick, value: isFocused)
+        // V3.6.40: 升级所有 cell 状态切换动画到 springGentle（统一"Q 弹"感）
+        .animation(Animations.springGentle, value: isActive)
+        .animation(Animations.springGentle, value: isHovered)
+        .animation(Animations.springGentle, value: isFocused)
         // hover 检测（仅用于缩放动画）
         .onHover { hovering in
             isHovered = hovering
@@ -631,6 +634,10 @@ struct PhotoThumbnailView: View {
         .focused($isFocused)
         .focusable(true)
         .focusEffectDisabled(false)  // 启用 macOS 系统 focus ring
+        // V3.6.40: hover 动画升级 .standard → .springGentle（按压更"Q弹"感）
+        // scaleEffect(currentScale) 在前面
+        // animation 之前是 Animations.standard，现改 spring
+        // 删除重复 .animation 块
         // V3.6.10: hover tooltip（文件名 + 尺寸 + 文件大小）
         .help(tooltipText)
         // 拖拽：支持内部文件夹移动 + 拖到 Finder 导出原图
