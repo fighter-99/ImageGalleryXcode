@@ -666,15 +666,21 @@ struct PhotoThumbnailView: View {
         //   多选状态下拖任意一张 = 导出那一张（不是整组一起导出）
         .draggable(capturedFileURL) {
             // 拖动预览：缩略图（用已加载的 capturedPreviewImage 避免重读盘 + @State 访问）
+            // V3.6.42: 加 shadow + 边框 + 放大到 96 + 旋转 1°（"被拿起"感）
             ZStack {
                 RoundedRectangle(cornerRadius: Radius.md)
                     .fill(Palette.cellBackground)
-                    .frame(width: 80, height: 80)
+                    .frame(width: 96, height: 96)
+                    .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: Radius.md)
+                            .strokeBorder(Color.accentColor.opacity(0.6), lineWidth: 1.5)
+                    )
                 if let nsImage = capturedPreviewImage {
                     Image(nsImage: nsImage)
                         .resizable()
                         .aspectRatio(contentMode: .fill)
-                        .frame(width: 80, height: 80)
+                        .frame(width: 96, height: 96)
                         .clipShape(RoundedRectangle(cornerRadius: Radius.md))
                 } else {
                     Image(systemName: "photo")
@@ -682,6 +688,7 @@ struct PhotoThumbnailView: View {
                         .foregroundStyle(.secondary)
                 }
             }
+            .rotationEffect(.degrees(1))  // 微旋转加强"被拿起"感
         }
         // V3.6.37: 把 contextMenu + confirmationDialog 抽到独立 view
         //   原因：cell 主体 + 30+ modifier + 这两个复杂 modifier 让 Swift 编译器 type-check 超时

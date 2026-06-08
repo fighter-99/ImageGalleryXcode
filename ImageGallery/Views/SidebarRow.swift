@@ -25,25 +25,25 @@ struct SidebarRow: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: 8) {
-                // 图标
+                // 图标：V3.6.41 选中/hover 时亮度提升（secondary → primary）
                 Image(systemName: icon)
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(iconColor ?? (isSelected ? Color.accentColor : Color.secondary))
+                    .foregroundStyle(iconColor ?? (isSelected || isHovered ? Color.accentColor : Color.secondary))
                     .frame(width: 18)
 
                 // 文字
                 Text(label)
                     .font(.callout)
-                    .foregroundStyle(isSelected ? Color.accentColor : Color.primary)
+                    .foregroundStyle(isSelected ? Color.accentColor : (isHovered ? Color.primary : Color.primary.opacity(0.85)))
                     .lineLimit(1)
 
                 Spacer(minLength: 4)
 
-                // 计数
+                // 计数：V3.6.41 选中时提升到 secondary 色（更醒目）
                 if let count = count {
                     Text("\(count)")
                         .font(.caption.monospacedDigit())
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(isSelected ? Color.secondary : Color.secondary.opacity(0.7))
                 }
             }
             .padding(.horizontal, 8)
@@ -60,6 +60,9 @@ struct SidebarRow: View {
         .onHover { hovering in
             isHovered = hovering
         }
+        // V3.6.41: 升级 hover/选中 动画到 springGentle（统一 cell 动画风格）
+        .animation(Animations.springGentle, value: isHovered)
+        .animation(Animations.springGentle, value: isSelected)
     }
 
     /// 背景色：选中 > hover > 默认
