@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import os  // V4.9.5: Logger.imageIO for async load failure
 import SwiftData
 import AppKit
 
@@ -32,6 +33,11 @@ struct DetailView: View {
 
     // 弹窗控制
     @State private var showingAddTagAlert = false
+
+    // V4.9.5: 大图 async 加载——避免同步 IO 阻塞主线程
+    //   .task(id: photo.id) 自动取消旧任务，photo 变化时重载
+    @State private var bigImage: NSImage?
+    @State private var bigImageLoadFailed: Bool = false
     @State private var showingDeleteConfirm = false
     @State private var showingRenameAlert = false
     @State private var newTagName = ""
@@ -107,21 +113,41 @@ struct DetailView: View {
     /// 1️⃣ 大图卡
     private var bigImageCard: some View {
         Group {
-            if let nsImage = ImageLoader.loadImage(at: photo.fileURL, maxPixelSize: 2000) {
+            if let nsImage = bigImage {
                 Image(nsImage: nsImage)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-            } else {
+            } else if bigImageLoadFailed {
+                // V4.9.5: 加载失败——显示 photo 占位 + 错误 icon
                 RoundedRectangle(cornerRadius: Radius.md)
                     .fill(Palette.cellFilled)
                     .overlay {
-                        Image(systemName: "photo")
+                        Image(systemName: "exclamationmark.triangle")
                             .font(.system(size: 60))
                             .foregroundStyle(.tertiary)
                     }
+            } else {
+                // V4.9.5: 加载中——Shimmer 占位（V4.4.0 Shimmer 复用）
+                RoundedRectangle(cornerRadius: Radius.md)
+                    .fill(Palette.cellFilled)
+                    .frame(maxWidth: .infinity, maxHeight: 360)
+                    .modifier(Shimmer(duration: 1.2))
             }
         }
         .frame(maxWidth: .infinity, maxHeight: 360)
+        // V4.9.5: async 加载——photo.id 变化时自动取消旧任务
+        .task(id: photo.id) {
+            bigImage = nil
+            bigImageLoadFailed = false
+            bigImage = await ImageLoader.loadImageAsync(
+                at: photo.fileURL,
+                maxPixelSize: 2000
+            )
+            if bigImage == nil {
+                bigImageLoadFailed = true
+                Logger.imageIO.error("DetailView loadImageAsync failed: \(photo.fileURL.path, privacy: .public)")
+            }
+        }
         .background(
             RoundedRectangle(cornerRadius: Radius.md)
                 .fill(Palette.cellFilled.opacity(0.3))
