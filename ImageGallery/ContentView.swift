@@ -717,7 +717,7 @@ struct ContentView: View {
                 .controlSize(.regular)
                 .help("导入图片 (⌘O)")
 
-                // 视图选项：保留末位（之前是 .principal 末位，V4.7.6 移到 .primaryAction 末位）
+                // 视图选项：保留末位
                 Button {
                     showViewOptions.toggle()
                 } label: {
@@ -736,6 +736,7 @@ struct ContentView: View {
                     )
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .trailing)  // V4.7.7: 强制 HStack 内容右对齐，避免被居中
         }
 
         // V4.3.3: 删除 .status placement「已选 N 张」（用户要求取消顶部提示）
