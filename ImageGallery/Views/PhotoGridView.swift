@@ -64,6 +64,8 @@ struct PhotoGridView: View {
     // V4.9.0: 清空所有 filter (searchText + folder + tag + 所有 filter 状态)
     //   用于"无搜索结果"和"空 folder/tag"等空状态次 CTA——"查看全部"
     let onClearFilters: () -> Void
+    // V4.9.3: 加载中状态（导入时 brief 闪烁——主 grid 显示 Shimmer 占位）
+    let isImporting: Bool = false
     // 必须在最末尾（Swift init 顺序要求）
     let onExportComplete: (Int) -> Void
 
@@ -158,7 +160,11 @@ struct PhotoGridView: View {
             // V3.5.19：移除 multiSelectTopBar
             // 批量操作搬到详情面板的 MultiSelectDetailView 里了
 
-            if photos.isEmpty && !hasSelection {
+            // V4.9.3: 加载中优先于空状态（导入时 brief Shimmer）
+            if isImporting {
+                loadingGrid
+                    .transition(.opacity)
+            } else if photos.isEmpty && !hasSelection {
                 emptyState
                     // V3.6.43: 空状态 fade in/out（之前是突现）
                     .transition(.opacity)
@@ -172,6 +178,8 @@ struct PhotoGridView: View {
         .animation(Animations.medium, value: viewMode)
         // V3.6.43: 触发空状态切换的 transition 动画
         .animation(Animations.medium, value: photos.isEmpty && !hasSelection)
+        // V4.9.3: 触发 loading 状态切换的 transition 动画
+        .animation(Animations.quick, value: isImporting)
         .navigationTitle(navigationTitle)
         .onAppear {
             // V3.6.5：首次出现时算一次 photos（之前 photos 是 computed，每次 re-render 重算）
@@ -231,6 +239,23 @@ struct PhotoGridView: View {
                 )
             }
         )
+    }
+
+    /// V4.9.3: 加载中 Shimmer 占位 grid
+    ///   场景: 导入时 brief 闪烁（SwiftData 还没返回 photos）
+    ///   复用 V4.4.0 Shimmer modifier
+    private var loadingGrid: some View {
+        // 12 个 Shimmer 占位 cell（足够填满可见区域）
+        let columns = [GridItem(.adaptive(minimum: thumbnailSize), spacing: Spacing.xs)]
+        return LazyVGrid(columns: columns, spacing: Spacing.xs) {
+            ForEach(0..<12, id: \.self) { _ in
+                RoundedRectangle(cornerRadius: Radius.thumb)
+                    .fill(Surface.cardBackground)
+                    .frame(width: thumbnailSize, height: thumbnailSize)
+                    .modifier(Shimmer(duration: 1.2))
+            }
+        }
+        .padding(Spacing.md)
     }
 
     /// V4.9.0: 主 CTA 配置（label + systemImage + onTap）
