@@ -732,7 +732,7 @@ struct ContentView: View {
                     )
                 }
             }
-            .toolbarBackground(.hidden, for: .automatic)  // V4.7.3: 隐藏 .principal section 背景
+            .toolbarBackground(.hidden, for: .windowToolbar)  // V4.7.3 → V4.7.4: .automatic 不覆盖 .principal
         }
 
         // V4.3.3: 删除 .status placement「已选 N 张」（用户要求取消顶部提示）
