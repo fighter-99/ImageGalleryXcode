@@ -560,8 +560,20 @@ struct ContentView: View {
         controller.onImport = { [self] in
             startImport()
         }
-        controller.onShowViewOptions = { [self] in
-            showViewOptions.toggle()
+        // V4.9.1: View Options 改用 NSPopover + NSHostingController
+        //   之前 V4.8.0 NSToolbar 迁移时丢了 .popover modifier——只 toggle showViewOptions 无效
+        //   现在 ToolbarController.handleShowViewOptions 内部直接 NSPopover.show
+        //   contentProvider 提供 NSHostingController(rootView: ViewOptionsPopover(...))
+        //   viewMode 是 @AppStorage 的 computed property——用 Binding(get:set:) 构造 binding
+        controller.viewOptionsContentProvider = { [self] in
+            NSHostingController(rootView: ViewOptionsPopover(
+                viewMode: Binding(
+                    get: { self.viewMode },
+                    set: { self.viewMode = $0 }
+                ),
+                thumbnailSize: $thumbnailSize,
+                sortOption: $sortOption
+            ))
         }
         // V4.8.1: search field 改用 NSSearchField (AppKit 原生) 替代 SwiftUI 自绘
         //   NSSearchField 由 ToolbarController.makeSearchItem 创建
@@ -675,11 +687,8 @@ struct ContentView: View {
         }
     }
 
-    // V4.3.0 NEW: ViewOptions popover 触发 state
-    //   原 ToolbarViewOptionsButton 内部 @State 管，V4.3.0 删自绘后由 ContentView 直接管
-    @State private var showViewOptions = false
-
     // V4.8.0: 删 toolbarContent 定义——NSToolbar (AppKit) 接管所有 toolbar items
+    // V4.9.1: 删 showViewOptions @State——View Options popover 改用 NSPopover 由 ToolbarController 管
     //   SwiftUI .toolbar 是降级实现，Photos.app 风格必须用 NSToolbar
     //   新 toolbar 配置在 configureNSToolbar(window:) 方法里
     //   （V4.7.1-V4.7.7 7 个 commit 探索 SwiftUI toolbar 限制都失败）

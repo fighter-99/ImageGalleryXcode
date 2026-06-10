@@ -39,7 +39,7 @@ final class ToolbarController: NSObject, NSToolbarDelegate {
     var onBatchExport: (() -> Void)?
     var onDelete: (() -> Void)?
     var onImport: (() -> Void)?
-    var onShowViewOptions: (() -> Void)?
+    // V4.9.1: 删 onShowViewOptions closure——改用 viewOptionsContentProvider + NSPopover
 
     // MARK: - Search field 桥接
 
@@ -50,6 +50,17 @@ final class ToolbarController: NSObject, NSToolbarDelegate {
 
     /// NSSearchField → SwiftUI @State 同步（用户输入时）
     var onSearchTextChanged: ((String) -> Void)?
+
+    // MARK: - View options popover 桥接（V4.9.1 NEW）
+
+    /// V4.9.1: ContentView 提供 popover 内容（NSHostingController 包 SwiftUI ViewOptionsPopover）
+    /// 之前 V4.8.0 迁移 NSToolbar 时丢了 .popover modifier——action 只 toggle 状态无 popover 显示
+    /// 现在用 NSPopover + NSHostingController 动态显示
+    var viewOptionsContentProvider: (() -> NSViewController)?
+
+    /// V4.9.1: View Options popover 强引用（避免被释放）
+    /// transient 行为下点击外部自动关闭
+    private var viewOptionsPopover: NSPopover?
 
     // MARK: - 状态桥接
 
@@ -264,7 +275,28 @@ final class ToolbarController: NSObject, NSToolbarDelegate {
     @objc private func handleBatchExport() { onBatchExport?() }
     @objc private func handleDelete() { onDelete?() }
     @objc private func handleImport() { onImport?() }
-    @objc private func handleShowViewOptions() { onShowViewOptions?() }
+    @objc private func handleShowViewOptions() {
+        // V4.9.1: 不用 onShowViewOptions closure——直接用 NSPopover 显示 ViewOptionsPopover
+        //   行为：再次点击按钮 → 关闭 popover（toggle）
+        //   点外部 → 自动关闭（.transient）
+        if let popover = viewOptionsPopover, popover.isShown {
+            popover.close()
+            viewOptionsPopover = nil
+            return
+        }
+
+        guard let contentProvider = viewOptionsContentProvider,
+              let item = itemCache[Identifier.viewOptions.nsIdentifier],
+              let anchorView = item.view else {
+            return
+        }
+
+        let popover = NSPopover()
+        popover.behavior = .transient  // 点外部自动关闭
+        popover.contentViewController = contentProvider()
+        popover.show(relativeTo: anchorView.bounds, of: anchorView, preferredEdge: .minY)
+        self.viewOptionsPopover = popover
+    }
     @objc private func handleSearchAction() {
         // Enter 键触发——已通过 textDidChangeNotification 实时同步
         // 这里留作 future: 触发"提交搜索"（可能高亮首个结果等）
