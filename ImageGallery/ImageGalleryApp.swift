@@ -54,6 +54,13 @@ struct ImageGalleryApp: App {
         // V4.0.0.1: 改 .unified → .unifiedCompact——blur 太重与图标不和谐，
         //   unified 风格让背景抢戏；compact 更"贴底"，让 icon 主导
         //   （参考 Photos.app / Things / Bear：toolbar 是 backdrop，icon 才是主角）
+        // V4.7.5: .unifiedCompact → .unified (回归 V4.0.0)
+        //   V4.0.0.1 改 .unifiedCompact 带来副作用——.principal placement 在 compact 风格下
+        //   系统会强制加 section 背景（"胶囊"效果），不论 button style / 任何 modifier
+        //   V4.7.1-V4.7.4 5 轮局部修法（controlSize / ToolbarItem / toolbarBackground / scope）
+        //   都无法覆盖——这是 macOS system feature
+        //   回归 .unified：blur 重但 .principal 不被强制加 section 背景
+        //   toolbar 整体视觉调整（更多 vibrancy）由后续 commit 处理
         WindowGroup("我的图馆", id: "main") {
             ContentView()
         }
@@ -64,7 +71,7 @@ struct ImageGalleryApp: App {
         .defaultSize(width: 1280, height: 800)
         .windowResizability(.contentMinSize)
         .windowStyle(.hiddenTitleBar)            // V4.0.0: 合并 title bar + toolbar
-        .windowToolbarStyle(.unifiedCompact)     // V4.0.0.1: 改 unified → unifiedCompact
+        .windowToolbarStyle(.unified)            // V4.7.5: 回归 V4.0.0（去掉 compact，绕开 .principal section 背景）
         .modelContainer(modelContainer)  // V3.6.7：显式 VersionedSchema 容器
         .commands {
             // macOS 原生 View 菜单（在 View 菜单里加 Toggle 项）
