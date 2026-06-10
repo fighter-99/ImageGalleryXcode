@@ -291,7 +291,7 @@ struct DetailView: View {
                 // 收藏切换
                 Button {
                     photo.isFavorite.toggle()
-                    try? modelContext.save()
+                    modelContext.saveWithLog()
                 } label: {
                     HStack(spacing: 4) {
                         Image(systemName: photo.isFavorite ? "star.fill" : "star")
@@ -326,10 +326,10 @@ struct DetailView: View {
             description: "移除标签 \(tag.name)"
         ) {
             photo.tags.removeAll { $0.id == tag.id }
-            try? modelContext.save()
+            modelContext.saveWithLog()
         } undo: {
             photo.tags.append(tag)
-            try? modelContext.save()
+            modelContext.saveWithLog()
         }
     }
 
@@ -355,13 +355,13 @@ struct DetailView: View {
             try? FileManager.default.moveItem(at: oldURL, to: newURL)
             photo.filename = trimmed
             photo.fileURL = newURL
-            try? modelContext.save()
+            modelContext.saveWithLog()
         } undo: {
             // 撤销：磁盘重命名回 + SwiftData 回滚
             try? FileManager.default.moveItem(at: newURL, to: oldURL)
             photo.filename = oldFilename
             photo.fileURL = oldURL
-            try? modelContext.save()
+            modelContext.saveWithLog()
         }
     }
 
@@ -389,10 +389,10 @@ struct DetailView: View {
             description: "添加标签 \(tagToAdd.name)"
         ) {
             photo.tags.append(tagToAdd)
-            try? modelContext.save()
+            modelContext.saveWithLog()
         } undo: {
             photo.tags.removeAll { $0.id == tagToAdd.id }
-            try? modelContext.save()
+            modelContext.saveWithLog()
         }
     }
 

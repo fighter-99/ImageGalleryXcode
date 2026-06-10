@@ -940,7 +940,7 @@ struct PhotoThumbnailView: View {
         } else {
             photo.tags.append(tag)
         }
-        try? modelContext.save()
+        modelContext.saveWithLog()
     }
 }
 
@@ -959,7 +959,7 @@ struct CellContextMenuModifier: ViewModifier {
             Menu {
                 Button {
                     photo.folder = nil
-                    try? modelContext.save()
+                    modelContext.saveWithLog()
                 } label: {
                     Label("移出文件夹", systemImage: "tray")
                 }
@@ -969,7 +969,7 @@ struct CellContextMenuModifier: ViewModifier {
                 ForEach(folders) { folder in
                     Button {
                         photo.folder = folder
-                        try? modelContext.save()
+                        modelContext.saveWithLog()
                     } label: {
                         if photo.folder?.id == folder.id {
                             Label(folder.name, systemImage: "checkmark")
@@ -1002,7 +1002,7 @@ struct CellContextMenuModifier: ViewModifier {
 
             Button {
                 photo.isFavorite.toggle()
-                try? modelContext.save()
+                modelContext.saveWithLog()
             } label: {
                 Label(
                     photo.isFavorite ? "取消收藏" : "收藏",

@@ -272,13 +272,13 @@ struct SidebarView: View {
         guard !trimmed.isEmpty else { return }
         let folder = Folder(name: trimmed)
         modelContext.insert(folder)
-        try? modelContext.save()
+        modelContext.saveWithLog()
         selection = .folder(folder)
     }
 
     private func deleteFolder(_ folder: Folder) {
         modelContext.delete(folder)
-        try? modelContext.save()
+        modelContext.saveWithLog()
         if case .folder(let current) = selection, current.id == folder.id {
             selection = .all
         }
@@ -290,13 +290,13 @@ struct SidebarView: View {
         let randomColor = TagColors.presets.randomElement() ?? "#5B8FF9"
         let tag = Tag(name: trimmed, colorHex: randomColor)
         modelContext.insert(tag)
-        try? modelContext.save()
+        modelContext.saveWithLog()
         selection = .tag(tag)
     }
 
     private func deleteTag(_ tag: Tag) {
         modelContext.delete(tag)
-        try? modelContext.save()
+        modelContext.saveWithLog()
         if case .tag(let current) = selection, current.id == tag.id {
             selection = .all
         }

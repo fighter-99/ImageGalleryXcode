@@ -605,7 +605,7 @@ struct ContentView: View {
         guard !trimmed.isEmpty else { return }
         let folder = Folder(name: trimmed)
         modelContext.insert(folder)
-        try? modelContext.save()
+        modelContext.saveWithLog()
         sidebarSelection = .folder(folder)
     }
 
@@ -675,7 +675,7 @@ struct ContentView: View {
     private func toggleFavorite() {
         if let photo = singleSelectedPhoto {
             photo.isFavorite.toggle()
-            try? modelContext.save()
+            modelContext.saveWithLog()
         } else if !selection.selectedIDs.isEmpty {
             // V3.6.52: 用 selection.selectedPhotos(in:) 替手写 filter
             let targetPhotos = selection.selectedPhotos(in: visiblePhotos)
@@ -683,7 +683,7 @@ struct ContentView: View {
             for photo in targetPhotos {
                 photo.isFavorite = !allFavorited
             }
-            try? modelContext.save()
+            modelContext.saveWithLog()
         }
     }
 
@@ -1069,14 +1069,14 @@ struct ContentView: View {
             for photo in photosToMove {
                 photo.folder = folder
             }
-            try? modelContext.save()
+            modelContext.saveWithLog()
             // 移动后清空多选
             selection = .empty
         } undo: {
             for (photo, oldFolder) in zip(photosToMove, oldFolders) {
                 photo.folder = oldFolder
             }
-            try? modelContext.save()
+            modelContext.saveWithLog()
         }
     }
 
@@ -1089,7 +1089,7 @@ struct ContentView: View {
                 photo.tags.append(tag)
             }
         }
-        try? modelContext.save()
+        modelContext.saveWithLog()
         // 加标签后保留多选（用户可能想加多个标签）
     }
 
@@ -1153,7 +1153,7 @@ struct ContentView: View {
         for photo in photosToToggle {
             photo.isFavorite = !allFavorited
         }
-        try? modelContext.save()
+        modelContext.saveWithLog()
     }
 
     // ─── 回收站操作（V3.6 NEW）───

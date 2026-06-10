@@ -29,13 +29,13 @@ final class RecycleBinService {
     /// - 立即持久化到 SwiftData
     func recycle(_ photo: Photo) {
         photo.trashedAt = Date()
-        try? modelContext.save()
+        modelContext.saveWithLog()
     }
 
     /// 从回收站恢复
     func restore(_ photo: Photo) {
         photo.trashedAt = nil
-        try? modelContext.save()
+        modelContext.saveWithLog()
     }
 
     /// 永久删除一个 photo（文件 + SwiftData 记录）
@@ -44,7 +44,7 @@ final class RecycleBinService {
         try? storage.delete(photoURL: photo.fileURL)
         // 再删 SwiftData 记录
         modelContext.delete(photo)
-        try? modelContext.save()
+        modelContext.saveWithLog()
     }
 
     /// 永久删除多个 photo
