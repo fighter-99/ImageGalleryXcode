@@ -626,11 +626,11 @@ struct ContentView: View {
     @ToolbarContentBuilder
     var toolbarContent: some ToolbarContent {
         // ─── 左侧：Sidebar toggle ───
-        // V4.5.1: 加 .bordered + .controlSize(.small) 让 sidebar toggle 从 toolbar 背景独立
-        //   旧：plain Button 无 resting 背景，与 toolbar vibrancy 颜色太接近
-        //       → 与右侧 search field 视觉融为一体
-        //   新：.bordered 给系统圆角矩形 + 灰底，hover 有加深反馈
-        //       active 态仍靠 .symbolVariant(.fill) + accent icon（V4.2.3 已确认 macOS 原生）
+        // V4.7.1: 改 .bordered + .small → .plain + .small
+        //   V4.5.1 的 .bordered 是为了让 sidebar toggle 从 toolbar 背景独立
+        //   但加了圆角矩形底后与右侧 search field 的 .quaternary 胶囊视觉粘连
+        //   改为 .plain——macOS 系统接管 hover 灰底，resting 完全透明
+        //   与 Photos.app / Finder sidebar toggle 一致（纯 SF Symbol，hover 才出系统圆角）
         ToolbarItem(placement: .navigation) {
             Button {
                 withAnimation(Animations.medium) { showSidebar.toggle() }
@@ -639,13 +639,14 @@ struct ContentView: View {
                     .symbolVariant(showSidebar ? .fill : .none)
                     .foregroundStyle(showSidebar ? Color.accentColor : Color.primary)
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(.plain)
             .controlSize(.small)
             .help(showSidebar ? "隐藏侧栏 (⌘⌃S)" : "显示侧栏 (⌘⌃S)")
         }
 
         // ─── 左侧：Search field ───（与 sidebar 同组，左对齐）
         // V4.4.8: leadingPadding 动态计算，让 search 左缘与下方 grid 对齐
+        // V4.7.1: 保持 .quaternary 底——search 必须常驻可识别（与 sidebar toggle 区分）
         ToolbarItem(placement: .navigation) {
             ToolbarSearchField(
                 text: $searchText,
@@ -653,19 +654,21 @@ struct ContentView: View {
             )
         }
 
-        // ─── 中央：4 个核心 actions（永远可见）───
+        // ─── 中央：5 个 actions（永远可见）───
         // ⭐收藏 / 📤导出 / 🗑删除：未选中时 disabled
         // ↓导入 / ⊞视图选项：永远 enabled
-        // V4.5.1: 全部加 .controlSize(.large)——与 DetailView / MultiSelectDetailView 按钮尺寸统一
-        //   旧默认 .automatic ≈ 26pt，用户反馈"按钮有点小"
-        //   新 .large ≈ 32pt，icon 自动适配，更舒展可点
+        // V4.7.1: .controlSize(.large) → .regular (32pt → 26pt)
+        //   V4.5.1 用 .large 是为了与 DetailView / MultiSelectDetailView 按钮尺寸统一
+        //   但 toolbar 的 plain Button + .large 让 SF Symbol 撑不满 32pt 框，"大框小图标" 比例失调
+        //   改 .regular (26pt) 与 macOS 系统 toolbar 默认一致，icon 在框中比例自然
+        //   注: DetailView / MultiSelectDetailView 按钮仍保持 .large (有文字 label，需更大可点区域)
         ToolbarItemGroup(placement: .principal) {
             Button {
                 toggleFavorite()
             } label: {
                 Label("收藏", systemImage: "star")
             }
-            .controlSize(.large)
+            .controlSize(.regular)
             .disabled(!selection.hasSelection)
             .help(selection.hasSelection ? "切换收藏" : "请先选中照片")
 
@@ -674,7 +677,7 @@ struct ContentView: View {
             } label: {
                 Label("导出", systemImage: "square.and.arrow.down.on.square")
             }
-            .controlSize(.large)
+            .controlSize(.regular)
             .disabled(!selection.hasSelection)
             .help(selection.hasSelection ? "导出 \(selection.selectedIDs.count) 张到文件夹" : "请先选中照片")
 
@@ -683,7 +686,7 @@ struct ContentView: View {
             } label: {
                 Label("删除", systemImage: "trash")
             }
-            .controlSize(.large)
+            .controlSize(.regular)
             .disabled(!selection.hasSelection)
             .help(selection.hasSelection ? "删除选中 (⌫)" : "请先选中照片")
 
@@ -692,7 +695,7 @@ struct ContentView: View {
             } label: {
                 Label("导入", systemImage: "square.and.arrow.down")
             }
-            .controlSize(.large)
+            .controlSize(.regular)
             .help("导入图片 (⌘O)")
 
             // V4.3.3: ViewOptions 从 .primaryAction 搬到 .principal 末位
@@ -702,7 +705,7 @@ struct ContentView: View {
             } label: {
                 Label("视图选项", systemImage: viewMode.icon)
             }
-            .controlSize(.large)
+            .controlSize(.regular)
             .help("视图选项：\(viewMode.label) / \(ThumbnailDensity.nearest(to: thumbnailSize).label) / \(sortOption.label)")
             .popover(isPresented: $showViewOptions, arrowEdge: .bottom) {
                 ViewOptionsPopover(
