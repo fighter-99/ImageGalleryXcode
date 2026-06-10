@@ -202,8 +202,8 @@ final class ToolbarController: NSObject, NSToolbarDelegate {
 
     private func makeSimpleItem(id: Identifier, image: String, label: String, action: Selector) -> NSToolbarItem {
         let item = NSToolbarItem(itemIdentifier: id.nsIdentifier)
-        item.label = label
-        item.paletteLabel = label
+        item.label = ""  // V4.8.3: 空 label + displayMode = .iconOnly 双重保险隐藏文字
+        item.paletteLabel = label  // Customize Toolbar 面板仍显示 label
         item.toolTip = label
         item.image = NSImage(systemSymbolName: image, accessibilityDescription: label)
         item.target = self
@@ -218,7 +218,7 @@ final class ToolbarController: NSObject, NSToolbarDelegate {
         //   自动有合适的背景样式 + 系统 placeholder + clear button + 展开/收起的 toolbar 行为
         //   Photos.app / Finder / Mail / Notes 都用这个
         let searchItem = NSSearchToolbarItem(itemIdentifier: id.nsIdentifier)
-        searchItem.label = "Search"
+        searchItem.label = ""  // V4.8.3: 不显示 "Search" 文字
         searchItem.paletteLabel = "Search"
         searchItem.toolTip = "Search photos, tags, notes"
 

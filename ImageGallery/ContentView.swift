@@ -532,8 +532,11 @@ struct ContentView: View {
 
         let toolbar = NSToolbar(identifier: NSToolbar.Identifier("MainToolbar"))
         toolbar.delegate = ToolbarController.shared
-        // V4.8.2: .iconAndLabel → .iconOnly（Photos.app 风格，5 actions 不显示文字 label）
         toolbar.displayMode = .iconOnly
+        // V4.8.3: centeredItemIdentifiers = [.search] 让搜索框居中
+        //   (Photos.app 风格——搜索框与 grid 中线对齐)
+        //   5 actions 走默认 .principalItems 区域，在 trailing 端
+        toolbar.centeredItemIdentifiers = [ToolbarController.Identifier.search.nsIdentifier]
         toolbar.allowsUserCustomization = true   // 用户可自定义 toolbar items
         toolbar.autosavesConfiguration = true   // 自定义状态自动保存
         toolbar.showsBaselineSeparator = false  // 不显示底部分隔线
