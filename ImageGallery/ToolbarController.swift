@@ -220,6 +220,24 @@ final class ToolbarController: NSObject, NSToolbarDelegate {
         item.target = self
         item.action = action
         item.isBordered = true
+
+        // V4.9.2: 显式创建 NSButton 作为 item.view
+        //   原因: 简单 NSToolbarItem（只有 image + target/action）的 item.view = nil
+        //   NSToolbar 内部会生成 NSButton 但不暴露给 item.view
+        //   NSPopover.show(relativeTo:of:) 需要非 nil anchor view——否则 popover 创建后被 ARC 释放
+        //   显式 NSButton 让 item.view 非 nil，popover 可正确锚定
+        //   同时让所有 5 actions 行为一致（之前 sidebar toggle 也有此问题，只是不需要 popover 没暴露）
+        let button = NSButton()
+        button.image = item.image
+        button.imageScaling = .scaleProportionallyDown
+        button.target = self
+        button.action = action
+        button.bezelStyle = .recessed  // 跟 NSToolbar 系统按钮风格一致
+        button.toolTip = label
+        button.isBordered = true
+        button.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        item.view = button
+
         return item
     }
 
