@@ -81,6 +81,13 @@ struct ImageGalleryApp: App {
                 }
                 .keyboardShortcut(",", modifiers: .command)
             }
+            // V4.7.0 NEW: Undo/Redo Edit menu 集成
+            //   CommandGroup(replacing: .undoRedo) 替换系统默认 Undo/Redo（macOS 标准位置）
+            //   之前 ⌘Z/⌘⇧Z 由 ContentKeyboardShortcuts.swift 里的 hidden Button 处理
+            //   现在用 .keyboardShortcut 绑到菜单项——系统接管，原 hidden Button 移除
+            CommandGroup(replacing: .undoRedo) {
+                UndoRedoMenuButtons()
+            }
         }
     }
 }
@@ -104,5 +111,48 @@ extension Binding where Value == Bool {
             get: { UserDefaults.standard.object(forKey: key) as? Bool ?? defaultValue },
             set: { UserDefaults.standard.set($0, forKey: key) }
         )
+    }
+}
+
+// MARK: - V4.7.0 NEW: Undo/Redo Edit menu 按钮
+//
+// 接收 ContentView 通过 .focusedSceneValue 暴露的 undoManager。
+// 菜单 label 动态显示最近一次 action 描述（"撤销 删除选中"、"重做 添加标签"等），
+// 与 macOS Photos / Finder / TextEdit 风格一致。
+//
+// canUndo/canRedo 状态联动 disable——无 undo 栈时菜单项灰显。
+//
+// ⌘Z / ⌘⇧Z 快捷键绑在菜单项上（V4.7.0 之前是 ContentKeyboardShortcuts.swift
+// 里的 hidden Button）。两边并存会双重触发——所以 hidden Button 已移除。
+//
+struct UndoRedoMenuButtons: View {
+    @FocusedValue(\.imageGalleryUndoManager) private var undoManager
+
+    var body: some View {
+        // 撤销——label 动态化（"撤销" + 最近 action 描述）
+        Button(undoLabel) {
+            undoManager?.undo()
+        }
+        .keyboardShortcut("z", modifiers: .command)
+        .disabled(undoManager?.canUndo != true)
+
+        // 重做——label 动态化（"重做" + 最近 action 描述）
+        Button(redoLabel) {
+            undoManager?.redo()
+        }
+        .keyboardShortcut("z", modifiers: [.command, .shift])
+        .disabled(undoManager?.canRedo != true)
+    }
+
+    /// "撤销 <action>"——无 action 时仅 "撤销"
+    private var undoLabel: String {
+        guard let desc = undoManager?.undoDescription, !desc.isEmpty else { return "撤销" }
+        return "撤销 \(desc)"
+    }
+
+    /// "重做 <action>"——无 action 时仅 "重做"
+    private var redoLabel: String {
+        guard let desc = undoManager?.redoDescription, !desc.isEmpty else { return "重做" }
+        return "重做 \(desc)"
     }
 }

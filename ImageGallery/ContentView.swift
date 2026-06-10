@@ -434,8 +434,7 @@ struct ContentView: View {
                 onCopy: copyToPasteboard,
                 onToggleSortDirection: toggleSortDirection,
                 onToggleSidebar: { showSidebar.toggle() },
-                onUndo: undoManager.undo,
-                onRedo: undoManager.redo,
+                // V4.7.0: ⌘Z/⌘⇧Z 改由 Edit menu 接管，contentKeyboardShortcuts 的 onUndo/onRedo 不再传
                 // V3.6.23: ⌘F 聚焦搜索框（通过 notification 桥接，避免 ContentView body 改动）
                 onFocusSearch: {
                     NotificationCenter.default.post(name: .focusSearchField, object: nil)
@@ -493,6 +492,9 @@ struct ContentView: View {
             } message: {
                 Text("选\"跳过\"避免重复导入。")
             }
+            // V4.7.0: 暴露 undoManager 给 Edit menu commands
+            //   抽到 extension（exposeUndoManager）避免 body 链过长触发 type-check 超时
+            .exposeUndoManager(undoManager)
     }
 
     // V4.0.0: 抽出 importDuplicateCheck 状态到 binding（让 type-check 过得去）

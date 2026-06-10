@@ -21,7 +21,7 @@ extension View {
     /// - ⌘C: 复制到剪贴板
     /// - ⌘⇧S: 切换排序方向
     /// - ⌘⌃S: 切换侧栏显隐（macOS 标准）
-    /// - ⌘Z / ⌘⇧Z: 撤销 / 重做
+    /// - ⌘Z / ⌘⇧Z: 撤销 / 重做（V4.7.0 起由 Edit menu 接管——见 ImageGalleryApp.UndoRedoMenuButtons）
     func contentKeyboardShortcuts(
         sidebarSelection: Binding<SidebarSelection?>,
         onImport: @escaping () -> Void,
@@ -31,8 +31,8 @@ extension View {
         onCopy: @escaping () -> Void,
         onToggleSortDirection: @escaping () -> Void,
         onToggleSidebar: @escaping () -> Void,
-        onUndo: @escaping () -> Void,
-        onRedo: @escaping () -> Void,
+        onUndo: @escaping () -> Void = {},  // V4.7.0: 不再使用——保留参数避免破坏调用点
+        onRedo: @escaping () -> Void = {},  // V4.7.0: 不再使用——保留参数避免破坏调用点
         onFocusSearch: @escaping () -> Void = {}  // V3.6.23: ⌘F 聚焦搜索框（V3.5 ⌘F 之前给收藏，移除避免冲突 — 收藏快捷键改 ⌘D）
     ) -> some View {
         background {
@@ -80,13 +80,10 @@ extension View {
                     .keyboardShortcut("s", modifiers: [.command, .control])
                     .hidden()
 
-                // V3.5 Phase 1 Step 4：⌘Z 撤销 / ⌘⇧Z 重做
-                Button("") { onUndo() }
-                    .keyboardShortcut("z", modifiers: .command)
-                    .hidden()
-                Button("") { onRedo() }
-                    .keyboardShortcut("z", modifiers: [.command, .shift])
-                    .hidden()
+                // V4.7.0: ⌘Z 撤销 / ⌘⇧Z 重做 改由 Edit menu 接管（ImageGalleryApp.UndoRedoMenuButtons）
+                //   之前这里有 hidden Button 触发 onUndo/onRedo
+                //   现在移除——避免与 menu 双触发
+                //   onUndo/onRedo 参数保留默认空实现，调用点不破坏
             }
         }
     }

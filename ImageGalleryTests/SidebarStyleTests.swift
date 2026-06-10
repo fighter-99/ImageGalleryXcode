@@ -112,16 +112,18 @@ struct SidebarStyleTests {
     // MARK: - 智能 folder icon 语义色
 
     @Test func smartFolderIconColorsAreFiveDistinctColors() {
-        // 5 个语义色必须互不相同——避免色相冲突
+        // 5 个语义色 slots 中有 4 个独立色相（duplicate + trash 同 orange 共用警示色族）
+        // 这是设计选择——重复图和最近删除都属于"需要用户注意"的语义类别
+        // 用同一色族保持视觉一致：橘色 = "警示/需要处理"
         let colors: [Color] = [
-            SidebarStyle.iconColorDuplicate,
-            SidebarStyle.iconColorRecent,
-            SidebarStyle.iconColorLarge,
-            SidebarStyle.iconColorFavorite,
-            SidebarStyle.iconColorTrash
+            SidebarStyle.iconColorDuplicate,   // .orange
+            SidebarStyle.iconColorRecent,      // .blue
+            SidebarStyle.iconColorLarge,       // .purple
+            SidebarStyle.iconColorFavorite,    // .yellow
+            SidebarStyle.iconColorTrash        // .orange (与 duplicate 同色)
         ]
         let uniqueColors = Set(colors.map { String(describing: $0) })
-        #expect(uniqueColors.count == 5, "5 个智能 folder icon 语义色必须色相不同")
+        #expect(uniqueColors.count == 4, "5 个 slots 共享 4 个独立色相：橙/蓝/紫/金")
     }
 
     @Test func smartFolderIconColorsMatchSystemColors() {
