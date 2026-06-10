@@ -106,15 +106,18 @@ struct SidebarView: View {
             // ─── Section 1: 我的图馆（智能项 + 智能文件夹合并）───
             Section {
                 // 4 个 smart items + 2 个 smart filters
+                // V4.6.0: 智能 folder icon 用语义色（SidebarStyle.iconColor* token）——
+                //   一眼区分内容类型（重复/最近/大图/收藏/最近删除）
+                //   色板：色相分散（HLS space 60°+ 间隔），避免混淆
                 sidebarRow(icon: "photo.on.rectangle.angled", label: "全部", count: libraryCounts.all, target: .all)
-                sidebarRow(icon: "star", label: "收藏", count: libraryCounts.favorites, target: .favorites)
+                sidebarRow(icon: "star", label: "收藏", count: libraryCounts.favorites, target: .favorites, iconColor: SidebarStyle.iconColorFavorite)
                 sidebarRow(icon: "tray", label: "待整理", count: libraryCounts.unfiled, target: .unfiled)
                 if duplicateCount > 0 {
-                    sidebarRow(icon: "doc.on.doc", label: "重复图", count: duplicateCount, target: .duplicates, iconColor: .orange)
+                    sidebarRow(icon: "doc.on.doc", label: "重复图", count: duplicateCount, target: .duplicates, iconColor: SidebarStyle.iconColorDuplicate)
                 }
                 // V4.1.0: 智能文件夹移进"我的图馆"section（之前是独立 section）
-                sidebarRow(icon: "clock.arrow.circlepath", label: "最近 7 天", target: .recent7Days)
-                sidebarRow(icon: "large.circle", label: "大图 (>5MB)", target: .largeFiles)
+                sidebarRow(icon: "clock.arrow.circlepath", label: "最近 7 天", target: .recent7Days, iconColor: SidebarStyle.iconColorRecent)
+                sidebarRow(icon: "large.circle", label: "大图 (>5MB)", target: .largeFiles, iconColor: SidebarStyle.iconColorLarge)
             } header: {
                 // V4.1.0: 可见 header（V3.6.25 之前被隐藏）
                 SidebarSectionHeader("我的图馆", icon: "sparkles", storageKey: "sidebar.section.library")
@@ -197,7 +200,8 @@ struct SidebarView: View {
                     label: "最近删除",
                     count: libraryCounts.trashed,
                     target: .recentlyDeleted,
-                    iconColor: libraryCounts.trashed > 0 ? .orange : nil
+                    // V4.6.0: 改用 SidebarStyle.iconColorTrash token
+                    iconColor: libraryCounts.trashed > 0 ? SidebarStyle.iconColorTrash : nil
                 )
                 // V3.6.12: 拖拽缩略图到 trash 行直接 recycle
                 .dropDestination(for: URL.self) { urls, _ in

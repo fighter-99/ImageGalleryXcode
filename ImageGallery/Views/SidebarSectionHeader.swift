@@ -7,6 +7,7 @@
 //  V3.6.21 强化：加可选 SF Symbol 小图标，每个 section 视觉锚点更明确
 //  V4.1.0 NEW: 加可折叠 chevron——整个 header 区域可点击切换展开/折叠
 //              折叠状态用 @AppStorage 持久化（用户偏好）
+//  V4.6.0: token 化——所有视觉常量改用 SidebarStyle.* token
 //
 //  Photos.app 风格：
 //  - small caps + caption2 + semibold + tertiary 色
@@ -43,30 +44,30 @@ struct SidebarSectionHeader: View {
     }
 
     var body: some View {
-        HStack(spacing: 5) {
+        HStack(spacing: SidebarStyle.headerIconSpacing) {
             if let icon {
                 Image(systemName: icon)
-                    .font(.caption2)
+                    .font(SidebarStyle.headerFont)
                     .foregroundStyle(.secondary)
             }
             Text(title)
-                .font(.caption2.weight(.semibold))
-                .foregroundStyle(.tertiary)
+                .font(SidebarStyle.headerFont)
+                .foregroundStyle(SidebarStyle.headerColor)
                 .textCase(.uppercase)  // ⭐ Photos.app 风格：small caps
 
             Spacer()
 
             // V4.1.0 NEW: chevron（▶ → ▼ 旋转）
             Image(systemName: "chevron.right")
-                .font(.caption2.weight(.semibold))
-                .foregroundStyle(.tertiary)
+                .font(SidebarStyle.headerFont)
+                .foregroundStyle(SidebarStyle.headerColor)
                 .rotationEffect(.degrees(isExpanded ? 90 : 0))
                 .animation(Animations.interactive, value: isExpanded)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 12)
-        .padding(.top, 10)
-        .padding(.bottom, 4)
+        .padding(.horizontal, SidebarStyle.headerPaddingHorizontal)
+        .padding(.top, SidebarStyle.headerPaddingTop)
+        .padding(.bottom, SidebarStyle.headerPaddingBottom)
         .contentShape(Rectangle())  // 让整个 header 区域可点击
         .onTapGesture {
             // V4.1.0: 点击切换折叠

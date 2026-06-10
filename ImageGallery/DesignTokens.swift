@@ -57,7 +57,8 @@ enum Surface {
     /// hover 时的微妙高亮（两种模式下都自然）
     static let hover = Color.primary.opacity(0.04)
     /// 选中态的浅 accent 背景
-    static let selected = Color.accentColor.opacity(0.10)
+    /// V4.6.0: 0.10 → 0.12——sidebar active row 视觉锤（"胶囊"效果更明确）
+    static let selected = Color.accentColor.opacity(0.12)
     /// 多选/强选中态
     static let selectedStrong = Color.accentColor.opacity(0.16)
 
@@ -232,6 +233,96 @@ enum WindowChrome {
     static let topInset: CGFloat = 0
     /// 侧栏"折叠/展开"按钮的额外 padding
     static let navButtonPadding: CGFloat = 12
+}
+
+// MARK: - V4.6.0 NEW: 侧栏视觉 token
+//
+// 设计原则：
+// - 行高 28pt 是 macOS Photos / Finder 侧栏标准
+// - 字号 13pt label + 11pt count 平衡"内容可读性"与"密度"
+// - 智能 folder icon 用语义色——一眼区分内容类型（重复/最近/大图/收藏/最近删除）
+// - 选中态高亮 0.12 opacity——比 hover (0.04) 强 3 倍，视觉锤足够
+//
+// 与 V4.4.5 cell 浅框教训呼应：sidebar 不放 resting shadow、不放 hover shadow，
+// 仅靠 background 颜色变化区分状态——避免 5 个浅框真凶链
+
+enum SidebarStyle {
+    // ─── 行 (row) ───
+    /// 行高——macOS Photos / Finder 侧栏标准
+    static let rowHeight: CGFloat = 28
+    /// 行内左右 padding（视觉上不到侧栏边缘，配合背景 padding 形成 inset 效果）
+    static let rowHorizontalPadding: CGFloat = 8
+    /// 行背景外侧 padding（让背景不到侧栏边缘 4pt，macOS 标准风格）
+    static let rowBackgroundInset: CGFloat = 4
+    /// 行圆角——用 Radius.sm (6pt) 与其他 UI 组件统一
+    static let rowCornerRadius: CGFloat = Radius.sm
+    /// 行内 icon↔text 间距
+    static let rowIconTextSpacing: CGFloat = 8
+    /// 行内 text↔count 最小间距
+    static let rowTextCountSpacing: CGFloat = 4
+
+    // ─── 图标 (icon) ───
+    /// icon 字号——与 label 字号 13pt 一致
+    static let iconSize: CGFloat = 13
+    /// icon 字重
+    static let iconWeight: Font.Weight = .medium
+    /// icon 框架宽度（让所有 icon 对齐）
+    static let iconFrameWidth: CGFloat = 18
+
+    // ─── 文字 (label + count) ───
+    /// label 字号 13pt——macOS Photos / Finder 侧栏标准
+    /// V4.6.0: 之前用 .callout (16pt) 太大，sidebar 显得拥挤
+    static let labelFont: Font = .system(size: 13, weight: .regular)
+    /// label 选中态字重——加粗视觉锤（V4.1.0B 引入，V4.6.0 token 化）
+    static let labelSelectedFont: Font = .system(size: 13, weight: .semibold)
+    /// count 字号 11pt + 等宽数字（防止数字宽度抖动）
+    static let countFont: Font = .system(size: 11).monospacedDigit()
+
+    // ─── 状态色 ───
+    /// hover 背景色——Surface.hover 0.04
+    static let hoverBackground: Color = Surface.hover
+    /// 选中背景色——Surface.selected 0.12（V4.6.0 从 0.10 提至 0.12）
+    static let activeBackground: Color = Surface.selected
+    /// 默认 label 颜色
+    static let labelDefault: Color = Color.primary.opacity(0.85)
+    /// hover label 颜色
+    static let labelHover: Color = Color.primary
+    /// 选中 label 颜色
+    static let labelActive: Color = Color.accentColor
+    /// 默认 icon 颜色
+    static let iconDefault: Color = Color.secondary
+    /// hover/选中 icon 颜色（保持与 label 一致——视觉关联）
+    static let iconActive: Color = Color.accentColor
+
+    // ─── section header ───
+    /// section header 字号——caption2 (11pt) semibold
+    static let headerFont: Font = .caption2.weight(.semibold)
+    /// section header 颜色——.tertiary 等价值
+    /// 注: Color 没有 .tertiary（tertiary 是 ShapeStyle 概念），用 secondary 70% opacity 模拟
+    static let headerColor: Color = Color.secondary.opacity(0.7)
+    /// section header 上下 padding——视觉分组空间
+    static let headerPaddingHorizontal: CGFloat = 12
+    static let headerPaddingTop: CGFloat = 10
+    static let headerPaddingBottom: CGFloat = 4
+    /// section header icon↔title 间距
+    static let headerIconSpacing: CGFloat = 5
+
+    // ─── 智能 folder icon 语义色 ───
+    //
+    // 一眼区分内容类型——不依赖文案理解
+    // 色板：色相分散（HLS space 60°+ 间隔），避免混淆
+    //
+    /// 重复图——橙色（警示/注意）
+    static let iconColorDuplicate: Color = .orange
+    /// 最近 7 天——蓝色（新鲜/时间）
+    static let iconColorRecent: Color = .blue
+    /// 大图——紫色（文件体积/重量）
+    static let iconColorLarge: Color = .purple
+    /// 收藏——金色（重要/标记）
+    static let iconColorFavorite: Color = .yellow
+    /// 最近删除——橙色（警示，与重复图共用色族但更饱和）
+    /// 条件：trashed > 0 时显示，空时不显示（保持简洁）
+    static let iconColorTrash: Color = .orange
 }
 
 // MARK: - V4.0.0 NEW: 材质 token（集中管理 .regularMaterial / .quaternary 等）
