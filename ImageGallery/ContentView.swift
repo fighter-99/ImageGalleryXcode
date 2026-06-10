@@ -654,28 +654,33 @@ struct ContentView: View {
             )
         }
 
-        // ─── 中央：5 个 actions（永远可见）───
+        // ─── 右侧：5 个 actions（永远可见）───
         // ⭐收藏 / 📤导出 / 🗑删除：未选中时 disabled
         // ↓导入 / ⊞视图选项：永远 enabled
-        // V4.7.1: .controlSize(.large) → .regular (32pt → 26pt)
-        //   V4.5.1 用 .large 是为了与 DetailView / MultiSelectDetailView 按钮尺寸统一
-        //   但 toolbar 的 plain Button + .large 让 SF Symbol 撑不满 32pt 框，"大框小图标" 比例失调
-        //   改 .regular (26pt) 与 macOS 系统 toolbar 默认一致，icon 在框中比例自然
-        //   注: DetailView / MultiSelectDetailView 按钮仍保持 .large (有文字 label，需更大可点区域)
         //
-        // V4.7.2: ToolbarItemGroup(.principal) → 单个 ToolbarItem + HStack
-        //   V4.7.1 只改 .controlSize 没解决问题——macOS unifiedCompact toolbar 对
-        //   ToolbarItemGroup(.principal) 自动加圆角矩形底（"胶囊"效果）
-        //   改用单个 ToolbarItem + HStack 装 5 个 plain Button——系统不会加 group 背景
-        //   与 Photos.app / Finder toolbar 一致：actions 是纯 icon，hover 才出系统灰底
+        // V4.7.x 完整修法历程（5 个 commit）：
+        //   V4.7.1 (cd3f7ed): sidebar .plain + 5 actions .controlSize(.regular)
+        //   V4.7.2 (9276999): ToolbarItemGroup → ToolbarItem + HStack
+        //   V4.7.3 (0a0d083): HStack 加 .toolbarBackground(.hidden, for: .automatic)
+        //   V4.7.4 (6b0cc44): 改 for: .windowToolbar
+        //   V4.7.5 (888d056): .unifiedCompact → .unified（已回滚）
+        //   V4.7.6 (current): 5 actions .principal → .primaryAction ← 根本解法
         //
-        // V4.7.3: 加 .toolbarBackground(.hidden, for: .toolbar) 隐藏 section 背景
-        //   V4.7.2 验证发现：.principal placement 在 unifiedCompact toolbar 下系统自动加
-        //   section 背景（"胶囊"效果是 placement 行为，不是 group 行为）
-        //   即使用单个 ToolbarItem，section 背景仍在
-        //   解法: HStack 加 .toolbarBackground(.hidden) 显式隐藏 section 背景
-        //   结果: 5 actions 纯 icon 排列，hover 出系统灰底（与 macOS 标准 toolbar 一致）
-        ToolbarItem(placement: .principal) {
+        // V4.7.6 根因（5 轮局部修法失败的根因）：
+        //   macOS SwiftUI .principal placement 在 unifiedCompact 风格下
+        //   系统强制加 section 背景（'胶囊'效果）——system feature 不可覆盖
+        //   .unified 风格同样加 section 背景（V4.7.5 验证）
+        //   唯一 SwiftUI 内解法：放弃 .principal placement
+        //
+        // V4.7.6 修法：.principal → .primaryAction
+        //   .primaryAction 在 macOS 系统里就是 '右上角 actions 集中'（Photos/Finder/Mail）
+        //   不会加 section 背景，actions 是纯 icon，hover 出系统灰底
+        //   视觉差异：actions 从屏幕中央移到右上角（但仍是 '集中'）
+        //
+        // V4.7.6 保留 V4.7.1-V4.7.4 探索的成果（.controlSize(.regular) / HStack / 无 group）
+        // ToolbarItemGroup(.primaryAction) 仍会被系统加 group 背景——
+        // 用单个 ToolbarItem + HStack(spacing: 4) 避免 group 背景
+        ToolbarItem(placement: .primaryAction) {
             HStack(spacing: 4) {
                 Button {
                     toggleFavorite()
@@ -712,8 +717,7 @@ struct ContentView: View {
                 .controlSize(.regular)
                 .help("导入图片 (⌘O)")
 
-                // V4.3.3: ViewOptions 从 .primaryAction 搬到 .principal 末位
-                //   用户要求"右上角按钮也集中中间"——所有 actions（含视图选项）同组
+                // 视图选项：保留末位（之前是 .principal 末位，V4.7.6 移到 .primaryAction 末位）
                 Button {
                     showViewOptions.toggle()
                 } label: {
@@ -732,7 +736,6 @@ struct ContentView: View {
                     )
                 }
             }
-            .toolbarBackground(.hidden, for: .windowToolbar)  // V4.7.3 → V4.7.4: .automatic 不覆盖 .principal
         }
 
         // V4.3.3: 删除 .status placement「已选 N 张」（用户要求取消顶部提示）
