@@ -100,16 +100,21 @@ struct MainSplitView<Sidebar: View, Center: View, Detail: View>: View {
         .overlay {
             if isDropTargeted {
                 ZStack {
-                    Palette.selectionOverlayMulti
+                    // V4.0.0: 改用 .regularMaterial 替代纯 accent 染色
+                    //   让 drop overlay 自动适配暗色 + 透出后面内容（半透明）
+                    Rectangle()
+                        .fill(Material.dropOverlay)
+                        .opacity(0.95)
                     VStack(spacing: 12) {
                         Image(systemName: "square.and.arrow.down.fill")
                             .font(.system(size: 80))
+                            .symbolRenderingMode(.hierarchical)
                             .foregroundStyle(.tint)
                         Text("松开导入")
-                            .font(.title)
+                            .font(.title.weight(.semibold))
                             .foregroundStyle(.primary)
                         Text("支持图片文件 / 文件夹")
-                            .font(.caption)
+                            .font(.callout)
                             .foregroundStyle(.secondary)
                     }
                 }

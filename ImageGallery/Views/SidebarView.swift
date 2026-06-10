@@ -17,6 +17,9 @@
 //  - List 原生 keyboard nav（⌘1-9）
 //  - List 原生 context menu
 //
+//  V3.6.52: 重构选中状态——`@Binding var selectedIDs: Set<UUID>` 改为
+//  `@Binding var selection: SelectionState`，与 ContentView 单一真相源对齐
+//
 
 import SwiftUI
 import SwiftData
@@ -33,8 +36,17 @@ struct SidebarView: View {
     // 选中项（双向绑定）
     @Binding var selection: SidebarSelection?
 
-    // 多选集合（双向绑定）
-    @Binding var selectedIDs: Set<UUID>
+    // V3.6.52: 多选集合 (selectedIDs: Set<UUID>) 合并为 SelectionState 绑定
+    //   命名冲突：与上面的 sidebar selection 同名；本 binding 命名改 photoSelection
+    @Binding var photoSelection: SelectionState
+
+    // V4.1.0f: showSidebar binding 移除（hide 按钮完全搬回主工具栏）
+
+    // V4.0.0.6: 缩放（搬到侧栏顶部，与主工具栏解耦）
+    @Binding var thumbnailSize: CGFloat
+
+    // V4.0.0.6: 排序（搬到侧栏顶部）
+    @Binding var sortOption: SortOption
 
     // 弹窗控制
     @State private var showingNewFolderAlert = false
@@ -68,54 +80,47 @@ struct SidebarView: View {
     }
 
     var body: some View {
-        // V3.5.15：纯导航侧栏，搜索在工具栏（V3.5.14 的侧栏顶部搜索框已移除）
+        // V4.1.0f: 侧栏完全"无 UI"——hide 按钮搬回主工具栏
+        //   视觉上侧栏直接从 section header 开始（更紧凑）
+        //   整个 sidebarContent 用 .regularMaterial 背景（V4.1.0d 改）
+        sidebarContent
+            .background(.regularMaterial)
+    }
+
+    /// V4.1.0f 移除：sidebarTopBar 整个组件删除（hide 按钮回到主工具栏）
+    ///   之前 V4.1.0e 留的 sidebarTopBar 已经完全空（只有 Spacer + hide）——彻底删除
+    ///   侧栏顶部不再有 30pt 高的"假控制面板"
+
+    /// V3.5.15: 纯导航侧栏，搜索在工具栏（V3.5.14 的侧栏顶部搜索框已移除）
+    /// V4.0.0.5: 把原 body 内的 List 抽到独立 var，让 sidebarTopBar + sidebarContent 组装
+    @ViewBuilder
+    private var sidebarContent: some View {
         List(selection: $selection) {
-            // ─── 智能项 ───
+            // V4.1.0 重构: 5 段清晰分层（Photos.app 风格）
+            //   1. 我的图馆（含智能项 + 智能文件夹）
+            //   2. 我的文件夹
+            //   3. 标签
+            //   4. 最近删除（单独 section，底部独立入口）
+            //   5. 存储信息（在 List 外，固定在侧栏底部）
+
+            // ─── Section 1: 我的图馆（智能项 + 智能文件夹合并）───
             Section {
+                // 4 个 smart items + 2 个 smart filters
                 sidebarRow(icon: "photo.on.rectangle.angled", label: "全部", count: libraryCounts.all, target: .all)
                 sidebarRow(icon: "star", label: "收藏", count: libraryCounts.favorites, target: .favorites)
                 sidebarRow(icon: "tray", label: "待整理", count: libraryCounts.unfiled, target: .unfiled)
                 if duplicateCount > 0 {
                     sidebarRow(icon: "doc.on.doc", label: "重复图", count: duplicateCount, target: .duplicates, iconColor: .orange)
                 }
-                // V3.6 NEW: 回收站入口（始终显示，包括 0 张时；不显示空状态可能让用户找不到入口）
-                // V3.6.6: count > 0 时图标橙色高亮，提醒有待处理项
-                // V3.6.12: 拖拽缩略图到 trash 行直接 recycle（Photos.app 习惯动作）
-                sidebarRow(
-                    icon: "trash",
-                    label: "最近删除",
-                    count: libraryCounts.trashed,
-                    target: .recentlyDeleted,
-                    iconColor: libraryCounts.trashed > 0 ? .orange : nil
-                )
-                // V3.6.33: .onDrop(of: [.text]) → .dropDestination(for: URL.self)
-                // 配对 .draggable(URL) 现代 API 对
-                .dropDestination(for: URL.self) { urls, _ in
-                    handleTrashDrop(urls: urls)
-                } isTargeted: { isTargeted in
-                    isTrashDropTargeted = isTargeted
-                }
-                .background(
-                    RoundedRectangle(cornerRadius: Radius.sm)
-                        .fill(isTrashDropTargeted ? Color.orange.opacity(0.28) : Color.clear)
-                        .padding(-4)
-                )
-                // V3.6.36: 改用 springGentle 让高亮动画更平滑
-                .animation(Animations.springGentle, value: isTrashDropTargeted)
-            } header: {
-                // V3.6.25: 隐藏 section header（"我的图馆"）
-                EmptyView()
-            }
-
-            // ─── 智能文件夹 ───
-            Section {
+                // V4.1.0: 智能文件夹移进"我的图馆"section（之前是独立 section）
                 sidebarRow(icon: "clock.arrow.circlepath", label: "最近 7 天", target: .recent7Days)
                 sidebarRow(icon: "large.circle", label: "大图 (>5MB)", target: .largeFiles)
             } header: {
-                SidebarSectionHeader("智能文件夹", icon: "sparkles")
+                // V4.1.0: 可见 header（V3.6.25 之前被隐藏）
+                SidebarSectionHeader("我的图馆", icon: "sparkles", storageKey: "sidebar.section.library")
             }
 
-            // ─── 用户文件夹 ───
+            // ─── Section 2: 我的文件夹 ───
             Section {
                 ForEach(folders) { folder in
                     folderSidebarRow(folder)
@@ -135,26 +140,25 @@ struct SidebarView: View {
                 }
                 .buttonStyle(.plain)
             } header: {
-                SidebarSectionHeader("我的文件夹", icon: "folder")
+                SidebarSectionHeader("我的文件夹", icon: "folder", storageKey: "sidebar.section.folders")
             }
 
-            // ─── 标签 ───
+            // ─── Section 3: 标签 ───
             Section {
                 if tags.isEmpty {
-                    // V3.6.21: 改用 EmptyStateView 统一空状态（替代之前灰色小字）
+                    // V3.6.21: 改用 EmptyStateView 统一空状态
                     EmptyStateView(
                         icon: "tag",
                         title: "还没有标签",
                         subtitle: "新建一个标签，给照片打上分类标记",
                         iconColor: .secondary
                     )
-                    .frame(height: 100)  // 紧凑版（避免在 List row 内占太多空间）
+                    .frame(height: 100)
                 } else {
                     ForEach(tags) { tag in
                         sidebarRow(
                             icon: "tag",
                             label: tag.name,
-                            // V3.6.4：用 PhotoStats 排除 trashed 的（之前 tag.photos.count 包含 trashed）
                             count: PhotoStats.inLibraryCount(tag),
                             target: .tag(tag),
                             iconColor: Color(hex: tag.colorHex)  // 标签用 tag 颜色
@@ -183,12 +187,38 @@ struct SidebarView: View {
                 }
                 .buttonStyle(.plain)
             } header: {
-                SidebarSectionHeader("标签", icon: "tag")
+                SidebarSectionHeader("标签", icon: "tag", storageKey: "sidebar.section.tags")
+            }
+
+            // ─── Section 4: 最近删除（单独 section，底部入口）───
+            Section {
+                sidebarRow(
+                    icon: "trash",
+                    label: "最近删除",
+                    count: libraryCounts.trashed,
+                    target: .recentlyDeleted,
+                    iconColor: libraryCounts.trashed > 0 ? .orange : nil
+                )
+                // V3.6.12: 拖拽缩略图到 trash 行直接 recycle
+                .dropDestination(for: URL.self) { urls, _ in
+                    handleTrashDrop(urls: urls)
+                } isTargeted: { isTargeted in
+                    isTrashDropTargeted = isTargeted
+                }
+                .background(
+                    RoundedRectangle(cornerRadius: Radius.sm)
+                        .fill(isTrashDropTargeted ? Color.orange.opacity(0.28) : Color.clear)
+                        .padding(-4)
+                )
+                .animation(Animations.interactive, value: isTrashDropTargeted)
+            } header: {
+                // V4.1.0: trash 是关键入口，不可折叠
+                SidebarSectionHeader("最近删除", icon: "trash", isExpanded: .constant(true))
             }
         }
         .listStyle(.sidebar)
-        .scrollContentBackground(.hidden)  // V3.5.8：隐藏 List 默认背景（用 Surface 统一）
-        .listRowSeparator(.hidden)         // V3.5.8：隐藏 List 默认分隔线
+        .scrollContentBackground(.hidden)
+        .listRowSeparator(.hidden)
         .navigationTitle("图馆")
 
         .alert("新建文件夹", isPresented: $showingNewFolderAlert) {
@@ -281,7 +311,8 @@ struct SidebarView: View {
         let folderID = folder.persistentModelID
         let capturedContext = modelContext
         let capturedAllPhotos = allPhotos  // 查 photo 用的快照
-        let capturedSelectedIDs = selectedIDs
+        // V3.6.52: 从 photoSelection 派生 selectedIDs 快照（drag 期间防逸出）
+        let capturedSelectedIDs = photoSelection.selectedIDs
 
         // 找到拖动的 photo（按 fileURL 匹配）
         // 多选时：拖动的是单张（.draggable 是 per-view），但如果用户在多选状态拖了被选中的那张，
@@ -345,7 +376,8 @@ struct SidebarView: View {
         // 主线程上捕获状态
         let capturedContext = modelContext
         let capturedAllPhotos = allPhotos
-        let capturedSelectedIDs = selectedIDs
+        // V3.6.52: 从 photoSelection 派生 selectedIDs 快照（drag 期间防逸出）
+        let capturedSelectedIDs = photoSelection.selectedIDs
 
         let draggedFileURLs = Set(urls)
         let draggedPhotos = capturedAllPhotos.filter { draggedFileURLs.contains($0.fileURL) }
@@ -451,7 +483,9 @@ struct SidebarView: View {
 #Preview {
     SidebarView(
         selection: .constant(.all),
-        selectedIDs: .constant([])
+        photoSelection: .constant(SelectionState()),
+        thumbnailSize: .constant(170),
+        sortOption: .constant(.importedAtDesc)
     )
     .frame(width: 220, height: 600)
 }

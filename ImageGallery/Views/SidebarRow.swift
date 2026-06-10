@@ -33,7 +33,8 @@ struct SidebarRow: View {
 
                 // 文字
                 Text(label)
-                    .font(.callout)
+                    // V4.1.0 B: 选中态加粗（Photos.app 风格）——视觉锤
+                    .font(isSelected ? .callout.weight(.semibold) : .callout)
                     .foregroundStyle(isSelected ? Color.accentColor : (isHovered ? Color.primary : Color.primary.opacity(0.85)))
                     .lineLimit(1)
 

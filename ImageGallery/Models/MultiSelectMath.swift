@@ -3,6 +3,9 @@
 //  ImageGallery
 //
 //  V3.6.30：把 PhotoGridView 的多选点击交互（handleTap + rangeSelect）抽成可测试的纯函数 seam。
+//  V3.6.52：移除内嵌的 SelectionState 声明（已搬到 Models/SelectionState.swift）；
+//           handleTap 的 .command 分支对齐用户可见行为——⌘+点击后清掉 selectedPhotoID
+//           （与原 applyTapOutcome glue 的 X2 行为对齐，让 seam 成为状态唯一真相源）。
 //
 //  设计要点：
 //  - 零 SwiftData 依赖——只接 [UUID] 和 [Photo] 不在 seam 里
@@ -13,32 +16,6 @@
 //
 
 import Foundation
-
-// MARK: - 状态抽象
-
-/// V3.6.30：多选交互状态的可测试抽象。
-///
-/// 抽自 ContentView.swift:36-41 的 @State 字段：
-/// - selectedPhoto: Photo?  →  selectedPhotoID: UUID?
-/// - selectedIDs: Set<UUID>  →  selectedIDs: Set<UUID>
-/// - lastSelectedID: UUID?  →  lastSelectedID: UUID?
-///
-/// 把 Photo 替换为 UUID 是有意为之——避免 seam 依赖 SwiftData @Model。
-struct SelectionState: Equatable {
-    var selectedIDs: Set<UUID>
-    var lastSelectedID: UUID?
-    var selectedPhotoID: UUID?
-
-    init(
-        selectedIDs: Set<UUID> = [],
-        lastSelectedID: UUID? = nil,
-        selectedPhotoID: UUID? = nil
-    ) {
-        self.selectedIDs = selectedIDs
-        self.lastSelectedID = lastSelectedID
-        self.selectedPhotoID = selectedPhotoID
-    }
-}
 
 // MARK: - 输入枚举
 
@@ -76,16 +53,18 @@ enum TapOutcome: Equatable {
 ///
 /// 行为与原 inline 实现完全等价：
 /// - plain click: 单选，清空多选，设 selectedPhotoID
-/// - ⌘+click: toggle 该 photo 是否在多选中
+/// - ⌘+click: toggle 该 photo 是否在多选中（V3.6.52：清掉 selectedPhotoID）
 /// - ⇧+click: 从 lastSelectedID 到当前 photo 的范围选择，selectedPhotoID = nil
 ///
 /// 关键不变量：
-/// 1. ⌘+click 不改变 selectedPhotoID（原注释："⌘+点击不改变 selectedPhoto"）
-/// 2. ⇧+click 设 selectedPhotoID = nil（原代码：rangeSelect 后 selectedPhoto = nil）
-/// 3. ⇧+click 的 lastSelectedID = nil 退化路径：selectedIDs = [targetID]、lastSelectedID = targetID
+/// 1. V3.6.52 修正：⌘+点击也清掉 selectedPhotoID（用户可见行为：详情面板隐藏）
+///    之前 seam 不变 selectedPhotoID，但消费者 applyTapOutcome 会强制设 nil
+///    ——seam 与消费者不一致。本次下沉到 seam，消除"glue 覆盖 seam"反模式
+/// 2. ⇧+click 的 lastSelectedID = nil 退化路径：selectedIDs = [targetID]、lastSelectedID = targetID
 enum MultiSelectMath {
 
     /// V3.6.30: 抽自 PhotoGridView.handleTap (line 317-338)
+    /// V3.6.52: .command 分支加 `selectedPhotoID = nil`（X2 行为下沉到 seam）
     ///
     /// 调用方需提供 photoIDs: [UUID]——⇧+click 时用 photoIDs.firstIndex(of:) 计算范围。
     /// plain / ⌘+click 时 photoIDs 会被忽略。
@@ -107,7 +86,8 @@ enum MultiSelectMath {
                 s.selectedIDs.insert(photoID)
             }
             s.lastSelectedID = photoID
-            // ⌘+点击不改变 selectedPhotoID（保持原行为）
+            // V3.6.52: 与消费者行为对齐——⌘+点击后详情面板隐藏
+            s.selectedPhotoID = nil
             return .toggleMultiSelect(s)
 
         case .shift:

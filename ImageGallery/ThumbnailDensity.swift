@@ -50,4 +50,20 @@ enum ThumbnailDensity: String, CaseIterable, Identifiable {
     static func nearest(to size: CGFloat) -> ThumbnailDensity {
         allCases.min(by: { abs($0.size - size) < abs($1.size - size) }) ?? .medium
     }
+
+    /// V4.0.0.6: ⌘+ 快捷键——返回比当前 size 大的下一档（顶到最大返回 nil）
+    static func larger(than size: CGFloat) -> ThumbnailDensity? {
+        let current = nearest(to: size)
+        let all = allCases
+        guard let idx = all.firstIndex(of: current), idx < all.count - 1 else { return nil }
+        return all[idx + 1]
+    }
+
+    /// V4.0.0.6: ⌘- 快捷键——返回比当前 size 小的下一档（顶到最小返回 nil）
+    static func smaller(than size: CGFloat) -> ThumbnailDensity? {
+        let current = nearest(to: size)
+        let all = allCases
+        guard let idx = all.firstIndex(of: current), idx > 0 else { return nil }
+        return all[idx - 1]
+    }
 }

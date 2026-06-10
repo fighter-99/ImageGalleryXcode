@@ -30,8 +30,14 @@ enum Spacing {
 
 enum Radius {
     static let sm: CGFloat = 6      // 小：输入框、按钮
-    static let md: CGFloat = 8      // 中：缩略图、卡片
+    static let md: CGFloat = 8      // 中：卡片
     static let lg: CGFloat = 12     // 大：大卡片、tag chip
+
+    /// V4.4.0 NEW: 缩略图 cell 专用——统一所有缩略图相关圆角
+    /// 之前 cell 外层 cornerRadius 6 vs selectionOverlay/加载占位/多选蒙层
+    /// 用 Radius.md (8pt) 不一致 → 选中边框 8pt 罩在 6pt cell 上漏 1pt 白边
+    /// 现在所有缩略图相关 RoundedRectangle 统一引用 Radius.thumb
+    static let thumb: CGFloat = 6
 }
 
 // MARK: - 表面色（V3.1 NEW：Photos.app 风格语义化）
@@ -165,12 +171,14 @@ extension EnvironmentValues {
     }
 }
 
-// MARK: - 动效（V3.6.11 NEW：统一动画 token）
+// MARK: - 动效（V3.6.11 NEW：统一动画 token；V4.0.0 升级）
 //
 // 设计原则：
 // - 5 个标准时长（按"感知速度"命名，不用"slow/medium"等模糊词）
 // - 1 个 spring 曲线（toast 弹出专用，比 easeInOut 更有"物理感"）
 // - 集中调整一处即可全局影响（如未来调成更"快"或更"慢"风格）
+// - V4.0.0: standard / medium 改从 easeInOut → spring（统一 spring 风格）
+// - V4.0.0: springGentle 重命名为 interactive（语义更清晰）
 //
 // 用法：
 // ```
@@ -183,10 +191,87 @@ enum Animations {
     static let press: Animation = .easeInOut(duration: 0.1)
     /// 快：150ms，多选 toggle、焦点切换、沉浸式淡入
     static let quick: Animation = .easeInOut(duration: 0.15)
-    /// 标准：200ms，hover、选中、Chrome 显示
-    static let standard: Animation = .easeInOut(duration: 0.2)
-    /// 中等：250ms，视图模式切换、sidebar 显隐
-    static let medium: Animation = .easeInOut(duration: 0.25)
-    /// 弹性 spring：toast 弹出（带"物理感"）
-    static let springGentle: Animation = .spring(response: 0.35, dampingFraction: 0.85)
+    /// 标准：200ms spring，hover、选中、Chrome 显示
+    /// V4.0.0: 改从 easeInOut → spring
+    static let standard: Animation = .spring(response: 0.3, dampingFraction: 0.85)
+    /// 中等：250ms spring，视图模式切换、sidebar 显隐
+    /// V4.0.0: 改从 easeInOut → spring
+    static let medium: Animation = .spring(response: 0.3, dampingFraction: 0.85)
+    /// 弹性 spring：toast 弹出 / 选中 / sidebar 进出
+    /// V4.0.0: 重命名 springGentle → interactive（语义更清晰）
+    static let interactive: Animation = .spring(response: 0.35, dampingFraction: 0.85)
+    /// V4.0.0 兼容别名——旧代码用 springGentle 的地方仍能编译（过渡期）
+    static var springGentle: Animation { interactive }
+    /// V4.0.0 NEW: 弹性更"Q"的 spring（带轻微反弹，用于 toast / 重要操作确认）
+    static let bouncy: Animation = .spring(response: 0.4, dampingFraction: 0.7)
+}
+
+// MARK: - V4.0.0 NEW: 工具栏样式 token
+
+enum ToolbarStyle {
+    /// macOS 原生 toolbar 高度（unified 模式系统决定，留常量给测试）
+    static let height: CGFloat = 52       // unified 默认
+    static let heightCompact: CGFloat = 28 // V4.0.2 用户选"紧凑"
+    static let spacing: CGFloat = 8        // ToolbarItem 之间
+
+    // V4.3.0 删除：自绘按钮相关 token（已不再用）
+    //   - highlightRadius (RoundedRect 圆角)
+    //   - buttonRestingTint / HoverTint / ActiveTint (Color.primary.opacity 等级)
+    //
+    //   V4.2.x 5 轮在自绘 buttonStyle 上反复调，最终回归原生 Button + Label，
+    //   所有按钮 hover / focus / pressed 由 macOS 系统接管，无需 token
+    //
+    //   ToolbarSearchField 仍自绘（项目无 NavigationStack），但只用 .quaternary
+    //   material + 6pt 圆角直接硬编码，无须 token 维护
+}
+
+// MARK: - V4.0.0 NEW: 窗口 chrome token
+
+enum WindowChrome {
+    /// hiddenTitleBar 后，内容区起始 Y 偏移
+    static let topInset: CGFloat = 0
+    /// 侧栏"折叠/展开"按钮的额外 padding
+    static let navButtonPadding: CGFloat = 12
+}
+
+// MARK: - V4.0.0 NEW: 材质 token（集中管理 .regularMaterial / .quaternary 等）
+
+enum Material {
+    /// drop overlay 背景（半透明 + blur）
+    static let dropOverlay: AnyShapeStyle = AnyShapeStyle(.regularMaterial)
+    /// status bar 背景（半透明 + blur，自动适配暗色）
+    static let statusBar: AnyShapeStyle = AnyShapeStyle(.regularMaterial)
+    /// toolbar segmented 容器（替代旧 Surface.toolbarControl 的实心色）
+    static let toolbarControl: AnyShapeStyle = AnyShapeStyle(.quaternary)
+    /// confirmation dialog 卡片
+    static let dialog: AnyShapeStyle = AnyShapeStyle(.regularMaterial)
+}
+
+// MARK: - V4.0.1 NEW: 状态栏升级指标
+
+enum StatusBarMetrics {
+    static let height: CGFloat = 24
+    static let progressBarHeight: CGFloat = 3
+    static let popoverWidth: CGFloat = 360
+}
+
+// MARK: - V4.0.1 NEW: 搜索框指标
+
+enum SearchFieldMetrics {
+    // V4.0.0.4: 240 → 200pt——视觉上不再抢戏（toolbar 整体更平衡）
+    // V4.2.3: 200 → 170pt——给两侧按钮组让出呼吸空间
+    // V4.2.4: 170 → 180pt——170 装不下原 placeholder "搜索文件名、标签、备注"
+    //   配合 placeholder 缩短为 "搜索照片、标签..." 两手抓
+    static let width: CGFloat = 180
+    static let widthExpanded: CGFloat = 360  // 展开历史时（V4.0.1 智能搜索）
+    static let height: CGFloat = 30          // V4.0.0.4 与其他 item 对齐
+}
+
+// MARK: - V4.0.2 NEW: 窗口模式指标
+
+enum WindowModeMetrics {
+    /// viewerOnly 模式下的工具栏高度（紧凑）
+    static let viewerToolbarHeight: CGFloat = 32
+    /// viewerOnly 模式下的图片 padding
+    static let viewerImagePadding: CGFloat = 40
 }

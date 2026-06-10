@@ -3,9 +3,12 @@
 //  ImageGalleryTests
 //
 //  V3.6.30：MultiSelectMath 纯函数测试。
+//  V3.6.52: 重构——内嵌的 SelectionState 搬到 Models/SelectionState.swift；
+//           commandClickDoesNotChangeSelectedPhotoID 改名 commandClickClearsDetailPanel
+//           并改断言——⌘+点击后 selectedPhotoID 强制为 nil（X2 行为下沉到 seam）。
 //
 //  覆盖：
-//  - handleTap × 6：plain 单选 / ⌘+新增 / ⌘+删除 / ⇧+正向 range / ⇧+反向 range / ⇧+lastID=nil 退化
+//  - handleTap × 6：plain 单选 / ⌘+新增 / ⌘+删除 / ⌘+清详情 / ⇧+正向 range / ⇧+反向 range / ⇧+lastID=nil 退化
 //  - computeRangeSelection × 4：正向 / 反向 / lastID=nil 退化 / 单元素 range
 //
 //  测试模式：参考 DragReorderMathTests——纯函数，零依赖。
@@ -89,8 +92,10 @@ struct MultiSelectMathTests {
         }
     }
 
-    @Test func commandClickDoesNotChangeSelectedPhotoID() {
-        // 关键不变量：⌘+点击不改变 selectedPhotoID（保持原 Photo 引用）
+    @Test func commandClickClearsDetailPanel() {
+        // V3.6.52: 重构——⌘+点击后 selectedPhotoID 强制为 nil（X2 行为下沉到 seam）
+        //   之前 seam 不变 selectedPhotoID，但消费者 applyTapOutcome 强制设 nil
+        //   ——seam 与消费者行为不一致。本次下沉到 seam，单一真相源
         let ids = fivePhotoIDs()
         let state = SelectionState(
             selectedIDs: [ids[0]],
@@ -103,7 +108,9 @@ struct MultiSelectMathTests {
             photoIDs: ids
         )
         if case .toggleMultiSelect(let s) = outcome {
-            #expect(s.selectedPhotoID == ids[1], "⌘+点击应保持原 selectedPhotoID")
+            #expect(s.selectedPhotoID == nil, "⌘+点击应清空 selectedPhotoID（详情面板隐藏）")
+            // selectedIDs 仍正确 toggle（B 不在选中 → 加入）
+            #expect(s.selectedIDs == [ids[0], ids[3]], "⌘+点击应把 D 加入多选")
         } else {
             Issue.record("Expected .toggleMultiSelect")
         }

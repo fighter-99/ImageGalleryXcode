@@ -2,24 +2,24 @@
 //  MainLayoutView.swift
 //  ImageGallery
 //
-//  最外层主布局：VStack 纵向堆叠 Toolbar / PathBar / MainSplit / StatusBar，
-//  + 原生 title bar 侧栏按钮
+//  最外层主布局：VStack 纵向堆叠 Split / StatusBar，
 //  + undoManager 环境注入
 //  + Toast 浮层
 //  + 沉浸式全屏看图
 //
 //  V3.5.17：从 ContentView.swift 拆出。
+//  V4.0.0: 去掉 toolbar generic 槽位（toolbar 现在用 ContentView.toolbarContent
+//  暴露给外层 .toolbar { ... } modifier）；保留 pathBar 槽位供未来启用
 //
 //  修饰顺序严格保持原 mainLayout（不能调换）：
-//  .toolbar → .environment → .overlay(toast) → .animation(toast)
+//  .environment → .overlay(toast) → .animation(toast)
 //  → .overlay(immersive) → .animation(immersive)
 //
 
 import SwiftUI
 
-struct MainLayoutView<Toolbar: View, PathBar: View, Split: View, StatusBarView: View>: View {
-    // 4 个子视图（generic 存储）
-    let toolbar: Toolbar
+struct MainLayoutView<PathBar: View, Split: View, StatusBarView: View>: View {
+    // 3 个子视图（generic 存储）—— toolbar 在 V4.0.0 已迁出到 native .toolbar API
     let pathBar: PathBar
     let split: Split
     let statusBar: StatusBarView
@@ -38,7 +38,6 @@ struct MainLayoutView<Toolbar: View, PathBar: View, Split: View, StatusBarView: 
     let onImmersiveDismiss: () -> Void
 
     init(
-        @ViewBuilder toolbar: () -> Toolbar,
         @ViewBuilder pathBar: () -> PathBar,
         @ViewBuilder split: () -> Split,
         @ViewBuilder statusBar: () -> StatusBarView,
@@ -50,7 +49,6 @@ struct MainLayoutView<Toolbar: View, PathBar: View, Split: View, StatusBarView: 
         visiblePhotos: [Photo],
         onImmersiveDismiss: @escaping () -> Void
     ) {
-        self.toolbar = toolbar()
         self.pathBar = pathBar()
         self.split = split()
         self.statusBar = statusBar()
@@ -65,27 +63,9 @@ struct MainLayoutView<Toolbar: View, PathBar: View, Split: View, StatusBarView: 
 
     var body: some View {
         VStack(spacing: 0) {
-            toolbar
             pathBar
             split
             statusBar
-        }
-        // V3.5.13：恢复 Mac 原生侧栏按钮（title bar 区域）
-        // V3.5.16：Photos.app 风格视觉状态 — 侧栏显示时图标变实心 + accent 色
-        // V3.5.17：包 withAnimation 让侧栏出现/消失平滑过渡
-        .toolbar {
-            ToolbarItem(placement: .navigation) {
-                Button {
-                    withAnimation(Animations.medium) {
-                        showSidebar.toggle()
-                    }
-                } label: {
-                    Image(systemName: "sidebar.leading")
-                        .symbolVariant(showSidebar ? .fill : .none)
-                        .foregroundStyle(showSidebar ? Color.accentColor : .primary)
-                }
-                .help(showSidebar ? "隐藏侧栏 (⌘⌃+S)" : "显示侧栏 (⌘⌃+S)")
-            }
         }
         // V3.5 Phase 2：把 undoManager 注入环境，让 DetailView 的撤销逻辑（添加/移除标签、重命名）能用
         .environment(\.undoManager, undoManager)

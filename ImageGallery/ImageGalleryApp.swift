@@ -49,10 +49,22 @@ struct ImageGalleryApp: App {
     var body: some Scene {
         // V3.5.D：WindowGroup 加 id 让 macOS 能稳定追踪窗口(用于 frame autosave)
         // 同时加 defaultSize 给首次启动一个合理尺寸
+        // V4.0.0: 加 .windowToolbarStyle(.unified) + .windowStyle(.hiddenTitleBar)——
+        //   原生 toolbar 半透明材质 + 隐藏 title bar 让 toolbar 延伸到顶部
+        // V4.0.0.1: 改 .unified → .unifiedCompact——blur 太重与图标不和谐，
+        //   unified 风格让背景抢戏；compact 更"贴底"，让 icon 主导
+        //   （参考 Photos.app / Things / Bear：toolbar 是 backdrop，icon 才是主角）
         WindowGroup("我的图馆", id: "main") {
             ContentView()
         }
-        .defaultSize(width: 1280, height: 800)  // V3.5.D：首次启动合理尺寸
+        // V4.1.0 m: 默认 1280×800；contentMinSize 由 layout 决定
+        //   侧栏 160pt + 工具栏 200pt + grid 400pt + 详情 320pt = 1080pt 横向最小
+        //   纵向 toolbar 30 + 状态栏 24 + grid 200 = 254pt 最小
+        //   13" MacBook (1280×800) 能完整用；更小屏幕 contentMinSize 会兜底
+        .defaultSize(width: 1280, height: 800)
+        .windowResizability(.contentMinSize)
+        .windowStyle(.hiddenTitleBar)            // V4.0.0: 合并 title bar + toolbar
+        .windowToolbarStyle(.unifiedCompact)     // V4.0.0.1: 改 unified → unifiedCompact
         .modelContainer(modelContainer)  // V3.6.7：显式 VersionedSchema 容器
         .commands {
             // macOS 原生 View 菜单（在 View 菜单里加 Toggle 项）

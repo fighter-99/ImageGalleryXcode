@@ -47,7 +47,9 @@ struct StatusBar: View {
         .foregroundStyle(.secondary)
         .padding(.horizontal, Spacing.md)
         .frame(height: 24)
-        .background(Surface.panel)
+        // V4.0.0: 改用 .regularMaterial 替代 Surface.panel（NSColor.controlBackgroundColor）
+        //   半透明 + blur 背景，让 status bar 与主内容区视觉分层
+        .background(Material.statusBar)
         .overlay(alignment: .top) {
             Rectangle()
                 .fill(Surface.separator)

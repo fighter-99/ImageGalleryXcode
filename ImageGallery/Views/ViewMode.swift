@@ -37,8 +37,8 @@ enum ViewMode: String, CaseIterable, Identifiable {
 
 struct PhotoListView: View {
     let photos: [Photo]
-    let selectedIDs: Set<UUID>
-    let singleSelectedID: UUID?
+    // V3.6.52: 2 let (selectedIDs/singleSelectedID) 合并为 1 SelectionState
+    let selection: SelectionState
     let onTap: (Photo) -> Void
     let onDoubleTap: (Photo) -> Void
 
@@ -49,8 +49,8 @@ struct PhotoListView: View {
                 ForEach(photos) { photo in
                     PhotoListRow(
                         photo: photo,
-                        isInMultiSelect: selectedIDs.contains(photo.id),
-                        isActive: singleSelectedID == photo.id
+                        isInMultiSelect: selection.contains(photo.id),
+                        isActive: selection.singleSelectedID == photo.id
                     )
                     .contentShape(Rectangle())
                     .onTapGesture { onTap(photo) }
@@ -196,8 +196,8 @@ struct PhotoListRow: View {
 
 struct PhotoTimelineView: View {
     let photos: [Photo]
-    let selectedIDs: Set<UUID>
-    let singleSelectedID: UUID?
+    // V3.6.52: 2 let (selectedIDs/singleSelectedID) 合并为 1 SelectionState
+    let selection: SelectionState
     let onTap: (Photo) -> Void
     let onDoubleTap: (Photo) -> Void
 
@@ -235,8 +235,7 @@ struct PhotoTimelineView: View {
                     TimelineYearSection(
                         year: yearGroup.year,
                         months: yearGroup.months,
-                        selectedIDs: selectedIDs,
-                        singleSelectedID: singleSelectedID,
+                        selection: selection,
                         onTap: onTap,
                         onDoubleTap: onDoubleTap
                     )
@@ -254,8 +253,8 @@ struct PhotoTimelineView: View {
 struct TimelineYearSection: View {
     let year: String
     let months: [(key: String, keyDate: Date, photos: [Photo])]
-    let selectedIDs: Set<UUID>
-    let singleSelectedID: UUID?
+    // V3.6.52: 2 let → 1 SelectionState
+    let selection: SelectionState
     let onTap: (Photo) -> Void
     let onDoubleTap: (Photo) -> Void
 
@@ -277,8 +276,7 @@ struct TimelineYearSection: View {
                 TimelineMonthSection(
                     title: formatMonth(month.key),
                     photos: month.photos,
-                    selectedIDs: selectedIDs,
-                    singleSelectedID: singleSelectedID,
+                    selection: selection,
                     onTap: onTap,
                     onDoubleTap: onDoubleTap
                 )
@@ -298,8 +296,8 @@ struct TimelineYearSection: View {
 struct TimelineMonthSection: View {
     let title: String
     let photos: [Photo]
-    let selectedIDs: Set<UUID>
-    let singleSelectedID: UUID?
+    // V3.6.52: 2 let → 1 SelectionState
+    let selection: SelectionState
     let onTap: (Photo) -> Void
     let onDoubleTap: (Photo) -> Void
 
@@ -323,8 +321,8 @@ struct TimelineMonthSection: View {
                 ForEach(photos) { photo in
                     TimelineThumbnail(
                         photo: photo,
-                        isInMultiSelect: selectedIDs.contains(photo.id),
-                        isActive: singleSelectedID == photo.id
+                        isInMultiSelect: selection.contains(photo.id),
+                        isActive: selection.singleSelectedID == photo.id
                     )
                     .onTapGesture { onTap(photo) }
                     .onTapGesture(count: 2) { onDoubleTap(photo) }

@@ -7,6 +7,13 @@
 //  支持：拖拽导入、Delete 键删除、方向键切换图片、启动记忆、导入进度。
 //  多选：⌘+点击加选、⇧+点击范围选择、⌘+A 全选、⌥+拖动框选、Esc 取消。
 //
+//  V3.6.52: 重构选中状态——3 @State (selectedPhoto/selectedIDs/lastSelectedID) 合并为
+//  1 @State<SelectionState>；`selectedPhoto: Photo?` 改为 computed（从
+//  selection.singleSelectedID + visiblePhotos 派生）；5+ 处 `selectedIDs = []; selectedPhoto = nil`
+//  收成 1 行 `selection = .empty`；5+ 处 `visiblePhotos.filter { selectedIDs.contains($0.id) }`
+//  收成 1 行 `selection.selectedPhotos(in: visiblePhotos)`；3 个 O(n) lookup
+//  (selectedPhoto/singleSelectedPhoto/currentIndex) 合并为 1 个 `resolvedSingle`。
+//
 
 import SwiftUI
 import SwiftData
@@ -32,12 +39,10 @@ enum SidebarSelection: Hashable {
 }
 
 struct ContentView: View {
-    // 选中的图片（单选 / 详情）
-    @State private var selectedPhoto: Photo?
+    // V3.6.52: 3 @State (selectedPhoto/selectedIDs/lastSelectedID) 合并为 1 @State<SelectionState>
+    //   这是图片选中的唯一真相源；`selectedPhoto: Photo?` 改为下面的 computed property
+    @State private var selection = SelectionState()
 
-    // 多选状态
-    @State private var selectedIDs: Set<UUID> = []
-    @State private var lastSelectedID: UUID?  // 范围选择起点
     @State private var isBoxSelecting = false
 
     // 侧边栏的选中项
@@ -197,25 +202,36 @@ struct ContentView: View {
     }
 
     // 派生属性
-    private var currentIndex: Int {
-        guard let id = selectedIDs.first ?? selectedPhoto?.id,
+    // V3.6.52: 3 个 O(n) lookup (selectedPhoto + singleSelectedPhoto + currentIndex) 合并为 1 个
+    //   之前每次 body 重算要做 2-3 遍 visiblePhotos.first(where:) / firstIndex(where:)
+    //   现在用 selection.singleSelectedID + 一次 firstIndex 扫描，photo 和 index 一起拿
+    //
+    // 返回 (photo, visibleIndex)——photo 供 DetailPane 用，visibleIndex 供 currentIndex 用
+    private var resolvedSingle: (photo: Photo, visibleIndex: Int)? {
+        guard let id = selection.singleSelectedID,
               let idx = visiblePhotos.firstIndex(where: { $0.id == id }) else {
-            return 0
+            return nil
         }
-        return idx + 1
+        return (visiblePhotos[idx], idx)
+    }
+
+    /// V3.6.52：单选 photo（DetailPane.singleSelectedPhoto 用）
+    /// selection.singleSelectedID 已涵盖多选强制 nil 的语义，无需 `!isMultiSelect` 守卫
+    private var singleSelectedPhoto: Photo? {
+        resolvedSingle?.photo
+    }
+
+    // V3.6.52 优化：currentIndex 复用 resolvedSingle 的索引，0 遍额外 lookup
+    private var currentIndex: Int {
+        (resolvedSingle?.visibleIndex ?? -1) + 1
     }
 
     private var canPrev: Bool { currentIndex > 1 }
     private var canNext: Bool { currentIndex > 0 && currentIndex < visiblePhotos.count }
 
-    // 单选图片（多选时为 nil）
-    private var singleSelectedPhoto: Photo? {
-        guard selectedIDs.count <= 1, let id = selectedIDs.first ?? selectedPhoto?.id else { return nil }
-        return visiblePhotos.first(where: { $0.id == id })
-    }
-
     // 多选模式（>1 张）
-    private var isMultiSelect: Bool { selectedIDs.count > 1 }
+    // V3.6.52: 改用 selection 上的派生属性
+    private var isMultiSelect: Bool { selection.isMultiSelect }
 
     private var trimmedSearch: String {
         searchText.trimmingCharacters(in: .whitespaces)
@@ -227,11 +243,52 @@ struct ContentView: View {
         return ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)
     }
 
+    // V4.2.0 P0❸: 当前 sidebar 选项的可读名（用作 navigationTitle）
+    //   hidden title bar 模式下不显示在窗口顶部，但作为窗口元数据进入：
+    //   - Dock 右键菜单的窗口名
+    //   - ⌘⇥ 切换器的窗口名
+    //   - Mission Control 的标签
+    //   - VoiceOver 念出的窗口标题
+    private var currentViewTitle: String {
+        switch sidebarSelection {
+        case .all, .none:           return "全部照片"
+        case .favorites:            return "收藏"
+        case .unfiled:              return "待整理"
+        case .duplicates:           return "重复图"
+        case .recent7Days:          return "最近 7 天"
+        case .largeFiles:           return "大图（>5MB）"
+        case .recentlyDeleted:      return "最近删除"
+        case .folder(let f):        return f.name
+        case .tag(let t):           return "#\(t.name)"
+        }
+    }
+
+    // V4.2.0 P0❸: 副标题——"N 张 · X MB"
+    //   visiblePhotos.count 是当前筛选+排序后实际显示的数量；优于 allPhotos.count
+    private var currentViewSubtitle: String {
+        let count = visiblePhotos.count
+        let bytes = visiblePhotos.reduce(Int64(0)) { $0 + $1.fileSize }
+        let size = ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)
+        return "\(count) 张 · \(size)"
+    }
+
+    // V4.4.8: toolbar 搜索框左 padding 动态计算
+    //   让 search 左缘与下方主内容区（grid）左缘对齐——形成 toolbar 与
+    //   content 之间的视觉锚线。Eagle / Lightroom / Photos 等图片管理 app 同款。
+    //   - sidebar 可见时：padding = sidebarColumnWidth - sidebar toggle 占用宽度
+    //     toggle 占用 ≈ 64pt（toggle button 40pt + 系统 spacing 8pt + 边距 16pt）
+    //   - sidebar 隐藏时：仅留 12pt 与 sidebar toggle 视觉分开
+    private var searchFieldLeadingOffset: CGFloat {
+        guard showSidebar else { return 12 }
+        let togglePlusSpacing: CGFloat = 64
+        return max(12, sidebarColumnWidth - togglePlusSpacing)
+    }
+
     // V3.5.19：当前选中图片的总大小（字节）
     // 用于多选详情面板显示 "已选 N 张 · 12.3 MB"
+    // V3.6.52: 用 selection.selectedPhotos(in:) 替手写 filter
     private var selectedTotalSize: Int64 {
-        visiblePhotos
-            .filter { selectedIDs.contains($0.id) }
+        selection.selectedPhotos(in: visiblePhotos)
             .reduce(0) { $0 + $1.fileSize }
     }
 
@@ -286,6 +343,14 @@ struct ContentView: View {
 
     var body: some View {
         mainLayout
+            // V4.0.0: 原生 toolbar（替代 V3.4 自绘 44pt HStack）
+            //   用 @ToolbarContentBuilder 暴露内容
+            //   .windowToolbarStyle(.unified) 在 ImageGalleryApp 的 WindowGroup 上加
+            .toolbar { toolbarContent }
+            // V4.2.0 P0❸: 窗口元数据（hidden title bar 模式下不显示在窗口顶部，
+            //   但进入 Dock 右键 / ⌘⇥ 切换器 / Mission Control / VoiceOver 等位置）
+            .navigationTitle(currentViewTitle)
+            .navigationSubtitle(currentViewSubtitle)
             // V3.6.22: 应用外观（浅色/深色/跟随系统）
             .preferredColorScheme(appearanceMode.colorScheme)
             .onAppear {
@@ -313,6 +378,8 @@ struct ContentView: View {
             }
             .onChange(of: sidebarSelection) { _, new in
                 storedSidebarKey = serializeSelection(new)
+                // V4.1.0 l: 切换侧栏 section 同时清选中（避免"选中的照片不在新 section"）
+                clearSelectionOnFilterChange()
             }
             .onChange(of: sortOption) { _, new in
                 storedSortOption = new.rawValue
@@ -328,15 +395,31 @@ struct ContentView: View {
                 return .handled
             }
             .onKeyPress(.escape) {
-                if !selectedIDs.isEmpty {
-                    selectedIDs = []
+                if !selection.isEmpty {
+                    selection = .empty
                     return .handled
                 }
                 return .ignored
             }
             .onKeyPress("a", phases: .down) { press in
                 if press.modifiers.contains(EventModifiers.command) {
-                    selectedIDs = Set(visiblePhotos.map { $0.id })
+                    // V3.6.52: 用 selection.settingAll(in:) 替手写 Set 构造
+                    selection = selection.settingAll(in: visiblePhotos)
+                    return .handled
+                }
+                return .ignored
+            }
+            // V4.0.0.6: ⌘+ / ⌘- 缩放快捷键（缩放搬到侧栏顶部后必须配快捷键）
+            .onKeyPress("+", phases: .down) { press in
+                if press.modifiers.contains(EventModifiers.command) {
+                    zoomIn()
+                    return .handled
+                }
+                return .ignored
+            }
+            .onKeyPress("-", phases: .down) { press in
+                if press.modifiers.contains(EventModifiers.command) {
+                    zoomOut()
                     return .handled
                 }
                 return .ignored
@@ -359,7 +442,7 @@ struct ContentView: View {
                 }
             )
             .confirmationDialog(
-                "确定要删除 \(selectedIDs.count) 张图片吗？",
+                batchDeleteTitle,
                 isPresented: $showingBatchDeleteConfirm,
                 titleVisibility: .visible
             ) {
@@ -401,10 +484,7 @@ struct ContentView: View {
             // V3.6.24: 导入时重复检测 dialog
             .confirmationDialog(
                 duplicateDialogTitle,
-                isPresented: Binding(
-                    get: { importDuplicateCheck != nil },
-                    set: { if !$0 { importDuplicateCheck = nil } }
-                ),
+                isPresented: showingDuplicateCheck,
                 titleVisibility: .visible
             ) {
                 Button("全部跳过（保留现有）") { confirmSkipDuplicates() }
@@ -413,6 +493,20 @@ struct ContentView: View {
             } message: {
                 Text("选\"跳过\"避免重复导入。")
             }
+    }
+
+    // V4.0.0: 抽出 importDuplicateCheck 状态到 binding（让 type-check 过得去）
+    // 之前 inline Binding get/set 触发 "unable to type-check in reasonable time"
+    private var showingDuplicateCheck: Binding<Bool> {
+        Binding(
+            get: { importDuplicateCheck != nil },
+            set: { if !$0 { importDuplicateCheck = nil } }
+        )
+    }
+
+    // V4.0.0: 抽出批量删除确认 title（避免 body 内 string interpolation 触发 type-check 超时）
+    private var batchDeleteTitle: String {
+        "确定要删除 \(selection.selectedIDs.count) 张图片吗？"
     }
 
     // ⌘N 触发的创建文件夹
@@ -435,11 +529,10 @@ struct ContentView: View {
     // 使用 macOS 系统分享面板（NSSharingServicePicker）
     // 可选：AirDrop / 信息 / 邮件 / 备忘录 / 第三方 App 等
     private func shareSelected() {
+        // V3.6.52: 用 selection.selectedPhotos(in:) 替手写 filter
         let urls: [URL]
-        if !selectedIDs.isEmpty {
-            urls = visiblePhotos
-                .filter { selectedIDs.contains($0.id) }
-                .map { $0.fileURL }
+        if !selection.selectedIDs.isEmpty {
+            urls = selection.selectedPhotos(in: visiblePhotos).map { $0.fileURL }
         } else if let photo = singleSelectedPhoto {
             urls = [photo.fileURL]
         } else {
@@ -457,12 +550,11 @@ struct ContentView: View {
         pasteboard.clearContents()
 
         // 收集所有要复制的文件 URL
+        // V3.6.52: 用 selection.selectedPhotos(in:) 替手写 filter
         let urls: [URL]
-        if !selectedIDs.isEmpty {
+        if !selection.selectedIDs.isEmpty {
             // 多选：复制所有选中
-            urls = visiblePhotos
-                .filter { selectedIDs.contains($0.id) }
-                .map { $0.fileURL }
+            urls = selection.selectedPhotos(in: visiblePhotos).map { $0.fileURL }
         } else if let photo = singleSelectedPhoto {
             // 单选：复制单张
             urls = [photo.fileURL]
@@ -494,8 +586,9 @@ struct ContentView: View {
         if let photo = singleSelectedPhoto {
             photo.isFavorite.toggle()
             try? modelContext.save()
-        } else if !selectedIDs.isEmpty {
-            let targetPhotos = visiblePhotos.filter { selectedIDs.contains($0.id) }
+        } else if !selection.selectedIDs.isEmpty {
+            // V3.6.52: 用 selection.selectedPhotos(in:) 替手写 filter
+            let targetPhotos = selection.selectedPhotos(in: visiblePhotos)
             let allFavorited = targetPhotos.allSatisfy { $0.isFavorite }
             for photo in targetPhotos {
                 photo.isFavorite = !allFavorited
@@ -504,29 +597,130 @@ struct ContentView: View {
         }
     }
 
-    // 主布局（V3.5.17：拆到 Views/MainLayoutView.swift）
-    private var mainLayout: some View {
-        MainLayoutView(
-            toolbar: {
-                ToolbarView(
-                    searchText: $searchText,
-                    onImport: startImport,
-                    // V3.6.13: viewMode 通过 computed property 包装，构造 Binding 传给 ToolbarView
+    // V4.3.0 NEW: ViewOptions popover 触发 state
+    //   原 ToolbarViewOptionsButton 内部 @State 管，V4.3.0 删自绘后由 ContentView 直接管
+    @State private var showViewOptions = false
+
+    // V4.0.0 NEW: 原生 toolbar 内容（@ToolbarContentBuilder）
+    //   在 body 里用 `.toolbar { toolbarContent }` 挂载
+    //
+    // V4.3.0 彻底重构：从自绘 buttonStyle 系统 → 纯原生 Button + Label
+    //   ⚠️ 不要再加 .background(...) / .buttonStyle(.plain) + 自绘 RoundedRect 之类的
+    //   ⚠️ 让 macOS 接管 hover / focus / pressed / 深浅模式 / vibrancy / disabled
+    //
+    // V4.3.2 布局重构（用户决策）：
+    //   - sidebar toggle + search field 都在 .navigation（左侧）
+    //   - 4 个核心 actions ⭐收藏 / 📤导出 / 🗑删除 / ↓导入 集中在 .principal（中央）
+    //     永远可见，未选中时前 3 个 disabled、导入永远 enabled
+    //   - viewopts 单独在 .primaryAction（右上角）
+    //   - 不再有 contextual toolbar（actions 不跟着选中态出现/消失）
+    //
+    // V4.3.2 关键决策记录：
+    //   - 用户选「actions 集中中央 + 永远可见」是非 macOS 标准的设计
+    //     macOS 一般 actions 在右上角 + contextual；这里走类似 Linear/Notion 的固定中央栏
+    //     trade-off：可见性强、肌肉记忆稳，但失去"按需变形"的 macOS 习惯
+    //   - 「导出」按钮 = batchExport（导出到用户选择的文件夹），替代原 Share
+    //     原 shareSelected() 函数保留（右键菜单等地方可能仍用）
+    @ToolbarContentBuilder
+    var toolbarContent: some ToolbarContent {
+        // ─── 左侧：Sidebar toggle ───
+        // V4.5.1: 加 .bordered + .controlSize(.small) 让 sidebar toggle 从 toolbar 背景独立
+        //   旧：plain Button 无 resting 背景，与 toolbar vibrancy 颜色太接近
+        //       → 与右侧 search field 视觉融为一体
+        //   新：.bordered 给系统圆角矩形 + 灰底，hover 有加深反馈
+        //       active 态仍靠 .symbolVariant(.fill) + accent icon（V4.2.3 已确认 macOS 原生）
+        ToolbarItem(placement: .navigation) {
+            Button {
+                withAnimation(Animations.medium) { showSidebar.toggle() }
+            } label: {
+                Label("侧栏", systemImage: "sidebar.leading")
+                    .symbolVariant(showSidebar ? .fill : .none)
+                    .foregroundStyle(showSidebar ? Color.accentColor : Color.primary)
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+            .help(showSidebar ? "隐藏侧栏 (⌘⌃S)" : "显示侧栏 (⌘⌃S)")
+        }
+
+        // ─── 左侧：Search field ───（与 sidebar 同组，左对齐）
+        // V4.4.8: leadingPadding 动态计算，让 search 左缘与下方 grid 对齐
+        ToolbarItem(placement: .navigation) {
+            ToolbarSearchField(
+                text: $searchText,
+                leadingPadding: searchFieldLeadingOffset
+            )
+        }
+
+        // ─── 中央：4 个核心 actions（永远可见）───
+        // ⭐收藏 / 📤导出 / 🗑删除：未选中时 disabled
+        // ↓导入 / ⊞视图选项：永远 enabled
+        // V4.5.1: 全部加 .controlSize(.large)——与 DetailView / MultiSelectDetailView 按钮尺寸统一
+        //   旧默认 .automatic ≈ 26pt，用户反馈"按钮有点小"
+        //   新 .large ≈ 32pt，icon 自动适配，更舒展可点
+        ToolbarItemGroup(placement: .principal) {
+            Button {
+                toggleFavorite()
+            } label: {
+                Label("收藏", systemImage: "star")
+            }
+            .controlSize(.large)
+            .disabled(!selection.hasSelection)
+            .help(selection.hasSelection ? "切换收藏" : "请先选中照片")
+
+            Button {
+                batchExport()
+            } label: {
+                Label("导出", systemImage: "square.and.arrow.down.on.square")
+            }
+            .controlSize(.large)
+            .disabled(!selection.hasSelection)
+            .help(selection.hasSelection ? "导出 \(selection.selectedIDs.count) 张到文件夹" : "请先选中照片")
+
+            Button(role: .destructive) {
+                handleDelete()
+            } label: {
+                Label("删除", systemImage: "trash")
+            }
+            .controlSize(.large)
+            .disabled(!selection.hasSelection)
+            .help(selection.hasSelection ? "删除选中 (⌫)" : "请先选中照片")
+
+            Button {
+                startImport()
+            } label: {
+                Label("导入", systemImage: "square.and.arrow.down")
+            }
+            .controlSize(.large)
+            .help("导入图片 (⌘O)")
+
+            // V4.3.3: ViewOptions 从 .primaryAction 搬到 .principal 末位
+            //   用户要求"右上角按钮也集中中间"——所有 actions（含视图选项）同组
+            Button {
+                showViewOptions.toggle()
+            } label: {
+                Label("视图选项", systemImage: viewMode.icon)
+            }
+            .controlSize(.large)
+            .help("视图选项：\(viewMode.label) / \(ThumbnailDensity.nearest(to: thumbnailSize).label) / \(sortOption.label)")
+            .popover(isPresented: $showViewOptions, arrowEdge: .bottom) {
+                ViewOptionsPopover(
                     viewMode: Binding(
                         get: { self.viewMode },
                         set: { self.viewMode = $0 }
                     ),
                     thumbnailSize: $thumbnailSize,
-                    sortOption: $sortOption,
-                    // V3.5.15：侧栏显隐按钮已移至 title bar（ToolbarItem .navigation）
-                    onShare: shareSelected,            // V3.5 Phase 1 Step 3
-                    hasSelection: !selectedIDs.isEmpty || singleSelectedPhoto != nil,
-                    onUndo: undoManager.undo,         // V3.5 Phase 1 Step 4
-                    onRedo: undoManager.redo,
-                    canUndo: undoManager.canUndo,
-                    canRedo: undoManager.canRedo
+                    sortOption: $sortOption
                 )
-            },
+            }
+        }
+
+        // V4.3.3: 删除 .status placement「已选 N 张」（用户要求取消顶部提示）
+        //   底部 StatusBar 已显示选中数，toolbar 重复无意义
+    }
+
+    // 主布局（V3.5.17：拆到 Views/MainLayoutView.swift；V4.0.0 toolbar 迁出到 native .toolbar）
+    private var mainLayout: some View {
+        MainLayoutView(
             pathBar: {
                 // V3.5.17：PathBar 已禁用（用户偏好）
                 // 保留 MainLayoutView 接口；空 @ViewBuilder 闭包 = EmptyView = 不占空间
@@ -554,15 +748,16 @@ struct ContentView: View {
                     sidebar: {
                         SidebarView(
                             selection: $sidebarSelection,
-                            selectedIDs: $selectedIDs
-                            // V3.5.15：搜索移到工具栏（侧栏无搜索）
+                            photoSelection: $selection,
+                            // V4.0.0.6: 缩放 + 排序搬到侧栏顶部（"视图控制中心"）
+                            thumbnailSize: $thumbnailSize,
+                            sortOption: $sortOption
+                            // V4.1.0f: 移除 showSidebar binding（hide 按钮完全搬回主工具栏）
                         )
                     },
                     center: {
                         PhotoGridPane(
-                            selectedPhoto: $selectedPhoto,
-                            selectedIDs: $selectedIDs,
-                            lastSelectedID: $lastSelectedID,
+                            selection: $selection,
                             folder: currentFolder,
                             tag: currentTag,
                             searchText: searchText,
@@ -579,7 +774,7 @@ struct ContentView: View {
                             onVisiblePhotosChange: { visiblePhotos = $0 },
                             onImport: startImport,
                             onBatchDelete: { showingBatchDeleteConfirm = true },
-                            onClearMultiSelect: { selectedIDs = [] },
+                            onClearMultiSelect: { selection = .empty },
                             onDoubleTap: enterImmersive,
                             onExportComplete: { count in
                                 showToast("已导出 \(count) 张图片", type: .success)
@@ -590,7 +785,8 @@ struct ContentView: View {
                         DetailPane(
                             singleSelectedPhoto: singleSelectedPhoto,
                             isMultiSelect: isMultiSelect,
-                            count: filterInTrash ? trashedCount : (filterInDuplicates ? duplicatePurgeableCount : selectedIDs.count),
+                            // V3.6.52: 用 selection.selectedIDs.count 替直接字段
+                            count: filterInTrash ? trashedCount : (filterInDuplicates ? duplicatePurgeableCount : selection.selectedIDs.count),
                             totalSize: filterInTrash ? trashedTotalSize : (filterInDuplicates ? duplicatePurgeableSize : selectedTotalSize),
                             folders: folders,
                             allTags: allTags,
@@ -607,7 +803,8 @@ struct ContentView: View {
                             onBatchToggleFavorite: batchToggleFavorite,
                             onBatchExport: batchExport,
                             onBatchDelete: { showingBatchDeleteConfirm = true },
-                            onClearSelection: { selectedIDs = []; selectedPhoto = nil },
+                            // V3.6.52: 单字段 assignment 替 2 字段 pair
+                            onClearSelection: { selection = .empty },
                             // V3.6 NEW: 回收站模式
                             sidebarSelection: sidebarSelection,
                             retentionDays: retentionDays,
@@ -616,14 +813,21 @@ struct ContentView: View {
                             // V3.6.6: 改弹二次确认（不再直接调 emptyTrash）
                             onEmptyTrash: { showingEmptyTrashConfirm = true },
                             // V3.6.15: 重复图清理（一键保留每组最新）
-                            onKeepNewestPerDuplicateGroup: keepNewestPerDuplicateGroup
+                            onKeepNewestPerDuplicateGroup: keepNewestPerDuplicateGroup,
+                            // V4.1.0 k: 无选中时显示图库概览
+                            allPhotos: allPhotos,
+                            libraryTotalCount: allPhotos.count,
+                            libraryTotalSize: PhotoStats.totalSize(allPhotos),
+                            onSelectPhoto: { photo in selection = selection.selectingSingle(photo.id) },
+                            onSelectFolder: { folder in sidebarSelection = .folder(folder) },
+                            onImport: startImport
                         )
                     }
                 )
+                // V3.6.52: 1 binding<SelectionState> 替 2 bindings
                 .boxSelectionGesture(
                     isBoxSelecting: $isBoxSelecting,
-                    selectedIDs: $selectedIDs,
-                    lastSelectedID: $lastSelectedID,
+                    selection: $selection,
                     visiblePhotos: visiblePhotos
                 )
                 // V3.6.32: 恢复到 V3.6.27 顶层加 .boxSelectionGesture 模式
@@ -635,7 +839,8 @@ struct ContentView: View {
                 StatusBar(
                     totalCount: allPhotos.count,
                     totalSize: totalSizeFormatted,
-                    selectedCount: selectedIDs.count
+                    // V3.6.52: 用 selection.selectedIDs.count 替直接字段
+                    selectedCount: selection.selectedIDs.count
                 )
             },
             showSidebar: $showSidebar,
@@ -665,7 +870,8 @@ struct ContentView: View {
 
     // 处理 Delete 键
     private func handleDelete() {
-        if !selectedIDs.isEmpty {
+        // V3.6.52: 用 selection.selectedIDs 替旧 selectedIDs
+        if !selection.selectedIDs.isEmpty {
             showingBatchDeleteConfirm = true
         } else if singleSelectedPhoto != nil {
             deleteSinglePhoto()
@@ -673,24 +879,38 @@ struct ContentView: View {
     }
 
     // ─── 上一张 / 下一张 ───
+    // V3.6.52: 用 selection.selectingSingle(_:) 替 2 字段手工赋值
     private func goPrev() {
         guard canPrev,
-              let id = singleSelectedPhoto?.id ?? selectedIDs.first,
+              let id = selection.singleSelectedID,
               let idx = visiblePhotos.firstIndex(where: { $0.id == id }),
               idx > 0 else { return }
         let newID = visiblePhotos[idx - 1].id
-        selectedIDs = [newID]
-        lastSelectedID = newID
+        selection = selection.selectingSingle(newID)
     }
 
     private func goNext() {
         guard canNext,
-              let id = singleSelectedPhoto?.id ?? selectedIDs.first,
+              let id = selection.singleSelectedID,
               let idx = visiblePhotos.firstIndex(where: { $0.id == id }),
               idx < visiblePhotos.count - 1 else { return }
         let newID = visiblePhotos[idx + 1].id
-        selectedIDs = [newID]
-        lastSelectedID = newID
+        selection = selection.selectingSingle(newID)
+    }
+
+    // ─── V4.0.0.6: 缩放快捷键（⌘+ / ⌘-）───
+    // 缩放搬到侧栏顶部后，必须配快捷键——否则要"绕到侧栏才能缩"
+    // 参考 macOS Photos.app / Preview：⌘+ / ⌘- 缩略图大小
+    private func zoomIn() {
+        if let next = ThumbnailDensity.larger(than: thumbnailSize) {
+            thumbnailSize = next.size
+        }
+    }
+
+    private func zoomOut() {
+        if let prev = ThumbnailDensity.smaller(than: thumbnailSize) {
+            thumbnailSize = prev.size
+        }
     }
 
     // ─── 启动时清理过期回收站项（V3.6 NEW）───
@@ -823,14 +1043,20 @@ struct ContentView: View {
         return true
     }
 
+    // V4.1.0 l: 切换侧栏 section 时清选中（避免"选中的照片不在新 section"）
+    private func clearSelectionOnFilterChange() {
+        if !selection.isEmpty {
+            selection = .empty
+        }
+    }
+
     // ─── 删除单张（V3.6：走 RecycleBinService，不再调 undoManager）───
     private func deleteSinglePhoto() {
         guard let photo = singleSelectedPhoto else { return }
         // V3.6：删除 = 移到回收站（软删），文件保留在 Photos/ 原位
         RecycleBinService(storage: .shared, modelContext: modelContext).recycle(photo)
-        // 清选择（与旧行为一致）
-        selectedIDs = []
-        selectedPhoto = nil
+        // V3.6.52: 单字段清空替 2 字段 pair
+        selection = .empty
         showToast("已移到「最近删除」（\(retentionDays) 天后永久删除）", type: .info)
     }
 
@@ -848,7 +1074,8 @@ struct ContentView: View {
 
     // ─── 批量移动到文件夹 ───
     private func batchMove(to folder: Folder?) {
-        let photosToMove = visiblePhotos.filter { selectedIDs.contains($0.id) }
+        // V3.6.52: 用 selection.selectedPhotos(in:) 替手写 filter
+        let photosToMove = selection.selectedPhotos(in: visiblePhotos)
         guard !photosToMove.isEmpty else { return }
 
         // 快照：移动前的 folder 列表
@@ -864,8 +1091,7 @@ struct ContentView: View {
             }
             try? modelContext.save()
             // 移动后清空多选
-            selectedIDs = []
-            selectedPhoto = nil
+            selection = .empty
         } undo: {
             for (photo, oldFolder) in zip(photosToMove, oldFolders) {
                 photo.folder = oldFolder
@@ -876,7 +1102,8 @@ struct ContentView: View {
 
     // ─── 批量加标签 ───
     private func batchAddTag(_ tag: Tag) {
-        let photosToTag = visiblePhotos.filter { selectedIDs.contains($0.id) }
+        // V3.6.52: 用 selection.selectedPhotos(in:) 替手写 filter
+        let photosToTag = selection.selectedPhotos(in: visiblePhotos)
         for photo in photosToTag {
             if !photo.tags.contains(where: { $0.id == tag.id }) {
                 photo.tags.append(tag)
@@ -888,7 +1115,8 @@ struct ContentView: View {
 
     // ─── 批量导出 ───
     private func batchExport() {
-        let photosToExport = visiblePhotos.filter { selectedIDs.contains($0.id) }
+        // V3.6.52: 用 selection.selectedPhotos(in:) 替手写 filter
+        let photosToExport = selection.selectedPhotos(in: visiblePhotos)
         guard !photosToExport.isEmpty else { return }
 
         let panel = NSOpenPanel()
@@ -937,7 +1165,8 @@ struct ContentView: View {
 
     // ─── 批量收藏切换 ───
     private func batchToggleFavorite() {
-        let photosToToggle = visiblePhotos.filter { selectedIDs.contains($0.id) }
+        // V3.6.52: 用 selection.selectedPhotos(in:) 替手写 filter
+        let photosToToggle = selection.selectedPhotos(in: visiblePhotos)
         guard !photosToToggle.isEmpty else { return }
         // 全部已收藏 → 全部取消；否则 → 全部收藏
         let allFavorited = photosToToggle.allSatisfy { $0.isFavorite }
@@ -959,13 +1188,13 @@ struct ContentView: View {
         message: (Int) -> String,
         type: ToastView.ToastType = .info
     ) {
-        let photos = visiblePhotos.filter { selectedIDs.contains($0.id) }
+        // V3.6.52: 用 selection.selectedPhotos(in:) 替手写 filter
+        let photos = selection.selectedPhotos(in: visiblePhotos)
         guard !photos.isEmpty else { return }
         let service = RecycleBinService(storage: .shared, modelContext: modelContext)
         operation(service, photos)
         let count = photos.count
-        selectedIDs = []
-        selectedPhoto = nil
+        selection = .empty
         showToast(message(count), type: type)
     }
 
@@ -992,8 +1221,8 @@ struct ContentView: View {
         guard !trashed.isEmpty else { return }
         RecycleBinService(storage: .shared, modelContext: modelContext).purgeAll(trashed)
         let count = trashed.count
-        selectedIDs = []
-        selectedPhoto = nil
+        // V3.6.52: 单字段清空替 2 字段 pair
+        selection = .empty
         showToast("已清空回收站（\(count) 张）", type: .info)
     }
 

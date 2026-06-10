@@ -9,13 +9,15 @@
 //  直接转发参数给 PhotoGridView。提取出来是为了让 ContentView
 //  的"列布局"职责更清晰（侧栏/网格/详情三列各占一文件）。
 //
+//  V3.6.52: 重构选中状态——3 Binding (selectedPhoto/selectedIDs/lastSelectedID) 合并为
+//  1 Binding<SelectionState>（与 PhotoGridView 同步）。
+//
 
 import SwiftUI
 
 struct PhotoGridPane: View {
-    @Binding var selectedPhoto: Photo?
-    @Binding var selectedIDs: Set<UUID>
-    @Binding var lastSelectedID: UUID?
+    // V3.6.52: 3 Binding → 1 Binding<SelectionState>（与 PhotoGridView 同步）
+    @Binding var selection: SelectionState
     let folder: Folder?
     let tag: Tag?
     let searchText: String
@@ -39,9 +41,7 @@ struct PhotoGridPane: View {
 
     var body: some View {
         PhotoGridView(
-            selectedPhoto: $selectedPhoto,
-            selectedIDs: $selectedIDs,
-            lastSelectedID: $lastSelectedID,
+            selection: $selection,
             folder: folder,
             tag: tag,
             searchText: searchText,

@@ -45,6 +45,14 @@ struct DetailPane: View {
     // V3.6.15 NEW: 重复图模式操作
     let onKeepNewestPerDuplicateGroup: () -> Void
 
+    // V4.1.0 k NEW: 图库概览（无选中时显示有用内容）
+    let allPhotos: [Photo]
+    let libraryTotalCount: Int
+    let libraryTotalSize: Int64
+    let onSelectPhoto: (Photo) -> Void
+    let onSelectFolder: (Folder) -> Void
+    let onImport: () -> Void
+
     var body: some View {
         // V3.6.44: 加 .id(viewKind) 让 SwiftUI 知道是"不同视图"（不是同一 view 内部状态变化）
         //   这样 .transition 才会触发；.animation 驱动 spring 过渡
@@ -101,7 +109,16 @@ struct DetailPane: View {
                     onClearSelection: onClearSelection
                 )
             } else {
-                EmptyDetailView()
+                // V4.1.0 k: 无选中 → 显示"图库概览"（替代空白 EmptyDetailView）
+                LibraryOverviewView(
+                    allPhotos: allPhotos,
+                    folders: folders,
+                    totalCount: libraryTotalCount,
+                    totalSize: libraryTotalSize,
+                    onSelectPhoto: onSelectPhoto,
+                    onSelectFolder: onSelectFolder,
+                    onImport: onImport
+                )
             }
         }
         .id(viewKind)  // V3.6.44: 视图类型变化时强制 transition

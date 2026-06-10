@@ -10,6 +10,10 @@
 //  - 多选：单击/⌘+点击/⇧+点击/⌘+A
 //  - 顶部多选操作栏（已选 N 张 + 批量删除 + 取消）
 //
+//  V3.6.52: 重构选中状态——3 Binding (selectedPhoto/selectedIDs/lastSelectedID) 合并为
+//  1 Binding<SelectionState>；applyTapOutcome 收成 1 行；deletePhoto 用 selection.removing(_:)；
+//  局部 isMultiSelect 重命名为 hasSelection（与 ContentView 的 count>1 区分）
+//
 
 import SwiftUI
 import SwiftData
@@ -31,9 +35,9 @@ struct PhotoGridView: View {
     }
 
     // 双向绑定
-    @Binding var selectedPhoto: Photo?
-    @Binding var selectedIDs: Set<UUID>
-    @Binding var lastSelectedID: UUID?
+    // V3.6.52: 3 个绑定（selectedPhoto/selectedIDs/lastSelectedID）合并为 1 个
+    // SelectionState binding——单一真相源，消除 3 字段手工同步的 5+ 处易错点
+    @Binding var selection: SelectionState
 
     // 筛选条件
     let folder: Folder?
@@ -141,14 +145,17 @@ struct PhotoGridView: View {
     }
 
     // 多选模式
-    private var isMultiSelect: Bool { selectedIDs.count > 0 }
+    // V3.6.52: 原 isMultiSelect (count > 0) 改名为 hasSelection
+    //   与 ContentView 的 isMultiSelect (count > 1) 区分——前者供空状态抑制用，
+    //   后者供 DetailPane 切换布局用
+    private var hasSelection: Bool { selection.hasSelection }
 
     var body: some View {
         VStack(spacing: 0) {
             // V3.5.19：移除 multiSelectTopBar
             // 批量操作搬到详情面板的 MultiSelectDetailView 里了
 
-            if photos.isEmpty && !isMultiSelect {
+            if photos.isEmpty && !hasSelection {
                 emptyState
                     // V3.6.43: 空状态 fade in/out（之前是突现）
                     .transition(.opacity)
@@ -161,7 +168,7 @@ struct PhotoGridView: View {
         // V3.6.39: 触发视图模式切换的 transition 动画
         .animation(Animations.medium, value: viewMode)
         // V3.6.43: 触发空状态切换的 transition 动画
-        .animation(Animations.medium, value: photos.isEmpty && !isMultiSelect)
+        .animation(Animations.medium, value: photos.isEmpty && !hasSelection)
         .navigationTitle(navigationTitle)
         .onAppear {
             // V3.6.5：首次出现时算一次 photos（之前 photos 是 computed，每次 re-render 重算）
@@ -267,8 +274,7 @@ struct PhotoGridView: View {
         case .list:
             PhotoListView(
                 photos: photos,
-                selectedIDs: selectedIDs,
-                singleSelectedID: singleSelectedID,
+                selection: selection,
                 onTap: handleTap,
                 onDoubleTap: onDoubleTap
             )
@@ -276,8 +282,7 @@ struct PhotoGridView: View {
         case .timeline:
             PhotoTimelineView(
                 photos: photos,
-                selectedIDs: selectedIDs,
-                singleSelectedID: singleSelectedID,
+                selection: selection,
                 onTap: handleTap,
                 onDoubleTap: onDoubleTap
             )
@@ -298,8 +303,8 @@ struct PhotoGridView: View {
                 ForEach(photos) { photo in
                     PhotoThumbnailView(
                         photo: photo,
-                        isInMultiSelect: selectedIDs.contains(photo.id),
-                        isActive: singleSelectedID == photo.id,
+                        isInMultiSelect: selection.contains(photo.id),
+                        isActive: selection.singleSelectedID == photo.id,
                         folders: folders,
                         allTags: allTags,
                         cellHeight: thumbnailSize,
@@ -327,11 +332,10 @@ struct PhotoGridView: View {
     }
 
     // 当前单选 ID（用于蓝色边框）
-    private var singleSelectedID: UUID? {
-        selectedIDs.count <= 1 ? (selectedIDs.first ?? selectedPhoto?.id) : nil
-    }
+    // 当前单选 ID（用于蓝色边框）
+    // V3.6.52: 改用 selection 上的派生属性（删除原 local 重复实现）
 
-    // ─── 处理点击（V3.6.30：抽成 MultiSelectMath.handleTap 纯函数 thin wrapper）───
+    // ─── 处理点击（V3.6.30：抽成 MultiSelectMath.handleTap 纯函数 thin wrapper；V3.6.52：glue 收成 1 行）───
     private func handleTap(_ photo: Photo) {
         let modifiers = NSEvent.modifierFlags
         let modifier: ClickModifier = {
@@ -339,46 +343,31 @@ struct PhotoGridView: View {
             if modifiers.contains(.shift) { return .shift }
             return .plain
         }()
-        let state = SelectionState(
-            selectedIDs: selectedIDs,
-            lastSelectedID: lastSelectedID,
-            selectedPhotoID: selectedPhoto?.id
-        )
+        // V3.6.52: 直接传当前 selection，不再手工 destructure 3 个字段
         let photoIDs = photos.map { $0.id }
         let outcome = MultiSelectMath.handleTap(
-            state: state,
+            state: selection,
             photoID: photo.id,
             modifier: modifier,
             photoIDs: photoIDs
         )
-        applyTapOutcome(outcome, clickedPhoto: photo)
+        // V3.6.52: applyTapOutcome 收成 1 行——seam 已包含 X2 行为
+        // （.command / .shift 都设 selectedPhotoID = nil），消费者无需覆盖
+        applyTapOutcome(outcome)
     }
 
-    // ─── 应用 TapOutcome 到 @State（V3.6.30：handleTap 拆出来后必要的 glue）───
-    private func applyTapOutcome(_ outcome: TapOutcome, clickedPhoto: Photo) {
-        let s: SelectionState
+    // ─── 应用 TapOutcome 到 @State（V3.6.52：从 7 行收成 4 行）───
+    private func applyTapOutcome(_ outcome: TapOutcome) {
         switch outcome {
-        case .singleSelect(let x), .toggleMultiSelect(let x), .rangeSelect(let x):
-            s = x
-        }
-        selectedIDs = s.selectedIDs
-        lastSelectedID = s.lastSelectedID
-        // selectedPhoto 只在 .singleSelect 时设（保持与原 handleTap 行为一致）
-        switch outcome {
-        case .singleSelect:
-            selectedPhoto = clickedPhoto
-        case .toggleMultiSelect, .rangeSelect:
-            selectedPhoto = nil
+        case .singleSelect(let s), .toggleMultiSelect(let s), .rangeSelect(let s):
+            selection = s
         }
     }
 
-    // ─── 删除（V3.6：走 RecycleBinService.recycle，移到回收站）───
+    // ─── 删除（V3.6：走 RecycleBinService.recycle，移到回收站；V3.6.52：selection.removing 替手写）───
     private func deletePhoto(_ photo: Photo) {
         RecycleBinService(storage: .shared, modelContext: modelContext).recycle(photo)
-        selectedIDs.remove(photo.id)
-        if selectedPhoto?.id == photo.id {
-            selectedPhoto = nil
-        }
+        selection = selection.removing(photo.id)
     }
 
 
@@ -448,16 +437,43 @@ struct PhotoThumbnailView: View {
 
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme) private var colorScheme  // V3.6.14: 暗色适配 trash opacity
+    // V4.4.0 NEW: Reduced Motion 适配——禁用 hover scale / 选中 scale 等动画
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showingDeleteConfirm = false
     @State private var isHovered = false
     // V3.6.10: 键盘聚焦状态（SwiftUI 默认 focus ring，但 macOS 上系统不显示时手动加）
     @FocusState private var isFocused: Bool
     // V3.6.26: 异步缩略图加载状态（避免主线程阻塞）
     @State private var loadedImage: NSImage?
+    // V4.4.0 NEW: 加载失败标记——区分"还在加载"vs"加载失败"
+    @State private var loadFailed = false
 
     /// V3.6.6: 距离永久删除的剩余天数（nil = 未在回收站）
     private var daysLeft: Int? {
         PhotoStats.daysUntilPurge(trashedAt: photo.trashedAt, retentionDays: retentionDays)
+    }
+
+    /// V4.1.0 NEW: 剩余天数 badge 颜色编码
+    /// - ≤3 天：红色（危险，永久删除迫近）
+    /// - 4-7 天：橙色（提醒）
+    /// - 8-14 天：黄色（注意）
+    /// - >14 天：灰色（正常）
+    private struct BadgeColor {
+        let foreground: Color
+        let background: Color
+    }
+
+    private func daysLeftBadgeColor(days: Int) -> BadgeColor {
+        if days <= 3 {
+            return BadgeColor(foreground: .white, background: Color.red)
+        } else if days <= 7 {
+            return BadgeColor(foreground: .white, background: Color.orange)
+        } else if days <= 14 {
+            return BadgeColor(foreground: .primary, background: Color.yellow.opacity(0.85))
+        } else {
+            return BadgeColor(foreground: .primary,
+                              background: Color(nsColor: .controlBackgroundColor).opacity(0.9))
+        }
     }
 
     /// V3.6.10: 缩略图 hover 时显示的 tooltip（文件名 + 尺寸 + 文件大小）
@@ -472,13 +488,86 @@ struct PhotoThumbnailView: View {
         return parts.joined(separator: " · ")
     }
 
+    /// V3.6.51: 重构——选中状态机
+    /// 之前 isActive 和 isInMultiSelect 两个独立 bool 各自驱动 3-4 个 modifier，
+    /// 多个独立动画叠加产生'双层边框'错觉（用户多次反馈'先浅框再深蓝'）
+    /// 现在统一为单一 CellSelectionState enum，单一来源
+    enum CellSelectionState {
+        case none       // 默认
+        case single     // isActive 单选
+        case multi      // isInMultiSelect 多选
+
+        var borderWidth: CGFloat {
+            switch self {
+            case .none:   return 0      // 一直绘制 lineWidth=0 时不显示
+            case .single, .multi: return 3  // 单选和多选都用 3pt（视觉一致）
+            }
+        }
+
+        var borderColor: Color {
+            switch self {
+            case .none:   return .clear
+            case .single, .multi: return Palette.selectionBorder
+            }
+        }
+
+        var showsCheckmark: Bool {
+            self == .multi
+        }
+    }
+
+    private var selectionState: CellSelectionState {
+        if isActive { return .single }
+        if isInMultiSelect { return .multi }
+        return .none
+    }
+
+    /// V4.4.3: 选中态时 hover shadow 让位（避免选中后 shadow 形成「浅框」）
+    ///   hover shadow（Elevation.strong, radius 12pt）只在 hover-未选中时显示
+    ///   选中态已用 accent 边框指示，无需 shadow 再"喊一遍"
+    private var shadowShowsHover: Bool {
+        isHovered && !isActive && !isInMultiSelect
+    }
+
     /// V3.6.35: 当前缩放比例（按压 scale 撤销，hover > 选中 > 默认）
     /// V3.6.47: scale priority 修——选中 1.025 > hover 1.02
     ///   之前选中 1.015 < hover 1.02，点击 cell 反而变小（反 UX）
+    /// V4.4.0: Reduced Motion 时所有 scale 强制 1.0（accessibility）
     private var currentScale: CGFloat {
-        if isActive { return 1.025 }              // 单选：放大 2.5%
-        if isHovered && !isInMultiSelect { return 1.02 }  // hover：放大 2%
+        if reduceMotion { return 1.0 }            // V4.4.0: accessibility
+        // V4.1.0 C: hover 从 1.025 → 1.01（更微妙——"凸起"而非"放大"）
+        if isActive { return 1.015 }              // 单选：放大 1.5%（之前 2.5%）
+        if isHovered && !isInMultiSelect { return 1.01 }  // hover：放大 1%
         return 1.0
+    }
+
+    /// V3.6.51: cell 选中视觉的单一 overlay（之前散在 3 个 overlay modifier）
+    /// - 边框（单选 + 多选共用 lineWidth=3、Palette.selectionBorder，opacity 0/1）
+    /// - ✓ checkmark（仅 multi）
+    /// 不再有多选时的 selectionOverlayMulti 染色（V3.6.50 之前反复被误读为"淡色框"）
+    /// V4.4.0: cornerRadius 从 Radius.md (8pt) → Radius.thumb (6pt)
+    /// V4.4.1: `.stroke` → `.strokeBorder` 修「浅框」幽灵
+    ///   `.stroke(lineWidth: 3)` 是 center-aligned——外侧 1.5pt 飞出 cell 圆角范围
+    ///   在直线段 vs 圆角处厚度不一致（圆角处变薄、直线段变厚），且飞出部分
+    ///   在 grid spacing 上显成"细蓝边"。
+    ///   `.strokeBorder` 完全在 path 内绘制 → 边框完全在 cell 内，无飞出无几何错位
+    @ViewBuilder
+    private var cellSelectionOverlay: some View {
+        let state = selectionState
+        ZStack {
+            RoundedRectangle(cornerRadius: Radius.thumb)
+                .strokeBorder(state.borderColor, lineWidth: state.borderWidth)
+            if state.showsCheckmark {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.title2)
+                    .foregroundStyle(.white, Color.accentColor)
+                    .background(Circle().fill(.background).padding(3))
+                    .padding(6)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                    .transition(.scale.combined(with: .opacity))
+                    .allowsHitTesting(false)
+            }
+        }
     }
 
     private var aspectRatio: CGFloat {
@@ -494,10 +583,18 @@ struct PhotoThumbnailView: View {
         let capturedFileURL = photo.fileURL
         let capturedPreviewImage = loadedImage
         return ZStack(alignment: .topTrailing) {
+            // V4.4.4: 删除 CheckerboardBackground——这就是「浅框」幽灵的真正源头
+            //   V4.4.0 引入 checker 想"为透明 PNG 提供视觉边界"，但 99% 图片是 JPG
+            //   不透明 → 图片 fit 留白处显示 checker → 每张图周围一圈棋盘格
+            //   远看时棋盘格平均化变成浅灰色 = 用户感知的「浅框」（每张图都有）
+            //   Mac Photos.app / Finder 都不显示 checker，透明区显示 cell 背景色即可
+            //   ThumbnailEffects.CheckerboardBackground 仍保留，未来若做透明检测可重用
+
             // 图片（垂直居中 + 按原比例）
             // V3.6.8: trash 视图下加灰度 + 降低不透明度，让"已删除"感更强
             // V3.6.14: 暗色下 opacity 0.65（暗背景下半透明不会"黑掉"）
             // V3.6.26: 改用 .task + 异步加载，主线程不阻塞
+            // V4.4.0: 三态 → 加载中 (shimmer 骨架) / 加载失败 (exclamationmark) / 已加载 (Image)
             VStack(spacing: 0) {
                 Spacer(minLength: 0)
                 Group {
@@ -507,33 +604,50 @@ struct PhotoThumbnailView: View {
                             .aspectRatio(aspectRatio, contentMode: .fit)
                             .saturation(photo.isInTrash ? 0.05 : 1)
                             .opacity(photo.isInTrash ? (colorScheme == .dark ? 0.65 : 0.55) : 1)
-                    } else {
-                        RoundedRectangle(cornerRadius: Radius.md)
-                            .fill(Palette.cellEmpty)
+                    } else if loadFailed {
+                        // V4.4.0: 加载失败——明确指示 + 灰底
+                        RoundedRectangle(cornerRadius: Radius.thumb)
+                            .fill(.quaternary)
                             .aspectRatio(aspectRatio, contentMode: .fit)
                             .overlay {
-                                Image(systemName: "photo")
-                                    .foregroundStyle(.secondary)
+                                VStack(spacing: 4) {
+                                    Image(systemName: "exclamationmark.triangle")
+                                        .font(.title3)
+                                    Text("加载失败")
+                                        .font(.caption2)
+                                }
+                                .foregroundStyle(.secondary)
                             }
+                    } else {
+                        // V4.4.0: 加载中——shimmer 骨架替静态 photo icon
+                        //   滚动到新位置时不再"灰图标闪烁"
+                        RoundedRectangle(cornerRadius: Radius.thumb)
+                            .fill(.quaternary)
+                            .aspectRatio(aspectRatio, contentMode: .fit)
+                            .shimmer()
                     }
                 }
                 Spacer(minLength: 0)
             }
             .frame(maxWidth: .infinity)
             // V3.6.26: 异步加载缩略图（缓存命中立即返回；未命中后台线程解码）
-            // .task 在 view 出现时触发，photo.id 变化时重新加载
+            // V4.4.0: 加载失败时 set loadFailed=true（loadImageAsync 返回 nil 视为失败）
             .task(id: photo.id) {
-                loadedImage = await ImageLoader.loadImageAsync(
+                loadFailed = false
+                let img = await ImageLoader.loadImageAsync(
                     at: photo.fileURL,
                     maxPixelSize: 600
                 )
+                if img == nil {
+                    loadFailed = true
+                } else {
+                    loadedImage = img
+                }
             }
 
-            // 多选蒙层
-            if isInMultiSelect {
-                RoundedRectangle(cornerRadius: Radius.md)
-                    .fill(Palette.selectionOverlayMulti)
-            }
+            // V4.4.0: 删除 isInMultiSelect 时的 16% accent 蒙层
+            //   V3.6.51 注释说"删了"但代码仍在；选中状态靠 cellSelectionOverlay
+            //   的 3pt accent 边框 + checkmark 角标已足够，无需整图染色
 
             // 收藏星标
             if photo.isFavorite {
@@ -545,23 +659,21 @@ struct PhotoThumbnailView: View {
             }
 
             // V3.6.6: 回收站剩余天数 badge（仅 trash 视图下显示）
+            // V4.1.0: 颜色编码——≤3 红 / 4-7 橙 / 8-14 黄 / >14 灰
             // topLeading 不与右上角的多选 ✓ / 左上角的 star 冲突
             if let days = daysLeft, photo.isInTrash {
+                let badgeColor = daysLeftBadgeColor(days: days)
                 HStack(spacing: 2) {
                     Image(systemName: "clock")
                         .font(.caption2)
                     Text("\(days)")
                         .font(.caption.monospacedDigit())
                 }
-                .foregroundStyle(days <= 3 ? .white : .primary)
+                .foregroundStyle(badgeColor.foreground)
                 .padding(.horizontal, 6)
                 .padding(.vertical, 3)
                 .background(
-                    Capsule().fill(
-                        days <= 3
-                        ? Color.orange
-                        : Color(nsColor: .controlBackgroundColor).opacity(0.9)
-                    )
+                    Capsule().fill(badgeColor.background)
                 )
                 .padding(6)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -585,53 +697,46 @@ struct PhotoThumbnailView: View {
         .animation(Animations.standard, value: isInMultiSelect)
         .frame(maxWidth: .infinity)
         .frame(height: cellHeight)
-        .background(Palette.cellBackground)
-        // V3.6.50: 删除 V3.6.47 加的 5% accent 背景染色
-        //   之前用户反馈'先出现淡色框再出现深蓝框'——淡色框就是这个 5% accent
-        //   选中视觉现在只靠 3pt 深蓝边框 + scale 1.025 + hover 阴影
-        .cornerRadius(Radius.md)
+        // V4.4.5: cell 背景 controlBackgroundColor → windowBackgroundColor
+        //   ↑ 终于找到「浅框」真正源头——cell 背景比窗口背景浅一档
+        //   旧 Palette.cellBackground = Surface.elevated = controlBackgroundColor ≈ #2C2C2C
+        //   窗口背景 windowBackgroundColor ≈ #1E1E1E
+        //   每个 cell 在深窗口上 = 浅灰圆角矩形 = 用户感知的「浅框」
+        //   现在 cell 与窗口同色，cell 容器感完全消失，只剩"漂浮的图片"
+        //   视觉分隔靠 grid spacing（间距本身）+ cornerRadius clip（图片圆角）
+        //   这是 Mac Photos.app 标准做法
+        .background(Color(NSColor.windowBackgroundColor))
+        .cornerRadius(Radius.thumb)
         .clipped()
-        // V3.6.48: 彻底删除 V3.1 的 1pt 浅色边框
-        //   之前 V3.6.46 是'选中时隐藏'，但 0.2s 淡出动画期间用户看到'浅色变深蓝'过渡感
-        //   现在直接不要这层边框——cells 视觉分离靠 background + shadow
-        //   （resting 状态下也有 subtle 阴影，V3.1 引入）
-        // 边框：单选激活显示蓝色边框（V3.1：4pt → 3pt，更克制）
-        // V3.6.40: 加 .animation 让边框线宽 / 颜色过渡平滑
-        // V3.6.49: 边框从 lineWidth 0→3 改为 opacity 0→1
-        //   之前 lineWidth 增长动画早期看起来'细线'，被用户读成'浅色→深蓝'两层
-        //   现在保持 lineWidth=3 一直绘制，只 toggle opacity——单层均匀淡入淡出
-        .overlay {
-            RoundedRectangle(cornerRadius: Radius.md)
-                .stroke(
-                    Palette.selectionBorder.opacity(isActive ? 1 : 0),
-                    lineWidth: 3
-                )
-        }
-        .animation(Animations.standard, value: isActive)
-        // 多选选中显示蓝色蒙层 + 边框
-        // V3.6.49: 同样 lineWidth=2 一直绘制，toggle opacity
-        .overlay {
-            RoundedRectangle(cornerRadius: Radius.md)
-                .stroke(
-                    Palette.selectionBorder.opacity(isInMultiSelect ? 1 : 0),
-                    lineWidth: 2
-                )
-        }
-        // V3.6.35: 缩放优先级 选中 (1.015) > hover (1.02) > 默认
+        // V3.6.51: 重构——单一 cellSelectionOverlay 取代之前散在 3 个 overlay modifier
+        //   之前：3pt 单选 border（独立 modifier） + 2pt 多选 border（独立 modifier）
+        //        + 多选 selectionOverlayMulti 染色（用户多次反馈的'淡色框'，V3.6.50 没真删干净）
+        //   现在：单一 overlay 由 selectionState enum 驱动，单一 .animation(value: selectionState)
+        //   状态切换时所有视觉元素（边框 + ✓）一起淡入淡出，无'先后'错觉
+        //   V3.6.51 也彻底删除 selectionOverlayMulti 染色（16% accent 太显眼被读成'浅框'）
+        .overlay(cellSelectionOverlay)
+        // V3.6.35: 缩放优先级 选中 (1.025) > hover (1.02) > 默认
         //   按压 0.95 scale 撤销（避免跟 .draggable 抢事件）
         .scaleEffect(currentScale)
-        // V3.1：用 Elevation 阴影系统
-        //   resting：subtle（始终有微弱阴影，浮起感）
-        //   hover：strong（明显浮起）
+        // V4.4.2: 删除 resting shadow——这就是「浅框」幽灵的真正源头
+        //   V3.1 引入「始终浮起感」: resting Elevation.subtle (radius=2, y=1, opacity=0.08)
+        //   但 shadow 在 cell 四周扩散 2pt，在浅色 grid 间距上呈现为"一圈淡色光晕"
+        //   = 用户感知的「浅框」（每个 cell 都有，无论选中与否）
+        //
+        // V4.4.3: hover shadow 与选中态互斥——「选中后的浅框」真凶
+        //   用户点击 cell = 必然 hover → 选中后 isHovered=true → Elevation.strong
+        //   shadow（12pt radius + 0.20 opacity）在 accent 边框周围扩散 12pt
+        //   = 用户感知的「选中后出现的浅框」
+        //   设计原则：选中已用 accent 边框明确指示，shadow 是 hover 反馈，
+        //   选中时让 shadow 让位（!isActive && !isInMultiSelect 才显示）
         .shadow(
-            color: isHovered ? Elevation.strong.color : Elevation.subtle.color,
-            radius: isHovered ? Elevation.strong.radius : Elevation.subtle.radius,
+            color: shadowShowsHover ? Elevation.strong.color : .clear,
+            radius: shadowShowsHover ? Elevation.strong.radius : 0,
             x: 0,
-            y: isHovered ? Elevation.strong.y : Elevation.subtle.y
+            y: shadowShowsHover ? Elevation.strong.y : 0
         )
-        // V3.6.50: 删除 V3.6.47 加的 selectionBackground 动画（属性本身也删了）
-        // V3.6.45: 选中 isActive 用 standard（0.2s 极快），hover/focus 仍 springGentle（环境反馈可以 Q 弹）
-        .animation(Animations.standard, value: isActive)
+        // V3.6.51: 单一 .animation 驱动所有选中状态过渡（之前 3 个独立 modifier）
+        .animation(Animations.standard, value: selectionState)
         .animation(Animations.springGentle, value: isHovered)
         .animation(Animations.springGentle, value: isFocused)
         // hover 检测（仅用于缩放动画）
@@ -646,9 +751,15 @@ struct PhotoThumbnailView: View {
             onDoubleTap()
         }
         // V3.6.10: 键盘聚焦绑定（方向键导航时高亮）
+        // V4.4.6: focusEffectDisabled(false) → true ——「点击后浅框」真凶
+        //   旧 V3.6.10 显式启用系统 focus ring 给键盘导航视觉
+        //   但鼠标点击也会触发 focus → 系统淡蓝发光环显示在 cell 周围
+        //   = 用户看到的「点击后的浅框」
+        //   选中状态已用 3pt accent strokeBorder 明确指示，再叠 focus ring 是双重视觉
+        //   键盘导航可用 selectionState (selectedIDs/singleSelectedID) 体现，无需系统 ring
         .focused($isFocused)
         .focusable(true)
-        .focusEffectDisabled(false)  // 启用 macOS 系统 focus ring
+        .focusEffectDisabled(true)  // V4.4.6: 禁用系统 focus ring
         // V3.6.40: hover 动画升级 .standard → .springGentle（按压更"Q弹"感）
         // scaleEffect(currentScale) 在前面
         // animation 之前是 Animations.standard，现改 spring
@@ -682,13 +793,14 @@ struct PhotoThumbnailView: View {
         .draggable(capturedFileURL) {
             // 拖动预览：缩略图（用已加载的 capturedPreviewImage 避免重读盘 + @State 访问）
             // V3.6.42: 加 shadow + 边框 + 放大到 96 + 旋转 1°（"被拿起"感）
+            // V4.4.0: Radius.md → Radius.thumb 与 cell 本体圆角统一
             ZStack {
-                RoundedRectangle(cornerRadius: Radius.md)
+                RoundedRectangle(cornerRadius: Radius.thumb)
                     .fill(Palette.cellBackground)
                     .frame(width: 96, height: 96)
                     .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
                     .overlay(
-                        RoundedRectangle(cornerRadius: Radius.md)
+                        RoundedRectangle(cornerRadius: Radius.thumb)
                             .strokeBorder(Color.accentColor.opacity(0.6), lineWidth: 1.5)
                     )
                 if let nsImage = capturedPreviewImage {
@@ -696,7 +808,7 @@ struct PhotoThumbnailView: View {
                         .resizable()
                         .aspectRatio(contentMode: .fill)
                         .frame(width: 96, height: 96)
-                        .clipShape(RoundedRectangle(cornerRadius: Radius.md))
+                        .clipShape(RoundedRectangle(cornerRadius: Radius.thumb))
                 } else {
                     Image(systemName: "photo")
                         .font(.title)
@@ -824,9 +936,7 @@ struct CellContextMenuModifier: ViewModifier {
 
 #Preview {
     PhotoGridView(
-        selectedPhoto: .constant(nil),
-        selectedIDs: .constant([]),
-        lastSelectedID: .constant(nil),
+        selection: .constant(SelectionState()),
         folder: nil,
         tag: nil,
         searchText: "",
