@@ -359,12 +359,9 @@ struct ContentView: View {
                 configureNSToolbar(window: window)
             })
             // V4.8.0: 选中状态变化 → 更新 NSToolbar buttons enabled
-            .onChange(of: selection.hasSelection) { _, hasSelection in
-                ToolbarController.shared.updateAllStates(
-                    hasSelection: hasSelection,
-                    hasMultipleSelection: selection.isMultiSelect
-                )
-            }
+            .syncNSToolbarSelectionState(selection: selection)
+            // V4.8.1: SwiftUI @State searchText 变化 → 同步到 NSSearchField
+            .syncNSToolbarSearchField(text: searchText)
             .onAppear {
                 thumbnailSize = CGFloat(storedThumbnailSize)
                 sidebarSelection = restoreSelection(storedSidebarKey)
@@ -562,15 +559,15 @@ struct ContentView: View {
         controller.onShowViewOptions = { [self] in
             showViewOptions.toggle()
         }
-        // V4.8.0: search field 用 NSHostingView 包 SwiftUI ToolbarSearchField
-        //   闭包捕获 $searchText binding——NSToolbar 询问时构造一次
-        controller.searchViewProvider = { [searchText = $searchText, searchFieldLeadingOffset = searchFieldLeadingOffset] in
-            let host = NSHostingView(rootView: ToolbarSearchField(
-                text: searchText,
-                leadingPadding: searchFieldLeadingOffset
-            ))
-            host.frame = NSRect(x: 0, y: 0, width: 180, height: 24)
-            return host
+        // V4.8.1: search field 改用 NSSearchField (AppKit 原生) 替代 SwiftUI 自绘
+        //   NSSearchField 由 ToolbarController.makeSearchItem 创建
+        //   这里只绑 text 变化 closure 同步到 SwiftUI @State
+        controller.onSearchTextChanged = { [self] newText in
+            // NSSearchField 文本变化 → SwiftUI @State 同步
+            // 避免无限循环：SwiftUI @State → setSearchText 时检查值是否相同
+            if searchText != newText {
+                searchText = newText
+            }
         }
 
         window.toolbar = toolbar
@@ -1276,5 +1273,33 @@ extension View {
         }
         .tint(tintColor)
         .environment(\.appAccent, tintColor)
+    }
+}
+
+// MARK: - V4.8.1: NSToolbar 桥接 extension
+//
+// 抽到 extension 避免 ContentView body 链过长触发 type-check 超时
+// （V3.6.17/6.23/4.7.7 教训——body 临界点 ~200 行）
+//
+// syncNSToolbarSelectionState: SwiftUI @State SelectionState → NSToolbar buttons enabled
+// syncNSToolbarSearchField: SwiftUI @State searchText → NSSearchField.stringValue
+//
+extension View {
+    /// V4.8.0: 选中状态变化 → 同步到 NSToolbar 5 actions 的 enabled
+    func syncNSToolbarSelectionState(selection: SelectionState) -> some View {
+        onChange(of: selection.hasSelection) { _, hasSelection in
+            ToolbarController.shared.updateAllStates(
+                hasSelection: hasSelection,
+                hasMultipleSelection: selection.isMultiSelect
+            )
+        }
+    }
+
+    /// V4.8.1: SwiftUI @State searchText 变化 → 同步到 NSSearchField
+    ///   NSSearchField 内部变化由 ToolbarController.onSearchTextChanged 闭包处理（避免循环）
+    func syncNSToolbarSearchField(text: String) -> some View {
+        onChange(of: text) { _, newValue in
+            ToolbarController.shared.setSearchText(newValue)
+        }
     }
 }

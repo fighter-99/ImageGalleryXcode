@@ -43,9 +43,13 @@ final class ToolbarController: NSObject, NSToolbarDelegate {
 
     // MARK: - Search field 桥接
 
-    /// ContentView 提供 closure 创建 search field view
-    /// 捕获 @State searchText binding 进 SwiftUI view
-    var searchViewProvider: (() -> NSView)?
+    /// NSSearchField 强引用——用于 SwiftUI @State → NSSearchField 同步
+    /// NSSearchField 由 NSToolbar 在需要时构造（NSToolbarItem.view 懒加载）
+    /// 这里保存引用是为了 ContentView 通过 setSearchText 主动更新 stringValue
+    private(set) weak var searchField: NSSearchField?
+
+    /// NSSearchField → SwiftUI @State 同步（用户输入时）
+    var onSearchTextChanged: ((String) -> Void)?
 
     // MARK: - 状态桥接
 
@@ -213,16 +217,46 @@ final class ToolbarController: NSObject, NSToolbarDelegate {
         item.label = "Search"
         item.paletteLabel = "Search"
         item.toolTip = "Search photos, tags, notes"
-        // V4.8.0b: 用 ContentView 提供的 provider 创建 search view
-        if let viewProvider = searchViewProvider {
-            item.view = viewProvider()
-            item.minSize = NSSize(width: 180, height: 24)
-            item.maxSize = NSSize(width: 360, height: 24)
-        } else {
-            // Provider 未设置时的 fallback
-            item.view = NSView(frame: NSRect(x: 0, y: 0, width: 180, height: 24))
+
+        // V4.8.1: 用 NSSearchField (AppKit 原生) 替换 SwiftUI 自绘的 ToolbarSearchField
+        //   Finder / Mail / Notes / Photos 都用 NSSearchField
+        //   自带 magnifying glass + clear button (X) + 系统样式
+        //   与 NSToolbar 视觉风格统一（不用 .quaternary 自绘背景）
+        let searchField = NSSearchField()
+        searchField.placeholderString = "搜索照片、标签…"
+        searchField.sendsSearchStringImmediately = true  // 输入即触发（与原 ToolbarSearchField 一致）
+        searchField.sendsWholeSearchString = false       // 每次输入都触发（非 Enter 才触发）
+        searchField.frame = NSRect(x: 0, y: 0, width: 180, height: 22)
+        searchField.target = self
+        searchField.action = #selector(handleSearchAction)  // Enter 键触发
+
+        // 监听 NSSearchField 文本变化——通过 NSControl.textDidChangeNotification
+        //   NSSearchField 的文本变化是 NSControl 的 textDidChangeNotification
+        //   不能用 delegate（NSControl 的 delegate 是 NSWindowDelegate 协议不同）
+        NotificationCenter.default.addObserver(
+            forName: NSControl.textDidChangeNotification,
+            object: searchField,
+            queue: .main
+        ) { [weak self, weak searchField] _ in
+            guard let self = self, let searchField = searchField else { return }
+            self.onSearchTextChanged?(searchField.stringValue)
         }
+
+        self.searchField = searchField
+        item.view = searchField
+        item.minSize = NSSize(width: 180, height: 22)
+        item.maxSize = NSSize(width: 360, height: 22)
         return item
+    }
+
+    // MARK: - 外部 API（SwiftUI @State → NSSearchField 同步）
+
+    /// ContentView 在 .onChange(of: searchText) 调用
+    /// 把 SwiftUI @State 同步到 NSSearchField（外部状态变化时）
+    func setSearchText(_ text: String) {
+        // 避免无限循环：只在 NSSearchField 当前值与新值不同时更新
+        guard searchField?.stringValue != text else { return }
+        searchField?.stringValue = text
     }
 
     // MARK: - Action Handlers
@@ -233,4 +267,8 @@ final class ToolbarController: NSObject, NSToolbarDelegate {
     @objc private func handleDelete() { onDelete?() }
     @objc private func handleImport() { onImport?() }
     @objc private func handleShowViewOptions() { onShowViewOptions?() }
+    @objc private func handleSearchAction() {
+        // Enter 键触发——已通过 textDidChangeNotification 实时同步
+        // 这里留作 future: 触发"提交搜索"（可能高亮首个结果等）
+    }
 }
