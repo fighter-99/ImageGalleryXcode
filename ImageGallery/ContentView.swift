@@ -532,7 +532,8 @@ struct ContentView: View {
 
         let toolbar = NSToolbar(identifier: NSToolbar.Identifier("MainToolbar"))
         toolbar.delegate = ToolbarController.shared
-        toolbar.displayMode = .iconAndLabel  // V4.8.0: 先 iconAndLabel 测试，后续可改 .iconOnly
+        // V4.8.2: .iconAndLabel → .iconOnly（Photos.app 风格，5 actions 不显示文字 label）
+        toolbar.displayMode = .iconOnly
         toolbar.allowsUserCustomization = true   // 用户可自定义 toolbar items
         toolbar.autosavesConfiguration = true   // 自定义状态自动保存
         toolbar.showsBaselineSeparator = false  // 不显示底部分隔线

@@ -213,26 +213,27 @@ final class ToolbarController: NSObject, NSToolbarDelegate {
     }
 
     private func makeSearchItem(id: Identifier) -> NSToolbarItem {
-        let item = NSToolbarItem(itemIdentifier: id.nsIdentifier)
-        item.label = "Search"
-        item.paletteLabel = "Search"
-        item.toolTip = "Search photos, tags, notes"
+        // V4.8.2: 用 NSSearchToolbarItem 替代裸 NSToolbarItem + NSSearchField
+        //   NSSearchToolbarItem (macOS 11+) 是 NSToolbar 专用 search item 包装
+        //   自动有合适的背景样式 + 系统 placeholder + clear button + 展开/收起的 toolbar 行为
+        //   Photos.app / Finder / Mail / Notes 都用这个
+        let searchItem = NSSearchToolbarItem(itemIdentifier: id.nsIdentifier)
+        searchItem.label = "Search"
+        searchItem.paletteLabel = "Search"
+        searchItem.toolTip = "Search photos, tags, notes"
 
-        // V4.8.1: 用 NSSearchField (AppKit 原生) 替换 SwiftUI 自绘的 ToolbarSearchField
-        //   Finder / Mail / Notes / Photos 都用 NSSearchField
-        //   自带 magnifying glass + clear button (X) + 系统样式
-        //   与 NSToolbar 视觉风格统一（不用 .quaternary 自绘背景）
-        let searchField = NSSearchField()
+        let searchField = searchItem.searchField
         searchField.placeholderString = "搜索照片、标签…"
-        searchField.sendsSearchStringImmediately = true  // 输入即触发（与原 ToolbarSearchField 一致）
-        searchField.sendsWholeSearchString = false       // 每次输入都触发（非 Enter 才触发）
-        searchField.frame = NSRect(x: 0, y: 0, width: 180, height: 22)
+        searchField.sendsSearchStringImmediately = true
+        searchField.sendsWholeSearchString = false
         searchField.target = self
-        searchField.action = #selector(handleSearchAction)  // Enter 键触发
+        searchField.action = #selector(handleSearchAction)
 
-        // 监听 NSSearchField 文本变化——通过 NSControl.textDidChangeNotification
-        //   NSSearchField 的文本变化是 NSControl 的 textDidChangeNotification
-        //   不能用 delegate（NSControl 的 delegate 是 NSWindowDelegate 协议不同）
+        // V4.8.2: 加宽搜索框——成为 toolbar 主要元素
+        //   NSSearchToolbarItem.preferredWidthForSearchField 控制搜索框展开宽度
+        searchItem.preferredWidthForSearchField = 280
+
+        // 监听文本变化——同 V4.8.1，NSSearchField 继承自 NSSearchField
         NotificationCenter.default.addObserver(
             forName: NSControl.textDidChangeNotification,
             object: searchField,
@@ -243,10 +244,7 @@ final class ToolbarController: NSObject, NSToolbarDelegate {
         }
 
         self.searchField = searchField
-        item.view = searchField
-        item.minSize = NSSize(width: 180, height: 22)
-        item.maxSize = NSSize(width: 360, height: 22)
-        return item
+        return searchItem
     }
 
     // MARK: - 外部 API（SwiftUI @State → NSSearchField 同步）
