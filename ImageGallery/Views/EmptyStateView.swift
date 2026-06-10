@@ -9,15 +9,26 @@
 //  - 可选 CTA 按钮（PhotoGridView 的"导入图片" 按钮）
 //  - 统一 iconColor（accent / secondary / destructive）
 //
+//  V4.9.0: 加 secondaryAction 支持双 CTA
+//  - primaryAction: 主操作（borderedProminent + 大尺寸）
+//  - secondaryAction: 次要操作（bordered + 中尺寸）
+//  - 区分"空状态"（icon + 引导文案）vs "错误状态"（exclamationmark.triangle + 重试）
+//
 //  用法：
 //  ```
 //  EmptyStateView(
 //      icon: "photo.on.rectangle.angled",
 //      title: "还没有图片",
 //      subtitle: "拖入图片，或点击下方按钮开始添加",
-//      action: EmptyStateView.Action(label: "导入图片", systemImage: "square.and.arrow.down") {
-//          onImport()
-//      }
+//      primaryAction: EmptyStateView.Action(
+//          label: "导入图片",
+//          systemImage: "square.and.arrow.down",
+//          onTap: onImport
+//      ),
+//      secondaryAction: EmptyStateView.Action(
+//          label: "了解更多",
+//          onTap: showHelp
+//      )
 //  )
 //  ```
 //
@@ -36,7 +47,10 @@ struct EmptyStateView: View {
     let title: String
     var subtitle: String? = nil
     var iconColor: Color = .accentColor
-    var action: Action? = nil
+    /// V4.9.0: 重命名 action → primaryAction（更清晰区分主/次 CTA）
+    var primaryAction: Action? = nil
+    /// V4.9.0 NEW: 次要 CTA——bordered + 中尺寸（不抢主 CTA 视觉）
+    var secondaryAction: Action? = nil
 
     var body: some View {
         VStack(spacing: Spacing.lg) {
@@ -60,18 +74,33 @@ struct EmptyStateView: View {
                 }
             }
 
-            // 可选 CTA 按钮
-            if let action {
-                Button(action: action.onTap) {
-                    if let systemImage = action.systemImage {
-                        Label(action.label, systemImage: systemImage)
-                    } else {
-                        Text(action.label)
+            // CTA 按钮区（主 + 次）
+            if primaryAction != nil || secondaryAction != nil {
+                VStack(spacing: Spacing.sm) {
+                    if let primaryAction {
+                        Button(action: primaryAction.onTap) {
+                            if let systemImage = primaryAction.systemImage {
+                                Label(primaryAction.label, systemImage: systemImage)
+                            } else {
+                                Text(primaryAction.label)
+                            }
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.large)
+                        .buttonStyle(.pressable)
+                    }
+                    if let secondaryAction {
+                        Button(action: secondaryAction.onTap) {
+                            if let systemImage = secondaryAction.systemImage {
+                                Label(secondaryAction.label, systemImage: systemImage)
+                            } else {
+                                Text(secondaryAction.label)
+                            }
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.regular)
                     }
                 }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
-                .buttonStyle(.pressable)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -88,14 +117,30 @@ struct EmptyStateView: View {
     .frame(width: 320, height: 480)
 }
 
-#Preview("带 CTA") {
+#Preview("带主 CTA") {
     EmptyStateView(
         icon: "photo.on.rectangle.angled",
         title: "还没有图片",
         subtitle: "拖入图片，或点击下方按钮开始添加",
-        action: EmptyStateView.Action(
+        primaryAction: EmptyStateView.Action(
             label: "导入图片",
             systemImage: "square.and.arrow.down"
+        ) {}
+    )
+    .frame(width: 600, height: 400)
+}
+
+#Preview("带主+次 CTA") {
+    EmptyStateView(
+        icon: "magnifyingglass",
+        title: "没有匹配的照片",
+        subtitle: "试试其他关键词，或清除搜索",
+        primaryAction: EmptyStateView.Action(
+            label: "清除搜索",
+            systemImage: "xmark.circle"
+        ) {},
+        secondaryAction: EmptyStateView.Action(
+            label: "查看全部"
         ) {}
     )
     .frame(width: 600, height: 400)

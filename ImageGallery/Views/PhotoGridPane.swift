@@ -37,6 +37,8 @@ struct PhotoGridPane: View {
     let onBatchDelete: () -> Void
     let onClearMultiSelect: () -> Void
     let onDoubleTap: (Photo) -> Void
+    // V4.9.0: 清空所有 filter（用于"无搜索结果"等空状态次 CTA）
+    let onClearFilters: () -> Void
     let onExportComplete: (Int) -> Void
 
     var body: some View {
@@ -59,6 +61,7 @@ struct PhotoGridPane: View {
             onBatchDelete: onBatchDelete,
             onClearMultiSelect: onClearMultiSelect,
             onDoubleTap: onDoubleTap,
+            onClearFilters: onClearFilters,  // V4.9.0
             onExportComplete: onExportComplete
         )
     }

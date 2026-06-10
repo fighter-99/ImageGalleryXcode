@@ -61,6 +61,9 @@ struct PhotoGridView: View {
     let onBatchDelete: () -> Void
     let onClearMultiSelect: () -> Void
     let onDoubleTap: (Photo) -> Void
+    // V4.9.0: 清空所有 filter (searchText + folder + tag + 所有 filter 状态)
+    //   用于"无搜索结果"和"空 folder/tag"等空状态次 CTA——"查看全部"
+    let onClearFilters: () -> Void
     // 必须在最末尾（Swift init 顺序要求）
     let onExportComplete: (Int) -> Void
 
@@ -204,19 +207,78 @@ struct PhotoGridView: View {
 
     private var emptyState: some View {
         // V3.6.9：用统一 EmptyStateView 组件
+        // V4.9.0: 区分 3 种 empty 场景，提供主 + 次 CTA
+        //   - 无图片（首次启动）→ 主"导入图片"
+        //   - 空相册/标签 → 主"导入图片" + 次"查看全部"
+        //   - 无搜索结果 → 主"清除搜索" + 次"查看全部"
         EmptyStateView(
             icon: emptyIcon,
             title: emptyText,
             subtitle: emptyHint,
             iconColor: Color.accentColor.opacity(0.6),
-            action: emptyShowImport
-                ? EmptyStateView.Action(
-                    label: "导入图片",
-                    systemImage: "square.and.arrow.down",
-                    onTap: onImport
+            primaryAction: emptyPrimaryAction.map {
+                EmptyStateView.Action(
+                    label: $0.label,
+                    systemImage: $0.systemImage,
+                    onTap: $0.onTap
                 )
-                : nil
+            },
+            secondaryAction: emptySecondaryAction.map {
+                EmptyStateView.Action(
+                    label: $0.label,
+                    systemImage: $0.systemImage,
+                    onTap: $0.onTap
+                )
+            }
         )
+    }
+
+    /// V4.9.0: 主 CTA 配置（label + systemImage + onTap）
+    private struct EmptyCTA {
+        let label: String
+        var systemImage: String? = nil
+        let onTap: () -> Void
+    }
+
+    /// V4.9.0: 主 CTA——根据 empty 场景返回不同操作
+    private var emptyPrimaryAction: EmptyCTA? {
+        // 无搜索结果 → "清除搜索"（通过 onClearFilters 触发：清 searchText + 切回全部）
+        if !searchText.trimmingCharacters(in: .whitespaces).isEmpty {
+            return EmptyCTA(
+                label: "清除搜索",
+                systemImage: "xmark.circle",
+                onTap: { onClearFilters() }
+            )
+        }
+        // 首次启动（无任何 filter） → "导入图片"
+        if emptyShowImport {
+            return EmptyCTA(
+                label: "导入图片",
+                systemImage: "square.and.arrow.down",
+                onTap: onImport
+            )
+        }
+        return nil  // 其他场景无主 CTA（如回收站空、收藏空等）
+    }
+
+    /// V4.9.0: 次 CTA——切换到"全部" 视图
+    ///   用于空相册/空标签/无搜索结果等"当前 filter 无结果但全部有图"场景
+    private var emptySecondaryAction: EmptyCTA? {
+        // 无搜索结果 → "查看全部"（回到全部视图）
+        if !searchText.trimmingCharacters(in: .whitespaces).isEmpty {
+            return EmptyCTA(
+                label: "查看全部",
+                onTap: { onClearFilters() }
+            )
+        }
+        // folder/tag 模式空 → "查看全部"
+        if folder != nil || tag != nil {
+            return EmptyCTA(
+                label: "查看全部",
+                onTap: { onClearFilters() }
+            )
+        }
+        return nil
     }
 
     private var emptyIcon: String {
@@ -954,6 +1016,7 @@ struct CellContextMenuModifier: ViewModifier {
         onBatchDelete: {},
         onClearMultiSelect: {},
         onDoubleTap: { _ in },
+        onClearFilters: {},  // V4.9.0
         onExportComplete: { _ in }
     )
     .frame(width: 600, height: 400)

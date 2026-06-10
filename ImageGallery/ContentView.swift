@@ -742,6 +742,9 @@ struct ContentView: View {
                             onBatchDelete: { showingBatchDeleteConfirm = true },
                             onClearMultiSelect: { selection = .empty },
                             onDoubleTap: enterImmersive,
+                            // V4.9.0: 清空所有 filter（用于"无搜索结果"等空状态次 CTA）
+                            //   清 searchText + folder + tag + 所有 filter 状态
+                            onClearFilters: { resetFilters() },
                             onExportComplete: { count in
                                 showToast("已导出 \(count) 张图片", type: .success)
                             }
@@ -778,6 +781,8 @@ struct ContentView: View {
                             onTrashPermanentDelete: permanentDeleteSelected,
                             // V3.6.6: 改弹二次确认（不再直接调 emptyTrash）
                             onEmptyTrash: { showingEmptyTrashConfirm = true },
+                            // V4.9.0: 回收站空时切回"全部"视图
+                            onExitTrash: { sidebarSelection = .all },
                             // V3.6.15: 重复图清理（一键保留每组最新）
                             onKeepNewestPerDuplicateGroup: keepNewestPerDuplicateGroup,
                             // V4.1.0 k: 无选中时显示图库概览

@@ -42,6 +42,8 @@ struct DetailPane: View {
     let onTrashRestore: () -> Void
     let onTrashPermanentDelete: () -> Void
     let onEmptyTrash: () -> Void
+    // V4.9.0: 回收站空时切回"全部"视图（用于 TrashDetailView EmptyStateView 次 CTA）
+    let onExitTrash: () -> Void
     // V3.6.15 NEW: 重复图模式操作
     let onKeepNewestPerDuplicateGroup: () -> Void
 
@@ -74,7 +76,8 @@ struct DetailPane: View {
                     retentionDays: retentionDays,
                     onRestore: onTrashRestore,
                     onPermanentDelete: onTrashPermanentDelete,
-                    onEmptyTrash: onEmptyTrash
+                    onEmptyTrash: onEmptyTrash,
+                    onExitTrash: onExitTrash
                 )
             // V3.6.15: 重复图模式（仿 TrashDetailView 的"操作中心"模式）
             } else if sidebarSelection == .duplicates {
