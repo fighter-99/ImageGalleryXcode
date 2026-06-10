@@ -57,7 +57,9 @@ struct DetailView: View {
             }
             .padding(Spacing.lg)
         }
-        .background(Surface.canvas)
+        // V4.1.0d: 改用 .regularMaterial——与侧栏、主工具栏统一
+        //   整个控制区 = 半透明毛玻璃；主区 = opaque canvas（照片焦点）
+        .background(.regularMaterial)
         .frame(minWidth: 280)
         .alert("新建标签", isPresented: $showingAddTagAlert) {
             TextField("标签名称", text: $newTagName)
@@ -83,21 +85,23 @@ struct DetailView: View {
         }
     }
 
-    // MARK: - 卡片组件（V3.5.21）
+    // MARK: - 卡片组件（V3.5.21 / V4.5.0 重写）
 
     /// 通用卡片容器
+    ///
+    /// V3.5.21 原版：cardBackground 填充 + 0.5pt cardBorder 描边
+    /// V4.5.0 重写：删双层背景 + 边框
+    ///   原因：detail panel 已用 .regularMaterial 整体 vibrancy，再加 cardBackground 是
+    ///        双层背景叠加 → 4 个 card 形成 4 个浅灰圆角 + 4 圈细灰边 = 「卡片浅框」幽灵
+    ///        （与 V4.4.5 cell 浅框同源）
+    ///   现在：仅保留 padding，分隔靠外层 VStack(spacing: Spacing.md) 自然间距
+    ///        + 各 card 内部字体层级（headline / secondary / caption）形成视觉层次
+    ///        Photos.app detail panel 同款做法
     private func detailCard<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
         content()
-            .padding(Spacing.lg)
+            .padding(.horizontal, Spacing.lg)
+            .padding(.vertical, Spacing.md)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: Radius.md)
-                    .fill(Surface.cardBackground)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: Radius.md)
-                    .stroke(Surface.cardBorder, lineWidth: 0.5)
-            )
     }
 
     /// 1️⃣ 大图卡
@@ -177,9 +181,11 @@ struct DetailView: View {
         detailCard {
             VStack(alignment: .leading, spacing: Spacing.sm) {
                 // 文件名（标题级 + 重命名按钮）
+                // V4.5.0: 字号 .title3.semibold → .headline（13pt semibold，窄 panel 不换行）
+                //         重命名按钮 .plain → .borderless（hover 出系统圆角灰底，可识别为按钮）
                 HStack(spacing: Spacing.sm) {
                     Text(photo.filename)
-                        .font(.title3.weight(.semibold))
+                        .font(.headline)
                         .lineLimit(2)
                         .truncationMode(.middle)
                     Spacer()
@@ -189,9 +195,8 @@ struct DetailView: View {
                     } label: {
                         Image(systemName: "pencil")
                             .font(.callout)
-                            .foregroundStyle(.secondary)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.borderless)
                     .help("重命名")
                 }
 
@@ -249,7 +254,7 @@ struct DetailView: View {
                             .font(.callout)
                             .foregroundStyle(.tint)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.borderless)
                     .help("添加标签")
                 }
 
@@ -279,6 +284,9 @@ struct DetailView: View {
     /// 5️⃣ 操作卡
     private var operationsCard: some View {
         detailCard {
+            // V4.5.0: 加 .controlSize(.large) 让按钮更舒展（同 MultiSelectDetailView V4.4.7）
+            //   旧 .bordered + frame infinity 默认高度 ~26pt，内容占按钮 30% 宽，比例失衡
+            //   .controlSize(.large) → 32pt 高 + 字号自动适配 → 与容器框比例协调
             HStack(spacing: Spacing.md) {
                 // 收藏切换
                 Button {
@@ -292,6 +300,7 @@ struct DetailView: View {
                     .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
+                .controlSize(.large)
                 .tint(photo.isFavorite ? .yellow : .accentColor)
 
                 // 删除
@@ -305,6 +314,7 @@ struct DetailView: View {
                     .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
+                .controlSize(.large)
             }
         }
     }

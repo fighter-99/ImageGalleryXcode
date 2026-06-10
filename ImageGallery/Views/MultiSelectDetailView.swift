@@ -49,6 +49,10 @@ struct MultiSelectDetailView: View {
             Divider()
 
             // ─── 批量操作区 ───
+            // V4.4.7: 按钮优化——Label 左对齐 + .controlSize(.large)
+            //   旧：.frame(maxWidth: .infinity) + Label 自动居中 → 按钮容器宽但内容窄、比例失衡
+            //   新：HStack { Label; Spacer } 让内容左对齐贴边 + .controlSize(.large) 让按钮更舒展
+            //       内容占按钮宽度从 30% → 60%，与容器框比例协调
             VStack(spacing: Spacing.sm) {
                 // 移动到文件夹
                 if !folders.isEmpty {
@@ -67,10 +71,13 @@ struct MultiSelectDetailView: View {
                             }
                         }
                     } label: {
-                        Label("移动到", systemImage: "folder")
-                            .frame(maxWidth: .infinity)
+                        HStack {
+                            Label("移动到", systemImage: "folder")
+                            Spacer()
+                        }
                     }
                     .buttonStyle(.bordered)
+                    .controlSize(.large)
                 }
 
                 // 加标签
@@ -84,29 +91,38 @@ struct MultiSelectDetailView: View {
                             }
                         }
                     } label: {
-                        Label("加标签", systemImage: "tag")
-                            .frame(maxWidth: .infinity)
+                        HStack {
+                            Label("加标签", systemImage: "tag")
+                            Spacer()
+                        }
                     }
                     .buttonStyle(.bordered)
+                    .controlSize(.large)
                 }
 
                 // 收藏切换
                 Button {
                     onToggleFavorite()
                 } label: {
-                    Label("收藏切换", systemImage: "star")
-                        .frame(maxWidth: .infinity)
+                    HStack {
+                        Label("收藏切换", systemImage: "star")
+                        Spacer()
+                    }
                 }
                 .buttonStyle(.bordered)
+                .controlSize(.large)
 
                 // 导出
                 Button {
                     onExport()
                 } label: {
-                    Label("导出", systemImage: "square.and.arrow.up")
-                        .frame(maxWidth: .infinity)
+                    HStack {
+                        Label("导出", systemImage: "square.and.arrow.up")
+                        Spacer()
+                    }
                 }
                 .buttonStyle(.bordered)
+                .controlSize(.large)
             }
 
             Spacer()
@@ -116,19 +132,25 @@ struct MultiSelectDetailView: View {
                 Button(role: .destructive) {
                     onDelete()
                 } label: {
-                    Label("删除", systemImage: "trash")
-                        .frame(maxWidth: .infinity)
+                    HStack {
+                        Label("删除", systemImage: "trash")
+                        Spacer()
+                    }
                 }
                 .buttonStyle(.bordered)
+                .controlSize(.large)
                 .tint(Palette.destructive)
 
                 Button {
                     onClearSelection()
                 } label: {
-                    Label("取消多选 (Esc)", systemImage: "xmark.circle")
-                        .frame(maxWidth: .infinity)
+                    HStack {
+                        Label("取消多选 (Esc)", systemImage: "xmark.circle")
+                        Spacer()
+                    }
                 }
                 .buttonStyle(.borderless)
+                .controlSize(.large)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
