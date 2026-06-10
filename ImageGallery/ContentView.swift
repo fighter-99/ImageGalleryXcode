@@ -662,60 +662,68 @@ struct ContentView: View {
         //   但 toolbar 的 plain Button + .large 让 SF Symbol 撑不满 32pt 框，"大框小图标" 比例失调
         //   改 .regular (26pt) 与 macOS 系统 toolbar 默认一致，icon 在框中比例自然
         //   注: DetailView / MultiSelectDetailView 按钮仍保持 .large (有文字 label，需更大可点区域)
-        ToolbarItemGroup(placement: .principal) {
-            Button {
-                toggleFavorite()
-            } label: {
-                Label("收藏", systemImage: "star")
-            }
-            .controlSize(.regular)
-            .disabled(!selection.hasSelection)
-            .help(selection.hasSelection ? "切换收藏" : "请先选中照片")
+        //
+        // V4.7.2: ToolbarItemGroup(.principal) → 单个 ToolbarItem + HStack
+        //   V4.7.1 只改 .controlSize 没解决问题——macOS unifiedCompact toolbar 对
+        //   ToolbarItemGroup(.principal) 自动加圆角矩形底（"胶囊"效果）
+        //   改用单个 ToolbarItem + HStack 装 5 个 plain Button——系统不会加 group 背景
+        //   与 Photos.app / Finder toolbar 一致：actions 是纯 icon，hover 才出系统灰底
+        ToolbarItem(placement: .principal) {
+            HStack(spacing: 4) {
+                Button {
+                    toggleFavorite()
+                } label: {
+                    Label("收藏", systemImage: "star")
+                }
+                .controlSize(.regular)
+                .disabled(!selection.hasSelection)
+                .help(selection.hasSelection ? "切换收藏" : "请先选中照片")
 
-            Button {
-                batchExport()
-            } label: {
-                Label("导出", systemImage: "square.and.arrow.down.on.square")
-            }
-            .controlSize(.regular)
-            .disabled(!selection.hasSelection)
-            .help(selection.hasSelection ? "导出 \(selection.selectedIDs.count) 张到文件夹" : "请先选中照片")
+                Button {
+                    batchExport()
+                } label: {
+                    Label("导出", systemImage: "square.and.arrow.down.on.square")
+                }
+                .controlSize(.regular)
+                .disabled(!selection.hasSelection)
+                .help(selection.hasSelection ? "导出 \(selection.selectedIDs.count) 张到文件夹" : "请先选中照片")
 
-            Button(role: .destructive) {
-                handleDelete()
-            } label: {
-                Label("删除", systemImage: "trash")
-            }
-            .controlSize(.regular)
-            .disabled(!selection.hasSelection)
-            .help(selection.hasSelection ? "删除选中 (⌫)" : "请先选中照片")
+                Button(role: .destructive) {
+                    handleDelete()
+                } label: {
+                    Label("删除", systemImage: "trash")
+                }
+                .controlSize(.regular)
+                .disabled(!selection.hasSelection)
+                .help(selection.hasSelection ? "删除选中 (⌫)" : "请先选中照片")
 
-            Button {
-                startImport()
-            } label: {
-                Label("导入", systemImage: "square.and.arrow.down")
-            }
-            .controlSize(.regular)
-            .help("导入图片 (⌘O)")
+                Button {
+                    startImport()
+                } label: {
+                    Label("导入", systemImage: "square.and.arrow.down")
+                }
+                .controlSize(.regular)
+                .help("导入图片 (⌘O)")
 
-            // V4.3.3: ViewOptions 从 .primaryAction 搬到 .principal 末位
-            //   用户要求"右上角按钮也集中中间"——所有 actions（含视图选项）同组
-            Button {
-                showViewOptions.toggle()
-            } label: {
-                Label("视图选项", systemImage: viewMode.icon)
-            }
-            .controlSize(.regular)
-            .help("视图选项：\(viewMode.label) / \(ThumbnailDensity.nearest(to: thumbnailSize).label) / \(sortOption.label)")
-            .popover(isPresented: $showViewOptions, arrowEdge: .bottom) {
-                ViewOptionsPopover(
-                    viewMode: Binding(
-                        get: { self.viewMode },
-                        set: { self.viewMode = $0 }
-                    ),
-                    thumbnailSize: $thumbnailSize,
-                    sortOption: $sortOption
-                )
+                // V4.3.3: ViewOptions 从 .primaryAction 搬到 .principal 末位
+                //   用户要求"右上角按钮也集中中间"——所有 actions（含视图选项）同组
+                Button {
+                    showViewOptions.toggle()
+                } label: {
+                    Label("视图选项", systemImage: viewMode.icon)
+                }
+                .controlSize(.regular)
+                .help("视图选项：\(viewMode.label) / \(ThumbnailDensity.nearest(to: thumbnailSize).label) / \(sortOption.label)")
+                .popover(isPresented: $showViewOptions, arrowEdge: .bottom) {
+                    ViewOptionsPopover(
+                        viewMode: Binding(
+                            get: { self.viewMode },
+                            set: { self.viewMode = $0 }
+                        ),
+                        thumbnailSize: $thumbnailSize,
+                        sortOption: $sortOption
+                    )
+                }
             }
         }
 
