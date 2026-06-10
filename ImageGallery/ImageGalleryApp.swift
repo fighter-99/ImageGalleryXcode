@@ -69,7 +69,8 @@ struct ImageGalleryApp: App {
         .defaultSize(width: 1280, height: 800)
         .windowResizability(.contentMinSize)
         .windowStyle(.hiddenTitleBar)            // V4.0.0: 合并 title bar + toolbar
-        .windowToolbarStyle(.unifiedCompact)     // V4.0.0.1: blur 轻；V4.7.6 回归（5 actions 已移到 .primaryAction）
+        // V4.8.0: 删 .windowToolbarStyle——NSToolbar 在 ContentView.configureNSToolbar
+        //   直接设置 window.toolbarStyle = .unified（避免双重设置冲突）
         .modelContainer(modelContainer)  // V3.6.7：显式 VersionedSchema 容器
         .commands {
             // macOS 原生 View 菜单（在 View 菜单里加 Toggle 项）

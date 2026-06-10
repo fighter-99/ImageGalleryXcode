@@ -343,16 +343,28 @@ struct ContentView: View {
 
     var body: some View {
         mainLayout
-            // V4.0.0: 原生 toolbar（替代 V3.4 自绘 44pt HStack）
-            //   用 @ToolbarContentBuilder 暴露内容
-            //   .windowToolbarStyle(.unified) 在 ImageGalleryApp 的 WindowGroup 上加
-            .toolbar { toolbarContent }
+            // V4.8.0: 删 .toolbar { toolbarContent }——SwiftUI .toolbar 在 macOS 是降级实现
+            //   改用 NSToolbar (AppKit) 在 WindowAccessor 处设置
+            //   Photos.app / Finder / Mail 都用 NSToolbar——本路线一致
+            //
             // V4.2.0 P0❸: 窗口元数据（hidden title bar 模式下不显示在窗口顶部，
             //   但进入 Dock 右键 / ⌘⇥ 切换器 / Mission Control / VoiceOver 等位置）
             .navigationTitle(currentViewTitle)
             .navigationSubtitle(currentViewSubtitle)
             // V3.6.22: 应用外观（浅色/深色/跟随系统）
             .preferredColorScheme(appearanceMode.colorScheme)
+            // V4.8.0: NSToolbar 桥接——WindowAccessor 拿到 NSWindow 后设置 NSToolbar
+            //   .background(WindowAccessor) 嵌入零尺寸 NSView
+            .background(WindowAccessor { window in
+                configureNSToolbar(window: window)
+            })
+            // V4.8.0: 选中状态变化 → 更新 NSToolbar buttons enabled
+            .onChange(of: selection.hasSelection) { _, hasSelection in
+                ToolbarController.shared.updateAllStates(
+                    hasSelection: hasSelection,
+                    hasMultipleSelection: selection.isMultiSelect
+                )
+            }
             .onAppear {
                 thumbnailSize = CGFloat(storedThumbnailSize)
                 sidebarSelection = restoreSelection(storedSidebarKey)
@@ -511,6 +523,69 @@ struct ContentView: View {
         "确定要删除 \(selection.selectedIDs.count) 张图片吗？"
     }
 
+    // V4.8.0: NSToolbar 配置（WindowAccessor 触发）
+    //   - 设置 window.toolbar = NSToolbar（AppKit 原生，Photos.app 风格）
+    //   - 设置 NSToolbar.delegate = ToolbarController.shared
+    //   - 设置 NSToolbar 视觉：.iconOnly display + .unified style
+    //   - 绑 action closures（SwiftUI → AppKit action bridge）
+    //   - 设置 search field provider（NSHostingView 包 ToolbarSearchField）
+    private func configureNSToolbar(window: NSWindow) {
+        // 只在第一次设置
+        guard window.toolbar == nil else { return }
+
+        let toolbar = NSToolbar(identifier: NSToolbar.Identifier("MainToolbar"))
+        toolbar.delegate = ToolbarController.shared
+        toolbar.displayMode = .iconAndLabel  // V4.8.0: 先 iconAndLabel 测试，后续可改 .iconOnly
+        toolbar.allowsUserCustomization = true   // 用户可自定义 toolbar items
+        toolbar.autosavesConfiguration = true   // 自定义状态自动保存
+        toolbar.showsBaselineSeparator = false  // 不显示底部分隔线
+
+        // 绑 action closures
+        //   ContentView 是 value type——strong capture 是值复制，无 reference cycle
+        //   (用 [weak self] 需要 class-bound，struct 不行)
+        let controller = ToolbarController.shared
+        controller.onToggleSidebar = { [self] in
+            withAnimation(Animations.medium) { showSidebar.toggle() }
+        }
+        controller.onToggleFavorite = { [self] in
+            toggleFavorite()
+        }
+        controller.onBatchExport = { [self] in
+            batchExport()
+        }
+        controller.onDelete = { [self] in
+            handleDelete()
+        }
+        controller.onImport = { [self] in
+            startImport()
+        }
+        controller.onShowViewOptions = { [self] in
+            showViewOptions.toggle()
+        }
+        // V4.8.0: search field 用 NSHostingView 包 SwiftUI ToolbarSearchField
+        //   闭包捕获 $searchText binding——NSToolbar 询问时构造一次
+        controller.searchViewProvider = { [searchText = $searchText, searchFieldLeadingOffset = searchFieldLeadingOffset] in
+            let host = NSHostingView(rootView: ToolbarSearchField(
+                text: searchText,
+                leadingPadding: searchFieldLeadingOffset
+            ))
+            host.frame = NSRect(x: 0, y: 0, width: 180, height: 24)
+            return host
+        }
+
+        window.toolbar = toolbar
+        window.toolbarStyle = .unified  // V4.8.0: Photos.app 风格 (unified 比 unifiedCompact 视觉更原生)
+        // window title 隐藏——toolbar 顶到窗口顶部
+        window.titleVisibility = .hidden
+        window.titlebarAppearsTransparent = true
+
+        // 初始 enabled 状态同步
+        controller.updateAllStates(
+            hasSelection: selection.hasSelection,
+            hasMultipleSelection: selection.isMultiSelect
+        )
+    }
+
     // ⌘N 触发的创建文件夹
     private func createFolderFromAlert() {
         let trimmed = newFolderName.trimmingCharacters(in: .whitespaces)
@@ -603,147 +678,12 @@ struct ContentView: View {
     //   原 ToolbarViewOptionsButton 内部 @State 管，V4.3.0 删自绘后由 ContentView 直接管
     @State private var showViewOptions = false
 
-    // V4.0.0 NEW: 原生 toolbar 内容（@ToolbarContentBuilder）
-    //   在 body 里用 `.toolbar { toolbarContent }` 挂载
-    //
-    // V4.3.0 彻底重构：从自绘 buttonStyle 系统 → 纯原生 Button + Label
-    //   ⚠️ 不要再加 .background(...) / .buttonStyle(.plain) + 自绘 RoundedRect 之类的
-    //   ⚠️ 让 macOS 接管 hover / focus / pressed / 深浅模式 / vibrancy / disabled
-    //
-    // V4.3.2 布局重构（用户决策）：
-    //   - sidebar toggle + search field 都在 .navigation（左侧）
-    //   - 4 个核心 actions ⭐收藏 / 📤导出 / 🗑删除 / ↓导入 集中在 .principal（中央）
-    //     永远可见，未选中时前 3 个 disabled、导入永远 enabled
-    //   - viewopts 单独在 .primaryAction（右上角）
-    //   - 不再有 contextual toolbar（actions 不跟着选中态出现/消失）
-    //
-    // V4.3.2 关键决策记录：
-    //   - 用户选「actions 集中中央 + 永远可见」是非 macOS 标准的设计
-    //     macOS 一般 actions 在右上角 + contextual；这里走类似 Linear/Notion 的固定中央栏
-    //     trade-off：可见性强、肌肉记忆稳，但失去"按需变形"的 macOS 习惯
-    //   - 「导出」按钮 = batchExport（导出到用户选择的文件夹），替代原 Share
-    //     原 shareSelected() 函数保留（右键菜单等地方可能仍用）
-    @ToolbarContentBuilder
-    var toolbarContent: some ToolbarContent {
-        // ─── 左侧：Sidebar toggle ───
-        // V4.7.1: 改 .bordered + .small → .plain + .small
-        //   V4.5.1 的 .bordered 是为了让 sidebar toggle 从 toolbar 背景独立
-        //   但加了圆角矩形底后与右侧 search field 的 .quaternary 胶囊视觉粘连
-        //   改为 .plain——macOS 系统接管 hover 灰底，resting 完全透明
-        //   与 Photos.app / Finder sidebar toggle 一致（纯 SF Symbol，hover 才出系统圆角）
-        ToolbarItem(placement: .navigation) {
-            Button {
-                withAnimation(Animations.medium) { showSidebar.toggle() }
-            } label: {
-                Label("侧栏", systemImage: "sidebar.leading")
-                    .symbolVariant(showSidebar ? .fill : .none)
-                    .foregroundStyle(showSidebar ? Color.accentColor : Color.primary)
-            }
-            .buttonStyle(.plain)
-            .controlSize(.small)
-            .help(showSidebar ? "隐藏侧栏 (⌘⌃S)" : "显示侧栏 (⌘⌃S)")
-        }
+    // V4.8.0: 删 toolbarContent 定义——NSToolbar (AppKit) 接管所有 toolbar items
+    //   SwiftUI .toolbar 是降级实现，Photos.app 风格必须用 NSToolbar
+    //   新 toolbar 配置在 configureNSToolbar(window:) 方法里
+    //   （V4.7.1-V4.7.7 7 个 commit 探索 SwiftUI toolbar 限制都失败）
 
-        // ─── 左侧：Search field ───（与 sidebar 同组，左对齐）
-        // V4.4.8: leadingPadding 动态计算，让 search 左缘与下方 grid 对齐
-        // V4.7.1: 保持 .quaternary 底——search 必须常驻可识别（与 sidebar toggle 区分）
-        ToolbarItem(placement: .navigation) {
-            ToolbarSearchField(
-                text: $searchText,
-                leadingPadding: searchFieldLeadingOffset
-            )
-        }
-
-        // ─── 右侧：5 个 actions（永远可见）───
-        // ⭐收藏 / 📤导出 / 🗑删除：未选中时 disabled
-        // ↓导入 / ⊞视图选项：永远 enabled
-        //
-        // V4.7.x 完整修法历程（5 个 commit）：
-        //   V4.7.1 (cd3f7ed): sidebar .plain + 5 actions .controlSize(.regular)
-        //   V4.7.2 (9276999): ToolbarItemGroup → ToolbarItem + HStack
-        //   V4.7.3 (0a0d083): HStack 加 .toolbarBackground(.hidden, for: .automatic)
-        //   V4.7.4 (6b0cc44): 改 for: .windowToolbar
-        //   V4.7.5 (888d056): .unifiedCompact → .unified（已回滚）
-        //   V4.7.6 (current): 5 actions .principal → .primaryAction ← 根本解法
-        //
-        // V4.7.6 根因（5 轮局部修法失败的根因）：
-        //   macOS SwiftUI .principal placement 在 unifiedCompact 风格下
-        //   系统强制加 section 背景（'胶囊'效果）——system feature 不可覆盖
-        //   .unified 风格同样加 section 背景（V4.7.5 验证）
-        //   唯一 SwiftUI 内解法：放弃 .principal placement
-        //
-        // V4.7.6 修法：.principal → .primaryAction
-        //   .primaryAction 在 macOS 系统里就是 '右上角 actions 集中'（Photos/Finder/Mail）
-        //   不会加 section 背景，actions 是纯 icon，hover 出系统灰底
-        //   视觉差异：actions 从屏幕中央移到右上角（但仍是 '集中'）
-        //
-        // V4.7.6 保留 V4.7.1-V4.7.4 探索的成果（.controlSize(.regular) / HStack / 无 group）
-        // ToolbarItemGroup(.primaryAction) 仍会被系统加 group 背景——
-        // 用单个 ToolbarItem + HStack(spacing: 4) 避免 group 背景
-        ToolbarItem(placement: .primaryAction) {
-            HStack(spacing: 4) {
-                Button {
-                    toggleFavorite()
-                } label: {
-                    Label("收藏", systemImage: "star")
-                }
-                .controlSize(.regular)
-                .disabled(!selection.hasSelection)
-                .help(selection.hasSelection ? "切换收藏" : "请先选中照片")
-
-                Button {
-                    batchExport()
-                } label: {
-                    Label("导出", systemImage: "square.and.arrow.down.on.square")
-                }
-                .controlSize(.regular)
-                .disabled(!selection.hasSelection)
-                .help(selection.hasSelection ? "导出 \(selection.selectedIDs.count) 张到文件夹" : "请先选中照片")
-
-                Button(role: .destructive) {
-                    handleDelete()
-                } label: {
-                    Label("删除", systemImage: "trash")
-                }
-                .controlSize(.regular)
-                .disabled(!selection.hasSelection)
-                .help(selection.hasSelection ? "删除选中 (⌫)" : "请先选中照片")
-
-                Button {
-                    startImport()
-                } label: {
-                    Label("导入", systemImage: "square.and.arrow.down")
-                }
-                .controlSize(.regular)
-                .help("导入图片 (⌘O)")
-
-                // 视图选项：保留末位
-                Button {
-                    showViewOptions.toggle()
-                } label: {
-                    Label("视图选项", systemImage: viewMode.icon)
-                }
-                .controlSize(.regular)
-                .help("视图选项：\(viewMode.label) / \(ThumbnailDensity.nearest(to: thumbnailSize).label) / \(sortOption.label)")
-                .popover(isPresented: $showViewOptions, arrowEdge: .bottom) {
-                    ViewOptionsPopover(
-                        viewMode: Binding(
-                            get: { self.viewMode },
-                            set: { self.viewMode = $0 }
-                        ),
-                        thumbnailSize: $thumbnailSize,
-                        sortOption: $sortOption
-                    )
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .trailing)  // V4.7.7: 强制 HStack 内容右对齐，避免被居中
-        }
-
-        // V4.3.3: 删除 .status placement「已选 N 张」（用户要求取消顶部提示）
-        //   底部 StatusBar 已显示选中数，toolbar 重复无意义
-    }
-
-    // 主布局（V3.5.17：拆到 Views/MainLayoutView.swift；V4.0.0 toolbar 迁出到 native .toolbar）
+    // 主布局（V3.5.17：拆到 Views/MainLayoutView.swift；V4.0.0 toolbar 迁出到 native .toolbar；V4.8.0 改为 NSToolbar）
     private var mainLayout: some View {
         MainLayoutView(
             pathBar: {
