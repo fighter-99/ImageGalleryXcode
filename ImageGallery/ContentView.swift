@@ -668,6 +668,13 @@ struct ContentView: View {
         //   ToolbarItemGroup(.principal) 自动加圆角矩形底（"胶囊"效果）
         //   改用单个 ToolbarItem + HStack 装 5 个 plain Button——系统不会加 group 背景
         //   与 Photos.app / Finder toolbar 一致：actions 是纯 icon，hover 才出系统灰底
+        //
+        // V4.7.3: 加 .toolbarBackground(.hidden, for: .toolbar) 隐藏 section 背景
+        //   V4.7.2 验证发现：.principal placement 在 unifiedCompact toolbar 下系统自动加
+        //   section 背景（"胶囊"效果是 placement 行为，不是 group 行为）
+        //   即使用单个 ToolbarItem，section 背景仍在
+        //   解法: HStack 加 .toolbarBackground(.hidden) 显式隐藏 section 背景
+        //   结果: 5 actions 纯 icon 排列，hover 出系统灰底（与 macOS 标准 toolbar 一致）
         ToolbarItem(placement: .principal) {
             HStack(spacing: 4) {
                 Button {
@@ -725,6 +732,7 @@ struct ContentView: View {
                     )
                 }
             }
+            .toolbarBackground(.hidden, for: .automatic)  // V4.7.3: 隐藏 .principal section 背景
         }
 
         // V4.3.3: 删除 .status placement「已选 N 张」（用户要求取消顶部提示）
