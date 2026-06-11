@@ -159,11 +159,17 @@ struct DetailView: View {
                 // V4.9.5: 加载中——Shimmer 占位（V4.4.0 Shimmer 复用）
                 RoundedRectangle(cornerRadius: Radius.md)
                     .fill(Palette.cellFilled)
-                    .frame(maxWidth: .infinity, maxHeight: 360)
+                    // V4.25.0: 删 maxHeight 360——Shimmer 占位也按 detail panel 宽度自适应
+                    .frame(maxWidth: .infinity)
                     .modifier(Shimmer(duration: 1.2))
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: 360)
+        // V4.25.0: 删 maxHeight 360——大图按 aspectRatio 完整显示
+        //   V4.4.0 当时限制 360pt 是 "占 50% 高度"——但 360pt 固定值不随窗口高度变
+        //   大图竖向 1080×1621 在 detail panel 280pt 宽度下, height = 420pt——超过 360pt 被裁剪
+        //   macOS Photos 实际: 大图按 aspectRatio 完整显示 + 整个 detail panel 滚动
+        //   删 maxHeight 限制——大图按 fit 缩放到 detail panel 宽度 + 高度由 aspectRatio 决定
+        .frame(maxWidth: .infinity)
         // V4.9.5: async 加载——photo.id 变化时自动取消旧任务
         .task(id: photo.id) {
             bigImage = nil
