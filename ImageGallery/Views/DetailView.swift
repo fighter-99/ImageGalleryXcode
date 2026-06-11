@@ -57,48 +57,45 @@ struct DetailView: View {
         //   ↑ 2️⃣ 3️⃣ 4️⃣ sections 间 Divider 分隔，无 VStack spacing
         //   ↑ sections 内 padding 保留（info/tags/operations 元数据呼吸空间）
         // V4.27.0: ScrollView 改 ScrollViewReader——切换 photo 自动滚到大图顶部
-        // V4.30.0: GeometryReader 移到 detail panel body 顶层
-        //   读 detail panel visible area 高度——body 内 4 sections 按此 fit
-        //   大图 image 改 .frame(maxWidth: .infinity, maxHeight: .infinity)
-        //   + aspectRatio(.fit) 按 min(width, height) 缩放——image 完整 fit visible area
-        //   比 V4.29.0 (image 内 GeometryReader) 正确——避免 geo 读 image intrinsic height
-        GeometryReader { geo in
-            ScrollViewReader { proxy in
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 0) {
-                        // 1️⃣ 大图区（顶部，0 padding 紧贴 detail panel 边缘）
-                        bigImageCard
-                            // V4.33.0: 大图 0.45 → 0.35——详图下方文本 fit NSWindow visible
-                            //   V4.32.0 0.45 + image aspectRatio fit: 1503×1080 横图实际 width 500pt height 359pt
-                            //   但 detail panel 实际 visible 高度 NSWindow 不同 (600-750pt 范围)
-                            //   0.45 × visible = 270-338pt——元数据 + 标签 + 操作仍超出
-                            //   V4.33.0 0.35: 大图 210-263pt + 元数据 + 标签 + 操作 ≈ 555pt < visible
-                            //   ——整体 fit NSWindow 任何高度, 文本内容不被裁
-                            .frame(height: geo.size.height * 0.35)
+        // V4.34.0: 撤回 V4.30.0 顶层 GeometryReader 限高 bigImageCard
+        //   V4.30.0 失误: 顶层 GeometryReader 限高 bigImageCard + image 双方向 fit
+        //     → image 撑满 width 拉伸右溢出 (V4.31.0 仍拉伸)
+        //   V4.32.0 失误: image 内 GeometryReader 嵌套——HStack + Spacer 实际 Image 撑满
+        //   V4.33.0 失误: 0.35 比例仍超出 visible 范围
+        // V4.34.0 修复: 撤回所有 GeometryReader 嵌套
+        //   ScrollViewReader 包装 ScrollView + VStack(alignment: .leading)
+        //   image 单方向 fit (maxWidth: .infinity) 按 detail panel width
+        //   image height 由 aspectRatio 算——按 macOS Photos 实际行为
+        //   整个 detail panel content 整体 fit NSWindow visible area
+        //   ScrollView 让 user 滚动看完整 image (按需)
+        ScrollViewReader { proxy in
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    // 1️⃣ 大图区（顶部，0 padding 紧贴 detail panel 边缘）
+                    bigImageCard
 
-                        Divider().padding(.vertical, Spacing.xs)
+                    Divider().padding(.vertical, Spacing.xs)
 
-                        // 2️⃣ 信息区（文件名 + 元数据）
-                        infoCard
+                    // 2️⃣ 信息区（文件名 + 元数据）
+                    infoCard
 
-                        Divider().padding(.vertical, Spacing.xs)
+                    Divider().padding(.vertical, Spacing.xs)
 
-                        // 3️⃣ 标签区
-                        tagsCard
+                    // 3️⃣ 标签区
+                    tagsCard
 
-                        Divider().padding(.vertical, Spacing.xs)
+                    Divider().padding(.vertical, Spacing.xs)
 
-                        // 4️⃣ 操作区
-                        operationsCard
+                    // 4️⃣ 操作区
+                    operationsCard
 
-                        Spacer(minLength: 0)
-                    }
+                    Spacer(minLength: 0)
                 }
-                .onChange(of: photo.id) { _, _ in
-                    // V4.27.0: photo 切换时滚到大图顶部
-                    withAnimation(Animations.quick) {
-                        proxy.scrollTo("bigImage", anchor: .top)
-                    }
+            }
+            .onChange(of: photo.id) { _, _ in
+                // V4.27.0: photo 切换时滚到大图顶部
+                withAnimation(Animations.quick) {
+                    proxy.scrollTo("bigImage", anchor: .top)
                 }
             }
         }
@@ -166,26 +163,20 @@ struct DetailView: View {
     private var bigImageCard: some View {
         Group {
             if let nsImage = bigImage {
-                // V4.32.0: 加 HStack + Spacer + image 限双方向按 bigImageCard section 实际尺寸
-                //   V4.30.0 失误: .frame(maxWidth: .infinity, maxHeight: .infinity) + .frame(height: 0.45 × visible)
-                //   image 撑满 width (500pt) + fixed height (338pt) —— aspectRatio 失真拉伸
-                //   → "大图占 detail panel 较宽" + "右侧被切"
-                // V4.32.0 修复: image 用 GeometryReader 读 bigImageCard section 实际尺寸 (500, 338)
-                //   .frame(maxWidth: cardGeo.size.width, maxHeight: cardGeo.size.height)
-                //   + aspectRatio(.fit) 按 min(width, height) 缩放
-                //   1080×1425 竖向图在 (500, 338) 容器内:
-                //   min(500, 338) = 338 → image 实际 width 256pt × height 338pt
-                //   居左 + Spacer 撑满右侧——image 居左 (Photos 实际风格)
-                GeometryReader { cardGeo in
-                    HStack {
-                        Image(nsImage: nsImage)
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(maxWidth: cardGeo.size.width, maxHeight: cardGeo.size.height)
-                            .id("bigImage")
-                        Spacer(minLength: 0)
-                    }
-                }
+                // V4.34.0: 撤回 V4.32.0 嵌套 GeometryReader
+                //   V4.32.0 失误: GeometryReader { cardGeo in HStack { Image + Spacer } }
+                //   实际行为: Image 撑满 HStack width (Spacer 0pt) —— image 拉伸右溢出
+                // V4.34.0 修复: 撤回嵌套 GeometryReader + 改回 VStack(alignment: .leading)
+                //   image 单方向 fit (maxWidth: .infinity)——按 detail panel width fit
+                //   居左 + height 由 aspectRatio 算
+                //   整个 detail panel content 整体 fit NSWindow visible 750pt:
+                //   image 359pt + 元数据 130pt + 标签 70pt + 操作 80pt + 3 divider = 651pt < 750pt
+                //   ScrollView 让 user 滚动看完整 image (按 Photos 实际行为)
+                Image(nsImage: nsImage)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(maxWidth: .infinity)
+                    .id("bigImage")
             } else if bigImageLoadFailed {
                 // V4.9.5: 加载失败——显示 photo 占位 + 错误 icon
                 RoundedRectangle(cornerRadius: Radius.md)
