@@ -68,7 +68,12 @@ struct DetailView: View {
                     VStack(alignment: .leading, spacing: 0) {
                         // 1️⃣ 大图区（顶部，0 padding 紧贴 detail panel 边缘）
                         bigImageCard
-                            .frame(height: geo.size.height * 0.55)  // 限大图 55% detail panel
+                            // V4.31.0: 大图 0.55 → 0.45——操作按钮可见
+                            //   V4.30.0 0.55: 大图 412pt + 元数据 320pt + 操作 80pt = 812pt
+                            //   > 750pt visible——操作按钮被窗口底部切断
+                            //   V4.31.0 0.45: 大图 338pt + 元数据 + 操作 = 738pt < 750pt visible
+                            //   ——整体 fit 窗口, 无 "被切断" 视觉
+                            .frame(height: geo.size.height * 0.45)
 
                         Divider().padding(.vertical, Spacing.xs)
 
