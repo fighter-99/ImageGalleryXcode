@@ -154,20 +154,18 @@ struct DetailView: View {
     private var bigImageCard: some View {
         Group {
             if let nsImage = bigImage {
-                // V4.27.0: 改单方向 fit——大图按 detail panel 宽度 fit 算 aspectRatio 高度
-                //   V4.26.0 双方向 fit (maxWidth: .infinity + maxHeight: .infinity)
-                //   让大图按 min(width, height) 缩放——大图在 detail panel visible area 完整
-                //   显示但按高度 fit 缩放后**小于 detail panel 宽度**——两侧有黑边
-                //   macOS Photos 实际: 大图按 detail panel 宽度 fit 算 height,
-                //   height 可能超出 visible area——用户滚动 ScrollView 看完整大图
-                //   撤回 V4.26.0 双方向 fit——单方向 fit 让大图按 detail panel 宽度填满
-                //   ScrollViewReader 在 onChange(of: photo.id) 时 scrollTo(0, anchor: .top)
-                //   切换 photo 时自动滚到大图顶部 (user 滚动后切下一张自动 reset)
+                // V4.28.0: 加 .frame(maxHeight: 600)——大图最大 600pt 高度
+                //   V4.27.0 单方向 fit (maxWidth: .infinity) 实际行为:
+                //   image 按 width fit 算 aspectRatio height (1080×1629 竖向图 height ≈ 720pt)
+                //   detail panel visible area 通常 600-800pt——大图超出 120pt 被滚动裁剪
+                //   视觉上"大图小 + 上下黑边"
+                //   macOS Photos 实际: 大图占 detail panel 60-75% 高度——按 width fit + 限 maxHeight 600
+                //   视觉效果: 大图在 detail panel 顶部占大半区域 + 元数据可滚动看
                 Image(nsImage: nsImage)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-                    .frame(maxWidth: .infinity)
-                    .id("bigImage")  // V4.27.0: ScrollViewProxy 滚动目标
+                    .frame(maxWidth: .infinity, maxHeight: 600)
+                    .id("bigImage")
             } else if bigImageLoadFailed {
                 // V4.9.5: 加载失败——显示 photo 占位 + 错误 icon
                 RoundedRectangle(cornerRadius: Radius.md)
