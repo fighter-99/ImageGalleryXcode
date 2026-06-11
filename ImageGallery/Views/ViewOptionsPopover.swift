@@ -194,17 +194,17 @@ struct ViewOptionsPopover: View {
 
             return Button(action: action) {
                 HStack(spacing: 6) {
-                    Image(systemName: directionIcon)
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(isActive ? PopoverStyle.activeText : .secondary)
-                        .frame(width: 18)
                     Text(label)
                         .font(.system(size: PopoverStyle.sortItemFontSize))
                         .foregroundStyle(isActive ? PopoverStyle.activeText : PopoverStyle.inactiveText)
                     Spacer()
-                    // V4.43.2: 移除 checkmark——macOS Photos 风格
-                    //   active 状态靠 accent bg 自带视觉锤，checkmark 是冗余
-                    //   SwiftUI .popover 内 sort 选中靠 bg + 文字色变化已足够清晰
+                    // V4.51.0: arrow 移到右侧——macOS Photos sort 风格
+                    //   之前 arrow 在 label 左边——"label icon"语义
+                    //   现在 arrow 在 label 右边——"方向指示"语义（↑↓）
+                    Image(systemName: directionIcon)
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(isActive ? PopoverStyle.activeText : .secondary)
+                        .frame(width: 18)
                 }
                 .padding(.horizontal, 8)
                 .padding(.vertical, PopoverStyle.itemVerticalPadding)
@@ -215,6 +215,11 @@ struct ViewOptionsPopover: View {
                 )
             }
             .buttonStyle(.plain)
+            // V4.51.0: active 1.015 scale——V4.17.0 cell pattern 锦上添花
+            //   scaleEffect 在 background 之后——active 时 icon+text 微放大
+            //   视觉上"被选中"——accent bg 之外第二重视觉锤
+            .scaleEffect(isActive ? 1.015 : 1.0)
+            .animation(.easeInOut(duration: PopoverStyle.stateTransitionDuration), value: isActive)
             .animation(.easeInOut(duration: PopoverStyle.stateTransitionDuration), value: isActive)
             .onHover { hovering in
                 isHovered = hovering
