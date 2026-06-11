@@ -343,96 +343,57 @@ struct ContentView: View {
 
     var body: some View {
         mainLayout
-            // V4.8.0: 删 .toolbar { toolbarContent }——SwiftUI .toolbar 在 macOS 是降级实现
-            //   改用 NSToolbar (AppKit) 在 WindowAccessor 处设置
-            //   Photos.app / Finder / Mail 都用 NSToolbar——本路线一致
-            //
-            // V4.2.0 P0❸: 窗口元数据（hidden title bar 模式下不显示在窗口顶部，
-            //   但进入 Dock 右键 / ⌘⇥ 切换器 / Mission Control / VoiceOver 等位置）
-            .navigationTitle(currentViewTitle)
-            .navigationSubtitle(currentViewSubtitle)
-            // V3.6.22: 应用外观（浅色/深色/跟随系统）
-            .preferredColorScheme(appearanceMode.colorScheme)
-            // V4.8.0: NSToolbar 桥接——WindowAccessor 拿到 NSWindow 后设置 NSToolbar
-            //   .background(WindowAccessor) 嵌入零尺寸 NSView
-            .background(WindowAccessor { window in
-                configureNSToolbar(window: window)
-            })
-            // V4.8.0: 选中状态变化 → 更新 NSToolbar buttons enabled
-            .syncNSToolbarSelectionState(selection: selection)
-            // V4.8.1: SwiftUI @State searchText 变化 → 同步到 NSSearchField
-            .syncNSToolbarSearchField(text: searchText)
-            .onAppear {
-                thumbnailSize = CGFloat(storedThumbnailSize)
-                sidebarSelection = restoreSelection(storedSidebarKey)
-                sortOption = SortOption(rawValue: storedSortOption) ?? .importedAtDesc
-                // V3.6 NEW: 启动时清理过期回收站项（只跑一次）
-                if !hasPurgedExpiredTrash {
-                    hasPurgedExpiredTrash = true
-                    purgeExpiredTrashOnStartup()
-                }
-            }
-            // V3.6.13: 监听 SettingsView 修改 storedThumbnailSize，实时同步当前 session
-            // 避免\"重启后生效\"的尴尬
-            .onChange(of: storedThumbnailSize) { _, new in
-                thumbnailSize = CGFloat(new)
-            }
-            .onChange(of: storedSortOption) { _, new in
-                sortOption = SortOption(rawValue: new) ?? .importedAtDesc
-            }
-            // V3.6.13: viewModeRaw 通过 computed property 自动响应 AppStorage 变化
-            .onChange(of: viewModeRaw) { _, _ in }
-            .onChange(of: thumbnailSize) { _, new in
-                storedThumbnailSize = Double(new)
-            }
-            .onChange(of: sidebarSelection) { _, new in
-                storedSidebarKey = serializeSelection(new)
-                // V4.1.0 l: 切换侧栏 section 同时清选中（避免"选中的照片不在新 section"）
-                clearSelectionOnFilterChange()
-            }
-            .onChange(of: sortOption) { _, new in
-                storedSortOption = new.rawValue
-            }
-            .onDeleteCommand(perform: handleDelete)
-            .focusable()
-            .onKeyPress(.leftArrow) {
-                if canPrev { goPrev() }
-                return .handled
-            }
-            .onKeyPress(.rightArrow) {
-                if canNext { goNext() }
-                return .handled
-            }
-            .onKeyPress(.escape) {
-                if !selection.isEmpty {
-                    selection = .empty
-                    return .handled
-                }
-                return .ignored
-            }
-            .onKeyPress("a", phases: .down) { press in
-                if press.modifiers.contains(EventModifiers.command) {
-                    // V3.6.52: 用 selection.settingAll(in:) 替手写 Set 构造
-                    selection = selection.settingAll(in: visiblePhotos)
-                    return .handled
-                }
-                return .ignored
-            }
-            // V4.0.0.6: ⌘+ / ⌘- 缩放快捷键（缩放搬到侧栏顶部后必须配快捷键）
-            .onKeyPress("+", phases: .down) { press in
-                if press.modifiers.contains(EventModifiers.command) {
-                    zoomIn()
-                    return .handled
-                }
-                return .ignored
-            }
-            .onKeyPress("-", phases: .down) { press in
-                if press.modifiers.contains(EventModifiers.command) {
-                    zoomOut()
-                    return .handled
-                }
-                return .ignored
-            }
+            // V4.10.0: 6 个 chrome modifier 打包（title/subtitle/colorScheme/WindowAccessor/NSToolbar sync）
+            .windowChromeAndToolbar(
+                title: currentViewTitle,
+                subtitle: currentViewSubtitle,
+                colorScheme: appearanceMode.colorScheme,
+                selection: selection,
+                searchText: searchText,
+                configureWindow: { configureNSToolbar(window: $0) }
+            )
+            // V4.10.0: app lifecycle hooks（.onAppear + 6 个 .onChange 打包）
+            //   避免 body 链超长触发 type-check 超时
+            .appLifecycleHooks(
+                thumbnailSize: thumbnailSize,
+                sidebarSelection: sidebarSelection,
+                sortOption: sortOption,
+                viewModeRaw: viewModeRaw,
+                storedThumbnailSize: storedThumbnailSize,
+                storedSortOption: storedSortOption,
+                onAppear: {
+                    thumbnailSize = CGFloat(storedThumbnailSize)
+                    sidebarSelection = restoreSelection(storedSidebarKey)
+                    sortOption = SortOption(rawValue: storedSortOption) ?? .importedAtDesc
+                    // V3.6 NEW: 启动时清理过期回收站项（只跑一次）
+                    if !hasPurgedExpiredTrash {
+                        hasPurgedExpiredTrash = true
+                        purgeExpiredTrashOnStartup()
+                    }
+                },
+                onStoredThumbnailChange: { thumbnailSize = CGFloat($0) },
+                onStoredSortChange: { sortOption = SortOption(rawValue: $0) ?? .importedAtDesc },
+                onThumbnailChange: { storedThumbnailSize = Double($0) },
+                onSidebarSelectionChange: { new in
+                    storedSidebarKey = serializeSelection(new)
+                    // V4.1.0 l: 切换侧栏 section 同时清选中（避免"选中的照片不在新 section"）
+                    clearSelectionOnFilterChange()
+                },
+                onSortOptionChange: { storedSortOption = $0.rawValue }
+            )
+            // V4.10.0: grid input handling（.onDeleteCommand + .focusable + 6 .onKeyPress 打包）
+            .gridInputHandling(
+                canPrev: canPrev,
+                canNext: canNext,
+                hasSelection: !selection.isEmpty,
+                onDelete: handleDelete,
+                onPrev: goPrev,
+                onNext: goNext,
+                onEscape: { selection = .empty },
+                onSelectAll: { selection = selection.settingAll(in: visiblePhotos) },
+                onZoomIn: zoomIn,
+                onZoomOut: zoomOut
+            )
             // 快捷键：⌘+1-6 切换侧边栏
             .contentKeyboardShortcuts(
                 sidebarSelection: $sidebarSelection,
@@ -449,28 +410,23 @@ struct ContentView: View {
                     NotificationCenter.default.post(name: .focusSearchField, object: nil)
                 }
             )
-            .confirmationDialog(
-                batchDeleteTitle,
-                isPresented: $showingBatchDeleteConfirm,
-                titleVisibility: .visible
-            ) {
-                Button("删除", role: .destructive) { batchDelete() }
-                Button("取消", role: .cancel) {}
-            } message: {
-                // V3.6 改：删除走回收站，N 天后才永久清除
-                Text("选中的图片会移到「最近删除」，\(retentionDays) 天后自动永久清除。可在「最近删除」中恢复。")
-            }
-            // ⌘N 新建文件夹
-            .alert("新建文件夹", isPresented: $showingNewFolderAlert) {
-                TextField("文件夹名称", text: $newFolderName)
-                Button("取消", role: .cancel) { newFolderName = "" }
-                Button("创建") {
-                    createFolderFromAlert()
-                    newFolderName = ""
-                }
-            } message: {
-                Text("为新文件夹命名")
-            }
+            // V4.10.0: 4 dialog 打包（batchDelete / newFolder / emptyTrash / duplicate）
+            .batchActionDialogs(
+                showingBatchDelete: $showingBatchDeleteConfirm,
+                batchDeleteTitle: batchDeleteTitle,
+                retentionDays: retentionDays,
+                onConfirmBatchDelete: batchDelete,
+                showingNewFolder: $showingNewFolderAlert,
+                newFolderName: $newFolderName,
+                onConfirmNewFolder: createFolderFromAlert,
+                showingEmptyTrash: $showingEmptyTrashConfirm,
+                onConfirmEmptyTrash: emptyTrash,
+                showingDuplicateCheck: showingDuplicateCheck,
+                duplicateDialogTitle: duplicateDialogTitle,
+                onConfirmSkipDuplicates: confirmSkipDuplicates,
+                onConfirmImportAllDuplicates: confirmImportAllDuplicates,
+                onCancelDuplicateImport: cancelDuplicateImport
+            )
             // V3.5.18：监听"设置..."菜单 + 弹设置 sheet + 应用强调色
             // 抽到 helper 函数里避免 body 链过长触发 Swift 类型检查超时
             .applySettingsChrome(
@@ -478,29 +434,6 @@ struct ContentView: View {
                 showSettings: $showSettings,
                 tintColor: accentColor.color
             )
-            // V3.6.6: 清空回收站二次确认
-            .confirmationDialog(
-                "确定要清空回收站吗？",
-                isPresented: $showingEmptyTrashConfirm,
-                titleVisibility: .visible
-            ) {
-                Button("清空", role: .destructive) { emptyTrash() }
-                Button("取消", role: .cancel) {}
-            } message: {
-                Text("回收站里的所有照片将被永久删除，无法恢复。")
-            }
-            // V3.6.24: 导入时重复检测 dialog
-            .confirmationDialog(
-                duplicateDialogTitle,
-                isPresented: showingDuplicateCheck,
-                titleVisibility: .visible
-            ) {
-                Button("全部跳过（保留现有）") { confirmSkipDuplicates() }
-                Button("全部导入（可能重复）", role: .destructive) { confirmImportAllDuplicates() }
-                Button("取消", role: .cancel) { cancelDuplicateImport() }
-            } message: {
-                Text("选\"跳过\"避免重复导入。")
-            }
             // V4.7.0: 暴露 undoManager 给 Edit menu commands
             //   抽到 extension（exposeUndoManager）避免 body 链过长触发 type-check 超时
             .exposeUndoManager(undoManager)
@@ -694,135 +627,13 @@ struct ContentView: View {
     //   （V4.7.1-V4.7.7 7 个 commit 探索 SwiftUI toolbar 限制都失败）
 
     // 主布局（V3.5.17：拆到 Views/MainLayoutView.swift；V4.0.0 toolbar 迁出到 native .toolbar；V4.8.0 改为 NSToolbar）
+    // V4.10.0: 把 4 个区块抽到 private var pane（sidebarPane/gridPane/detailPane/statusBarPane）
+    //   避免 mainLayout body 内 100+ 行的 PhotoGridPane / DetailPane 闭包列表触发 type-check 超时
     private var mainLayout: some View {
         MainLayoutView(
-            pathBar: {
-                // V3.5.17：PathBar 已禁用（用户偏好）
-                // 保留 MainLayoutView 接口；空 @ViewBuilder 闭包 = EmptyView = 不占空间
-                // 如要恢复：取消下面注释即可
-                //
-                // if !pathSegments.isEmpty {
-                //     PathBar(
-                //         segments: pathSegments,
-                //         onNavigate: { target in
-                //             if let target = target {
-                //                 sidebarSelection = target
-                //             }
-                //         }
-                //     )
-                // }
-            },
-            split: {
-                MainSplitView(
-                    layout: columnLayout,
-                    showSidebar: $showSidebar,
-                    showDetail: $showDetail,
-                    isDropTargeted: $isDropTargeted,
-                    isBoxSelecting: $isBoxSelecting,
-                    onDrop: handleDrop,
-                    sidebar: {
-                        SidebarView(
-                            selection: $sidebarSelection,
-                            photoSelection: $selection,
-                            // V4.0.0.6: 缩放 + 排序搬到侧栏顶部（"视图控制中心"）
-                            thumbnailSize: $thumbnailSize,
-                            sortOption: $sortOption
-                            // V4.1.0f: 移除 showSidebar binding（hide 按钮完全搬回主工具栏）
-                        )
-                    },
-                    center: {
-                        PhotoGridPane(
-                            selection: $selection,
-                            folder: currentFolder,
-                            tag: currentTag,
-                            searchText: searchText,
-                            filterFavorites: filterFavorites,
-                            filterUnfiled: filterUnfiled,
-                            filterDuplicates: filterDuplicates,
-                            filterRecent7Days: filterRecent7Days,
-                            filterLargeFiles: filterLargeFiles,
-                            filterInTrash: filterInTrash,  // V3.6 NEW
-                            // V3.6.6: 透传 retentionDays 给缩略图 badge
-                            retentionDays: retentionDays,
-                            thumbnailSize: thumbnailSize,
-                            sortOption: sortOption,
-                            onVisiblePhotosChange: { visiblePhotos = $0 },
-                            onImport: startImport,
-                            onBatchDelete: { showingBatchDeleteConfirm = true },
-                            onClearMultiSelect: { selection = .empty },
-                            onDoubleTap: enterImmersive,
-                            // V4.9.0: 清空所有 filter（用于"无搜索结果"等空状态次 CTA）
-                            //   清 searchText + folder + tag + 所有 filter 状态
-                            onClearFilters: { resetFilters() },
-                            onExportComplete: { count in
-                                showToast("已导出 \(count) 张图片", type: .success)
-                            }
-                        )
-                    },
-                    detail: {
-                        DetailPane(
-                            singleSelectedPhoto: singleSelectedPhoto,
-                            isMultiSelect: isMultiSelect,
-                            // V3.6.52: 用 selection.selectedIDs.count 替直接字段
-                            count: filterInTrash ? trashedCount : (filterInDuplicates ? duplicatePurgeableCount : selection.selectedIDs.count),
-                            totalSize: filterInTrash ? trashedTotalSize : (filterInDuplicates ? duplicatePurgeableSize : selectedTotalSize),
-                            folders: folders,
-                            allTags: allTags,
-                            onDelete: deleteSinglePhoto,
-                            onPrev: goPrev,
-                            onNext: goNext,
-                            canPrev: canPrev,
-                            canNext: canNext,
-                            currentIndex: currentIndex,
-                            totalCount: visiblePhotos.count,
-                            // V3.5.19：多选 batch 动作从原 PhotoGridView.multiSelectTopBar 搬过来
-                            onBatchMove: { folder in batchMove(to: folder) },
-                            onBatchAddTag: { tag in batchAddTag(tag) },
-                            onBatchToggleFavorite: batchToggleFavorite,
-                            onBatchExport: batchExport,
-                            onBatchDelete: { showingBatchDeleteConfirm = true },
-                            // V3.6.52: 单字段 assignment 替 2 字段 pair
-                            onClearSelection: { selection = .empty },
-                            // V3.6 NEW: 回收站模式
-                            sidebarSelection: sidebarSelection,
-                            retentionDays: retentionDays,
-                            onTrashRestore: restoreSelectedFromTrash,
-                            onTrashPermanentDelete: permanentDeleteSelected,
-                            // V3.6.6: 改弹二次确认（不再直接调 emptyTrash）
-                            onEmptyTrash: { showingEmptyTrashConfirm = true },
-                            // V4.9.0: 回收站空时切回"全部"视图
-                            onExitTrash: { sidebarSelection = .all },
-                            // V3.6.15: 重复图清理（一键保留每组最新）
-                            onKeepNewestPerDuplicateGroup: keepNewestPerDuplicateGroup,
-                            // V4.1.0 k: 无选中时显示图库概览
-                            allPhotos: allPhotos,
-                            libraryTotalCount: allPhotos.count,
-                            libraryTotalSize: PhotoStats.totalSize(allPhotos),
-                            onSelectPhoto: { photo in selection = selection.selectingSingle(photo.id) },
-                            onSelectFolder: { folder in sidebarSelection = .folder(folder) },
-                            onImport: startImport
-                        )
-                    }
-                )
-                // V3.6.52: 1 binding<SelectionState> 替 2 bindings
-                .boxSelectionGesture(
-                    isBoxSelecting: $isBoxSelecting,
-                    selection: $selection,
-                    visiblePhotos: visiblePhotos
-                )
-                // V3.6.32: 恢复到 V3.6.27 顶层加 .boxSelectionGesture 模式
-                // 之前 R2 改到 PhotoGridView 内部，simultaneousGesture 仍破坏 cell .onDrag
-                // 现在先恢复 V1（最安全），box-select V2 留待未来换实现思路
-            },
-            statusBar: {
-                // V3.5.6 Finder 化：Status Bar（底部信息条）
-                StatusBar(
-                    totalCount: allPhotos.count,
-                    totalSize: totalSizeFormatted,
-                    // V3.6.52: 用 selection.selectedIDs.count 替直接字段
-                    selectedCount: selection.selectedIDs.count
-                )
-            },
+            pathBar: { pathBarPane },
+            split: { mainSplitPane },
+            statusBar: { statusBarPane },
             showSidebar: $showSidebar,
             undoManager: undoManager,
             toast: toast,
@@ -830,6 +641,144 @@ struct ContentView: View {
             immersiveIndex: $immersiveIndex,
             visiblePhotos: visiblePhotos,
             onImmersiveDismiss: { immersivePhoto = nil }
+        )
+    }
+
+    // V3.5.17：PathBar 已禁用（用户偏好）
+    // 保留 MainLayoutView 接口；空 @ViewBuilder 闭包 = EmptyView = 不占空间
+    // 如要恢复：取消下面注释即可
+    //
+    // if !pathSegments.isEmpty {
+    //     PathBar(
+    //         segments: pathSegments,
+    //         onNavigate: { target in
+    //             if let target = target {
+    //                 sidebarSelection = target
+    //             }
+    //         }
+    //     )
+    // }
+    @ViewBuilder
+    private var pathBarPane: some View {
+        EmptyView()
+    }
+
+    // V3.6.32: 恢复到 V3.6.27 顶层加 .boxSelectionGesture 模式
+    // 之前 R2 改到 PhotoGridView 内部，simultaneousGesture 仍破坏 cell .onDrag
+    // 现在先恢复 V1（最安全），box-select V2 留待未来换实现思路
+    private var mainSplitPane: some View {
+        MainSplitView(
+            layout: columnLayout,
+            showSidebar: $showSidebar,
+            showDetail: $showDetail,
+            isDropTargeted: $isDropTargeted,
+            isBoxSelecting: $isBoxSelecting,
+            onDrop: handleDrop,
+            sidebar: { sidebarPane },
+            center: { gridPane },
+            detail: { detailPane }
+        )
+        // V3.6.52: 1 binding<SelectionState> 替 2 bindings
+        .boxSelectionGesture(
+            isBoxSelecting: $isBoxSelecting,
+            selection: $selection,
+            visiblePhotos: visiblePhotos
+        )
+    }
+
+    private var sidebarPane: some View {
+        SidebarView(
+            selection: $sidebarSelection,
+            photoSelection: $selection,
+            // V4.0.0.6: 缩放 + 排序搬到侧栏顶部（"视图控制中心"）
+            thumbnailSize: $thumbnailSize,
+            sortOption: $sortOption
+            // V4.1.0f: 移除 showSidebar binding（hide 按钮完全搬回主工具栏）
+        )
+    }
+
+    private var gridPane: some View {
+        PhotoGridPane(
+            selection: $selection,
+            folder: currentFolder,
+            tag: currentTag,
+            searchText: searchText,
+            filterFavorites: filterFavorites,
+            filterUnfiled: filterUnfiled,
+            filterDuplicates: filterDuplicates,
+            filterRecent7Days: filterRecent7Days,
+            filterLargeFiles: filterLargeFiles,
+            filterInTrash: filterInTrash,  // V3.6 NEW
+            // V3.6.6: 透传 retentionDays 给缩略图 badge
+            retentionDays: retentionDays,
+            thumbnailSize: thumbnailSize,
+            sortOption: sortOption,
+            onVisiblePhotosChange: { visiblePhotos = $0 },
+            onImport: startImport,
+            onBatchDelete: { showingBatchDeleteConfirm = true },
+            onClearMultiSelect: { selection = .empty },
+            onDoubleTap: enterImmersive,
+            // V4.9.0: 清空所有 filter（用于"无搜索结果"等空状态次 CTA）
+            //   清 searchText + folder + tag + 所有 filter 状态
+            onClearFilters: { resetFilters() },
+            onExportComplete: { count in
+                showToast("已导出 \(count) 张图片", type: .success)
+            }
+        )
+    }
+
+    private var detailPane: some View {
+        DetailPane(
+            singleSelectedPhoto: singleSelectedPhoto,
+            isMultiSelect: isMultiSelect,
+            // V3.6.52: 用 selection.selectedIDs.count 替直接字段
+            count: filterInTrash ? trashedCount : (filterInDuplicates ? duplicatePurgeableCount : selection.selectedIDs.count),
+            totalSize: filterInTrash ? trashedTotalSize : (filterInDuplicates ? duplicatePurgeableSize : selectedTotalSize),
+            folders: folders,
+            allTags: allTags,
+            onDelete: deleteSinglePhoto,
+            onPrev: goPrev,
+            onNext: goNext,
+            canPrev: canPrev,
+            canNext: canNext,
+            currentIndex: currentIndex,
+            totalCount: visiblePhotos.count,
+            // V3.5.19：多选 batch 动作从原 PhotoGridView.multiSelectTopBar 搬过来
+            onBatchMove: { folder in batchMove(to: folder) },
+            onBatchAddTag: { tag in batchAddTag(tag) },
+            onBatchToggleFavorite: batchToggleFavorite,
+            onBatchExport: batchExport,
+            onBatchDelete: { showingBatchDeleteConfirm = true },
+            // V3.6.52: 单字段 assignment 替 2 字段 pair
+            onClearSelection: { selection = .empty },
+            // V3.6 NEW: 回收站模式
+            sidebarSelection: sidebarSelection,
+            retentionDays: retentionDays,
+            onTrashRestore: restoreSelectedFromTrash,
+            onTrashPermanentDelete: permanentDeleteSelected,
+            // V3.6.6: 改弹二次确认（不再直接调 emptyTrash）
+            onEmptyTrash: { showingEmptyTrashConfirm = true },
+            // V4.9.0: 回收站空时切回"全部"视图
+            onExitTrash: { sidebarSelection = .all },
+            // V3.6.15: 重复图清理（一键保留每组最新）
+            onKeepNewestPerDuplicateGroup: keepNewestPerDuplicateGroup,
+            // V4.1.0 k: 无选中时显示图库概览
+            allPhotos: allPhotos,
+            libraryTotalCount: allPhotos.count,
+            libraryTotalSize: PhotoStats.totalSize(allPhotos),
+            onSelectPhoto: { photo in selection = selection.selectingSingle(photo.id) },
+            onSelectFolder: { folder in sidebarSelection = .folder(folder) },
+            onImport: startImport
+        )
+    }
+
+    private var statusBarPane: some View {
+        // V3.5.6 Finder 化：Status Bar（底部信息条）
+        StatusBar(
+            totalCount: allPhotos.count,
+            totalSize: totalSizeFormatted,
+            // V3.6.52: 用 selection.selectedIDs.count 替直接字段
+            selectedCount: selection.selectedIDs.count
         )
     }
 
@@ -1319,5 +1268,206 @@ extension View {
         onChange(of: text) { _, newValue in
             ToolbarController.shared.setSearchText(newValue)
         }
+    }
+}
+
+// MARK: - V4.10.0: app lifecycle hooks extension
+//
+// 把 .onAppear + 6 个 .onChange 打包成 1 个语义化 modifier，让 body 链显著缩短。
+// 同样的"抽到 extension 避免 type-check 超时"模式参考 applySettingsChrome / syncNSToolbar*。
+extension View {
+    func appLifecycleHooks(
+        thumbnailSize: CGFloat,
+        sidebarSelection: SidebarSelection?,
+        sortOption: SortOption,
+        viewModeRaw: String,
+        storedThumbnailSize: Double,
+        storedSortOption: String,
+        onAppear: @escaping () -> Void,
+        onStoredThumbnailChange: @escaping (Double) -> Void,
+        onStoredSortChange: @escaping (String) -> Void,
+        onThumbnailChange: @escaping (CGFloat) -> Void,
+        onSidebarSelectionChange: @escaping (SidebarSelection?) -> Void,
+        onSortOptionChange: @escaping (SortOption) -> Void
+    ) -> some View {
+        self
+            .onAppear { onAppear() }
+            // V3.6.13: 监听 SettingsView 修改 storedThumbnailSize，实时同步当前 session
+            //   避免"重启后生效"的尴尬
+            .onChange(of: storedThumbnailSize) { _, new in onStoredThumbnailChange(new) }
+            .onChange(of: storedSortOption) { _, new in onStoredSortChange(new) }
+            // V3.6.13: viewModeRaw 通过 computed property 自动响应 AppStorage 变化
+            .onChange(of: viewModeRaw) { _, _ in }
+            .onChange(of: thumbnailSize) { _, new in onThumbnailChange(new) }
+            .onChange(of: sidebarSelection) { _, new in onSidebarSelectionChange(new) }
+            .onChange(of: sortOption) { _, new in onSortOptionChange(new) }
+    }
+}
+
+// MARK: - V4.10.0: grid input handling extension
+//
+// 把 .onDeleteCommand + .focusable + 6 个 .onKeyPress（←→ESC / ⌘A / ⌘+ / ⌘-）打包。
+// 同样的"抽到 extension 避免 type-check 超时"模式参考 applySettingsChrome / appLifecycleHooks。
+extension View {
+    func gridInputHandling(
+        canPrev: Bool,
+        canNext: Bool,
+        hasSelection: Bool,
+        onDelete: @escaping () -> Void,
+        onPrev: @escaping () -> Void,
+        onNext: @escaping () -> Void,
+        onEscape: @escaping () -> Void,
+        onSelectAll: @escaping () -> Void,
+        onZoomIn: @escaping () -> Void,
+        onZoomOut: @escaping () -> Void
+    ) -> some View {
+        self
+            .onDeleteCommand(perform: onDelete)
+            .focusable()
+            .onKeyPress(.leftArrow) {
+                if canPrev { onPrev() }
+                return .handled
+            }
+            .onKeyPress(.rightArrow) {
+                if canNext { onNext() }
+                return .handled
+            }
+            .onKeyPress(.escape) {
+                if hasSelection {
+                    onEscape()
+                    return .handled
+                }
+                return .ignored
+            }
+            .onKeyPress("a", phases: .down) { press in
+                if press.modifiers.contains(EventModifiers.command) {
+                    // V3.6.52: 用 selection.settingAll(in:) 替手写 Set 构造
+                    onSelectAll()
+                    return .handled
+                }
+                return .ignored
+            }
+            // V4.0.0.6: ⌘+ / ⌘- 缩放快捷键（缩放搬到侧栏顶部后必须配快捷键）
+            .onKeyPress("+", phases: .down) { press in
+                if press.modifiers.contains(EventModifiers.command) {
+                    onZoomIn()
+                    return .handled
+                }
+                return .ignored
+            }
+            .onKeyPress("-", phases: .down) { press in
+                if press.modifiers.contains(EventModifiers.command) {
+                    onZoomOut()
+                    return .handled
+                }
+                return .ignored
+            }
+    }
+}
+
+// MARK: - V4.10.0: batch action dialogs extension
+//
+// 把 4 个 dialog（batchDelete / newFolder / emptyTrash / duplicate）打包成 1 个 modifier。
+// 各 dialog 独立的 isPresented，顺序之间无相互依赖。
+extension View {
+    func batchActionDialogs(
+        showingBatchDelete: Binding<Bool>,
+        batchDeleteTitle: String,
+        retentionDays: Int,
+        onConfirmBatchDelete: @escaping () -> Void,
+        showingNewFolder: Binding<Bool>,
+        newFolderName: Binding<String>,
+        onConfirmNewFolder: @escaping () -> Void,
+        showingEmptyTrash: Binding<Bool>,
+        onConfirmEmptyTrash: @escaping () -> Void,
+        showingDuplicateCheck: Binding<Bool>,
+        duplicateDialogTitle: String,
+        onConfirmSkipDuplicates: @escaping () -> Void,
+        onConfirmImportAllDuplicates: @escaping () -> Void,
+        onCancelDuplicateImport: @escaping () -> Void
+    ) -> some View {
+        self
+            .confirmationDialog(
+                batchDeleteTitle,
+                isPresented: showingBatchDelete,
+                titleVisibility: .visible
+            ) {
+                Button("删除", role: .destructive, action: onConfirmBatchDelete)
+                Button("取消", role: .cancel) {}
+            } message: {
+                // V3.6 改：删除走回收站，N 天后才永久清除
+                Text("选中的图片会移到「最近删除」，\(retentionDays) 天后自动永久清除。可在「最近删除」中恢复。")
+            }
+            // ⌘N 新建文件夹
+            .alert("新建文件夹", isPresented: showingNewFolder) {
+                TextField("文件夹名称", text: newFolderName)
+                Button("取消", role: .cancel) { newFolderName.wrappedValue = "" }
+                Button("创建") {
+                    onConfirmNewFolder()
+                    newFolderName.wrappedValue = ""
+                }
+            } message: {
+                Text("为新文件夹命名")
+            }
+            // V3.6.6: 清空回收站二次确认
+            .confirmationDialog(
+                "确定要清空回收站吗？",
+                isPresented: showingEmptyTrash,
+                titleVisibility: .visible
+            ) {
+                Button("清空", role: .destructive, action: onConfirmEmptyTrash)
+                Button("取消", role: .cancel) {}
+            } message: {
+                Text("回收站里的所有照片将被永久删除，无法恢复。")
+            }
+            // V3.6.24: 导入时重复检测 dialog
+            .confirmationDialog(
+                duplicateDialogTitle,
+                isPresented: showingDuplicateCheck,
+                titleVisibility: .visible
+            ) {
+                Button("全部跳过（保留现有）", action: onConfirmSkipDuplicates)
+                Button("全部导入（可能重复）", role: .destructive, action: onConfirmImportAllDuplicates)
+                Button("取消", role: .cancel, action: onCancelDuplicateImport)
+            } message: {
+                Text("选\"跳过\"避免重复导入。")
+            }
+    }
+}
+
+// MARK: - V4.10.0: window chrome + NSToolbar 桥接 extension
+//
+// 把 .navigationTitle + .navigationSubtitle + .preferredColorScheme +
+// .background(WindowAccessor) + .syncNSToolbarSelectionState + .syncNSToolbarSearchField
+// 6 个 chrome modifier 打包成 1 个语义化 modifier。
+extension View {
+    func windowChromeAndToolbar(
+        title: String,
+        subtitle: String,
+        colorScheme: ColorScheme?,
+        selection: SelectionState,
+        searchText: String,
+        configureWindow: @escaping (NSWindow) -> Void
+    ) -> some View {
+        self
+            // V4.8.0: 删 .toolbar { toolbarContent }——SwiftUI .toolbar 在 macOS 是降级实现
+            //   改用 NSToolbar (AppKit) 在 WindowAccessor 处设置
+            //   Photos.app / Finder / Mail 都用 NSToolbar——本路线一致
+            //
+            // V4.2.0 P0❸: 窗口元数据（hidden title bar 模式下不显示在窗口顶部，
+            //   但进入 Dock 右键 / ⌘⇥ 切换器 / Mission Control / VoiceOver 等位置）
+            .navigationTitle(title)
+            .navigationSubtitle(subtitle)
+            // V3.6.22: 应用外观（浅色/深色/跟随系统）
+            .preferredColorScheme(colorScheme)
+            // V4.8.0: NSToolbar 桥接——WindowAccessor 拿到 NSWindow 后设置 NSToolbar
+            //   .background(WindowAccessor) 嵌入零尺寸 NSView
+            .background(WindowAccessor { window in
+                configureWindow(window)
+            })
+            // V4.8.0: 选中状态变化 → 更新 NSToolbar buttons enabled
+            .syncNSToolbarSelectionState(selection: selection)
+            // V4.8.1: SwiftUI @State searchText 变化 → 同步到 NSSearchField
+            .syncNSToolbarSearchField(text: searchText)
     }
 }
