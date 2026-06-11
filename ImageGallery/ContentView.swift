@@ -125,10 +125,9 @@ struct ContentView: View {
     //   @State 而非 @StateObject：controller 内部状态不需 SwiftUI 监听
     @State private var quickLookController = QuickLookPreviewController()
 
-    // V4.19.0: macOS 26 Liquid Glass 跨区域融合 namespace
-    //   glassEffectUnion 在 mainSplitPane 上 + glassEffectID 在 sidebar / detail
-    //   视觉上 sidebar 底 + detail 顶 同一片玻璃（Photos.app 风格）
-    @Namespace private var glassNamespace
+    // V4.20.0: 撤回 V4.19.0 glassNamespace + glassEffectUnion
+    //   macOS 26 glassEffectUnion 在 sidebar 边界外产生 outline 痕迹（用户截图反馈）
+    //   回滚到 V4.18.0 单 view glassEffect 状态（仅 SidebarView/DetailView 4 处 .glassEffect）
 
     /// V4.12.0: 当前 visiblePhotos 对应的 URL 列表（空格键 QuickLook 翻页用）
     private var currentVisibleURLs: [URL] {
@@ -731,10 +730,6 @@ struct ContentView: View {
             selection: $selection,
             visiblePhotos: visiblePhotos
         )
-        // V4.19.0: macOS 26 Liquid Glass 跨区域融合
-        //   视觉上 sidebar 底 + detail 顶 同一片玻璃（Photos.app 风格）
-        //   glassEffectUnion 在父 view（mainSplitView）+ glassEffectID 在子 view（sidebar/detail）
-        .glassEffectUnion(id: "mainSplit", namespace: glassNamespace)
     }
 
     private var sidebarPane: some View {
@@ -743,9 +738,7 @@ struct ContentView: View {
             photoSelection: $selection,
             // V4.0.0.6: 缩放 + 排序搬到侧栏顶部（"视图控制中心"）
             thumbnailSize: $thumbnailSize,
-            sortOption: $sortOption,
-            // V4.19.0: glassEffectUnion 跨区域融合所需 namespace
-            glassNamespace: glassNamespace
+            sortOption: $sortOption
             // V4.1.0f: 移除 showSidebar binding（hide 按钮完全搬回主工具栏）
         )
     }
@@ -824,9 +817,7 @@ struct ContentView: View {
             onImport: startImport,
             // V4.11.0: 存储不可写错误（nil = OK）
             storageError: storageErrorMessage,
-            onRetryStorage: checkStorage,
-            // V4.19.0: glassEffectUnion 跨区域融合所需 namespace
-            glassNamespace: glassNamespace
+            onRetryStorage: checkStorage
         )
     }
 
