@@ -48,7 +48,7 @@ struct ViewOptionsPopover: View {
             popoverSection(title: "视图", icon: "square.grid.2x2") {
                 HStack(spacing: PopoverStyle.segmentGap) {
                     ForEach(ViewMode.allCases) { mode in
-                        popoverSegmentItem(
+                        PopoverSegmentItem(
                             isActive: viewMode == mode,
                             iconName: mode.icon,
                             label: mode.label,
@@ -66,7 +66,7 @@ struct ViewOptionsPopover: View {
             popoverSection(title: "缩放", icon: "square.grid.3x3") {
                 HStack(spacing: PopoverStyle.segmentGap) {
                     ForEach(ThumbnailDensity.allCases) { density in
-                        popoverSegmentItem(
+                        PopoverSegmentItem(
                             isActive: ThumbnailDensity.nearest(to: thumbnailSize) == density,
                             iconName: density.icon,
                             label: density.label,
@@ -84,7 +84,7 @@ struct ViewOptionsPopover: View {
             popoverSection(title: "排序", icon: "arrow.up.arrow.down") {
                 VStack(alignment: .leading, spacing: 2) {
                     ForEach(SortOption.allCases) { option in
-                        popoverSortItem(
+                        PopoverSortItem(
                             isActive: sortOption == option,
                             label: option.label,
                             directionIcon: option.directionIcon
@@ -124,68 +124,95 @@ struct ViewOptionsPopover: View {
     /// popover 内的 segment item（封闭空间，accent 满色填充 OK）
     /// V4.41.0: itemHeight / cornerRadius / active+inactive colors 全 token 化
     /// V4.42.0: icon 14pt → 16pt + 4pt 垂直 padding——icon 与 item 边界不贴紧
-    @ViewBuilder
-    private func popoverSegmentItem(
-        isActive: Bool,
-        iconName: String,
-        label: String,
-        help: String,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            VStack(spacing: 2) {
-                Image(systemName: iconName)
-                    .font(.system(size: PopoverStyle.iconFontSize, weight: .medium))
-                Text(label)
-                    .font(.caption2)
+    /// V4.43.0: hover bg——inactive items 鼠标悬停时 10% → 14%
+    /// V4.43.0: 抽到独立 View struct（@State 必须在 struct property）—— 8 个独立 hover state
+    private struct PopoverSegmentItem: View {
+        let isActive: Bool
+        let iconName: String
+        let label: String
+        let help: String
+        let action: () -> Void
+
+        @State private var isHovered = false
+
+        var body: some View {
+            let bg: Color = {
+                if isActive { return PopoverStyle.activeBackground }
+                if isHovered { return PopoverStyle.hoverBackground }
+                return PopoverStyle.inactiveBackground
+            }()
+
+            return Button(action: action) {
+                VStack(spacing: 2) {
+                    Image(systemName: iconName)
+                        .font(.system(size: PopoverStyle.iconFontSize, weight: .medium))
+                    Text(label)
+                        .font(.caption2)
+                }
+                .foregroundStyle(isActive ? PopoverStyle.activeText : PopoverStyle.inactiveText)
+                .padding(.vertical, PopoverStyle.itemVerticalPadding)
+                .frame(maxWidth: .infinity, minHeight: PopoverStyle.itemHeight)
+                .background(
+                    bg,
+                    in: RoundedRectangle(cornerRadius: PopoverStyle.itemCornerRadius, style: .continuous)
+                )
             }
-            .foregroundStyle(isActive ? PopoverStyle.activeText : PopoverStyle.inactiveText)
-            .padding(.vertical, PopoverStyle.itemVerticalPadding)
-            .frame(maxWidth: .infinity, minHeight: PopoverStyle.itemHeight)
-            .background(
-                isActive ? PopoverStyle.activeBackground : PopoverStyle.inactiveBackground,
-                in: RoundedRectangle(cornerRadius: PopoverStyle.itemCornerRadius, style: .continuous)
-            )
+            .buttonStyle(.plain)
+            .onHover { hovering in
+                isHovered = hovering
+            }
+            .help(help)
         }
-        .buttonStyle(.plain)
-        .help(help)
     }
 
     /// popover 内的 sort item（带 checkmark + direction icon）
     /// V4.41.0: 颜色 + cornerRadius + height 全 token 化
     /// V4.42.0: icon 12pt → 14pt + 4pt 垂直 padding——视觉与 segment item 一致
-    @ViewBuilder
-    private func popoverSortItem(
-        isActive: Bool,
-        label: String,
-        directionIcon: String,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            HStack(spacing: 6) {
-                Image(systemName: directionIcon)
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(isActive ? PopoverStyle.activeText : .secondary)
-                    .frame(width: 18)
-                Text(label)
-                    .font(.callout)
-                    .foregroundStyle(isActive ? PopoverStyle.activeText : PopoverStyle.inactiveText)
-                Spacer()
-                if isActive {
-                    Image(systemName: "checkmark")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(PopoverStyle.activeText)
+    /// V4.43.0: hover bg + 字号 13pt → 12pt
+    private struct PopoverSortItem: View {
+        let isActive: Bool
+        let label: String
+        let directionIcon: String
+        let action: () -> Void
+
+        @State private var isHovered = false
+
+        var body: some View {
+            let bg: Color = {
+                if isActive { return PopoverStyle.activeBackground }
+                if isHovered { return PopoverStyle.hoverBackground }
+                return .clear
+            }()
+
+            return Button(action: action) {
+                HStack(spacing: 6) {
+                    Image(systemName: directionIcon)
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(isActive ? PopoverStyle.activeText : .secondary)
+                        .frame(width: 18)
+                    Text(label)
+                        .font(.system(size: PopoverStyle.sortItemFontSize))
+                        .foregroundStyle(isActive ? PopoverStyle.activeText : PopoverStyle.inactiveText)
+                    Spacer()
+                    if isActive {
+                        Image(systemName: "checkmark")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(PopoverStyle.activeText)
+                    }
                 }
+                .padding(.horizontal, 8)
+                .padding(.vertical, PopoverStyle.itemVerticalPadding)
+                .frame(maxWidth: .infinity, minHeight: PopoverStyle.itemHeight, alignment: .leading)
+                .background(
+                    bg,
+                    in: RoundedRectangle(cornerRadius: PopoverStyle.itemCornerRadius, style: .continuous)
+                )
             }
-            .padding(.horizontal, 8)
-            .padding(.vertical, PopoverStyle.itemVerticalPadding)
-            .frame(maxWidth: .infinity, minHeight: PopoverStyle.itemHeight, alignment: .leading)
-            .background(
-                isActive ? PopoverStyle.activeBackground : .clear,
-                in: RoundedRectangle(cornerRadius: PopoverStyle.itemCornerRadius, style: .continuous)
-            )
+            .buttonStyle(.plain)
+            .onHover { hovering in
+                isHovered = hovering
+            }
         }
-        .buttonStyle(.plain)
     }
 }
 

@@ -436,6 +436,14 @@ enum PopoverStyle {
     static let inactiveBackground: Color = Color.primary.opacity(0.10)
     /// inactive 文字
     static let inactiveText: Color = .primary
+    /// V4.43.0 NEW: hover 背景——inactive items 在鼠标悬停时显示
+    ///   10% → 14% (略加深，给"可点击"反馈)
+    ///   active items 不变 (accent 实色，hover 加深没意义)
+    static let hoverBackground: Color = Color.primary.opacity(0.14)
+
+    /// V4.43.0 NEW: sort item 文字字号——12pt (原 13pt .callout)
+    ///   缩小让 sort item 视觉密度与 segment item (icon 16pt + label 11pt) 更协调
+    static let sortItemFontSize: CGFloat = 12
 
     // ─── 状态色（AppKit 版本） ───
     /// active 背景：NSColor.controlAccentColor（与 SwiftUI .accentColor 同源）

@@ -313,6 +313,9 @@ final class FilterPopoverViewController: NSViewController, NSSearchFieldDelegate
     // MARK: - 子视图工厂
 
     /// 顶部 header："筛选" + "清除全部" 按钮（仅激活时显示）
+    /// V4.43.0: "清除全部" 降调——去下划线 + tertiaryLabelColor + 11pt
+    ///   原 V4.36.x 蓝色下划线"链接"风格抢主内容视觉重心
+    ///   现在 secondary action 不抢镜 (destructive action 视觉收敛)
     private func makeHeader() -> NSView {
         let title = NSTextField(labelWithString: "筛选")
         title.font = NSFont.systemFont(ofSize: 13, weight: .semibold)
@@ -324,20 +327,21 @@ final class FilterPopoverViewController: NSViewController, NSSearchFieldDelegate
         stack.distribution = .fill
         stack.translatesAutoresizingMaskIntoConstraints = false
 
-        // "清除全部" 按钮（仅在筛选激活时显示）
+        // V4.43.0: "清除全部" 按钮——仅在筛选激活时显示
+        // 降调：去下划线 + tertiaryLabelColor + 11pt + 蓝色链接感消失
         if filterState.isActive {
             let clearButton = NSButton(title: "清除全部", target: self, action: #selector(handleClearAllTapped))
             clearButton.bezelStyle = .recessed
             clearButton.controlSize = .small
             clearButton.font = NSFont.systemFont(ofSize: 11)
             clearButton.isBordered = false
-            clearButton.contentTintColor = .secondaryLabelColor
-            // 用 attributeString 渲染下划线 + 蓝色（链接风格）
+            clearButton.contentTintColor = .tertiaryLabelColor  // V4.43.0: secondary → tertiary
+            // V4.43.0: 去下划线——plain text + tertiary 色 = 弱化 destructive action 视觉
             let attrTitle = NSAttributedString(
                 string: "清除全部",
                 attributes: [
-                    .foregroundColor: NSColor.secondaryLabelColor,
-                    .underlineStyle: NSUnderlineStyle.single.rawValue
+                    .foregroundColor: NSColor.tertiaryLabelColor
+                    // 移除 .underlineStyle 字段
                 ]
             )
             clearButton.attributedTitle = attrTitle
