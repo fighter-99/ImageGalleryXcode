@@ -154,18 +154,19 @@ struct DetailView: View {
     private var bigImageCard: some View {
         Group {
             if let nsImage = bigImage {
-                // V4.28.0: 加 .frame(maxHeight: 600)——大图最大 600pt 高度
-                //   V4.27.0 单方向 fit (maxWidth: .infinity) 实际行为:
-                //   image 按 width fit 算 aspectRatio height (1080×1629 竖向图 height ≈ 720pt)
-                //   detail panel visible area 通常 600-800pt——大图超出 120pt 被滚动裁剪
-                //   视觉上"大图小 + 上下黑边"
-                //   macOS Photos 实际: 大图占 detail panel 60-75% 高度——按 width fit + 限 maxHeight 600
-                //   视觉效果: 大图在 detail panel 顶部占大半区域 + 元数据可滚动看
-                Image(nsImage: nsImage)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(maxWidth: .infinity, maxHeight: 600)
-                    .id("bigImage")
+                // V4.29.0: GeometryReader 限制大图高度 = 父容器 visible area × 0.55
+                //   V4.28.0 maxHeight 600 固定值在 NSWindow 高度 < 800pt 时仍超出可见区
+                //   V4.27.0 单方向 fit (maxWidth: .infinity) 大图按 width fit 算 height 720pt
+                //   都造成"被窗口切断"——大图 + 元数据总高 1030pt > NSWindow visible 750pt
+                //   macOS Photos 实际: 大图占 detail panel 50-60% 高度, 元数据 fit 余下
+                //   GeometryReader 读父容器高度——大图限 maxHeight = parent × 0.55
+                GeometryReader { geo in
+                    Image(nsImage: nsImage)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(maxWidth: .infinity, maxHeight: geo.size.height * 0.55)
+                        .id("bigImage")
+                }
             } else if bigImageLoadFailed {
                 // V4.9.5: 加载失败——显示 photo 占位 + 错误 icon
                 RoundedRectangle(cornerRadius: Radius.md)
