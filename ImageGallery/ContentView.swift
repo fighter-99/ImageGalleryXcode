@@ -422,7 +422,9 @@ struct ContentView: View {
                 },
                 // V4.15.0: ⌘0 reset zoom（macOS Photos/Finder 标准）
                 //   恢复 thumbnailSize 到用户偏好（storedThumbnailSize）
-                onResetZoom: resetThumbnailSize
+                onResetZoom: resetThumbnailSize,
+                // V4.17.0: ⌘E 导出（macOS Finder 标准）—— 走 batchExport 路径
+                onExport: batchExport
             )
             // V4.12.0: QLPreviewBridge 注入 view tree——SwiftUI 不显示（透明 NSView）
             //   但参与 firstResponder 链，让 QLPreviewPanel 接管时能找到接管 view
@@ -1352,7 +1354,7 @@ extension View {
 
 // MARK: - V4.10.0: grid input handling extension
 //
-// 把 .onDeleteCommand + .focusable + 7 个 .onKeyPress（←→ESC / ⌘A / ⌘+ / ⌘- / ⌘0 / Space）打包。
+// 把 .onDeleteCommand + .focusable + 7 个 .onKeyPress（←→ESC / ⌘A / ⌘+ / ⌘- / ⌘0 / ⌘E / Space）打包。
 // 同样的"抽到 extension 避免 type-check 超时"模式参考 applySettingsChrome / appLifecycleHooks。
 extension View {
     func gridInputHandling(
@@ -1370,7 +1372,9 @@ extension View {
         hasSelectedPhoto: Bool,
         onSpace: @escaping () -> Void,
         // V4.15.0: ⌘0 reset zoom（macOS Photos/Finder 标准）
-        onResetZoom: @escaping () -> Void
+        onResetZoom: @escaping () -> Void,
+        // V4.17.0: ⌘E 导出（macOS Finder 标准，⌘L 撤回——与 macOS Get Info 冲突）
+        onExport: @escaping () -> Void
     ) -> some View {
         self
             .onDeleteCommand(perform: onDelete)
@@ -1425,6 +1429,15 @@ extension View {
             .onKeyPress("0", phases: .down) { press in
                 if press.modifiers.contains(EventModifiers.command) {
                     onResetZoom()
+                    return .handled
+                }
+                return .ignored
+            }
+            // V4.17.0: ⌘E 导出（macOS Finder 标准）—— 走 batchExport 路径，
+            //   单张多张都弹 NSOpenPanel 选目录
+            .onKeyPress("e", phases: .down) { press in
+                if press.modifiers.contains(EventModifiers.command) {
+                    onExport()
                     return .handled
                 }
                 return .ignored

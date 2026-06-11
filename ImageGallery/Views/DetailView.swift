@@ -162,6 +162,13 @@ struct DetailView: View {
                 Logger.imageIO.error("DetailView loadImageAsync failed: \(photo.fileURL.path, privacy: .public)")
             }
         }
+        // V4.17.0: photo 切换时 opacity + scale spring 过渡
+        //   .id(photo.id) 强制 child 替换触发 transition
+        //   视觉：旧图淡出 + 缩小 + 新图淡入 + 放大
+        //   旧实现：photo 切换瞬间图替换（无 transition 感觉"跳"）
+        .id(photo.id)
+        .transition(.opacity.combined(with: .scale(scale: 0.95)))
+        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: photo.id)
         .background(
             RoundedRectangle(cornerRadius: Radius.md)
                 .fill(Palette.cellFilled.opacity(0.3))
