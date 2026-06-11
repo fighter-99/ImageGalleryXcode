@@ -388,8 +388,8 @@ enum PopoverStyle {
     static let width: CGFloat = 240
     /// popover 内边距
     static let padding: CGFloat = Spacing.md
-    /// 段间距
-    static let sectionSpacing: CGFloat = 8
+    /// 段间距——V4.42.0: 8 → 10 (更多垂直呼吸)
+    static let sectionSpacing: CGFloat = 10
     /// 2 列布局列间距（folder/tag 段用）
     static let columnGap: CGFloat = 8
 
@@ -402,27 +402,38 @@ enum PopoverStyle {
     /// 注: Font.Weight 和 NSFont.Weight 标度相反（semibold 在 Font 是 0.3，在 NSFont 是 0.6）
     /// 不能直接转换——必须各设各的
     static let headerWeightAppKit: NSFont.Weight = .semibold
-    /// 段头 icon↔title 间距
-    static let headerIconSpacing: CGFloat = 4
+    /// 段头 icon↔title 间距——V4.42.0: 4 → 6 (icon 与 title 更舒展)
+    static let headerIconSpacing: CGFloat = 6
     /// 段头 icon 字号
     static let headerIconSize: CGFloat = 10
     /// 段头文字 uppercase（macOS Photos 风格）
     static let headerUppercased: Bool = true
 
     // ─── item（segment / list row） ───
-    /// item 高度——Photos 风格 44pt 太舒展，toolbar 风格 22pt 太紧凑
-    /// V4.41.0 选 28pt 居中——ViewOptions 从 44pt 收缩、Filter 从 22-26pt 升级
-    static let itemHeight: CGFloat = 28
-    /// item 圆角
-    static let itemCornerRadius: CGFloat = Radius.sm
+    /// item 高度——V4.42.0: 28 → 32 (略增, 让 16pt icon + caption2 label 不挤)
+    ///   Photos 44pt 太舒展、toolbar 22pt 太紧凑、28pt 偏矮
+    ///   32pt 居中且让 icon+label 上下各有 ~8pt 留白
+    static let itemHeight: CGFloat = 32
+    /// item 圆角——V4.42.0: 6 → 8 (略增, 更现代圆润)
+    static let itemCornerRadius: CGFloat = 8
+    /// segment 之间的间距——V4.42.0: 4 → 6 (相邻 segment 不再贴紧)
+    static let segmentGap: CGFloat = 6
+    /// 2 列布局的 VStack 行间距——V4.42.0: 2 → 4 (checkbox 行间更舒展)
+    static let columnRowGap: CGFloat = 4
+    /// item 内垂直 padding——V4.42.0 新增: 4pt (让 icon 不贴边)
+    static let itemVerticalPadding: CGFloat = 4
+    /// icon 字号——V4.42.0 新增: 16pt (从 14pt 增, 与 itemHeight 32 比例协调)
+    static let iconFontSize: CGFloat = 16
 
     // ─── 状态色（SwiftUI 版本） ───
     /// active 背景
     static let activeBackground: Color = .accentColor
     /// active 文字
     static let activeText: Color = .white
-    /// inactive 背景——Color.primary.opacity(0.06)，与 Surface.toolbarControl 一致
-    static let inactiveBackground: Color = Surface.toolbarControl
+    /// inactive 背景——V4.42.0: primary.opacity(0.06) → 0.10 (更多可见度)
+    ///   6% 太微妙——active vs inactive 区分度低
+    ///   10% 仍保持"未选"感但有清晰视觉提示
+    static let inactiveBackground: Color = Color.primary.opacity(0.10)
     /// inactive 文字
     static let inactiveText: Color = .primary
 
@@ -431,8 +442,8 @@ enum PopoverStyle {
     static let activeBackgroundAppKit: NSColor = .controlAccentColor
     /// active 文字
     static let activeTextAppKit: NSColor = .white
-    /// inactive 背景：6% black（自动暗色适配）——SwiftUI primary.opacity(0.06) 的 AppKit 等价
-    static let inactiveBackgroundAppKit: NSColor = NSColor(white: 0, alpha: 0.06)
+    /// inactive 背景——V4.42.0: 6% black → 10% black (更多可见度)
+    static let inactiveBackgroundAppKit: NSColor = NSColor(white: 0, alpha: 0.10)
     /// inactive 文字
     static let inactiveTextAppKit: NSColor = .labelColor
 }

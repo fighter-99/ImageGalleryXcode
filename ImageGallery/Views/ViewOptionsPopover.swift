@@ -46,7 +46,7 @@ struct ViewOptionsPopover: View {
         VStack(alignment: .leading, spacing: 0) {
             // 段 1: 视图模式
             popoverSection(title: "视图", icon: "square.grid.2x2") {
-                HStack(spacing: 4) {
+                HStack(spacing: PopoverStyle.segmentGap) {
                     ForEach(ViewMode.allCases) { mode in
                         popoverSegmentItem(
                             isActive: viewMode == mode,
@@ -64,7 +64,7 @@ struct ViewOptionsPopover: View {
 
             // 段 2: 缩放
             popoverSection(title: "缩放", icon: "square.grid.3x3") {
-                HStack(spacing: 4) {
+                HStack(spacing: PopoverStyle.segmentGap) {
                     ForEach(ThumbnailDensity.allCases) { density in
                         popoverSegmentItem(
                             isActive: ThumbnailDensity.nearest(to: thumbnailSize) == density,
@@ -123,6 +123,7 @@ struct ViewOptionsPopover: View {
 
     /// popover 内的 segment item（封闭空间，accent 满色填充 OK）
     /// V4.41.0: itemHeight / cornerRadius / active+inactive colors 全 token 化
+    /// V4.42.0: icon 14pt → 16pt + 4pt 垂直 padding——icon 与 item 边界不贴紧
     @ViewBuilder
     private func popoverSegmentItem(
         isActive: Bool,
@@ -134,11 +135,12 @@ struct ViewOptionsPopover: View {
         Button(action: action) {
             VStack(spacing: 2) {
                 Image(systemName: iconName)
-                    .font(.system(size: 14, weight: .medium))
+                    .font(.system(size: PopoverStyle.iconFontSize, weight: .medium))
                 Text(label)
                     .font(.caption2)
             }
             .foregroundStyle(isActive ? PopoverStyle.activeText : PopoverStyle.inactiveText)
+            .padding(.vertical, PopoverStyle.itemVerticalPadding)
             .frame(maxWidth: .infinity, minHeight: PopoverStyle.itemHeight)
             .background(
                 isActive ? PopoverStyle.activeBackground : PopoverStyle.inactiveBackground,
@@ -151,6 +153,7 @@ struct ViewOptionsPopover: View {
 
     /// popover 内的 sort item（带 checkmark + direction icon）
     /// V4.41.0: 颜色 + cornerRadius + height 全 token 化
+    /// V4.42.0: icon 12pt → 14pt + 4pt 垂直 padding——视觉与 segment item 一致
     @ViewBuilder
     private func popoverSortItem(
         isActive: Bool,
@@ -161,9 +164,9 @@ struct ViewOptionsPopover: View {
         Button(action: action) {
             HStack(spacing: 6) {
                 Image(systemName: directionIcon)
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(isActive ? PopoverStyle.activeText : .secondary)
-                    .frame(width: 16)
+                    .frame(width: 18)
                 Text(label)
                     .font(.callout)
                     .foregroundStyle(isActive ? PopoverStyle.activeText : PopoverStyle.inactiveText)
@@ -175,7 +178,7 @@ struct ViewOptionsPopover: View {
                 }
             }
             .padding(.horizontal, 8)
-            .padding(.vertical, 6)
+            .padding(.vertical, PopoverStyle.itemVerticalPadding)
             .frame(maxWidth: .infinity, minHeight: PopoverStyle.itemHeight, alignment: .leading)
             .background(
                 isActive ? PopoverStyle.activeBackground : .clear,

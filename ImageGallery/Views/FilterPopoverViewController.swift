@@ -41,7 +41,7 @@ final class FilterPopoverViewController: NSViewController, NSSearchFieldDelegate
     private static let sectionHeaderHeight: CGFloat = 18
     private static let sectionSpacing: CGFloat = PopoverStyle.sectionSpacing
     private static let segmentRowHeight: CGFloat = PopoverStyle.itemHeight
-    private static let segmentGap: CGFloat = 4
+    private static let segmentGap: CGFloat = PopoverStyle.segmentGap
     private static let columnGap: CGFloat = PopoverStyle.columnGap
     private static let searchFieldHeight: CGFloat = 22  // NSSearchField 系统高度
 
@@ -208,7 +208,7 @@ final class FilterPopoverViewController: NSViewController, NSSearchFieldDelegate
         let ratingContainer = NSStackView()
         ratingContainer.orientation = .vertical
         ratingContainer.alignment = .leading
-        ratingContainer.spacing = Self.segmentGap
+        ratingContainer.spacing = PopoverStyle.segmentGap
         ratingContainer.translatesAutoresizingMaskIntoConstraints = false
 
         let row1 = makeSegmentRow()
@@ -386,6 +386,7 @@ final class FilterPopoverViewController: NSViewController, NSSearchFieldDelegate
     }
 
     /// 2 列紧凑列表：HStack + 2 VStack（左列先满）
+    /// V4.42.0: VStack spacing 2 → PopoverStyle.columnRowGap (4) — checkbox 行间更舒展
     private func makeTwoColumnCheckList<T: AnyObject, Button: NSButton>(
         items: [T],
         itemBuilder: (T) -> Button
@@ -397,7 +398,7 @@ final class FilterPopoverViewController: NSViewController, NSSearchFieldDelegate
         let leftVStack = NSStackView()
         leftVStack.orientation = .vertical
         leftVStack.alignment = .leading
-        leftVStack.spacing = 2
+        leftVStack.spacing = PopoverStyle.columnRowGap
         leftVStack.translatesAutoresizingMaskIntoConstraints = false
         for item in leftItems {
             leftVStack.addArrangedSubview(itemBuilder(item))
@@ -406,7 +407,7 @@ final class FilterPopoverViewController: NSViewController, NSSearchFieldDelegate
         let rightVStack = NSStackView()
         rightVStack.orientation = .vertical
         rightVStack.alignment = .leading
-        rightVStack.spacing = 2
+        rightVStack.spacing = PopoverStyle.columnRowGap
         rightVStack.translatesAutoresizingMaskIntoConstraints = false
         for item in rightItems {
             rightVStack.addArrangedSubview(itemBuilder(item))
@@ -425,7 +426,7 @@ final class FilterPopoverViewController: NSViewController, NSSearchFieldDelegate
     private func makeSegmentRow() -> NSStackView {
         let stack = NSStackView()
         stack.orientation = .horizontal
-        stack.spacing = Self.segmentGap
+        stack.spacing = PopoverStyle.segmentGap
         stack.distribution = .fillEqually
         stack.alignment = .centerY
         stack.translatesAutoresizingMaskIntoConstraints = false
@@ -497,9 +498,16 @@ final class FilterPopoverViewController: NSViewController, NSSearchFieldDelegate
         // 2. icon：按状态动态 tint（不是预染色）——V4.41.1 修复
         if let symbol = symbolName {
             let iconColor = isActive ? PopoverStyle.activeTextAppKit : PopoverStyle.inactiveTextAppKit
-            let config = NSImage.SymbolConfiguration(paletteColors: [iconColor])
+            // V4.42.0: 加 pointSize + weight 到 config——icon 14pt → 16pt
+            //   与 ViewOptions popoverSegmentItem icon 16pt 对齐
+            let sizeConfig = NSImage.SymbolConfiguration(
+                pointSize: PopoverStyle.iconFontSize,
+                weight: .medium
+            )
+            let colorConfig = NSImage.SymbolConfiguration(paletteColors: [iconColor])
+            let combinedConfig = sizeConfig.applying(colorConfig)
             let img = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)?
-                .withSymbolConfiguration(config)
+                .withSymbolConfiguration(combinedConfig)
             button.image = img
             button.imageScaling = .scaleProportionallyDown
             button.imagePosition = .imageOnly
