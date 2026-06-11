@@ -365,3 +365,70 @@ enum WindowModeMetrics {
     /// viewerOnly 模式下的图片 padding
     static let viewerImagePadding: CGFloat = 40
 }
+
+// MARK: - V4.41.0 NEW: Popover 视觉 token
+//
+// 两个 popover（ViewOptions + Filter）共用同一套视觉 token。
+// 之前 V4.36.x Filter 弃用 SwiftUI 改纯 AppKit（因为 SwiftUI intrinsic size 与 NSPopover
+// 协商不一致导致 popover 裁切）——但视觉 token 没跟上 DesignTokens 系统。
+// V4.41.0 抽 token 让两边引用，消除 11 项不一致点。
+//
+// 设计原则：
+// - 段头：caption2 + uppercase + secondary（macOS Photos 标准）
+// - item：28pt 居中高度（Photos 风格 44pt 太舒展，toolbar 风格 22pt 太紧凑）
+// - 状态：active = accent + 白字；inactive = 6% primary 底 + primary 字
+// - 暗色：全用系统色 token，自动适配
+//
+// SwiftUI / AppKit 双实现：ViewOptions 用 SwiftUI（popoverSegmentItem 风格），
+// Filter 用 AppKit（NSButton + bezel）——token 字段两套并存，避免来回转换。
+
+enum PopoverStyle {
+    // ─── 布局 ───
+    /// popover 宽度
+    static let width: CGFloat = 240
+    /// popover 内边距
+    static let padding: CGFloat = Spacing.md
+    /// 段间距
+    static let sectionSpacing: CGFloat = 8
+    /// 2 列布局列间距（folder/tag 段用）
+    static let columnGap: CGFloat = 8
+
+    // ─── 段头（section header） ───
+    /// 段头字号——caption2 (11pt)
+    static let headerFontSize: CGFloat = 11
+    /// 段头字重
+    static let headerWeight: Font.Weight = .semibold
+    /// 段头 icon↔title 间距
+    static let headerIconSpacing: CGFloat = 4
+    /// 段头 icon 字号
+    static let headerIconSize: CGFloat = 10
+    /// 段头文字 uppercase（macOS Photos 风格）
+    static let headerUppercased: Bool = true
+
+    // ─── item（segment / list row） ───
+    /// item 高度——Photos 风格 44pt 太舒展，toolbar 风格 22pt 太紧凑
+    /// V4.41.0 选 28pt 居中——ViewOptions 从 44pt 收缩、Filter 从 22-26pt 升级
+    static let itemHeight: CGFloat = 28
+    /// item 圆角
+    static let itemCornerRadius: CGFloat = Radius.sm
+
+    // ─── 状态色（SwiftUI 版本） ───
+    /// active 背景
+    static let activeBackground: Color = .accentColor
+    /// active 文字
+    static let activeText: Color = .white
+    /// inactive 背景——Color.primary.opacity(0.06)，与 Surface.toolbarControl 一致
+    static let inactiveBackground: Color = Surface.toolbarControl
+    /// inactive 文字
+    static let inactiveText: Color = .primary
+
+    // ─── 状态色（AppKit 版本） ───
+    /// active 背景：NSColor.controlAccentColor（与 SwiftUI .accentColor 同源）
+    static let activeBackgroundAppKit: NSColor = .controlAccentColor
+    /// active 文字
+    static let activeTextAppKit: NSColor = .white
+    /// inactive 背景：6% black（自动暗色适配）——SwiftUI primary.opacity(0.06) 的 AppKit 等价
+    static let inactiveBackgroundAppKit: NSColor = NSColor(white: 0, alpha: 0.06)
+    /// inactive 文字
+    static let inactiveTextAppKit: NSColor = .labelColor
+}

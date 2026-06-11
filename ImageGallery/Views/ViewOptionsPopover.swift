@@ -95,11 +95,12 @@ struct ViewOptionsPopover: View {
                 }
             }
         }
-        .padding(Spacing.md)
-        .frame(width: 240)
+        .padding(PopoverStyle.padding)
+        .frame(width: PopoverStyle.width)
     }
 
     /// 段标题（icon + 小标题，Photos.app 风格）
+    /// V4.41.0: 全部 token 化（caption2 + uppercase + 4pt icon 间距）——与 FilterPopover 对齐
     @ViewBuilder
     private func popoverSection<Content: View>(
         title: String,
@@ -107,20 +108,21 @@ struct ViewOptionsPopover: View {
         @ViewBuilder content: () -> Content
     ) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 4) {
+            HStack(spacing: PopoverStyle.headerIconSpacing) {
                 Image(systemName: icon)
-                    .font(.caption2)
+                    .font(.system(size: PopoverStyle.headerIconSize, weight: .semibold))
                     .foregroundStyle(.secondary)
                 Text(title)
-                    .font(.caption2.weight(.semibold))
+                    .font(.system(size: PopoverStyle.headerFontSize, weight: PopoverStyle.headerWeight))
                     .foregroundStyle(.secondary)
-                    .textCase(.uppercase)
+                    .textCase(PopoverStyle.headerUppercased ? .uppercase : nil)
             }
             content()
         }
     }
 
     /// popover 内的 segment item（封闭空间，accent 满色填充 OK）
+    /// V4.41.0: itemHeight / cornerRadius / active+inactive colors 全 token 化
     @ViewBuilder
     private func popoverSegmentItem(
         isActive: Bool,
@@ -136,11 +138,11 @@ struct ViewOptionsPopover: View {
                 Text(label)
                     .font(.caption2)
             }
-            .foregroundStyle(isActive ? .white : .primary)
-            .frame(maxWidth: .infinity, minHeight: 44)
+            .foregroundStyle(isActive ? PopoverStyle.activeText : PopoverStyle.inactiveText)
+            .frame(maxWidth: .infinity, minHeight: PopoverStyle.itemHeight)
             .background(
-                isActive ? Color.accentColor : Color.primary.opacity(0.06),
-                in: RoundedRectangle(cornerRadius: 6, style: .continuous)
+                isActive ? PopoverStyle.activeBackground : PopoverStyle.inactiveBackground,
+                in: RoundedRectangle(cornerRadius: PopoverStyle.itemCornerRadius, style: .continuous)
             )
         }
         .buttonStyle(.plain)
@@ -148,6 +150,7 @@ struct ViewOptionsPopover: View {
     }
 
     /// popover 内的 sort item（带 checkmark + direction icon）
+    /// V4.41.0: 颜色 + cornerRadius + height 全 token 化
     @ViewBuilder
     private func popoverSortItem(
         isActive: Bool,
@@ -159,24 +162,24 @@ struct ViewOptionsPopover: View {
             HStack(spacing: 6) {
                 Image(systemName: directionIcon)
                     .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(isActive ? .white : .secondary)
+                    .foregroundStyle(isActive ? PopoverStyle.activeText : .secondary)
                     .frame(width: 16)
                 Text(label)
                     .font(.callout)
-                    .foregroundStyle(isActive ? .white : .primary)
+                    .foregroundStyle(isActive ? PopoverStyle.activeText : PopoverStyle.inactiveText)
                 Spacer()
                 if isActive {
                     Image(systemName: "checkmark")
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(PopoverStyle.activeText)
                 }
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 6)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity, minHeight: PopoverStyle.itemHeight, alignment: .leading)
             .background(
-                isActive ? Color.accentColor : .clear,
-                in: RoundedRectangle(cornerRadius: 6, style: .continuous)
+                isActive ? PopoverStyle.activeBackground : .clear,
+                in: RoundedRectangle(cornerRadius: PopoverStyle.itemCornerRadius, style: .continuous)
             )
         }
         .buttonStyle(.plain)
