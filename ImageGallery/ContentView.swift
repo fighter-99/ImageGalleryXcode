@@ -654,6 +654,23 @@ struct ContentView: View {
         window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = true
 
+        // V4.37.3: titlebar 右上角小按钮（Photos.app ⓘ 风格）
+        //   NSToolbar 在 toolbar 区域，titlebar accessory 在 titlebar 区域
+        //   layoutAttribute = .trailing = 紧邻交通灯右侧（与 macOS Photos.app 位置一致）
+        //   info.circle 图标语义"信息面板"——点击 toggle showDetail（与 ⌘I 菜单项同动作）
+        //   withAnimation 让切换有平滑过渡（V4.8.0 侧边栏 toggle 模式）
+        //   V4.20.0 撤回 V4.19.0 glassEffectUnion 后，titlebar 不参与玻璃融合——独立按钮
+        let titlebarAccessory = TitlebarAccessoryController(
+            image: "info.circle",
+            accessibilityLabel: "显示信息面板",
+            tooltip: "显示信息面板",
+            onAction: { [self] in
+                withAnimation(Animations.medium) { showDetail.toggle() }
+            }
+        )
+        titlebarAccessory.layoutAttribute = .trailing
+        window.addTitlebarAccessoryViewController(titlebarAccessory)
+
         // 初始 enabled 状态同步
         controller.updateAllStates(
             hasSelection: selection.hasSelection,
