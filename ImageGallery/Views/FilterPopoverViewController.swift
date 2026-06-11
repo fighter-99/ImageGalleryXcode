@@ -28,12 +28,13 @@ extension Notification.Name {
     static let filterStateChangedFromOutside = Notification.Name("FilterStateChangedFromOutside")
 }
 
-final class FilterPopoverViewController: NSViewController, NSSearchFieldDelegate {
+final class FilterPopoverViewController: NSViewController {
     // MARK: - 配置常量
     //
     // V4.41.1: 全部从 PopoverStyle token 引用——与 ViewOptionsPopover 视觉对齐
     //   之前 V4.36.x 写死 200/8/22/26 与 ViewOptions 240/12/44 不一致
     //   现在统一：width 240 / padding 12 / itemHeight 28
+    // V4.44.0: 删 searchFieldHeight——NSSearchField 移除后不再需要
 
     private static let contentWidth: CGFloat = PopoverStyle.width
     private static let padding: CGFloat = PopoverStyle.padding
@@ -43,7 +44,6 @@ final class FilterPopoverViewController: NSViewController, NSSearchFieldDelegate
     private static let segmentRowHeight: CGFloat = PopoverStyle.itemHeight
     private static let segmentGap: CGFloat = PopoverStyle.segmentGap
     private static let columnGap: CGFloat = PopoverStyle.columnGap
-    private static let searchFieldHeight: CGFloat = 22  // NSSearchField 系统高度
 
     // MARK: - 数据源 + 回调
 
@@ -57,12 +57,9 @@ final class FilterPopoverViewController: NSViewController, NSSearchFieldDelegate
     private let allFolders: [Folder]
     private let allTags: [Tag]
 
-    // V4.36.x #4: filter popover 内搜索——folder/tag 段顶部 NSSearchField
-    //   实时过滤；过滤后如全空显示空状态
-    private var searchText: String = "" {
-        didSet { rebuildContent() }
-    }
-    private var searchField: NSSearchField?
+    // V4.44.0: 删 NSSearchField 搜索——folder/tag 通常 10-20 个无需实时过滤
+    //   减少 popover 高度 + 视觉聚焦 (移除 NSSearchField 占的 22pt + 段间距 10pt = 32pt)
+    //   删除相关: searchText state、searchField 引用、searchFieldHeight 常量
 
     // 缓存所有 NSButton 引用——切换时同步 UI 状态
     private var folderButtons: [UUID: NSButton] = [:]
@@ -70,7 +67,7 @@ final class FilterPopoverViewController: NSViewController, NSSearchFieldDelegate
     private var shapeButtons: [PhotoShape: NSButton] = [:]
     private var ratingButtons: [Int: NSButton] = [:]  // 0 = 全部, 1-5 = n星
 
-    // 内容容器——重建式布局（搜索时整个内容区重建）
+    // 内容容器——重建式布局
     private var contentStack: NSStackView?
 
     // MARK: - init
@@ -106,20 +103,9 @@ final class FilterPopoverViewController: NSViewController, NSSearchFieldDelegate
         // 顶部：header（"筛选" + "清除全部"）
         outer.addArrangedSubview(makeHeader())
 
-        // V4.36.x #4: 搜索框——folder/tag 段顶部
-        let search = NSSearchField()
-        search.placeholderString = "搜索文件夹、标签"
-        search.bezelStyle = .roundedBezel
-        search.delegate = self
-        search.sendsSearchStringImmediately = true
-        search.sendsWholeSearchString = false
-        search.target = self
-        search.action = #selector(handleSearchChanged(_:))
-        search.translatesAutoresizingMaskIntoConstraints = false
-        searchField = search
-        outer.addArrangedSubview(search)
+        // V4.44.0: 删 NSSearchField——folder/tag 数量少无需过滤
 
-        // 内容区——可重建（搜索过滤时整段重建）
+        // 内容区——可重建
         let content = NSStackView()
         content.orientation = .vertical
         content.alignment = .leading
@@ -132,7 +118,8 @@ final class FilterPopoverViewController: NSViewController, NSSearchFieldDelegate
         self.view = outer
     }
 
-    /// V4.36.x #4: 重建内容区（搜索过滤时整体重建——folder/tag 段）
+    /// 重建内容区
+    /// V4.44.0: 移除搜索过滤逻辑——folder/tag 直接展示
     private func rebuildContent() {
         guard let content = contentStack else { return }
         // 清空旧内容
@@ -141,51 +128,34 @@ final class FilterPopoverViewController: NSViewController, NSSearchFieldDelegate
             sub.removeFromSuperview()
         }
 
-        // 过滤 folder/tag
-        let loweredSearch = searchText.lowercased()
-        let filteredFolders = loweredSearch.isEmpty
-            ? allFolders
-            : allFolders.filter { $0.name.lowercased().contains(loweredSearch) }
-        let filteredTags = loweredSearch.isEmpty
-            ? allTags
-            : allTags.filter { $0.name.lowercased().contains(loweredSearch) }
-
         // 段 1: 文件夹
         if !allFolders.isEmpty {
-            if filteredFolders.isEmpty {
-                content.addArrangedSubview(makeEmptyHint("无匹配文件夹"))
-            } else {
-                content.addArrangedSubview(makeSectionHeader("文件夹", icon: "folder"))
-                content.addArrangedSubview(makeTwoColumnCheckList(items: filteredFolders) { folder in
-                    let button = self.makeCheckItem(
-                        label: folder.name,
-                        isOn: filterState.folders.contains(folder.id)
-                    ) { [weak self] in
-                        self?.handleFolderToggle(folder.id)
-                    }
-                    self.folderButtons[folder.id] = button
-                    return button
-                })
-            }
+            content.addArrangedSubview(makeSectionHeader("文件夹", icon: "folder"))
+            content.addArrangedSubview(makeTwoColumnCheckList(items: allFolders) { folder in
+                let button = self.makeCheckItem(
+                    label: folder.name,
+                    isOn: filterState.folders.contains(folder.id)
+                ) { [weak self] in
+                    self?.handleFolderToggle(folder.id)
+                }
+                self.folderButtons[folder.id] = button
+                return button
+            })
         }
 
         // 段 2: 标签
         if !allTags.isEmpty {
-            if filteredTags.isEmpty {
-                content.addArrangedSubview(makeEmptyHint("无匹配标签"))
-            } else {
-                content.addArrangedSubview(makeSectionHeader("标签", icon: "tag"))
-                content.addArrangedSubview(makeTwoColumnCheckList(items: filteredTags) { tag in
-                    let button = self.makeCheckItem(
-                        label: "#\(tag.name)",
-                        isOn: filterState.tags.contains(tag.id)
-                    ) { [weak self] in
-                        self?.handleTagToggle(tag.id)
-                    }
-                    self.tagButtons[tag.id] = button
-                    return button
-                })
-            }
+            content.addArrangedSubview(makeSectionHeader("标签", icon: "tag"))
+            content.addArrangedSubview(makeTwoColumnCheckList(items: allTags) { tag in
+                let button = self.makeCheckItem(
+                    label: "#\(tag.name)",
+                    isOn: filterState.tags.contains(tag.id)
+                ) { [weak self] in
+                    self?.handleTagToggle(tag.id)
+                }
+                self.tagButtons[tag.id] = button
+                return button
+            })
         }
 
         // 段 3: 形状（不参与搜索过滤）
@@ -245,10 +215,6 @@ final class FilterPopoverViewController: NSViewController, NSSearchFieldDelegate
         }
         ratingContainer.addArrangedSubview(row2)
         content.addArrangedSubview(ratingContainer)
-    }
-
-    @objc private func handleSearchChanged(_ sender: NSSearchField) {
-        searchText = sender.stringValue
     }
 
     private func makeEmptyHint(_ text: String) -> NSView {
@@ -595,9 +561,9 @@ final class FilterPopoverViewController: NSViewController, NSSearchFieldDelegate
         //   padding 12pt × 2 = 24（top + bottom）
         //   item 28pt (V4.36.x 22pt → 28pt)
         //   segment 28pt (V4.36.x 26pt → 28pt)
+        // V4.44.0: 删 searchSection——NSSearchField 移除后 popover 高度减 32pt
         let padding: CGFloat = PopoverStyle.padding * 2
         let header: CGFloat = headerHeight + 4
-        let searchSection: CGFloat = searchFieldHeight + sectionSpacing
         let sectionHeader: CGFloat = 18
         let item: CGFloat = PopoverStyle.itemHeight
         let section: CGFloat = PopoverStyle.sectionSpacing
@@ -610,7 +576,6 @@ final class FilterPopoverViewController: NSViewController, NSSearchFieldDelegate
         let total: CGFloat =
             padding
             + header
-            + searchSection
             + (folders.isEmpty ? 0 : sectionHeader + folderColHeight + section)
             + (tags.isEmpty ? 0 : sectionHeader + tagColHeight + section)
             + sectionHeader + segment   // shape 单行
