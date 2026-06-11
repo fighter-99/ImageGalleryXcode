@@ -202,11 +202,9 @@ struct ViewOptionsPopover: View {
                         .font(.system(size: PopoverStyle.sortItemFontSize))
                         .foregroundStyle(isActive ? PopoverStyle.activeText : PopoverStyle.inactiveText)
                     Spacer()
-                    if isActive {
-                        Image(systemName: "checkmark")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(PopoverStyle.activeText)
-                    }
+                    // V4.43.2: 移除 checkmark——macOS Photos 风格
+                    //   active 状态靠 accent bg 自带视觉锤，checkmark 是冗余
+                    //   SwiftUI .popover 内 sort 选中靠 bg + 文字色变化已足够清晰
                 }
                 .padding(.horizontal, 8)
                 .padding(.vertical, PopoverStyle.itemVerticalPadding)
