@@ -396,8 +396,12 @@ enum PopoverStyle {
     // ─── 段头（section header） ───
     /// 段头字号——caption2 (11pt)
     static let headerFontSize: CGFloat = 11
-    /// 段头字重
+    /// 段头字重（SwiftUI 版本）——Font.Weight
     static let headerWeight: Font.Weight = .semibold
+    /// 段头字重（AppKit 版本）——NSFont.Weight
+    /// 注: Font.Weight 和 NSFont.Weight 标度相反（semibold 在 Font 是 0.3，在 NSFont 是 0.6）
+    /// 不能直接转换——必须各设各的
+    static let headerWeightAppKit: NSFont.Weight = .semibold
     /// 段头 icon↔title 间距
     static let headerIconSpacing: CGFloat = 4
     /// 段头 icon 字号

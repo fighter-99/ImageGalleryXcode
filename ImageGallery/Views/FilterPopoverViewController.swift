@@ -30,16 +30,20 @@ extension Notification.Name {
 
 final class FilterPopoverViewController: NSViewController, NSSearchFieldDelegate {
     // MARK: - 配置常量
+    //
+    // V4.41.1: 全部从 PopoverStyle token 引用——与 ViewOptionsPopover 视觉对齐
+    //   之前 V4.36.x 写死 200/8/22/26 与 ViewOptions 240/12/44 不一致
+    //   现在统一：width 240 / padding 12 / itemHeight 28
 
-    private static let contentWidth: CGFloat = 200
-    private static let padding: CGFloat = 8
-    private static let itemHeight: CGFloat = 22
+    private static let contentWidth: CGFloat = PopoverStyle.width
+    private static let padding: CGFloat = PopoverStyle.padding
+    private static let itemHeight: CGFloat = PopoverStyle.itemHeight
     private static let sectionHeaderHeight: CGFloat = 18
-    private static let sectionSpacing: CGFloat = 8
-    private static let segmentRowHeight: CGFloat = 26
+    private static let sectionSpacing: CGFloat = PopoverStyle.sectionSpacing
+    private static let segmentRowHeight: CGFloat = PopoverStyle.itemHeight
     private static let segmentGap: CGFloat = 4
-    private static let columnGap: CGFloat = 8
-    private static let searchFieldHeight: CGFloat = 22  // V4.36.x: NSSearchField 高度
+    private static let columnGap: CGFloat = PopoverStyle.columnGap
+    private static let searchFieldHeight: CGFloat = 22  // NSSearchField 系统高度
 
     // MARK: - 数据源 + 回调
 
@@ -295,11 +299,12 @@ final class FilterPopoverViewController: NSViewController, NSSearchFieldDelegate
         for (id, button) in tagButtons {
             button.state = filterState.tags.contains(id) ? .on : .off
         }
+        // V4.41.1: 传 symbolName 让 applySegmentStyle 按状态 tint icon
         for (shape, button) in shapeButtons {
-            applySegmentStyle(button, isActive: filterState.shapes.contains(shape), text: nil)
+            applySegmentStyle(button, isActive: filterState.shapes.contains(shape), text: nil, symbolName: shape.icon)
         }
         for (rating, button) in ratingButtons {
-            // 从 button 读 attributedTitle 拿回 text
+            // 评分段无 icon（"1星" 等纯文字）——symbolName = nil
             let text = button.attributedTitle.string
             applySegmentStyle(button, isActive: filterState.minRating == rating, text: text)
         }
@@ -347,15 +352,19 @@ final class FilterPopoverViewController: NSViewController, NSSearchFieldDelegate
     }
 
     private func makeSectionHeader(_ title: String, icon: String) -> NSView {
-        let label = NSTextField(labelWithString: title)
-        label.font = NSFont.systemFont(ofSize: 10, weight: .semibold)
+        // V4.41.1: 10pt → 11pt (PopoverStyle.headerFontSize) + uppercase
+        //   与 ViewOptionsPopover.popoverSection token 对齐
+        //   中文 uppercase no-op（无大小写）但 token 一致 + 未来 i18n 友好
+        let displayTitle = PopoverStyle.headerUppercased ? title.uppercased() : title
+        let label = NSTextField(labelWithString: displayTitle)
+        label.font = NSFont.systemFont(ofSize: PopoverStyle.headerFontSize, weight: PopoverStyle.headerWeightAppKit)
         label.textColor = .secondaryLabelColor
         let imageView = NSImageView(image: NSImage(systemSymbolName: icon, accessibilityDescription: nil) ?? NSImage())
         imageView.imageScaling = .scaleProportionallyDown
         imageView.contentTintColor = .secondaryLabelColor
         let stack = NSStackView(views: [imageView, label])
         stack.orientation = .horizontal
-        stack.spacing = 4
+        stack.spacing = PopoverStyle.headerIconSpacing
         stack.alignment = .centerY
         return stack
     }
@@ -429,6 +438,9 @@ final class FilterPopoverViewController: NSViewController, NSSearchFieldDelegate
     ///   之前尝试 image.isTemplate + contentTintColor 都不生效
     ///   （NSButton 无 title 时 tint 行为不可靠）
     ///   paletteColors 直接生成白色 image——绕开 NSButton tint 系统
+    /// V4.41.1: 改为按状态动态 tint——active 白、inactive labelColor
+    ///   之前预染色白色 + 25% 黑底 = inactive 状态白字白 icon 视觉糊
+    ///   现在 6% black 底 + labelColor icon = Photos 风格"未选"感
     private func makeIconOnlySegmentItem(
         icon: String,
         isActive: Bool,
@@ -436,60 +448,68 @@ final class FilterPopoverViewController: NSViewController, NSSearchFieldDelegate
     ) -> NSButton {
         let button = ClosureButton(title: "", action: action)
         button.bezelStyle = .recessed
-        // 预染色 SF Symbol 为白色——白色 icon
-        let whiteConfig = NSImage.SymbolConfiguration(paletteColors: [.white])
-        button.image = NSImage(systemSymbolName: icon, accessibilityDescription: nil)?
-            .withSymbolConfiguration(whiteConfig)
-        button.imageScaling = .scaleProportionallyDown
-        button.imagePosition = .imageOnly
-        applySegmentStyle(button, isActive: isActive, text: nil)
+        // V4.41.1: 不预染色——把 symbol name 传给 applySegmentStyle 让它按状态 tint
+        applySegmentStyle(button, isActive: isActive, text: nil, symbolName: icon)
         return button
     }
 
     /// icon + text segment item（用于评分——星数 + "n星"文字）
+    /// V4.41.1: 评分段实际无 icon（V4.36.x 设计如此，"1星" 等是纯文字）——symbolName = nil
     private func makeIconTextSegmentItem(
         icon: String?,
         text: String,
         isActive: Bool,
         action: @escaping () -> Void
     ) -> NSButton {
-        let button = ClosureButton(title: "", action: action)  // title 留空，用 attributedTitle 上色
+        let button = ClosureButton(title: "", action: action)
         button.bezelStyle = .recessed
-        applySegmentStyle(button, isActive: isActive, text: text)
+        applySegmentStyle(button, isActive: isActive, text: text, symbolName: icon)
         return button
     }
 
     // MARK: - 状态同步
 
-    /// V4.36.x #5: 文字 + icon 永远白色
-    ///   - 文字：attributedTitle 锁 white
-    ///   - 图标：contentTintColor = .white
-    ///   - 背景：active 实色 accent / inactive 半透明黑（让白字有衬底）
-    ///   失活/激活只靠背景区分——macOS 标准 NSSegmentedControl 风格
-    private func applySegmentStyle(_ button: NSButton, isActive: Bool, text: String?) {
-        // 1. 文字：永远白
+    /// V4.41.1: 全部颜色 + 字号 token 化——与 ViewOptions popoverSegmentItem 对齐
+    ///   - active: accent 底 + 白字/icon（PopoverStyle.activeBackgroundAppKit + .activeTextAppKit）
+    ///   - inactive: 6% primary 底 + labelColor 字（PopoverStyle.inactiveBackgroundAppKit + .inactiveTextAppKit）
+    ///   - 之前 V4.36.x #5 写"永远白" + 25% 黑底——与 ViewOptions 不一致 + 暗色下 25% 黑底偏暗
+    ///   - symbolName: 可选——传非 nil 时按状态动态 tint icon（active 白、inactive labelColor）
+    private func applySegmentStyle(
+        _ button: NSButton,
+        isActive: Bool,
+        text: String?,
+        symbolName: String? = nil
+    ) {
+        // 1. 文字：active 白 / inactive labelColor（系统色，暗色自动适配）
         if let text = text {
+            let color = isActive ? PopoverStyle.activeTextAppKit : PopoverStyle.inactiveTextAppKit
             button.attributedTitle = NSAttributedString(
                 string: text,
                 attributes: [
-                    .foregroundColor: NSColor.white,
-                    .font: NSFont.systemFont(ofSize: 10, weight: .medium)
+                    .foregroundColor: color,
+                    .font: NSFont.systemFont(ofSize: PopoverStyle.headerFontSize, weight: .medium)
                 ]
             )
         } else {
             button.attributedTitle = NSAttributedString()
         }
 
-        // 2. 图标：永远白
-        button.contentTintColor = .white
-
-        // 3. 背景：active 实色 accent / inactive 半透明黑（让白字有底）
-        if isActive {
-            button.bezelColor = .controlAccentColor
+        // 2. icon：按状态动态 tint（不是预染色）——V4.41.1 修复
+        if let symbol = symbolName {
+            let iconColor = isActive ? PopoverStyle.activeTextAppKit : PopoverStyle.inactiveTextAppKit
+            let config = NSImage.SymbolConfiguration(paletteColors: [iconColor])
+            let img = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)?
+                .withSymbolConfiguration(config)
+            button.image = img
+            button.imageScaling = .scaleProportionallyDown
+            button.imagePosition = .imageOnly
         } else {
-            // 半透明黑底——白字可读，弱化"未选"感
-            button.bezelColor = NSColor.black.withAlphaComponent(0.25)
+            button.image = nil
         }
+
+        // 3. 背景：active 实色 accent / inactive 6% primary
+        //   6% black 等价 SwiftUI .primary.opacity(0.06)，自动暗色适配
+        button.bezelColor = isActive ? PopoverStyle.activeBackgroundAppKit : PopoverStyle.inactiveBackgroundAppKit
     }
 
     private func handleFolderToggle(_ id: UUID) {
@@ -532,13 +552,17 @@ final class FilterPopoverViewController: NSViewController, NSSearchFieldDelegate
     private static let headerHeight: CGFloat = 22
 
     private static func computeHeight(folders: [Folder], tags: [Tag]) -> CGFloat {
-        let padding: CGFloat = 16
-        let header: CGFloat = headerHeight + 4  // header + 与下段间距
-        let searchSection: CGFloat = searchFieldHeight + sectionSpacing  // V4.36.x: 搜索框
+        // V4.41.1: 全部从 PopoverStyle 推——padding 2x, itemHeight 28
+        //   padding 12pt × 2 = 24（top + bottom）
+        //   item 28pt (V4.36.x 22pt → 28pt)
+        //   segment 28pt (V4.36.x 26pt → 28pt)
+        let padding: CGFloat = PopoverStyle.padding * 2
+        let header: CGFloat = headerHeight + 4
+        let searchSection: CGFloat = searchFieldHeight + sectionSpacing
         let sectionHeader: CGFloat = 18
-        let item: CGFloat = 22
-        let section: CGFloat = 8
-        let segment: CGFloat = 26
+        let item: CGFloat = PopoverStyle.itemHeight
+        let section: CGFloat = PopoverStyle.sectionSpacing
+        let segment: CGFloat = PopoverStyle.itemHeight
         // V4.36.x: folder/tag 段 2 列——高度按列中较多那列算
         let folderColHeight = ceil(CGFloat(folders.count) / 2) * item
         let tagColHeight = ceil(CGFloat(tags.count) / 2) * item
