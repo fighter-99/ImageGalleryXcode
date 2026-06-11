@@ -382,10 +382,13 @@ struct PhotoGridView: View {
         ScrollView {
             LazyVGrid(
                 columns: Array(
-                    repeating: GridItem(.flexible(minimum: 60), spacing: 8),
+                    repeating: GridItem(.flexible(minimum: 60), spacing: 12),
                     count: columnCount
                 ),
-                spacing: 8
+                // V4.23.0: 完整 Photos 风格——增 grid spacing
+                //   旧 8pt → 12pt (Spacing.md)：cell 之间更明显分隔
+                //   配合 cell 完全透明 + image clip 圆角，视觉简洁
+                spacing: 12
             ) {
                 ForEach(photos) { photo in
                     PhotoThumbnailView(
@@ -694,9 +697,13 @@ struct PhotoThumbnailView: View {
                 Spacer(minLength: 0)
                 Group {
                     if let nsImage = loadedImage {
+                        // V4.23.0: 完整 Photos 风格——image 加 .clipShape 圆角
+                        //   之前 cell .cornerRadius 是无意义修饰（image 自身无圆角）
+                        //   现在圆角仅给 image clip，cell 自身完全透明
                         Image(nsImage: nsImage)
                             .resizable()
                             .aspectRatio(aspectRatio, contentMode: .fit)
+                            .clipShape(RoundedRectangle(cornerRadius: Radius.thumb))
                             .saturation(photo.isInTrash ? 0.05 : 1)
                             .opacity(photo.isInTrash ? (colorScheme == .dark ? 0.65 : 0.55) : 1)
                     } else if loadFailed {
@@ -800,9 +807,14 @@ struct PhotoThumbnailView: View {
         //   现在 cell 与窗口同色，cell 容器感完全消失，只剩"漂浮的图片"
         //   视觉分隔靠 grid spacing（间距本身）+ cornerRadius clip（图片圆角）
         //   这是 Mac Photos.app 标准做法
-        .background(Color(NSColor.windowBackgroundColor))
-        .cornerRadius(Radius.thumb)
-        .clipped()
+        //
+        // V4.23.0: 完整 Photos 风格——删 cell 背景 + 删 cell 圆角
+        //   ↑ 进一步推到 Photos.app 真正的"无背景卡片"风格
+        //   cell 完全透明——无 background、无 cornerRadius（image 自身圆角已够）
+        //   视觉分隔仅靠 grid spacing (Spacing.sm 8pt) + image clip 圆角 (Radius.thumb 6pt)
+        //   对比 V4.4.5 半 Photos 风格：V4.4.5 cell 仍与窗口同色"圆角矩形"
+        //   V4.23.0 cell 完全透明——只剩"漂浮的圆角图片"
+        //   删 .clipped() (原为与 .cornerRadius 配合)——image 自身 clip 足够
         // V3.6.51: 重构——单一 cellSelectionOverlay 取代之前散在 3 个 overlay modifier
         //   之前：3pt 单选 border（独立 modifier） + 2pt 多选 border（独立 modifier）
         //        + 多选 selectionOverlayMulti 染色（用户多次反馈的'淡色框'，V3.6.50 没真删干净）
