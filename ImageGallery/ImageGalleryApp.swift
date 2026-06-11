@@ -109,12 +109,11 @@ struct ImageGalleryApp: App {
 
 // MARK: - 通知名（V3.5.D 新增）
 //
-// 菜单栏的"设置..."按钮发通知，ContentView 监听后弹出 SettingsView sheet。
-extension Notification.Name {
-    static let openSettingsRequested = Notification.Name("openSettingsRequested")
-    // V3.6.23: ⌘F 聚焦搜索框通知（ContentKeyboardShortcuts 发，ToolbarView 收）
-    static let focusSearchField = Notification.Name("focusSearchField")
-}
+// V4.15.0: 删 .openSettingsRequested + .focusSearchField 2 个通知名
+//   .openSettingsRequested：V4.13.0 ⌘, 改 Settings scene 后已 0 调用方
+//   .focusSearchField：V4.8.1 NSSearchField 接管后 0 调用方
+//   （V3.5.D 旧实现：菜单 post .openSettingsRequested → ContentView 弹 sheet；
+//    V3.6.23 旧实现：⌘F post .focusSearchField → ToolbarView 自绘搜索框聚焦）
 
 // MARK: - UserDefaults Binding 辅助（V3.5.18：去掉 @AppStorage 重复）
 //

@@ -222,8 +222,7 @@ enum ToolbarStyle {
     //   V4.2.x 5 轮在自绘 buttonStyle 上反复调，最终回归原生 Button + Label，
     //   所有按钮 hover / focus / pressed 由 macOS 系统接管，无需 token
     //
-    //   ToolbarSearchField 仍自绘（项目无 NavigationStack），但只用 .quaternary
-    //   material + 6pt 圆角直接硬编码，无须 token 维护
+    //   V4.8.1: 删 ToolbarSearchField 自绘——用 NSSearchField (AppKit 原生) 替代
 }
 
 // MARK: - V4.0.0 NEW: 窗口 chrome token

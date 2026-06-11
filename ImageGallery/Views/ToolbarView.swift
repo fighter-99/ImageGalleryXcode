@@ -25,79 +25,6 @@
 
 import SwiftUI
 
-// MARK: - 搜索框（V4.3.0 简化版 / V4.3.1 视觉协调）
-//
-// 项目用自定义 MainSplitView 没有 NavigationStack，.searchable() 无法挂进 toolbar，
-// 所以仍需自绘 TextField。但 V4.3.0 大幅简化：
-//   - 删 hover/focus 复杂背景层级 token
-//   - 保留 ⌘F focus 通知桥接（ContentKeyboardShortcuts 仍在用）
-//   - 保留 placeholder + xmark 清除按钮
-//
-// V4.3.1: resting 完全无底，hover/focus 才出 .quaternary（与其他 plain Button 风格统一）
-//   理由：用户选 Finder 极简风后，搜索框始终可见底会让它成为"toolbar 唯一持续显示
-//        底色的控件"，与 plain Button 不协调
-//   resting = 仅 magnifying glass icon + placeholder（icon 作锚点，用户仍能识别"这是搜索框"）
-//   hover/focus = 圆角矩形 .quaternary 底（与 plain Button hover 同视觉语言）
-struct ToolbarSearchField: View {
-    @Binding var text: String
-    var placeholder: String = "搜索照片、标签..."
-    /// V4.4.8: leading padding 由 ContentView 动态计算
-    ///   让 search 左缘与下方主内容区（grid）左缘对齐——形成 toolbar 与
-    ///   content 之间的视觉锚线。sidebar 拖动 / 隐藏时自动跟随。
-    var leadingPadding: CGFloat = 12
-
-    @FocusState private var searchFieldFocused: Bool
-    @State private var isHovered = false
-
-    var body: some View {
-        HStack(spacing: 6) {
-            Image(systemName: "magnifyingglass")
-                .foregroundStyle(text.isEmpty ? .secondary : Color.accentColor)
-                .font(.system(size: 13))
-            TextField(placeholder, text: $text)
-                .textFieldStyle(.plain)
-                .font(.system(size: 13))
-                .focused($searchFieldFocused)
-            if !text.isEmpty {
-                Button {
-                    text = ""
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(.secondary)
-                        .font(.system(size: 13))
-                }
-                .buttonStyle(.plain)
-                .help("清除搜索")
-            }
-        }
-        .padding(.horizontal, 10)
-        .frame(width: SearchFieldMetrics.width, height: 24)
-        .background(searchFieldBackground)
-        .contentShape(Rectangle())  // 让整个 frame 都响应 hover，否则只有文字位 hover
-        // V4.4.7 → V4.4.8: leading padding 由调用方动态传入
-        //   V4.4.7 硬编码 12pt 只解决了与 sidebar toggle 的视觉分开
-        //   V4.4.8 改为参数，调用方可计算 = sidebarColumnWidth - togglePlusSpacing
-        //   让 search 左缘与下方 grid 左缘对齐
-        .padding(.leading, leadingPadding)
-        .onHover { hovering in isHovered = hovering }
-        .animation(.easeOut(duration: 0.12), value: isHovered)
-        .animation(.easeOut(duration: 0.12), value: searchFieldFocused)
-        .onReceive(NotificationCenter.default.publisher(for: .focusSearchField)) { _ in
-            searchFieldFocused = true
-        }
-    }
-
-    /// V4.3.1: resting 完全无底，hover/focus 出 .quaternary 6pt 圆角
-    /// V4.5.1: resting 改为始终有 .quaternary 底（与 sidebar toggle .bordered 呼应）
-    ///   旧 resting 无底 + 深色 toolbar vibrancy → search 视觉"消失"，与 sidebar toggle 融为一体
-    ///   新 resting 始终 .quaternary → search 像"输入框"被识别，与左侧 sidebar toggle 形成"两个独立控件"感
-    @ViewBuilder
-    private var searchFieldBackground: some View {
-        RoundedRectangle(cornerRadius: 6, style: .continuous)
-            .fill(.quaternary)
-    }
-}
-
 // MARK: - 视图选项 Popover（V4.3.0 抽出独立 struct）
 //
 // 从原 ToolbarViewOptionsButton.viewOptionsPopover 抽离。
@@ -253,13 +180,6 @@ struct ViewOptionsPopover: View {
 }
 
 // MARK: - Preview
-
-#Preview("ToolbarSearchField") {
-    @Previewable @State var text = ""
-    return ToolbarSearchField(text: $text)
-        .padding()
-        .frame(width: 320)
-}
 
 #Preview("ViewOptionsPopover") {
     @Previewable @State var viewMode: ViewMode = .grid

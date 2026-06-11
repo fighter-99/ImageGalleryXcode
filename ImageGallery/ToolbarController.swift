@@ -14,7 +14,7 @@
 //  设计：
 //  - ToolbarController 是 NSToolbarDelegate，定义所有 toolbar items
 //  - 5 actions + sidebar toggle 是简单 NSToolbarItem (image + target/action)
-//  - Search field 是 custom NSToolbarItem (NSHostingView 包 ToolbarSearchField)
+//  - Search field 用 NSSearchToolbarItem (V4.8.1 替换 NSHostingView 包 ToolbarSearchField)
 //  - Action 桥接用 closure：ContentView 设置，NSToolbar 触发
 //  - 状态桥接 (enabled/disabled) 通过 ToolbarController.update* 方法
 //
@@ -173,7 +173,7 @@ final class ToolbarController: NSObject, NSToolbarDelegate {
                 action: #selector(handleShowViewOptions)
             )
         case .search:
-            // V4.8.0b: custom NSToolbarItem 用 NSHostingView 包 SwiftUI ToolbarSearchField
+            // V4.8.1: 用 NSSearchToolbarItem 替代 NSHostingView 包 SwiftUI ToolbarSearchField
             item = makeSearchItem(id: id)
         case .flexibleSpace:
             item = nil  // flexible space 由 NSToolbar 系统处理

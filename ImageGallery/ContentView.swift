@@ -419,7 +419,10 @@ struct ContentView: View {
                        let idx = visiblePhotos.firstIndex(where: { $0.id == photo.id }) {
                         quickLookController.show(urls: currentVisibleURLs, currentIndex: idx)
                     }
-                }
+                },
+                // V4.15.0: ⌘0 reset zoom（macOS Photos/Finder 标准）
+                //   恢复 thumbnailSize 到用户偏好（storedThumbnailSize）
+                onResetZoom: resetThumbnailSize
             )
             // V4.12.0: QLPreviewBridge 注入 view tree——SwiftUI 不显示（透明 NSView）
             //   但参与 firstResponder 链，让 QLPreviewPanel 接管时能找到接管 view
@@ -434,11 +437,9 @@ struct ContentView: View {
                 onCopy: copyToPasteboard,
                 onToggleSortDirection: toggleSortDirection,
                 onToggleSidebar: { showSidebar.toggle() },
-                // V4.7.0: ⌘Z/⌘⇧Z 改由 Edit menu 接管，contentKeyboardShortcuts 的 onUndo/onRedo 不再传
-                // V3.6.23: ⌘F 聚焦搜索框（通过 notification 桥接，避免 ContentView body 改动）
-                onFocusSearch: {
-                    NotificationCenter.default.post(name: .focusSearchField, object: nil)
-                }
+                // V4.15.0: ⌘F 聚焦搜索框改由 NSSearchField (V4.8.1) 自身处理
+                //   撤回 V3.6.23 旧 notification 桥接——onFocusSearch 用默认 {} 空实现
+                //   contentKeyboardShortcuts 仍调 onFocusSearch（参数保留避免破坏）
             )
             // V4.10.0: 4 dialog 打包（batchDelete / newFolder / emptyTrash / duplicate）
             .batchActionDialogs(
@@ -484,7 +485,8 @@ struct ContentView: View {
     //   - 设置 NSToolbar.delegate = ToolbarController.shared
     //   - 设置 NSToolbar 视觉：.iconOnly display + .unified style
     //   - 绑 action closures（SwiftUI → AppKit action bridge）
-    //   - 设置 search field provider（NSHostingView 包 ToolbarSearchField）
+    // V4.15.0: 删 "设置 search field provider（NSHostingView 包 ToolbarSearchField）" 注释
+    //   V4.8.1 NSSearchField 接管后已无此 provider——遗留注释清理
     private func configureNSToolbar(window: NSWindow) {
         // 只在第一次设置
         guard window.toolbar == nil else { return }
@@ -881,6 +883,14 @@ struct ContentView: View {
         if let prev = ThumbnailDensity.smaller(than: thumbnailSize) {
             thumbnailSize = prev.size
         }
+    }
+
+    // V4.15.0: ⌘0 reset zoom——macOS Photos/Finder 标准快捷键
+    //   恢复 thumbnailSize 到用户偏好（storedThumbnailSize from @AppStorage）
+    //   不硬编码 170——尊重用户在 Settings 设的 default
+    //   （与 ⌘+ / ⌘- 配合——缩放后可一键 reset 回默认）
+    private func resetThumbnailSize() {
+        thumbnailSize = CGFloat(storedThumbnailSize)
     }
 
     // ─── 启动时清理过期回收站项（V3.6 NEW）───
@@ -1342,7 +1352,7 @@ extension View {
 
 // MARK: - V4.10.0: grid input handling extension
 //
-// 把 .onDeleteCommand + .focusable + 6 个 .onKeyPress（←→ESC / ⌘A / ⌘+ / ⌘-）打包。
+// 把 .onDeleteCommand + .focusable + 7 个 .onKeyPress（←→ESC / ⌘A / ⌘+ / ⌘- / ⌘0 / Space）打包。
 // 同样的"抽到 extension 避免 type-check 超时"模式参考 applySettingsChrome / appLifecycleHooks。
 extension View {
     func gridInputHandling(
@@ -1358,7 +1368,9 @@ extension View {
         onZoomOut: @escaping () -> Void,
         // V4.12.0: 空格键 QuickLook（macOS Finder/Photos 标准）
         hasSelectedPhoto: Bool,
-        onSpace: @escaping () -> Void
+        onSpace: @escaping () -> Void,
+        // V4.15.0: ⌘0 reset zoom（macOS Photos/Finder 标准）
+        onResetZoom: @escaping () -> Void
     ) -> some View {
         self
             .onDeleteCommand(perform: onDelete)
@@ -1405,6 +1417,14 @@ extension View {
             .onKeyPress("-", phases: .down) { press in
                 if press.modifiers.contains(EventModifiers.command) {
                     onZoomOut()
+                    return .handled
+                }
+                return .ignored
+            }
+            // V4.15.0: ⌘0 reset zoom（macOS Photos/Finder 标准）—— 恢复 storedThumbnailSize
+            .onKeyPress("0", phases: .down) { press in
+                if press.modifiers.contains(EventModifiers.command) {
+                    onResetZoom()
                     return .handled
                 }
                 return .ignored
