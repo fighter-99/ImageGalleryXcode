@@ -202,6 +202,7 @@ final class FilterPopoverViewController: NSViewController {
         ratingContainer.translatesAutoresizingMaskIntoConstraints = false
 
         let row1 = makeSegmentRow()
+        // "全部"——无评分筛选（keep 纯文字）
         let noRating = makeIconTextSegmentItem(
             icon: nil, text: "全部",
             isActive: filterState.minRating == 0
@@ -210,9 +211,11 @@ final class FilterPopoverViewController: NSViewController {
         }
         row1.addArrangedSubview(noRating)
         ratingButtons[0] = noRating
+        // V4.45.1: 真实 ⭐ 替代 "n星" 文字——macOS Photos 风格
+        //   SF Symbol `star.fill` 实心星 + 数字 n+——"≥N 星" 语义
         for n in 1...2 {
             let button = makeIconTextSegmentItem(
-                icon: nil, text: "\(n)星",
+                icon: "star.fill", text: "\(n)+",
                 isActive: filterState.minRating == n
             ) { [weak self] in
                 self?.handleRatingToggle(n)
@@ -225,7 +228,7 @@ final class FilterPopoverViewController: NSViewController {
         let row2 = makeSegmentRow()
         for n in 3...5 {
             let button = makeIconTextSegmentItem(
-                icon: nil, text: "\(n)星",
+                icon: "star.fill", text: "\(n)+",
                 isActive: filterState.minRating == n
             ) { [weak self] in
                 self?.handleRatingToggle(n)
@@ -466,8 +469,10 @@ final class FilterPopoverViewController: NSViewController {
         return button
     }
 
-    /// icon + text segment item（用于评分——星数 + "n星"文字）
-    /// V4.41.1: 评分段实际无 icon（V4.36.x 设计如此，"1星" 等是纯文字）——symbolName = nil
+    /// icon + text segment item
+    /// V4.45.1: 评分段改用真 ⭐ SF Symbol "star.fill" + "n+" 文字
+    ///   之前是 "n星" 纯文字——现在视觉上一眼是评分筛选
+    ///   Photos 风格：实心星 + 数字 = 表达"≥N 星"语义
     private func makeIconTextSegmentItem(
         icon: String?,
         text: String,

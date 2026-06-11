@@ -26,11 +26,14 @@ enum PhotoShape: String, CaseIterable, Identifiable, Hashable {
         return .square
     }
 
+    /// V4.45.1: icon 用 .fill 变体——显示实际形状 silhouette (macOS Photos 风格)
+    ///   之前 "rectangle" 是空心 outline——用户需想象是横图
+    ///   现在 "rectangle.fill" 是实心形状——一眼看出 landscape/portrait/square
     var icon: String {
         switch self {
-        case .landscape: return "rectangle"
-        case .portrait: return "rectangle.portrait"
-        case .square: return "square"
+        case .landscape: return "rectangle.fill"
+        case .portrait: return "rectangle.portrait.fill"
+        case .square: return "square.fill"
         }
     }
 
