@@ -48,23 +48,36 @@ struct DetailView: View {
         // V4.16.0: 加 .contextMenu——右击 detail panel 任意位置可复制
         //   operationsCard 已有 3 个高频按钮（收藏/Finder/删除）
         //   contextMenu 提供"复制"1 个补充 action（不重复 operationsCard）
+        //
+        // V4.24.0: 完整 Photos 风格——去 4 card 容器视觉分隔
+        //   ↑ V4.5.0 注释 "分隔靠外层 VStack(spacing: Spacing.md) 自然间距"——这本身造成
+        //     4 个 card 像漂浮的 4 个独立卡片
+        //   ↑ macOS Photos 实际：单长滚动区 + sections 用 Divider 分隔（无 VStack spacing）
+        //   ↑ 1️⃣ 大图 0 padding 紧贴 detail panel 边缘（顶/底 0）——Photos 风格顶部大图
+        //   ↑ 2️⃣ 3️⃣ 4️⃣ sections 间 Divider 分隔，无 VStack spacing
+        //   ↑ sections 内 padding 保留（info/tags/operations 元数据呼吸空间）
         ScrollView {
-            VStack(alignment: .leading, spacing: Spacing.md) {
-                // 1️⃣ 大图卡（顶部，占 50% 左右高度）
+            VStack(alignment: .leading, spacing: 0) {
+                // 1️⃣ 大图区（顶部，0 padding 紧贴 detail panel 边缘）
                 bigImageCard
 
-                // 2️⃣ 信息卡（文件名 + 元数据）
+                Divider().padding(.vertical, Spacing.xs)
+
+                // 2️⃣ 信息区（文件名 + 元数据）
                 infoCard
 
-                // 3️⃣ 标签卡
+                Divider().padding(.vertical, Spacing.xs)
+
+                // 3️⃣ 标签区
                 tagsCard
 
-                // 5️⃣ 操作卡
+                Divider().padding(.vertical, Spacing.xs)
+
+                // 4️⃣ 操作区
                 operationsCard
 
-                Spacer(minLength: Spacing.md)
+                Spacer(minLength: 0)
             }
-            .padding(Spacing.lg)
         }
         // V4.1.0d: 改用 .regularMaterial——与侧栏、主工具栏统一
         //   整个控制区 = 半透明毛玻璃；主区 = opaque canvas（照片焦点）
