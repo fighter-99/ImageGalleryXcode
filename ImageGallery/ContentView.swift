@@ -455,15 +455,11 @@ struct ContentView: View {
                 onZoomIn: zoomIn,
                 onZoomOut: zoomOut,
                 // V4.12.0: 空格键 QuickLook——仅选中单张时生效
+                //   V4.37.1: 抽出到 showQuickLook()——⌘Y 菜单 / toolbar 按钮复用同一路径
                 //   计算 currentIndex (visiblePhotos 内的位置) + 整个 URL 列表
                 //   让 QLPreviewPanel 支持 ←→ 翻页（Photos.app 行为）
                 hasSelectedPhoto: singleSelectedPhoto != nil,
-                onSpace: {
-                    if let photo = singleSelectedPhoto,
-                       let idx = visiblePhotos.firstIndex(where: { $0.id == photo.id }) {
-                        quickLookController.show(urls: currentVisibleURLs, currentIndex: idx)
-                    }
-                },
+                onSpace: showQuickLook,
                 // V4.15.0: ⌘0 reset zoom（macOS Photos/Finder 标准）
                 //   恢复 thumbnailSize 到用户偏好（storedThumbnailSize）
                 onResetZoom: resetThumbnailSize,
@@ -587,6 +583,11 @@ struct ContentView: View {
         }
         controller.onImport = { [self] in
             startImport()
+        }
+        // V4.37.1: ⌘Y Quick Look——复用 showQuickLook()（与空格键同路径）
+        //   onQuickLook toolbar 按钮 + ⌘Y 菜单项共用这一个 closure
+        controller.onQuickLook = { [self] in
+            showQuickLook()
         }
         // V4.9.1: View Options 改用 NSPopover + NSHostingController
         //   之前 V4.8.0 NSToolbar 迁移时丢了 .popover modifier——只 toggle showViewOptions 无效
@@ -1065,6 +1066,17 @@ struct ContentView: View {
     //   （与 ⌘+ / ⌘- 配合——缩放后可一键 reset 回默认）
     private func resetThumbnailSize() {
         thumbnailSize = CGFloat(storedThumbnailSize)
+    }
+
+    // V4.37.1: 触发 Quick Look——复用于 ⌘Y 菜单 / toolbar 按钮 / 空格键
+    //   抽出 onSpace 闭包逻辑（避免 3 处重复 currentVisibleURLs + firstIndex 计算）
+    //   currentVisibleURLs 让 QLPreviewPanel 支持 ←→ 在整个 visiblePhotos 内翻页（Photos.app 行为）
+    private func showQuickLook() {
+        guard let photo = singleSelectedPhoto,
+              let idx = visiblePhotos.firstIndex(where: { $0.id == photo.id }) else {
+            return
+        }
+        quickLookController.show(urls: currentVisibleURLs, currentIndex: idx)
     }
 
     // ─── 启动时清理过期回收站项（V3.6 NEW）───

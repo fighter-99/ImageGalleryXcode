@@ -39,6 +39,7 @@ final class ToolbarController: NSObject, NSToolbarDelegate {
     var onBatchExport: (() -> Void)?
     var onDelete: (() -> Void)?
     var onImport: (() -> Void)?
+    var onQuickLook: (() -> Void)?   // V4.37.1 NEW: ⌘Y Quick Look（ContentView 接 quickLookController）
     // V4.9.1: 删 onShowViewOptions closure——改用 viewOptionsContentProvider + NSPopover
 
     // MARK: - Search field 桥接
@@ -94,6 +95,10 @@ final class ToolbarController: NSObject, NSToolbarDelegate {
     var deleteEnabled: Bool = false {
         didSet { updateItemEnabled(.delete, enabled: deleteEnabled) }
     }
+    /// V4.37.1 NEW: Quick Look 仅在单选时可用（多选/无选时灰显）
+    var quickLookEnabled: Bool = false {
+        didSet { updateItemEnabled(.quickLook, enabled: quickLookEnabled) }
+    }
 
     weak var toolbar: NSToolbar?
 
@@ -116,6 +121,7 @@ final class ToolbarController: NSObject, NSToolbarDelegate {
         case importItem      // 避开 `import` 关键字
         case filter          // V4.36.x NEW: 工具栏筛选按钮
         case viewOptions
+        case quickLook       // V4.37.1 NEW: ⌘Y Quick Look（macOS Finder/Photos 标准）
 
         var nsIdentifier: NSToolbarItem.Identifier {
             NSToolbarItem.Identifier(rawValue: rawValue)
@@ -125,18 +131,20 @@ final class ToolbarController: NSObject, NSToolbarDelegate {
     // MARK: - NSToolbarDelegate
 
     /// 默认 item 顺序——决定 toolbar 的视觉布局
-    /// sidebar | search | flex | favorite | export | delete | import | filter | viewOptions
+    /// sidebar | search | flex | favorite | quickLook | export | delete | import | filter | viewOptions
     /// V4.36.x: 在 importItem 之后、viewOptions 之前插入 filter（import→filter→viewOptions 形成设置组）
+    /// V4.37.1: 在 favorite 之后插入 quickLook（"看"的语义紧邻 favorite/"标记"语义）
     func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
         [
             Identifier.sidebarToggle.nsIdentifier,
             Identifier.search.nsIdentifier,
             Identifier.flexibleSpace.nsIdentifier,
             Identifier.favorite.nsIdentifier,
+            Identifier.quickLook.nsIdentifier,  // V4.37.1 NEW
             Identifier.export.nsIdentifier,
             Identifier.delete.nsIdentifier,
             Identifier.importItem.nsIdentifier,
-            Identifier.filter.nsIdentifier,  // V4.36.x NEW
+            Identifier.filter.nsIdentifier,
             Identifier.viewOptions.nsIdentifier
         ]
     }
@@ -166,6 +174,15 @@ final class ToolbarController: NSObject, NSToolbarDelegate {
                 image: "star",
                 label: "收藏",
                 action: #selector(handleToggleFavorite)
+            )
+        case .quickLook:  // V4.37.1 NEW
+            // V4.37.1: ⌘Y 快速查看——macOS Finder/Photos 标准 eye 图标
+            //   复用 makeSimpleItem 模式，行为与 5 actions 一致
+            item = makeSimpleItem(
+                id: id,
+                image: "eye",
+                label: "快速查看",
+                action: #selector(handleShowQuickLook)
             )
         case .export:
             item = makeSimpleItem(
@@ -224,6 +241,7 @@ final class ToolbarController: NSObject, NSToolbarDelegate {
         case .favorite: return favoriteEnabled
         case .export: return exportEnabled
         case .delete: return deleteEnabled
+        case .quickLook: return quickLookEnabled   // V4.37.1 NEW
         default: return true
         }
     }
@@ -240,6 +258,8 @@ final class ToolbarController: NSObject, NSToolbarDelegate {
         favoriteEnabled = hasSelection
         exportEnabled = hasSelection
         deleteEnabled = hasSelection
+        // V4.37.1: Quick Look 仅在单张选中时可用（多张 / 0 张 都灰显）
+        quickLookEnabled = hasSelection && !hasMultipleSelection
     }
 
     // MARK: - Item 工厂
@@ -327,6 +347,7 @@ final class ToolbarController: NSObject, NSToolbarDelegate {
     @objc private func handleBatchExport() { onBatchExport?() }
     @objc private func handleDelete() { onDelete?() }
     @objc private func handleImport() { onImport?() }
+    @objc private func handleShowQuickLook() { onQuickLook?() }   // V4.37.1 NEW
     @objc private func handleShowViewOptions() {
         // V4.9.1: 不用 onShowViewOptions closure——直接用 NSPopover 显示 ViewOptionsPopover
         //   行为：再次点击按钮 → 关闭 popover（toggle）

@@ -115,6 +115,10 @@ struct ImageGalleryApp: App {
                 //   ⌘Ctrl+D 保留为项目传统快捷键不破坏现有用户习惯
                 Toggle("显示信息面板", isOn: showDetailBinding)
                     .keyboardShortcut("i", modifiers: .command)
+                // V4.37.1: ⌘Y 快速查看——macOS Finder/Photos 标准 Quick Look 入口
+                //   与 toolbar .quickLook 按钮 + 空格键共用 ContentView.showQuickLook()
+                //   disable 状态由 NSToolbar.validateToolbarItem 单选时启用控制
+                QuickLookMenuItem()
                 Divider()
                 // V4.37.0: 视图切换（缩略图/列表/时间线）——macOS Photos / Finder View > View As 风格
                 //   用 ⌥1/⌥2/⌥3 避开 ContentKeyboardShortcuts 占用的 ⌘1-6（侧边栏 section 切换）
@@ -214,6 +218,18 @@ struct RecentPhotosMenu: View {
                 }
             }
         }
+    }
+}
+
+/// V4.37.1: 快速查看菜单项——⌘Y Quick Look
+/// 复用 ToolbarController.onQuickLook closure（与 toolbar 按钮 / 空格键 同路径）
+/// ContentView.showQuickLook 内部检查 singleSelectedPhoto——无选时是 no-op 不需要 disabled
+struct QuickLookMenuItem: View {
+    var body: some View {
+        Button("快速查看") {
+            ToolbarController.shared.onQuickLook?()
+        }
+        .keyboardShortcut("y", modifiers: .command)
     }
 }
 
