@@ -156,6 +156,11 @@ struct ContentView: View {
     //   @State 而非 @StateObject：controller 内部状态不需 SwiftUI 监听
     @State private var quickLookController = QuickLookPreviewController()
 
+    // V4.37.4: titlebar 右上角小按钮引用——@State 持 NSObject 引用
+    //   onChange(of: showDetail) 时调 setActive / setTooltip 同步状态
+    //   configureNSToolbar 内构造（一次），SwiftUI 重渲不重新构造（@State 持久）
+    @State private var titlebarAccessory: TitlebarAccessoryController?
+
     // V4.20.0: 撤回 V4.19.0 glassNamespace + glassEffectUnion
     //   macOS 26 glassEffectUnion 在 sidebar 边界外产生 outline 痕迹（用户截图反馈）
     //   回滚到 V4.18.0 单 view glassEffect 状态（仅 SidebarView/DetailView 4 处 .glassEffect）
@@ -527,6 +532,14 @@ struct ContentView: View {
                     userInfo: ["filterState": newState]
                 )
             }
+            // V4.37.4: 同步 showDetail 状态到 titlebar accessory
+            //   三个入口（titlebar 按钮 / ⌘I 菜单 / ⌘Ctrl+D 菜单）toggle 同一 @AppStorage
+            //   onChange 推到 accessory.setActive / setTooltip 让按钮反映真实状态
+            //   仿 V4.36.x Filter 按钮 filterActiveCount didSet → updateFilterBadge 模式
+            .onChange(of: showDetail) { _, newValue in
+                titlebarAccessory?.setActive(newValue)
+                titlebarAccessory?.setTooltip(titlebarAccessoryTooltip(isActive: newValue))
+            }
     }
 
     // V4.0.0: 抽出 importDuplicateCheck 状态到 binding（让 type-check 过得去）
@@ -654,22 +667,29 @@ struct ContentView: View {
         window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = true
 
-        // V4.37.3: titlebar 右上角小按钮（Photos.app ⓘ 风格）
+        // V4.37.4: titlebar 右上角小按钮（Photos.app ⓘ 风格 + 状态感知）
+        //   V4.37.3 基础上加 setActive / setTooltip——保持与 V4.36.x Filter 按钮 didSet 模式统一
+        //   - 双 symbol: info.circle (inactive) ↔ info.circle.fill (active)
+        //   - tint: 系统默认 ↔ .controlAccentColor（按下时变蓝，Photos.app 同款）
+        //   - tooltip: 动态反映当前操作 + ⌘I 快捷键提示
         //   NSToolbar 在 toolbar 区域，titlebar accessory 在 titlebar 区域
-        //   layoutAttribute = .trailing = 紧邻交通灯右侧（与 macOS Photos.app 位置一致）
-        //   info.circle 图标语义"信息面板"——点击 toggle showDetail（与 ⌘I 菜单项同动作）
+        //   layoutAttribute = .trailing = 紧邻交通灯右侧
         //   withAnimation 让切换有平滑过渡（V4.8.0 侧边栏 toggle 模式）
         //   V4.20.0 撤回 V4.19.0 glassEffectUnion 后，titlebar 不参与玻璃融合——独立按钮
-        let titlebarAccessory = TitlebarAccessoryController(
-            image: "info.circle",
-            accessibilityLabel: "显示信息面板",
-            tooltip: "显示信息面板",
+        let accessory = TitlebarAccessoryController(
+            inactiveSymbol: "info.circle",
+            activeSymbol: "info.circle.fill",
+            accessibilityLabel: "信息面板",
+            tooltip: titlebarAccessoryTooltip(isActive: showDetail),
             onAction: { [self] in
                 withAnimation(Animations.medium) { showDetail.toggle() }
             }
         )
-        titlebarAccessory.layoutAttribute = .trailing
-        window.addTitlebarAccessoryViewController(titlebarAccessory)
+        accessory.layoutAttribute = .trailing
+        window.addTitlebarAccessoryViewController(accessory)
+        // V4.37.4: @State 持引用（NSObject 引用类型可被 @State 管）——.onChange 时同步状态
+        titlebarAccessory = accessory
+        accessory.setActive(showDetail)
 
         // 初始 enabled 状态同步
         controller.updateAllStates(
@@ -1102,6 +1122,13 @@ struct ContentView: View {
             return
         }
         quickLookController.show(urls: currentVisibleURLs, currentIndex: idx)
+    }
+
+    // V4.37.4: titlebar accessory tooltip——反映当前 showDetail 状态
+    //   加 ⌘I 快捷键提示——用户 hover 时发现 macOS Photos 标准快捷键
+    //   仿 V4.36.x Filter 按钮 "筛选 (N)" 动态 tooltip 模式
+    private func titlebarAccessoryTooltip(isActive: Bool) -> String {
+        isActive ? "隐藏信息面板（⌘I）" : "显示信息面板（⌘I）"
     }
 
     // ─── 启动时清理过期回收站项（V3.6 NEW）───
