@@ -1,10 +1,21 @@
 //
-//  ToolbarView.swift
+//  ViewOptionsPopover.swift
 //  ImageGallery
 //
-//  V4.3.0: 彻底重构——从「自绘 buttonStyle 系统」到「纯系统 Button + Label」
+//  V4.3.0 抽出——从原 ToolbarViewOptionsButton.viewOptionsPopover 抽离
+//  V4.40.0: 文件重命名 ToolbarView.swift → ViewOptionsPopover.swift
+//    - V4.8.0 NSToolbar 接管后 ToolbarView 整体清仓（V4.15.0 删 7 个自绘 struct 共 400 行）
+//    - V4.15.0 进一步删 ToolbarSearchField struct
+//    - 本文件 193 行只剩 ViewOptionsPopover 1 个组件——文件名应匹配内容
 //
-//  历史背景（git blame 友好）：
+//  V4.9.1 进化：ContentView 用 NSPopover + NSHostingController 包本 View
+//    仿 V4.36.x Filter popover 模式——状态在 ContentView 通过 @Binding 双向改
+//
+//  3 段：视图模式 / 缩放 / 排序
+//  popover 内部仍用自绘 segment（popover 是封闭空间，segmented control 内 active
+//    满色填充是 macOS 标准；这里 OK，不算"toolbar 自绘"问题）
+//
+//  旧 ToolbarView.swift 留下的 6 个自绘 struct（V4.15.0 已删）历史：
 //    V4.0.0.3 引入 Arc 块状语言（每个 item 自绘 Capsule 底）
 //    V4.2.0 → V4.2.4 在自绘方向上反复调（5 轮 opacity/material/形状），始终不"原生"
 //    V4.3.0 承认根本错误：自绘 buttonStyle 永远比不上系统 NSToolbarItem
@@ -16,11 +27,8 @@
 //             disabled 颜色 / Symbol 字重 / VoiceOver
 //           Import 用 .buttonStyle(.borderedProminent) 系统 CTA
 //
-//  本文件 V4.3.0 保留 2 个组件：
-//    - ToolbarSearchField：自绘搜索框（项目无 NavigationStack，.searchable 不可用）
-//      简化为基础 TextField + 系统 .background(.quaternary, in: RoundedRectangle)
-//    - ViewOptionsPopover：视图选项 popover 内容（独立 View，被 ContentView toolbar
-//      的 Button.popover modifier 引用）
+//  V4.8.0 + V4.8.1 进化：Search field 用 NSSearchToolbarItem (AppKit 原生) 替代 SwiftUI 自绘
+//    旧 ToolbarSearchField（V4.8.1 删）已 dead——NSToolbar.search item 完全接管
 //
 
 import SwiftUI
@@ -29,10 +37,6 @@ import SwiftUI
 //
 // 从原 ToolbarViewOptionsButton.viewOptionsPopover 抽离。
 // ContentView.toolbarContent 用原生 Button + .popover { ViewOptionsPopover(...) } 调用。
-//
-// 3 段：视图模式 / 缩放 / 排序
-// popover 内部仍用自绘 segment（popover 是封闭空间，segmented control 内 active
-//   满色填充是 macOS 标准；这里 OK，不算"toolbar 自绘"问题）
 struct ViewOptionsPopover: View {
     @Binding var viewMode: ViewMode
     @Binding var thumbnailSize: CGFloat
@@ -171,7 +175,7 @@ struct ViewOptionsPopover: View {
             .padding(.vertical, 6)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
-                isActive ? Color.accentColor : Color.clear,
+                isActive ? Color.accentColor : .clear,
                 in: RoundedRectangle(cornerRadius: 6, style: .continuous)
             )
         }

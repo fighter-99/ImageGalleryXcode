@@ -561,8 +561,6 @@ struct ContentView: View {
     //   - 设置 NSToolbar.delegate = ToolbarController.shared
     //   - 设置 NSToolbar 视觉：.iconOnly display + .unified style
     //   - 绑 action closures（SwiftUI → AppKit action bridge）
-    // V4.15.0: 删 "设置 search field provider（NSHostingView 包 ToolbarSearchField）" 注释
-    //   V4.8.1 NSSearchField 接管后已无此 provider——遗留注释清理
     private func configureNSToolbar(window: NSWindow) {
         // 只在第一次设置
         guard window.toolbar == nil else { return }
