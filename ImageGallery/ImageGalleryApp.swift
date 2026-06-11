@@ -119,6 +119,9 @@ struct ImageGalleryApp: App {
                 //   与 toolbar .quickLook 按钮 + 空格键共用 ContentView.showQuickLook()
                 //   disable 状态由 NSToolbar.validateToolbarItem 单选时启用控制
                 QuickLookMenuItem()
+                // V4.37.2: ⌘[ / ⌘] 上一张/下一张（macOS Quick Look / Finder Back/Forward 风格）
+                //   复用 ContentView.goPrev/goNext（与 ←→ 方向键同路径，canPrev/canNext 边界检查共用）
+                NavigateMenuItems()
                 Divider()
                 // V4.37.0: 视图切换（缩略图/列表/时间线）——macOS Photos / Finder View > View As 风格
                 //   用 ⌥1/⌥2/⌥3 避开 ContentKeyboardShortcuts 占用的 ⌘1-6（侧边栏 section 切换）
@@ -230,6 +233,22 @@ struct QuickLookMenuItem: View {
             ToolbarController.shared.onQuickLook?()
         }
         .keyboardShortcut("y", modifiers: .command)
+    }
+}
+
+/// V4.37.2: 上一张/下一张菜单项——⌘[ / ⌘]
+/// 复用 ToolbarController.onPrev/onNext closures（与 ←→ 方向键 同路径）
+/// ContentView.goPrev/goNext 内部 canPrev/canNext 边界检查——无边界时是 no-op 不需要 disabled
+struct NavigateMenuItems: View {
+    var body: some View {
+        Button("上一张") {
+            ToolbarController.shared.onPrev?()
+        }
+        .keyboardShortcut("[", modifiers: .command)
+        Button("下一张") {
+            ToolbarController.shared.onNext?()
+        }
+        .keyboardShortcut("]", modifiers: .command)
     }
 }
 

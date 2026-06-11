@@ -40,6 +40,8 @@ final class ToolbarController: NSObject, NSToolbarDelegate {
     var onDelete: (() -> Void)?
     var onImport: (() -> Void)?
     var onQuickLook: (() -> Void)?   // V4.37.1 NEW: ⌘Y Quick Look（ContentView 接 quickLookController）
+    var onPrev: (() -> Void)?        // V4.37.2 NEW: ⌘[ 上一张（ContentView 接 goPrev）
+    var onNext: (() -> Void)?        // V4.37.2 NEW: ⌘] 下一张（ContentView 接 goNext）
     // V4.9.1: 删 onShowViewOptions closure——改用 viewOptionsContentProvider + NSPopover
 
     // MARK: - Search field 桥接
@@ -348,6 +350,8 @@ final class ToolbarController: NSObject, NSToolbarDelegate {
     @objc private func handleDelete() { onDelete?() }
     @objc private func handleImport() { onImport?() }
     @objc private func handleShowQuickLook() { onQuickLook?() }   // V4.37.1 NEW
+    @objc private func handleNavigatePrev() { onPrev?() }          // V4.37.2 NEW
+    @objc private func handleNavigateNext() { onNext?() }          // V4.37.2 NEW
     @objc private func handleShowViewOptions() {
         // V4.9.1: 不用 onShowViewOptions closure——直接用 NSPopover 显示 ViewOptionsPopover
         //   行为：再次点击按钮 → 关闭 popover（toggle）

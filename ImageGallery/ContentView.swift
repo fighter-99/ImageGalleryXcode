@@ -589,6 +589,14 @@ struct ContentView: View {
         controller.onQuickLook = { [self] in
             showQuickLook()
         }
+        // V4.37.2: ⌘[ / ⌘] 上下张切换（macOS Quick Look 标准）
+        //   菜单项 ⌘[/⌘] 通过 ToolbarController.onPrev/onNext closures 触发
+        controller.onPrev = { [self] in
+            goPrev()
+        }
+        controller.onNext = { [self] in
+            goNext()
+        }
         // V4.9.1: View Options 改用 NSPopover + NSHostingController
         //   之前 V4.8.0 NSToolbar 迁移时丢了 .popover modifier——只 toggle showViewOptions 无效
         //   现在 ToolbarController.handleShowViewOptions 内部直接 NSPopover.show
@@ -1622,6 +1630,23 @@ extension View {
             .onKeyPress("e", phases: .down) { press in
                 if press.modifiers.contains(EventModifiers.command) {
                     onExport()
+                    return .handled
+                }
+                return .ignored
+            }
+            // V4.37.2: ⌘[ / ⌘] 上下张切换（macOS Quick Look / Finder 标准）
+            //   Photos.app 用 ←→ 方向键（gridInputHandling 已有）
+            //   ⌘[/⌘] 是 macOS Quick Look 整个列表翻页的同款快捷键
+            .onKeyPress("[", phases: .down) { press in
+                if press.modifiers.contains(EventModifiers.command) {
+                    if canPrev { onPrev() }
+                    return .handled
+                }
+                return .ignored
+            }
+            .onKeyPress("]", phases: .down) { press in
+                if press.modifiers.contains(EventModifiers.command) {
+                    if canNext { onNext() }
                     return .handled
                 }
                 return .ignored
