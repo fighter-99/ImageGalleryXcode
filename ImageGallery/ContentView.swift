@@ -1237,6 +1237,12 @@ struct ContentView: View {
     }
 
     // ─── 拖拽导入 ───
+    /// V4.49.0: 支持的图像扩展名——拖入时先过滤,避免非图片文件进 importer
+    /// 跟 ImageImporter.supportedExtensions 保持一致
+    private static let supportedImageExtensions: Set<String> = [
+        "jpg", "jpeg", "png", "heic", "heif", "tiff", "tif", "gif", "bmp", "webp"
+    ]
+
     private func handleDrop(providers: [NSItemProvider]) -> Bool {
         let group = DispatchGroup()
         let lock = NSLock()
@@ -1248,19 +1254,48 @@ struct ContentView: View {
                 defer { group.leave() }
                 guard let data = data,
                       let url = URL(dataRepresentation: data, relativeTo: nil) else { return }
+                // V4.49.0: 文件夹递归展开
+                //   Photos.app 行为：拖入文件夹 = 导入文件夹内所有图片
+                let expanded = Self.expandFolders([url])
                 lock.lock()
-                urls.append(url)
+                urls.append(contentsOf: expanded)
                 lock.unlock()
             }
         }
 
         group.notify(queue: .main) {
-            guard !urls.isEmpty else { return }
+            // V4.49.0: 过滤非图片文件（macOS 拖入可能含 .txt/.pdf 等）
+            let imageURLs = urls.filter { Self.supportedImageExtensions.contains($0.pathExtension.lowercased()) }
+            guard !imageURLs.isEmpty else { return }
             // V3.6.24: 拖拽导入也走重复检测
-            runImportWithDuplicateCheck(urls: urls)
+            runImportWithDuplicateCheck(urls: imageURLs)
         }
 
         return true
+    }
+
+    /// V4.49.0: 递归展开文件夹——返回所有文件 URL
+    ///   Photos.app 行为：拖入文件夹 = 导入该文件夹 + 子文件夹的图片
+    ///   跳隐藏文件 (.DS_Store 等)
+    private static func expandFolders(_ urls: [URL]) -> [URL] {
+        var result: [URL] = []
+        let fileManager = FileManager.default
+        for url in urls {
+            var isDir: ObjCBool = false
+            guard fileManager.fileExists(atPath: url.path, isDirectory: &isDir) else { continue }
+            if isDir.boolValue {
+                if let contents = try? fileManager.contentsOfDirectory(
+                    at: url,
+                    includingPropertiesForKeys: [.isRegularFileKey],
+                    options: [.skipsHiddenFiles]
+                ) {
+                    result.append(contentsOf: expandFolders(contents))
+                }
+            } else {
+                result.append(url)
+            }
+        }
+        return result
     }
 
     // V4.1.0 l: 切换侧栏 section 时清选中（避免"选中的照片不在新 section"）
