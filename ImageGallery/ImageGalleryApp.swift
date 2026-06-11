@@ -8,6 +8,7 @@
 import SwiftUI
 import AppKit
 import SwiftData
+import Combine  // V4.36.x: RecentPhotosStoreObservable 需要 @Published
 
 // AppDelegate：处理应用层 macOS 事件
 class AppDelegate: NSObject, NSApplicationDelegate {
@@ -80,6 +81,18 @@ struct ImageGalleryApp: App {
             SettingsView()
         }
         .commands {
+            // V4.36.x: File 菜单——Open Recent（macOS 标准子菜单）
+            //   显示最近 20 个导入的照片 URL
+            //   点击 → NSWorkspace.activateFileViewerSelecting 在 Finder 中揭示
+            CommandGroup(replacing: .newItem) {
+                // 替换默认的 New 菜单组
+            }
+            CommandGroup(after: .newItem) {
+                // 标准的 "File > Open Recent" 位置
+                Menu("最近打开") {
+                    RecentPhotosMenu()
+                }
+            }
             // macOS 原生 View 菜单（在 View 菜单里加 Toggle 项）
             CommandGroup(after: .sidebar) {
                 Toggle("显示侧边栏", isOn: showSidebarBinding)
@@ -139,6 +152,66 @@ extension Binding where Value == Bool {
 // ⌘Z / ⌘⇧Z 快捷键绑在菜单项上（V4.7.0 之前是 ContentKeyboardShortcuts.swift
 // 里的 hidden Button）。两边并存会双重触发——所以 hidden Button 已移除。
 //
+/// V4.36.x: 最近打开菜单——File > Open Recent
+/// 显示 RecentPhotosStore 中的最近 20 个照片 URL
+/// 点击 → 在 Finder 中揭示；空时显示"清空菜单"
+struct RecentPhotosMenu: View {
+    @ObservedObject private var store = RecentPhotosStoreObservable.shared
+
+    var body: some View {
+        Group {
+            if store.urls.isEmpty {
+                Text("无最近文件")
+            } else {
+                ForEach(Array(store.urls.enumerated()), id: \.element) { index, url in
+                    Button {
+                        store.revealInFinder(url)
+                    } label: {
+                        Text("\(index + 1). \(url.lastPathComponent)")
+                    }
+                }
+                Divider()
+                Button("清空菜单") {
+                    store.clear()
+                }
+            }
+        }
+    }
+}
+
+/// V4.36.x: RecentPhotosStore 的 ObservableObject 包装
+/// SwiftUI 菜单需要 ObservableObject 来响应 URL 变化
+@MainActor
+final class RecentPhotosStoreObservable: ObservableObject {
+    static let shared = RecentPhotosStoreObservable()
+    private let store = RecentPhotosStore.shared
+
+    @Published var urls: [URL] = []
+
+    private init() {
+        urls = store.urls
+    }
+
+    func recordImport(_ url: URL) {
+        store.recordImport(url)
+        urls = store.urls
+    }
+
+    func recordImports(_ newURLs: [URL]) {
+        store.recordImports(newURLs)
+        urls = store.urls
+    }
+
+    func clear() {
+        store.clear()
+        urls = store.urls
+    }
+
+    func revealInFinder(_ url: URL) {
+        store.revealInFinder(url)
+    }
+}
+
 struct UndoRedoMenuButtons: View {
     @FocusedValue(\.imageGalleryUndoManager) private var undoManager
 

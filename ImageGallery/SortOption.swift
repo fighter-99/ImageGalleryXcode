@@ -71,6 +71,19 @@ enum SortOption: String, CaseIterable, Identifiable {
         }
     }
 
+    /// V4.37.1: 是否日期相关排序——驱动 PhotoGridView 是否显示日期分组表头
+    ///   true:  importedAtDesc/Asc  → 显示 "今天/昨天/本周/..." 段头
+    ///   false: filename/size/custom → 平铺一个 LazyVGrid，不分组
+    /// 理由: 按字母/大小排序时，日期段头会切碎字母顺序/大小顺序的连续浏览节奏
+    var isDateBased: Bool {
+        switch self {
+        case .importedAtDesc, .importedAtAsc:
+            return true
+        case .filenameAsc, .filenameDesc, .fileSizeDesc, .fileSizeAsc, .customOrder:
+            return false
+        }
+    }
+
     /// 对 [Photo] 数组排序（直接 mutate in place 不符合函数式风格，但调用方会丢弃原数组）
     func apply(to photos: [Photo]) -> [Photo] {
         switch self {

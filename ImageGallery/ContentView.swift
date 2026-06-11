@@ -48,6 +48,11 @@ struct ContentView: View {
     // 侧边栏的选中项
     @State private var sidebarSelection: SidebarSelection? = .all
 
+    // V4.36.x: 工具栏筛选按钮状态（session-only，不写 UserDefaults / SwiftData）
+    //   4 维：folders / tags / shapes / minRating
+    //   与侧边栏并存补充——侧边栏选主上下文，筛选按钮叠加多选精细控制
+    @State private var filterState = FilterState()
+
     // 搜索文本
     @State private var searchText = ""
 
@@ -63,8 +68,34 @@ struct ContentView: View {
     // 排序方式（Eagle 化工具栏新增）
     @State private var sortOption: SortOption = .importedAtDesc
 
-    // 当前可见图片列表
-    @State private var visiblePhotos: [Photo] = []
+    // V4.36.6: visiblePhotos 从 @State 改为 computed property
+    //   旧 @State + onVisiblePhotosChange 模式只服务于 grid view——切到 list/timeline 不更新
+    //   改 computed property 用 PhotoStats.filtered 共享 helper, 3 视图同步
+    // 注: 侧栏 section 折叠状态 (@AppStorage) 属于 SidebarView 持有, 不在此
+
+    /// V4.36.6: 当前可见图片——PhotoStats.filtered 计算
+    /// 3 视图（grid/list/timeline）共用同一份 filtered 列表
+    /// V4.36.x: 加 4 参（工具栏筛选 4 维：folder multi / tag multi / shape / rating）
+    private var visiblePhotos: [Photo] {
+        PhotoStats.filtered(
+            allPhotos,
+            folder: currentFolder,
+            tag: currentTag,
+            searchText: searchText,
+            sortOption: sortOption,
+            filterFavorites: filterFavorites,
+            filterUnfiled: filterUnfiled,
+            filterDuplicates: filterDuplicates,
+            filterRecent7Days: filterRecent7Days,
+            filterLargeFiles: filterLargeFiles,
+            filterInTrash: filterInTrash,
+            // V4.36.x: 工具栏筛选 4 维
+            selectedFolderIDs: filterState.folders,
+            selectedTagIDs: filterState.tags,
+            selectedShapes: filterState.shapes,
+            minRating: filterState.minRating
+        )
+    }
 
     // 拖拽状态
     @State private var isDropTargeted = false
@@ -161,14 +192,16 @@ struct ContentView: View {
 
     // V3.5.12：三栏列宽（HStack + 自定义 drag handles，避开 NSSplitView）
     @AppStorage("sidebarColumnWidth") private var storedSidebarWidth: Double = 220
-    @AppStorage("detailColumnWidth") private var storedDetailWidth: Double = 320
+    @AppStorage("detailColumnWidth") private var storedDetailWidth: Double = 360
     @State private var sidebarColumnWidth: CGFloat = 220
-    @State private var detailColumnWidth: CGFloat = 320
+    @State private var detailColumnWidth: CGFloat = 360
     @State private var sidebarDragStartWidth: CGFloat = 220
-    @State private var detailDragStartWidth: CGFloat = 320
+    @State private var detailDragStartWidth: CGFloat = 360
     private let sidebarMinWidth: CGFloat = 160
     private let sidebarMaxWidth: CGFloat = 320
-    private let detailMinWidth: CGFloat = 240
+    // V4.35.x 修复: 3 个按钮等分 (收藏/在 Finder 中显示/删除) 至少需要 ~360pt
+    //   旧 240pt → 3 按钮 80pt/个 → "在 Finder 中显示" 7 字 + icon 完全装不下 → 右侧被切
+    private let detailMinWidth: CGFloat = 340
     private let detailMaxWidth: CGFloat = 480
     private let contentMinWidth: CGFloat = 400
 
@@ -276,7 +309,7 @@ struct ContentView: View {
         case .duplicates:           return "重复图"
         case .recent7Days:          return "最近 7 天"
         case .largeFiles:           return "大图（>5MB）"
-        case .recentlyDeleted:      return "最近删除"
+        case .recentlyDeleted:      return "回收站"
         case .folder(let f):        return f.name
         case .tag(let t):           return "#\(t.name)"
         }
@@ -284,11 +317,16 @@ struct ContentView: View {
 
     // V4.2.0 P0❸: 副标题——"N 张 · X MB"
     //   visiblePhotos.count 是当前筛选+排序后实际显示的数量；优于 allPhotos.count
+    //   V4.36.x: 工具栏筛选激活时追加 "· 已筛选 (N)" 提示
     private var currentViewSubtitle: String {
         let count = visiblePhotos.count
         let bytes = visiblePhotos.reduce(Int64(0)) { $0 + $1.fileSize }
         let size = ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)
-        return "\(count) 张 · \(size)"
+        var s = "\(count) 张 · \(size)"
+        if filterState.isActive {
+            s += " · 已筛选 (\(filterState.activeCount))"
+        }
+        return s
     }
 
     // V4.4.8: toolbar 搜索框左 padding 动态计算
@@ -349,13 +387,15 @@ struct ContentView: View {
             detailDragStartWidth: $detailDragStartWidth,
             sidebarMinWidth: 160,
             sidebarMaxWidth: 320,
-            detailMinWidth: 240,
+            detailMinWidth: 340,  // V4.35.x 修复: 旧 240 → 3 按钮被切
             detailMaxWidth: 480,
             onSidebarDragEnd: { storedSidebarWidth = Double(sidebarColumnWidth) },
             onDetailDragEnd: { storedDetailWidth = Double(detailColumnWidth) },
             restoreFromStorage: {
                 sidebarColumnWidth = CGFloat(storedSidebarWidth)
-                detailColumnWidth = CGFloat(storedDetailWidth)
+                // V4.35.x 修复: 旧值 < 340pt 时升到 340pt（避免窄 detail panel 切按钮）
+                let restored = CGFloat(storedDetailWidth)
+                detailColumnWidth = max(restored, 340)
             }
         )
     }
@@ -470,6 +510,27 @@ struct ContentView: View {
             // V4.7.0: 暴露 undoManager 给 Edit menu commands
             //   抽到 extension（exposeUndoManager）避免 body 链过长触发 type-check 超时
             .exposeUndoManager(undoManager)
+            // V4.36.x: 工具栏筛选按钮 → 角标 tooltip 同步
+            //   filterActiveCount 变化时推送到 NSToolbar item.tooltip
+            //   onChange 不在初始化时触发——configureNSToolbar 闭包内首次手动 push
+            .onChange(of: filterState.activeCount) { _, count in
+                ToolbarController.shared.filterActiveCount = count
+            }
+            // V4.36.x: 切换筛选条件时清选中（仿 clearSelectionOnFilterChange L1114-1119）
+            //   避免"选中的照片不在新筛选结果里"
+            .onChange(of: filterState) { _, newState in
+                if !selection.isEmpty {
+                    selection = .empty
+                }
+                // V4.36.x #4: filterState 变化时通知 popover 同步 UI
+                //   场景：用户点 ActiveFiltersBar 上的 × 删 chip，但 popover 还开着
+                //   popover 监听此通知，调 updateState(newState) 同步 checkbox 状态
+                NotificationCenter.default.post(
+                    name: .filterStateChangedFromOutside,
+                    object: nil,
+                    userInfo: ["filterState": newState]
+                )
+            }
     }
 
     // V4.0.0: 抽出 importDuplicateCheck 状态到 binding（让 type-check 过得去）
@@ -542,6 +603,31 @@ struct ContentView: View {
                 sortOption: $sortOption
             ))
         }
+        // V4.36.x: Filter popover provider——纯 AppKit FilterPopoverViewController
+        //   弃用 SwiftUI FilterPopover + NSHostingController（intrinsic size 协商不可控）
+        //   AppKit controller 直接 preferredContentSize，NSPopover 读这个值
+        //   state 变化通过 onStateChange 回调同步（双向）
+        //   V4.36.x #4: 还接 onClearAll 回调 + filterStateChangedFromOutside 通知
+        controller.filterContentProvider = { [self] in
+            let popoverVC = FilterPopoverViewController(
+                filterState: filterState,
+                folders: folders,
+                tags: allTags
+            )
+            popoverVC.onStateChange = { [weak popoverVC] newState in
+                self.filterState = newState
+                // 不需要调 popoverVC.updateState——它自己已经更新了内部 filterState
+                _ = popoverVC
+            }
+            // V4.36.x #3: "清除全部"按钮回调
+            popoverVC.onClearAll = { [weak popoverVC] in
+                self.filterState = .empty
+                popoverVC?.updateState(.empty)
+            }
+            return popoverVC
+        }
+        // V4.36.x: 首次同步角标（onChange 不会在初始化时触发，必须手动 push）
+        controller.filterActiveCount = filterState.activeCount
         // V4.8.1: search field 改用 NSSearchField (AppKit 原生) 替代 SwiftUI 自绘
         //   NSSearchField 由 ToolbarController.makeSearchItem 创建
         //   这里只绑 text 变化 closure 同步到 SwiftUI @State
@@ -648,6 +734,8 @@ struct ContentView: View {
     private func resetFilters() {
         sidebarSelection = .all
         searchText = ""
+        // V4.36.x: 工具栏筛选按钮 4 维也清
+        filterState = .empty
     }
 
     // 收藏切换（单选切换；多选批量反向）
@@ -706,7 +794,14 @@ struct ContentView: View {
     // }
     @ViewBuilder
     private var pathBarPane: some View {
-        EmptyView()
+        // V4.36.x: 工具栏筛选按钮激活时显示 chip 行
+        //   仅 filterState.isActive 时返回 ActiveFiltersBar（内部 EmptyView 早返）
+        //   V3.5.17 PathBar 已被本组件"复活"——新的筛选状态可视化
+        ActiveFiltersBar(
+            filterState: $filterState,
+            allFolders: folders,
+            allTags: allTags
+        )
     }
 
     // V3.6.32: 恢复到 V3.6.27 顶层加 .boxSelectionGesture 模式
@@ -743,34 +838,90 @@ struct ContentView: View {
         )
     }
 
+    // V4.36.6: 中间列根据 viewMode 切换 3 视图
+    //   旧版 gridPane 只返回 PhotoGridPane, viewMode 在 popover 切换无效
+    //   新版 switch viewMode → 3 个 Pane 之一, 都用 visiblePhotos (PhotoStats.filtered)
+    //   共享 filter helper 保证 3 视图显示完全一致的内容
+    @ViewBuilder
     private var gridPane: some View {
-        PhotoGridPane(
-            selection: $selection,
-            folder: currentFolder,
-            tag: currentTag,
-            searchText: searchText,
-            filterFavorites: filterFavorites,
-            filterUnfiled: filterUnfiled,
-            filterDuplicates: filterDuplicates,
-            filterRecent7Days: filterRecent7Days,
-            filterLargeFiles: filterLargeFiles,
-            filterInTrash: filterInTrash,  // V3.6 NEW
-            // V3.6.6: 透传 retentionDays 给缩略图 badge
-            retentionDays: retentionDays,
-            thumbnailSize: thumbnailSize,
-            sortOption: sortOption,
-            onVisiblePhotosChange: { visiblePhotos = $0 },
-            onImport: startImport,
-            onBatchDelete: { showingBatchDeleteConfirm = true },
-            onClearMultiSelect: { selection = .empty },
-            onDoubleTap: enterImmersive,
-            // V4.9.0: 清空所有 filter（用于"无搜索结果"等空状态次 CTA）
-            //   清 searchText + folder + tag + 所有 filter 状态
-            onClearFilters: { resetFilters() },
-            onExportComplete: { count in
-                showToast("已导出 \(count) 张图片", type: .success)
-            }
-        )
+        switch viewMode {
+        case .grid:
+            PhotoGridPane(
+                selection: $selection,
+                folder: currentFolder,
+                tag: currentTag,
+                searchText: searchText,
+                filterFavorites: filterFavorites,
+                filterUnfiled: filterUnfiled,
+                filterDuplicates: filterDuplicates,
+                filterRecent7Days: filterRecent7Days,
+                filterLargeFiles: filterLargeFiles,
+                filterInTrash: filterInTrash,
+                // V4.36.x: 工具栏筛选 4 维
+                selectedFolderIDs: filterState.folders,
+                selectedTagIDs: filterState.tags,
+                selectedShapes: filterState.shapes,
+                filterMinRating: filterState.minRating,
+                retentionDays: retentionDays,
+                thumbnailSize: thumbnailSize,
+                sortOption: sortOption,
+                // V4.36.6: visiblePhotos 改 computed property, 此 callback 不再需要
+                //   保留参数避免破坏 PhotoGridPane 签名——传 noop
+                onVisiblePhotosChange: { _ in },
+                onImport: startImport,
+                onBatchDelete: { showingBatchDeleteConfirm = true },
+                onClearMultiSelect: { selection = .empty },
+                onDoubleTap: enterImmersive,
+                onClearFilters: { resetFilters() },
+                onExportComplete: { count in
+                    showToast("已导出 \(count) 张图片", type: .success)
+                }
+            )
+        case .list:
+            PhotoListPane(
+                selection: $selection,
+                folder: currentFolder,
+                tag: currentTag,
+                searchText: searchText,
+                filterFavorites: filterFavorites,
+                filterUnfiled: filterUnfiled,
+                filterDuplicates: filterDuplicates,
+                filterRecent7Days: filterRecent7Days,
+                filterLargeFiles: filterLargeFiles,
+                filterInTrash: filterInTrash,
+                // V4.36.x: 工具栏筛选 4 维（签名一致；本视图不实际用）
+                selectedFolderIDs: filterState.folders,
+                selectedTagIDs: filterState.tags,
+                selectedShapes: filterState.shapes,
+                filterMinRating: filterState.minRating,
+                sortOption: sortOption,
+                photos: visiblePhotos,
+                onTap: handleTap,
+                onDoubleTap: enterImmersive
+            )
+        case .timeline:
+            PhotoTimelinePane(
+                selection: $selection,
+                folder: currentFolder,
+                tag: currentTag,
+                searchText: searchText,
+                filterFavorites: filterFavorites,
+                filterUnfiled: filterUnfiled,
+                filterDuplicates: filterDuplicates,
+                filterRecent7Days: filterRecent7Days,
+                filterLargeFiles: filterLargeFiles,
+                filterInTrash: filterInTrash,
+                // V4.36.x: 工具栏筛选 4 维（签名一致；本视图不实际用）
+                selectedFolderIDs: filterState.folders,
+                selectedTagIDs: filterState.tags,
+                selectedShapes: filterState.shapes,
+                filterMinRating: filterState.minRating,
+                sortOption: sortOption,
+                photos: visiblePhotos,
+                onTap: handleTap,
+                onDoubleTap: enterImmersive
+            )
+        }
     }
 
     private var detailPane: some View {
@@ -808,13 +959,6 @@ struct ContentView: View {
             onExitTrash: { sidebarSelection = .all },
             // V3.6.15: 重复图清理（一键保留每组最新）
             onKeepNewestPerDuplicateGroup: keepNewestPerDuplicateGroup,
-            // V4.1.0 k: 无选中时显示图库概览
-            allPhotos: allPhotos,
-            libraryTotalCount: allPhotos.count,
-            libraryTotalSize: PhotoStats.totalSize(allPhotos),
-            onSelectPhoto: { photo in selection = selection.selectingSingle(photo.id) },
-            onSelectFolder: { folder in sidebarSelection = .folder(folder) },
-            onImport: startImport,
             // V4.11.0: 存储不可写错误（nil = OK）
             storageError: storageErrorMessage,
             onRetryStorage: checkStorage
@@ -853,6 +997,30 @@ struct ContentView: View {
             showingBatchDeleteConfirm = true
         } else if singleSelectedPhoto != nil {
             deleteSinglePhoto()
+        }
+    }
+
+    // V4.36.6: 从 PhotoGridView.handleTap 抽出到 ContentView——3 视图共用
+    //   旧版 tap 处理逻辑在 PhotoGridView 内, List/Timeline 视图无法复用
+    //   现在 3 视图都传 onTap: handleTap 闭包, 选中行为完全一致
+    private func handleTap(_ photo: Photo) {
+        let modifiers = NSEvent.modifierFlags
+        let modifier: ClickModifier = {
+            if modifiers.contains(.command) { return .command }
+            if modifiers.contains(.shift) { return .shift }
+            return .plain
+        }()
+        let photoIDs = visiblePhotos.map { $0.id }
+        let outcome = MultiSelectMath.handleTap(
+            state: selection,
+            photoID: photo.id,
+            modifier: modifier,
+            photoIDs: photoIDs
+        )
+        // TapOutcome 是 enum with associated values——从 3 个 case 都拿 SelectionState
+        switch outcome {
+        case .singleSelect(let s), .toggleMultiSelect(let s), .rangeSelect(let s):
+            selection = s
         }
     }
 
@@ -1043,14 +1211,14 @@ struct ContentView: View {
         RecycleBinService(storage: .shared, modelContext: modelContext).recycle(photo)
         // V3.6.52: 单字段清空替 2 字段 pair
         selection = .empty
-        showToast("已移到「最近删除」（\(retentionDays) 天后永久删除）", type: .info)
+        showToast("已移到回收站（\(retentionDays) 天后永久删除）", type: .info)
     }
 
     // ─── 批量删除（V3.6：走 RecycleBinService，不再调 undoManager）───
     private func batchDelete() {
         performOnSelectedTrash(
             { svc, photos in photos.forEach { svc.recycle($0) } },
-            message: { "已移到「最近删除」 \($0) 张" }
+            message: { "已移到回收站 \($0) 张" }
         )
     }
 
@@ -1220,7 +1388,7 @@ struct ContentView: View {
         guard !purgeable.isEmpty else { return }
         let service = RecycleBinService(storage: .shared, modelContext: modelContext)
         for photo in purgeable { service.recycle(photo) }
-        showToast("已移到「最近删除」 \(purgeable.count) 张重复图", type: .info)
+        showToast("已移到回收站 \(purgeable.count) 张重复图", type: .info)
     }
 
     // ─── 序列化 SidebarSelection ───
@@ -1480,7 +1648,7 @@ extension View {
                 Button("取消", role: .cancel) {}
             } message: {
                 // V3.6 改：删除走回收站，N 天后才永久清除
-                Text("选中的图片会移到「最近删除」，\(retentionDays) 天后自动永久清除。可在「最近删除」中恢复。")
+                Text("选中的图片会移到回收站，\(retentionDays) 天后自动永久清除。可在回收站中恢复。")
             }
             // ⌘N 新建文件夹
             .alert("新建文件夹", isPresented: showingNewFolder) {

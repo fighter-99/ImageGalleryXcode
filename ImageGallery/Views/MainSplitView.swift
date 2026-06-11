@@ -5,6 +5,11 @@
 //  三列布局：侧栏 / 内容 / 详情。
 //  V3.5.17：从 ContentView.swift 拆出。
 //
+//  V4.36.4: 撤销 V4.36.2 的 hasContent 隐藏行为——detail panel 永远显示
+//    V4.36.2 加 hasContent 条件: 未选中时整体隐藏 detail panel
+//    用户反馈: detail panel 进/出动画打扰浏览节奏 + 选/未选时 main grid 列数变化视觉不稳定
+//    撤回方案: 恢复 showDetail 一刀切, 未选中时 DetailPane 内显示简单占位
+//
 //  包含：
 //  - 条件显示侧栏和详情（受 showSidebar / showDetail 控制）
 //  - 三列之间的可拖拽分隔条（ColumnDragHandle）
@@ -80,6 +85,8 @@ struct MainSplitView<Sidebar: View, Center: View, Detail: View>: View {
                 .frame(maxWidth: .infinity)
 
             // 详情
+            // V4.36.4: 撤销 hasContent 条件，detail panel 永远显示（用户偏好稳定布局）
+            //   未选中时 DetailPane 内显示 EmptyDetailPlaceholder（无 LibraryOverview 重复内容）
             if showDetail {
                 ColumnDragHandle(
                     dragStartWidth: layout.detailDragStartWidth,

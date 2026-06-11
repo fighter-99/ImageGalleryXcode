@@ -5,11 +5,16 @@
 //  三列布局的右侧列：详情面板。
 //  V3.5.17：从 ContentView.swift 拆出。
 //
-//  三种状态：
-//  1. 选中单张图 → DetailView（带元数据、标签、EXIF、上一张/下一张）
-//  2. 多选模式 → MultiSelectDetailView（提示批量操作快捷键）
-//  3. 无选中 → LibraryOverviewView（V4.1.0 k 取代旧 EmptyDetailView，
-//    本身含导入按钮——新用户首次启动时作为 onboarding 引导）
+//  V4.36.4: 加"未选中 → EmptyDetailPlaceholder"分支——V4.36.2 撤回 hasContent 隐藏后
+//    detail panel 永远显示, 未选中时显示简单占位（不显示 LibraryOverview 重复内容）
+//
+//  五种状态（5 个 detail view，含 empty 占位）：
+//  1. 存储错误 → EmptyStateView（错误样式）
+//  2. 回收站模式 → TrashDetailView
+//  3. 重复图模式 → DuplicatesDetailView
+//  4. 选中单张图 → DetailView
+//  5. 多选模式 → MultiSelectDetailView
+//  6. 无选中（普通浏览）→ EmptyDetailPlaceholder（图标 + 提示）
 //
 
 import SwiftUI
@@ -48,14 +53,6 @@ struct DetailPane: View {
     // V3.6.15 NEW: 重复图模式操作
     let onKeepNewestPerDuplicateGroup: () -> Void
 
-    // V4.1.0 k NEW: 图库概览（无选中时显示有用内容）
-    let allPhotos: [Photo]
-    let libraryTotalCount: Int
-    let libraryTotalSize: Int64
-    let onSelectPhoto: (Photo) -> Void
-    let onSelectFolder: (Folder) -> Void
-    let onImport: () -> Void
-
     // V4.11.0: 存储不可写错误（nil = OK）
     //   PhotoStorage.verifyStorage() 失败时填消息，detail panel 切到错误态
     //   重试按钮触发 onRetryStorage 重新检测
@@ -72,7 +69,7 @@ struct DetailPane: View {
             if sidebarSelection == .duplicates { return "duplicates" }
             if let photo = singleSelectedPhoto { return "photo-\(photo.id)" }
             if isMultiSelect { return "multi" }
-            return "empty"
+            return "empty"  // V4.36.2: unreachable——MainSplitView 已在 hasContent=false 隐藏整个面板
         }()
 
         return Group {
@@ -134,16 +131,10 @@ struct DetailPane: View {
                     onClearSelection: onClearSelection
                 )
             } else {
-                // V4.1.0 k: 无选中 → 显示"图库概览"（替代空白 EmptyDetailView）
-                LibraryOverviewView(
-                    allPhotos: allPhotos,
-                    folders: folders,
-                    totalCount: libraryTotalCount,
-                    totalSize: libraryTotalSize,
-                    onSelectPhoto: onSelectPhoto,
-                    onSelectFolder: onSelectFolder,
-                    onImport: onImport
-                )
+                // V4.36.4: 未选中时显示简单占位——引导用户选照片
+                //   V4.36.2 撤回 hasContent 隐藏后, detail panel 永远显示
+                //   此处必须给占位, 不能用 EmptyView() (会显得 detail panel 是空的/bug)
+                EmptyDetailPlaceholder()
             }
         }
         .id(viewKind)  // V3.6.44: 视图类型变化时强制 transition
@@ -152,5 +143,24 @@ struct DetailPane: View {
         // V3.6.46: 用户反馈详情面板"向右翻页"感太重，去掉 .move，只保留 .opacity
         //   切到 .standard（0.2s easeInOut）—— 详情面板切换不需 Q 弹，平滑即可
         .animation(Animations.standard, value: viewKind)
+    }
+}
+
+// V4.36.4: 未选中时的 detail panel 占位——引导用户选照片
+//   V3.5.x 时代是 EmptyDetailView，V4.36.2 撤回时删了，V4.36.4 重建
+//   设计：图标 + 主提示 + 次提示（操作快捷键）— 简洁，不与 sidebar/main grid 重复内容
+struct EmptyDetailPlaceholder: View {
+    var body: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "photo")
+                .font(.system(size: 60))
+                .foregroundStyle(.tertiary)
+            Text("选择一张图片")
+                .foregroundStyle(.secondary)
+            Text("← → 切换 · ⌘+点击 多选 · ⌥+拖动 框选")
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }

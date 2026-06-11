@@ -57,45 +57,54 @@ struct DetailView: View {
         //   ↑ 2️⃣ 3️⃣ 4️⃣ sections 间 Divider 分隔，无 VStack spacing
         //   ↑ sections 内 padding 保留（info/tags/operations 元数据呼吸空间）
         // V4.27.0: ScrollView 改 ScrollViewReader——切换 photo 自动滚到大图顶部
-        // V4.34.0: 撤回 V4.30.0 顶层 GeometryReader 限高 bigImageCard
-        //   V4.30.0 失误: 顶层 GeometryReader 限高 bigImageCard + image 双方向 fit
-        //     → image 撑满 width 拉伸右溢出 (V4.31.0 仍拉伸)
-        //   V4.32.0 失误: image 内 GeometryReader 嵌套——HStack + Spacer 实际 Image 撑满
-        //   V4.33.0 失误: 0.35 比例仍超出 visible 范围
-        // V4.34.0 修复: 撤回所有 GeometryReader 嵌套
-        //   ScrollViewReader 包装 ScrollView + VStack(alignment: .leading)
-        //   image 单方向 fit (maxWidth: .infinity) 按 detail panel width
-        //   image height 由 aspectRatio 算——按 macOS Photos 实际行为
-        //   整个 detail panel content 整体 fit NSWindow visible area
-        //   ScrollView 让 user 滚动看完整 image (按需)
-        ScrollViewReader { proxy in
-            ScrollView {
-                VStack(alignment: .leading, spacing: 0) {
-                    // 1️⃣ 大图区（顶部，0 padding 紧贴 detail panel 边缘）
-                    bigImageCard
+        // V4.35.0: 加顶层 GeometryReader 限 bigImageCard 高度 = visible 60%
+        //   V4.30.0 失误: 顶层 GeometryReader 限高 0.55 + image 双方向 fit
+        //     → image 撑满 width (500pt) + 高度限 → 拉伸右溢出
+        //   V4.32.0 失误: image 内 GeometryReader 嵌套 + HStack + Spacer
+        //     → Image 撑满 HStack width → 拉伸右溢出
+        //   V4.34.0 失误: 撤回嵌套 + image 单方向 fit (.frame(maxWidth: .infinity))
+        //     → image 撑满父 width (detail panel ~500pt)
+        //     → 实际 visible width < 500pt → 右溢出被切
+        // V4.35.0 修复: 顶层 GeometryReader 限高 bigImageCard 0.60 × visible
+        //   + image 内 GeometryReader 读 bigImageCard 实际尺寸
+        //   + image maxWidth/Height 按 bigImageCard 实际尺寸 (双方向受约束)
+        //   + aspectRatio(.fit) min 缩放
+        //   image 不超 detail panel 实际可见 right 边界 + 高度 ≤ bigImageCard 高度
+        GeometryReader { geo in
+            ScrollViewReader { proxy in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 0) {
+                        // 1️⃣ 大图区（顶部，0 padding 紧贴 detail panel 边缘）
+                        bigImageCard
+                            // V4.35.0: 大图 60% × visible height——元数据 + 标签 + 操作 fit 余下
+                            //   1080×1503 竖向图在 (500, 450) 容器内:
+                            //   min(500, 450) = 450 → image width 324pt, height 450pt (不拉伸)
+                            //   元数据 + 标签 + 操作 ≈ 300pt < 余下 300pt (visible - bigImageCard) → 整体 fit
+                            .frame(height: geo.size.height * 0.60)
 
-                    Divider().padding(.vertical, Spacing.xs)
+                        Divider().padding(.vertical, Spacing.xs)
 
-                    // 2️⃣ 信息区（文件名 + 元数据）
-                    infoCard
+                        // 2️⃣ 信息区（文件名 + 元数据）
+                        infoCard
 
-                    Divider().padding(.vertical, Spacing.xs)
+                        Divider().padding(.vertical, Spacing.xs)
 
-                    // 3️⃣ 标签区
-                    tagsCard
+                        // 3️⃣ 标签区
+                        tagsCard
 
-                    Divider().padding(.vertical, Spacing.xs)
+                        Divider().padding(.vertical, Spacing.xs)
 
-                    // 4️⃣ 操作区
-                    operationsCard
+                        // 4️⃣ 操作区
+                        operationsCard
 
-                    Spacer(minLength: 0)
+                        Spacer(minLength: 0)
+                    }
                 }
-            }
-            .onChange(of: photo.id) { _, _ in
-                // V4.27.0: photo 切换时滚到大图顶部
-                withAnimation(Animations.quick) {
-                    proxy.scrollTo("bigImage", anchor: .top)
+                .onChange(of: photo.id) { _, _ in
+                    // V4.27.0: photo 切换时滚到大图顶部
+                    withAnimation(Animations.quick) {
+                        proxy.scrollTo("bigImage", anchor: .top)
+                    }
                 }
             }
         }
@@ -103,8 +112,10 @@ struct DetailView: View {
         //   整个控制区 = 半透明毛玻璃；主区 = opaque canvas（照片焦点）
         // V4.21.0: 撤回 V4.18.0 .glassEffect(.regular)——同 SidebarView
         //   macOS 26 单 view glassEffect 视觉副作用未消除
+        // V4.35.x 修复: idealWidth 320 + maxWidth 400——和 columnLayout detailMin 340 协调
+        //   旧仅 minWidth: 280 → 列宽可能扩到 480 但 detail panel 自身没边界 → 内容溢出
         .background(.regularMaterial)
-        .frame(minWidth: 280)
+        .frame(minWidth: 280, idealWidth: 340, maxWidth: 480)
         .alert("新建标签", isPresented: $showingAddTagAlert) {
             TextField("标签名称", text: $newTagName)
             Button("取消", role: .cancel) {}
@@ -125,7 +136,7 @@ struct DetailView: View {
             Button("删除", role: .destructive) { deletePhoto() }
             Button("取消", role: .cancel) {}
         } message: {
-            Text("图片将从图库中移除，文件也会被永久删除。")
+            Text("图片将从图馆中移除，文件也会被永久删除。")
         }
         // V4.16.0: 右击 detail panel 任意位置 → 复制（与 operationsCard 不重复）
         .contextMenu {
@@ -153,8 +164,13 @@ struct DetailView: View {
     ///        + 各 card 内部字体层级（headline / secondary / caption）形成视觉层次
     ///        Photos.app detail panel 同款做法
     private func detailCard<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+        // V4.35.x: leading 16pt / trailing 20pt——右侧多 4pt 呼吸空间
+        //   旧 .padding(.horizontal, Spacing.lg) 双向 16pt → 内容右侧贴 material 右边缘显局促
+        //   改不对称 padding → 内容视觉"靠左内缩"，与 material 右边缘留 4pt 空白
+        //   保持 detail panel material 满宽贴窗口边（Photos 风格），仅内容内缩
         content()
-            .padding(.horizontal, Spacing.lg)
+            .padding(.leading, Spacing.lg)     // 16pt
+            .padding(.trailing, Spacing.xl)    // 20pt
             .padding(.vertical, Spacing.md)
             .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -163,20 +179,24 @@ struct DetailView: View {
     private var bigImageCard: some View {
         Group {
             if let nsImage = bigImage {
-                // V4.34.0: 撤回 V4.32.0 嵌套 GeometryReader
-                //   V4.32.0 失误: GeometryReader { cardGeo in HStack { Image + Spacer } }
-                //   实际行为: Image 撑满 HStack width (Spacer 0pt) —— image 拉伸右溢出
-                // V4.34.0 修复: 撤回嵌套 GeometryReader + 改回 VStack(alignment: .leading)
-                //   image 单方向 fit (maxWidth: .infinity)——按 detail panel width fit
-                //   居左 + height 由 aspectRatio 算
-                //   整个 detail panel content 整体 fit NSWindow visible 750pt:
-                //   image 359pt + 元数据 130pt + 标签 70pt + 操作 80pt + 3 divider = 651pt < 750pt
-                //   ScrollView 让 user 滚动看完整 image (按 Photos 实际行为)
-                Image(nsImage: nsImage)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(maxWidth: .infinity)
-                    .id("bigImage")
+                // V4.35.0: 加 GeometryReader 读 bigImageCard section 实际尺寸
+                //   V4.34.0 失误: image .frame(maxWidth: .infinity) 单方向 fit
+                //   image 撑满父 width (detail panel 可见 width ~500pt)
+                //   但 detail panel 实际 visible width < 500pt (被 toolbar / status bar 占)
+                //   → image 渲染 width > visible width → 右溢出被切
+                // V4.35.0 修复: image 用 GeometryReader 读 bigImageCard section 实际尺寸
+                //   .frame(maxWidth: cardGeo.size.width, maxHeight: cardGeo.size.height)
+                //   + aspectRatio(.fit) 按 min(width, height) 缩放
+                //   bigImageCard section 实际 (detail panel 可见 width, 0.60 × visible height)
+                //   1080×1503 竖向图: min(width, height) 按 bigImageCard 实际尺寸算
+                //   image 不超 detail panel 右边界 + 不拉伸
+                GeometryReader { cardGeo in
+                    Image(nsImage: nsImage)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(maxWidth: cardGeo.size.width, maxHeight: cardGeo.size.height)
+                        .id("bigImage")
+                }
             } else if bigImageLoadFailed {
                 // V4.9.5: 加载失败——显示 photo 占位 + 错误 icon
                 RoundedRectangle(cornerRadius: Radius.md)
@@ -232,12 +252,14 @@ struct DetailView: View {
         )
         // 导航覆盖层：← / 索引 / →
         .overlay(alignment: .bottom) {
-            HStack(spacing: Spacing.md) {
+            HStack(spacing: 0) {
                 detailNavButton(systemName: "chevron.left", help: "上一张 (←)") {
                     onPrev()
                 }
                 .disabled(!canPrev)
                 .opacity(canPrev ? 0.9 : 0.3)
+
+                Spacer(minLength: 0)
 
                 if totalCount > 0 {
                     Text("\(currentIndex) / \(totalCount)")
@@ -249,12 +271,15 @@ struct DetailView: View {
                         .background(.ultraThinMaterial, in: Capsule())
                 }
 
+                Spacer(minLength: 0)
+
                 detailNavButton(systemName: "chevron.right", help: "下一张 (→)") {
                     onNext()
                 }
                 .disabled(!canNext)
                 .opacity(canNext ? 0.9 : 0.3)
             }
+            .frame(maxWidth: .infinity)  // 关键: 让 Spacer 撑开,索引居中,左/右按钮贴边
             .padding(Spacing.sm)
         }
     }
@@ -289,7 +314,7 @@ struct DetailView: View {
                         .font(.headline)
                         .lineLimit(2)
                         .truncationMode(.middle)
-                    Spacer()
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     Button {
                         newFileName = photo.filename
                         showingRenameAlert = true
@@ -299,6 +324,7 @@ struct DetailView: View {
                     }
                     .buttonStyle(.borderless)
                     .help("重命名")
+                    .fixedSize()  // 不被 Spacer 挤压
                 }
 
                 Divider().opacity(0.5)
@@ -330,12 +356,19 @@ struct DetailView: View {
                 Text(text)
                     .font(Typography.captionMono)
                     .foregroundStyle(.primary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             } else {
                 Text(text)
                     .font(.caption)
                     .foregroundStyle(.primary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     /// 4️⃣ 标签卡
@@ -399,12 +432,14 @@ struct DetailView: View {
                     HStack(spacing: 4) {
                         Image(systemName: photo.isFavorite ? "star.fill" : "star")
                         Text(photo.isFavorite ? "已收藏" : "收藏")
+                            .lineLimit(1)
                     }
                     .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.large)
                 .tint(photo.isFavorite ? .yellow : .accentColor)
+                .fixedSize(horizontal: false, vertical: true)  // 垂直固定 + 水平可伸缩
 
                 // V4.16.0: 在 Finder 中显示——macOS Photos 标配
                 //   NSWorkspace.activateFileViewerSelecting(_:) 高亮选中文件
@@ -415,11 +450,13 @@ struct DetailView: View {
                     HStack(spacing: 4) {
                         Image(systemName: "folder")
                         Text("在 Finder 中显示")
+                            .lineLimit(1)
                     }
                     .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.large)
+                .fixedSize(horizontal: false, vertical: true)
 
                 // 删除
                 Button(role: .destructive) {
@@ -428,11 +465,13 @@ struct DetailView: View {
                     HStack(spacing: 4) {
                         Image(systemName: "trash")
                         Text("删除")
+                            .lineLimit(1)
                     }
                     .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.large)
+                .fixedSize(horizontal: false, vertical: true)
             }
         }
     }

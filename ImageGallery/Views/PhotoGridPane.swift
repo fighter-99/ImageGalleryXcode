@@ -28,6 +28,11 @@ struct PhotoGridPane: View {
     let filterLargeFiles: Bool
     // V3.6 NEW: 回收站筛选（true = 只显示 trashedAt != nil 的项）
     let filterInTrash: Bool
+    // V4.36.x: 工具栏筛选按钮 4 维（与 PhotoGridView 签名一致；透传）
+    let selectedFolderIDs: Set<UUID>
+    let selectedTagIDs: Set<UUID>
+    let selectedShapes: Set<PhotoShape>
+    let filterMinRating: Int
     // V3.6.6: 保留时长（透传给 PhotoThumbnailView 显示剩余天数 badge）
     let retentionDays: Int
     let thumbnailSize: CGFloat
@@ -53,6 +58,11 @@ struct PhotoGridPane: View {
             filterRecent7Days: filterRecent7Days,
             filterLargeFiles: filterLargeFiles,
             filterInTrash: filterInTrash,
+            // V4.36.x: 工具栏筛选 4 维
+            selectedFolderIDs: selectedFolderIDs,
+            selectedTagIDs: selectedTagIDs,
+            selectedShapes: selectedShapes,
+            filterMinRating: filterMinRating,
             retentionDays: retentionDays,
             thumbnailSize: thumbnailSize,
             sortOption: sortOption,

@@ -50,6 +50,16 @@ struct PhotoGridView: View {
     let filterLargeFiles: Bool
     // V3.6 NEW: 回收站筛选
     let filterInTrash: Bool
+    // V4.36.x: 工具栏筛选按钮 4 维（透传到 PhotoStats.filtered）
+    let selectedFolderIDs: Set<UUID>
+    let selectedTagIDs: Set<UUID>
+    let selectedShapes: Set<PhotoShape>
+    let filterMinRating: Int
+    // V4.36.x: 工具栏筛选激活标记（空态文案感知）
+    var isFilterActive: Bool {
+        !selectedFolderIDs.isEmpty || !selectedTagIDs.isEmpty
+            || !selectedShapes.isEmpty || filterMinRating > 0
+    }
     // V3.6.6: 保留时长（用于缩略图剩余天数 badge）
     let retentionDays: Int
     let thumbnailSize: CGFloat
@@ -92,51 +102,34 @@ struct PhotoGridView: View {
         hasher.combine(filterRecent7Days)
         hasher.combine(filterLargeFiles)
         hasher.combine(filterInTrash)
+        // V4.36.x: 工具栏筛选 4 维（Set 有标准 Hashable；任一变化触发重算）
+        hasher.combine(selectedFolderIDs)
+        hasher.combine(selectedTagIDs)
+        hasher.combine(selectedShapes)
+        hasher.combine(filterMinRating)
         return hasher.finalize()
     }
 
     private func recomputePhotos() {
-        var result = allPhotos
-
-        if let folder = folder {
-            result = result.filter { $0.folder?.id == folder.id }
-        }
-        if let tag = tag {
-            result = result.filter { photo in photo.tags.contains { $0.id == tag.id } }
-        }
-        if filterFavorites {
-            result = result.filter { $0.isFavorite }
-        }
-        if filterUnfiled {
-            result = result.filter { $0.folder == nil }
-        }
-        if filterDuplicates {
-            let hashCounts = Dictionary(grouping: allPhotos) { $0.fileHash }.mapValues { $0.count }
-            result = result.filter { photo in
-                guard let hash = photo.fileHash else { return false }
-                return (hashCounts[hash] ?? 0) > 1
-            }
-        }
-        // V2: 最近 7 天
-        if filterRecent7Days {
-            let cutoff = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
-            result = result.filter { $0.importedAt > cutoff }
-        }
-        // V2: 大图 > 5MB
-        if filterLargeFiles {
-            result = result.filter { $0.fileSize > 5_000_000 }
-        }
-        // V3.6: 回收站筛选（与 folder/tag 互斥——只有 .recentlyDeleted 时才进此分支）
-        if filterInTrash {
-            result = result.filter { $0.trashedAt != nil }
-        } else {
-            // 非回收站视图：永远排除已删项
-            result = result.filter { $0.trashedAt == nil }
-        }
-        // V3.6.3：用 PhotoSearch 纯函数（含 folder.name 匹配，修复前只匹配 filename/note/tag）
-        result = PhotoSearch.filter(result, query: searchText)
-        // 排序（Eagle 化工具栏新增：覆盖 @Query 默认顺序）
-        photos = sortOption.apply(to: result)
+        // V4.36.6: 抽到 PhotoStats.filtered static helper——List/Timeline 视图共用
+        // V4.36.x: 增 4 参（工具栏筛选按钮）
+        photos = PhotoStats.filtered(
+            allPhotos,
+            folder: folder,
+            tag: tag,
+            searchText: searchText,
+            sortOption: sortOption,
+            filterFavorites: filterFavorites,
+            filterUnfiled: filterUnfiled,
+            filterDuplicates: filterDuplicates,
+            filterRecent7Days: filterRecent7Days,
+            filterLargeFiles: filterLargeFiles,
+            filterInTrash: filterInTrash,
+            selectedFolderIDs: selectedFolderIDs,
+            selectedTagIDs: selectedTagIDs,
+            selectedShapes: selectedShapes,
+            minRating: filterMinRating
+        )
     }
 
     // ─── 列数 ───
@@ -208,8 +201,8 @@ struct PhotoGridView: View {
         if filterUnfiled { return "待整理" }
         if filterDuplicates { return "重复图" }
         if filterRecent7Days { return "最近 7 天" }
-        if filterLargeFiles { return "大图" }
-        if filterInTrash { return "最近删除" }  // V3.6 NEW
+        if filterLargeFiles { return "大图（>5MB）" }
+        if filterInTrash { return "回收站" }  // V4.36.x: 统一为"回收站"
         return "全部"
     }
 
@@ -307,6 +300,8 @@ struct PhotoGridView: View {
     }
 
     private var emptyIcon: String {
+        // V4.36.x: 工具栏筛选激活 → 漏斗 icon
+        if isFilterActive { return "line.3.horizontal.decrease.circle" }
         if !searchText.trimmingCharacters(in: .whitespaces).isEmpty { return "magnifyingglass" }
         if filterFavorites { return "star" }
         if filterUnfiled { return "tray" }
@@ -320,6 +315,8 @@ struct PhotoGridView: View {
     }
 
     private var emptyText: String {
+        // V4.36.x: 工具栏筛选激活但无匹配
+        if isFilterActive { return "没有匹配筛选的图片" }
         if !searchText.trimmingCharacters(in: .whitespaces).isEmpty { return "没有匹配的图片" }
         if filterFavorites { return "还没有收藏的图片" }
         if filterUnfiled { return "没有待整理的图片" }
@@ -327,12 +324,14 @@ struct PhotoGridView: View {
         if tag != nil { return "没有带此标签的图片" }
         if filterDuplicates { return "没有重复的图片" }
         if filterRecent7Days { return "最近 7 天没有新图" }
-        if filterLargeFiles { return "没有大于 5MB 的图" }
+        if filterLargeFiles { return "没有大于 5 MB 的图" }
         if filterInTrash { return "回收站是空的" }  // V3.6 NEW
         return "还没有图片"
     }
 
     private var emptyHint: String {
+        // V4.36.x: 提示调整筛选条件
+        if isFilterActive { return "尝试减少筛选条件或调整侧边栏" }
         if !searchText.trimmingCharacters(in: .whitespaces).isEmpty { return "试试其他关键词" }
         if filterFavorites { return "在图片详情中点击 ⭐ 收藏" }
         if filterUnfiled { return "把图片移动到文件夹来整理" }
@@ -340,7 +339,7 @@ struct PhotoGridView: View {
         if tag != nil { return "在图片详情中添加此标签" }
         if filterDuplicates { return "重复图会自动出现在这里" }
         if filterInTrash { return "删除的图片会出现在这里，\(TrashRetentionDays.defaultValue.rawValue) 天后自动永久清除" }  // V3.6 NEW
-        return "拖入图片，或点击\"导入图片\"开始添加"
+        return "拖入图片，或点击“导入图片”开始添加"
     }
 
     private var emptyShowImport: Bool {
@@ -378,47 +377,111 @@ struct PhotoGridView: View {
     }
 
     // ─── 图片网格 ───
+    // V4.36.0: 自然宽高比 cell——column width 按容器宽 + thumbnailSize 计算
+    //   旧 columnCount 硬编码 (5/4/3/3/2 by thumbnailSize) → 窗口宽度不影响列数
+    //   新 numCols = floor((containerWidth + spacing) / (thumbnailSize + spacing))
+    //     → 窗口变宽自动多列，变窄自动少列
+    //   cell 高度按 photo.aspectRatio 自然延伸（image fill cell，不再 .fit 留白）
+    //   旧 cellHeight 固定 170pt → 竖向照片上下留白、横向照片左右留白（信息密度低）
+    //   新 cellHeight = cellSize / photoAspectRatio → 无留白、信息密度 ↑30-50%
+    //   GridItem alignment: .bottom——同 row 内短 item 底对齐（Photos.app "skyline"）
+    // V4.36.3: cellSize 用 availableWidth (fullWidth - 2 * padding) 算——对称 padding
+    //   旧 cellSize 按 geo.size.width 全宽算 → LazyVGrid 用 .padding() 后右列 cell 溢出右侧 padding
+    //   新 cellSize 按 availableWidth (减 24pt) 算 → cell 完全在 padding 内，左右对称
+    // V4.37.0: LazyVStack + 多个 LazyVGrid——按 importedAt 分段（Photos.app 风格）
+    //   段头 "今天" / "昨天" / "本周" / "本月" / "X 月" / "X 年"
+    //   段头不吸顶（让照片流连续），只做视觉分组
+    //   groupByDate 复用 PhotoStats.filtered 的结果——已 filter + sort 的 visiblePhotos
+    // V4.37.1: 条件分组——只在 sortOption.isDateBased 时显示日期段头
+    //   按文件名/大小排序时，日期段头会切碎字母顺序/大小顺序的连续浏览节奏
+    //   此时回退到 V4.36.6 平铺布局（单个 LazyVGrid）
+    //   与 Photos.app "Days/Months/Years vs All Photos (by name)" 行为对齐
+    @ViewBuilder
     private var photoGrid: some View {
+        GeometryReader { geo in
+            let spacing: CGFloat = Spacing.md  // 12pt
+            // V4.36.3: 减左右 padding (24pt) 拿真可用宽——否则 cellSize 算大了 24pt
+            let availableWidth = geo.size.width - 2 * Spacing.md
+            let idealCount = Int(floor((availableWidth + spacing) / (thumbnailSize + spacing)))
+            // 至少 1 列，最多 8 列（避免窄 cell 失去视觉意义）
+            let numCols = max(1, min(8, idealCount))
+            let totalSpacing = CGFloat(numCols - 1) * spacing
+            let cellSize = (availableWidth - totalSpacing) / CGFloat(numCols)
+            let columns = Array(
+                repeating: GridItem(.fixed(cellSize), spacing: spacing, alignment: .bottom),
+                count: numCols
+            )
+
+            // V4.37.1: 条件分支——isDateBased 时按日期分组，否则平铺
+            Group {
+                if sortOption.isDateBased {
+                    dateGroupedLayout(columns: columns, spacing: spacing, cellSize: cellSize)
+                } else {
+                    flatLayout(columns: columns, spacing: spacing, cellSize: cellSize)
+                }
+            }
+        }
+    }
+
+    // V4.37.1: 日期分组布局（importedAt 排序时用）
+    //   段头 "今天" / "昨天" / "本周" / "本月" / "X 月" / "X 年"
+    //   LazyVStack + 多个 LazyVGrid（每个 group 一个）
+    @ViewBuilder
+    private func dateGroupedLayout(columns: [GridItem], spacing: CGFloat, cellSize: CGFloat) -> some View {
+        let groups = PhotoStats.groupByDate(photos)
+
         ScrollView {
-            LazyVGrid(
-                columns: Array(
-                    repeating: GridItem(.flexible(minimum: 60), spacing: 12),
-                    count: columnCount
-                ),
-                // V4.23.0: 完整 Photos 风格——增 grid spacing
-                //   旧 8pt → 12pt (Spacing.md)：cell 之间更明显分隔
-                //   配合 cell 完全透明 + image clip 圆角，视觉简洁
-                spacing: 12
-            ) {
-                ForEach(photos) { photo in
-                    PhotoThumbnailView(
-                        photo: photo,
-                        isInMultiSelect: selection.contains(photo.id),
-                        isActive: selection.singleSelectedID == photo.id,
-                        folders: folders,
-                        allTags: allTags,
-                        cellHeight: thumbnailSize,
-                        // V3.6.6: 传 retentionDays（用于显示剩余天数 badge）
-                        retentionDays: retentionDays,
-                        onDelete: { deletePhoto(photo) },
-                        onTap: { handleTap(photo) },
-                        onDoubleTap: { onDoubleTap(photo) }
-                    )
-                    .transition(.asymmetric(
-                        insertion: .scale(scale: 0.8).combined(with: .opacity),
-                        removal: .scale(scale: 0.6).combined(with: .opacity)
-                    ))
+            LazyVStack(alignment: .leading, spacing: Spacing.xl) {
+                ForEach(groups) { group in
+                    VStack(alignment: .leading, spacing: Spacing.md) {
+                        DateSectionHeader(label: group.label, count: group.photos.count)
+                        LazyVGrid(columns: columns, spacing: spacing) {
+                            ForEach(group.photos) { photo in
+                                photoCell(photo, cellSize: cellSize)
+                            }
+                        }
+                    }
                 }
             }
             .padding()
             .animation(Animations.medium, value: photos.count)
         }
-        // V3.6.32: 撤销 V3.6.28 R2 的所有 UI 接入
-        // 原因：simultaneousGesture(DragGesture) 在 macOS 26.5 上仍抢占 cell 的 .onDrag，
-        // 即使 minimumDistance: 24 也不行。同时 onGeometryChange 给每个 cell 加了 .background
-        // GeometryReader 路径上的 performance 开销（每次 scroll 都更新 cellFrames）。
-        // BoxSelectionMath + BoxSelectionMathTests 保留为 dormant
-        // 等未来找到不跟 cell .onDrag 抢的方法再启用
+    }
+
+    // V4.37.1: 平铺布局（filename/size/custom 排序时用）
+    //   单个 LazyVGrid，照片按 sortOption 全局顺序排
+    @ViewBuilder
+    private func flatLayout(columns: [GridItem], spacing: CGFloat, cellSize: CGFloat) -> some View {
+        ScrollView {
+            LazyVGrid(columns: columns, spacing: spacing) {
+                ForEach(photos) { photo in
+                    photoCell(photo, cellSize: cellSize)
+                }
+            }
+            .padding()
+            .animation(Animations.medium, value: photos.count)
+        }
+    }
+
+    // V4.37.1: 抽出单 cell 渲染——dateGroupedLayout 和 flatLayout 共用
+    @ViewBuilder
+    private func photoCell(_ photo: Photo, cellSize: CGFloat) -> some View {
+        PhotoThumbnailView(
+            photo: photo,
+            isInMultiSelect: selection.contains(photo.id),
+            isActive: selection.singleSelectedID == photo.id,
+            folders: folders,
+            allTags: allTags,
+            cellSize: cellSize,
+            retentionDays: retentionDays,
+            onDelete: { deletePhoto(photo) },
+            onTap: { handleTap(photo) },
+            onDoubleTap: { onDoubleTap(photo) }
+        )
+        .transition(.asymmetric(
+            insertion: .scale(scale: 0.8).combined(with: .opacity),
+            removal: .scale(scale: 0.6).combined(with: .opacity)
+        ))
     }
 
     // 当前单选 ID（用于蓝色边框）
@@ -512,15 +575,29 @@ struct PhotoGridView: View {
 }
 
 // ─── 单个缩略图 ───
+// V4.36.0: 接受 cellSize (column width) + 内部按 photoAspectRatio 算 cellHeight
+//   旧 cellHeight 固定 170pt → 竖向照片上下留白 / 横向照片左右留白
+//   新 cellHeight = cellSize / aspectRatio → image 完全填满 cell 无留白
 struct PhotoThumbnailView: View {
     let photo: Photo
     let isInMultiSelect: Bool  // 是否在多选集合中
     let isActive: Bool          // 是否是当前单选激活（蓝色边框）
     let folders: [Folder]
     let allTags: [Tag]
-    let cellHeight: CGFloat
+    // V4.36.0: cellSize = column width（不再传固定 cellHeight）
+    let cellSize: CGFloat
     // V3.6.6: 保留时长（用于显示 trash 视图下的剩余天数 badge）
     let retentionDays: Int
+
+    /// V4.36.0: cell 实际高度 = 列宽 / 图片宽高比
+    ///   旧 170pt 固定 → 竖向照片 1080×1503 在 170pt 宽 cell 内 = height 236pt
+    ///     留白 66pt (顶+底), 信息密度低
+    ///   新 cellSize 200pt 宽 / 0.72 ratio = cellHeight 278pt → 完全 fill，无留白
+    private var cellHeight: CGFloat {
+        let ratio = aspectRatio
+        guard ratio > 0 else { return cellSize }
+        return cellSize / ratio
+    }
     let onDelete: () -> Void
     let onTap: () -> Void
     let onDoubleTap: () -> Void
@@ -798,7 +875,10 @@ struct PhotoThumbnailView: View {
         //   多选点击是高频操作，spring 反弹感在选择场景下反而像'卡顿'
         .animation(Animations.standard, value: isInMultiSelect)
         .frame(maxWidth: .infinity)
-        .frame(height: cellHeight)
+        // V4.36.0: 显式 cellSize × cellHeight——cell 高度按 photoAspectRatio 算
+        //   旧仅 .frame(height: cellHeight) + cellWidth = columnWidth (隐式) → 竖向照片上下留白
+        //   新 .frame(width: cellSize, height: cellHeight) → image fill cell 无留白
+        .frame(width: cellSize, height: cellHeight)
         // V4.4.5: cell 背景 controlBackgroundColor → windowBackgroundColor
         //   ↑ 终于找到「浅框」真正源头——cell 背景比窗口背景浅一档
         //   旧 Palette.cellBackground = Surface.elevated = controlBackgroundColor ≈ #2C2C2C
@@ -1080,6 +1160,11 @@ struct CellContextMenuModifier: ViewModifier {
         filterRecent7Days: false,
         filterLargeFiles: false,
         filterInTrash: false,
+        // V4.36.x: 工具栏筛选 4 维（Preview 用空值）
+        selectedFolderIDs: [],
+        selectedTagIDs: [],
+        selectedShapes: [],
+        filterMinRating: 0,
         retentionDays: 30,  // V3.6.6
         thumbnailSize: 170,
         sortOption: .importedAtDesc,

@@ -42,6 +42,12 @@ final class Photo {
     /// 老照片迁移时由 PhotoGridView 一次性补值
     var sortOrder: Int = 0
 
+    // ─── 用户评分（V4.36.x NEW：工具栏筛选按钮的「评分」维度）───
+    /// 0 = 未评分；1-5 = 1-5 星
+    /// SwiftData 轻量级自动迁移：新增带默认值的 Int 字段，迁移现有行填 0
+    /// 不影响 V1 schema（3 个 @Model 类数量不变；现有 v1ModelsCountIsThree 测试继续通过）
+    var rating: Int = 0
+
     // ─── 回收站时间戳（V3.6 NEW：App-Owned Storage + 回收站）───
     /// nil = 在图库中；非 nil = 在回收站中（等待恢复或被永久删除）
     /// 回收站视图通过 `trashedAt != nil` 过滤
@@ -67,5 +73,7 @@ final class Photo {
         self.fileHash = nil
         // V3.5.D：新照片用当前时间戳作为 sortOrder，避免和老照片的 0 冲突
         self.sortOrder = Int(Date().timeIntervalSince1970)
+        // V4.36.x：评分默认未评分（0）；与字段默认值一致，显式赋值更清晰
+        self.rating = 0
     }
 }

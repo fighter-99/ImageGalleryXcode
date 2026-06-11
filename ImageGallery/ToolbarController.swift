@@ -62,6 +62,26 @@ final class ToolbarController: NSObject, NSToolbarDelegate {
     /// transient 行为下点击外部自动关闭
     private var viewOptionsPopover: NSPopover?
 
+    // MARK: - Filter popover 桥接（V4.36.x NEW）——仿 V4.9.1 viewOptionsContentProvider
+
+    /// V4.36.x: ContentView 提供 popover 内容（NSHostingController 包 SwiftUI FilterPopover）
+    /// 同样的 NSPopover + NSHostingController 模式——state 在 ContentView 通过 @Binding 双向改
+    var filterContentProvider: (() -> NSViewController)?
+
+    /// V4.36.x: Filter popover 强引用（避免被释放）
+    private var filterPopover: NSPopover?
+
+    /// V4.36.x: 激活筛选总数（用于工具栏 hover tooltip 角标 "筛选 (N)"）
+    /// ContentView 通过 .onChange(of: filterState.activeCount) 同步此值
+    var filterActiveCount: Int = 0 {
+        didSet { updateFilterBadge() }
+    }
+
+    /// V4.36.x: 工具栏筛选按钮的 SwiftUI view provider（暂未使用——V4.36.x 回归 NSButton 风格）
+    ///   用 SwiftUI .popover() 而非 NSPopover，避免窗口裁切
+    ///   ContentView 设置时 return NSHostingView(rootView: FilterToolbarButton(...))
+    var filterButtonViewProvider: (() -> NSView)?
+
     // MARK: - 状态桥接
 
     /// 5 actions 的 enabled 状态
@@ -94,6 +114,7 @@ final class ToolbarController: NSObject, NSToolbarDelegate {
         case export
         case delete
         case importItem      // 避开 `import` 关键字
+        case filter          // V4.36.x NEW: 工具栏筛选按钮
         case viewOptions
 
         var nsIdentifier: NSToolbarItem.Identifier {
@@ -104,7 +125,8 @@ final class ToolbarController: NSObject, NSToolbarDelegate {
     // MARK: - NSToolbarDelegate
 
     /// 默认 item 顺序——决定 toolbar 的视觉布局
-    /// sidebar | search | flex | favorite | export | delete | import | viewOptions
+    /// sidebar | search | flex | favorite | export | delete | import | filter | viewOptions
+    /// V4.36.x: 在 importItem 之后、viewOptions 之前插入 filter（import→filter→viewOptions 形成设置组）
     func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
         [
             Identifier.sidebarToggle.nsIdentifier,
@@ -114,6 +136,7 @@ final class ToolbarController: NSObject, NSToolbarDelegate {
             Identifier.export.nsIdentifier,
             Identifier.delete.nsIdentifier,
             Identifier.importItem.nsIdentifier,
+            Identifier.filter.nsIdentifier,  // V4.36.x NEW
             Identifier.viewOptions.nsIdentifier
         ]
     }
@@ -164,6 +187,15 @@ final class ToolbarController: NSObject, NSToolbarDelegate {
                 image: "square.and.arrow.down",
                 label: "导入",
                 action: #selector(handleImport)
+            )
+        case .filter:  // V4.36.x NEW
+            // V4.36.x: 回归 NSButton 风格——与其他 5 actions 完全一致
+            //   SwiftUI popover 在 NSToolbar 里点击响应不可靠（事件被 toolbar 拦截）
+            item = makeSimpleItem(
+                id: id,
+                image: "line.3.horizontal.decrease",
+                label: "筛选",
+                action: #selector(handleShowFilter)
             )
         case .viewOptions:
             item = makeSimpleItem(
@@ -320,5 +352,38 @@ final class ToolbarController: NSObject, NSToolbarDelegate {
     @objc private func handleSearchAction() {
         // Enter 键触发——已通过 textDidChangeNotification 实时同步
         // 这里留作 future: 触发"提交搜索"（可能高亮首个结果等）
+    }
+
+    // MARK: - Filter popover handlers（V4.36.x NEW）
+
+    /// V4.36.x: 显示/隐藏 Filter popover
+    ///   完全仿 V4.9.1 handleShowViewOptions 模式：NSPopover + item.view 锚定
+    ///   NSPopover 自动处理屏幕边界，比 SwiftUI .popover() 在 NSToolbar 里更可靠
+    @objc private func handleShowFilter() {
+        if let popover = filterPopover, popover.isShown {
+            popover.close()
+            filterPopover = nil
+            return
+        }
+
+        guard let contentProvider = filterContentProvider,
+              let item = itemCache[Identifier.filter.nsIdentifier],
+              let anchorView = item.view else {
+            return
+        }
+
+        let popover = NSPopover()
+        popover.behavior = .transient  // 点外部自动关闭
+        popover.contentViewController = contentProvider()
+        popover.show(relativeTo: anchorView.bounds, of: anchorView, preferredEdge: .minY)
+        self.filterPopover = popover
+    }
+
+    /// V4.36.x: 同步激活筛选数到 filter item 的 tooltip
+    ///   V4.8.3: displayMode = .iconOnly 不显示 title，故用 tooltip 显示 "筛选 (N)"
+    ///   hover 才显符合 macOS HIG，零侵入
+    private func updateFilterBadge() {
+        guard let item = itemCache[Identifier.filter.nsIdentifier] else { return }
+        item.toolTip = filterActiveCount > 0 ? "筛选 (\(filterActiveCount))" : "筛选"
     }
 }

@@ -193,6 +193,11 @@ struct ImageImporter {
             importSingleImage(at: url)
             onProgress?(index + 1, total)
         }
+
+        // V4.36.x: 记录到最近导入——File > Open Recent 菜单显示
+        Task { @MainActor in
+            RecentPhotosStore.shared.recordImports(allFiles)
+        }
     }
 
     // MARK: - 私有方法

@@ -91,7 +91,7 @@ struct SettingsView: View {
                 Text("缩略图")
                     .font(Typography.headline)
 
-                Text("设置默认缩略图大小（拖动 slider 调整）。当前会话用 toolbar 临时改的会在重启后恢复默认值。")
+                Text("设置默认缩略图大小（拖动滑块调整）。当前会话用 toolbar 临时改的会在重启后恢复默认值。")
                     .font(Typography.caption)
                     .foregroundStyle(Surface.textSecondary)
 
@@ -126,7 +126,8 @@ struct SettingsView: View {
                 Picker("排序", selection: $defaultSortOption) {
                     Text("导入时间 ↓").tag(SortOption.importedAtDesc.rawValue)
                     Text("导入时间 ↑").tag(SortOption.importedAtAsc.rawValue)
-                    Text("文件名 A-Z").tag(SortOption.filenameAsc.rawValue)
+                    Text("文件名 A → Z").tag(SortOption.filenameAsc.rawValue)
+                    Text("文件名 Z → A").tag(SortOption.filenameDesc.rawValue)
                     Text("文件大小 ↓").tag(SortOption.fileSizeDesc.rawValue)
                     Text("文件大小 ↑").tag(SortOption.fileSizeAsc.rawValue)
                     Text("自定义顺序").tag(SortOption.customOrder.rawValue)

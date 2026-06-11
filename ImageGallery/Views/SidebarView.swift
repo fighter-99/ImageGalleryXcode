@@ -48,6 +48,14 @@ struct SidebarView: View {
     // V4.0.0.6: 排序（搬到侧栏顶部）
     @Binding var sortOption: SortOption
 
+    // V4.36.6: 侧栏 section 折叠状态（绑定到 header 和 content）
+    //   旧版 SidebarSectionHeader 用 storageKey 自管 UserDefaults, 但 Section content 永远显示
+    //   新版 @AppStorage 在 SidebarView 持有, 共享给 header (chevron) + content (if 包裹)
+    //   关键: 同一个 binding 让点击 header 真正控制 content 可见性
+    @AppStorage("sidebar.section.library") private var isLibraryExpanded: Bool = true
+    @AppStorage("sidebar.section.folders") private var isFoldersExpanded: Bool = true
+    @AppStorage("sidebar.section.tags") private var isTagsExpanded: Bool = true
+
     // 弹窗控制
     @State private var showingNewFolderAlert = false
     @State private var showingNewTagAlert = false
@@ -108,92 +116,103 @@ struct SidebarView: View {
 
             // ─── Section 1: 我的图馆（智能项 + 智能文件夹合并）───
             Section {
-                // 4 个 smart items + 2 个 smart filters
-                // V4.6.0: 智能 folder icon 用语义色（SidebarStyle.iconColor* token）——
-                //   一眼区分内容类型（重复/最近/大图/收藏/最近删除）
-                //   色板：色相分散（HLS space 60°+ 间隔），避免混淆
-                sidebarRow(icon: "photo.on.rectangle.angled", label: "全部", count: libraryCounts.all, target: .all)
-                sidebarRow(icon: "star", label: "收藏", count: libraryCounts.favorites, target: .favorites, iconColor: SidebarStyle.iconColorFavorite)
-                sidebarRow(icon: "tray", label: "待整理", count: libraryCounts.unfiled, target: .unfiled)
-                if duplicateCount > 0 {
-                    sidebarRow(icon: "doc.on.doc", label: "重复图", count: duplicateCount, target: .duplicates, iconColor: SidebarStyle.iconColorDuplicate)
+                if isLibraryExpanded {
+                    // 4 个 smart items + 2 个 smart filters
+                    // V4.6.0: 智能 folder icon 用语义色（SidebarStyle.iconColor* token）——
+                    //   一眼区分内容类型（重复/最近/大图/收藏/最近删除）
+                    //   色板：色相分散（HLS space 60°+ 间隔），避免混淆
+                    sidebarRow(icon: "photo.on.rectangle.angled", label: "全部", count: libraryCounts.all, target: .all)
+                    sidebarRow(icon: "star", label: "收藏", count: libraryCounts.favorites, target: .favorites, iconColor: SidebarStyle.iconColorFavorite)
+                    sidebarRow(icon: "tray", label: "待整理", count: libraryCounts.unfiled, target: .unfiled)
+                    if duplicateCount > 0 {
+                        sidebarRow(icon: "doc.on.doc", label: "重复图", count: duplicateCount, target: .duplicates, iconColor: SidebarStyle.iconColorDuplicate)
+                    }
+                    // V4.1.0: 智能文件夹移进"我的图馆"section（之前是独立 section）
+                    sidebarRow(icon: "clock.arrow.circlepath", label: "最近 7 天", target: .recent7Days, iconColor: SidebarStyle.iconColorRecent)
+                    sidebarRow(icon: "large.circle", label: "大图（>5MB）", target: .largeFiles, iconColor: SidebarStyle.iconColorLarge)
                 }
-                // V4.1.0: 智能文件夹移进"我的图馆"section（之前是独立 section）
-                sidebarRow(icon: "clock.arrow.circlepath", label: "最近 7 天", target: .recent7Days, iconColor: SidebarStyle.iconColorRecent)
-                sidebarRow(icon: "large.circle", label: "大图 (>5MB)", target: .largeFiles, iconColor: SidebarStyle.iconColorLarge)
             } header: {
                 // V4.1.0: 可见 header（V3.6.25 之前被隐藏）
-                SidebarSectionHeader("我的图馆", icon: "sparkles", storageKey: "sidebar.section.library")
+                SidebarSectionHeader("我的图馆", icon: "sparkles", isExpanded: $isLibraryExpanded)
             }
 
             // ─── Section 2: 我的文件夹 ───
             Section {
-                ForEach(folders) { folder in
-                    folderSidebarRow(folder)
-                }
-
-                Button {
-                    newName = ""
-                    showingNewFolderAlert = true
-                } label: {
-                    HStack(spacing: 8) {
-                        Image(systemName: "plus")
-                            .frame(width: 18)
-                            .foregroundStyle(Color.accentColor)
-                        Text("新建文件夹")
-                            .foregroundStyle(Color.accentColor)
+                if isFoldersExpanded {
+                    ForEach(folders) { folder in
+                        folderSidebarRow(folder)
                     }
+
+                    Button {
+                        newName = ""
+                        showingNewFolderAlert = true
+                    } label: {
+                        HStack(spacing: SidebarStyle.rowIconTextSpacing) {
+                            Image(systemName: "plus")
+                                .frame(width: SidebarStyle.iconFrameWidth)
+                                .foregroundStyle(Color.accentColor)
+                            // V4.36.x: 显式 SidebarStyle.labelFont——与行 label 字号/字重完全一致
+                            //   避免 fallback 到系统默认（可能比行 label 略大或粗，视觉不协调）
+                            Text("新建文件夹")
+                                .font(SidebarStyle.labelFont)
+                                .foregroundStyle(Color.accentColor)
+                        }
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
             } header: {
-                SidebarSectionHeader("我的文件夹", icon: "folder", storageKey: "sidebar.section.folders")
+                SidebarSectionHeader("我的文件夹", icon: "folder", isExpanded: $isFoldersExpanded)
             }
 
             // ─── Section 3: 标签 ───
             Section {
-                if tags.isEmpty {
-                    // V3.6.21: 改用 EmptyStateView 统一空状态
-                    EmptyStateView(
-                        icon: "tag",
-                        title: "还没有标签",
-                        subtitle: "新建一个标签，给照片打上分类标记",
-                        iconColor: .secondary
-                    )
-                    .frame(height: 100)
-                } else {
-                    ForEach(tags) { tag in
-                        sidebarRow(
+                if isTagsExpanded {
+                    if tags.isEmpty {
+                        // V3.6.21: 改用 EmptyStateView 统一空状态
+                        EmptyStateView(
                             icon: "tag",
-                            label: tag.name,
-                            count: PhotoStats.inLibraryCount(tag),
-                            target: .tag(tag),
-                            iconColor: Color(hex: tag.colorHex)  // 标签用 tag 颜色
+                            title: "还没有标签",
+                            subtitle: "新建一个标签，给照片打上分类标记",
+                            iconColor: .secondary
                         )
-                        .contextMenu {
-                            Button(role: .destructive) {
-                                deleteTag(tag)
-                            } label: {
-                                Label("删除标签", systemImage: "trash")
+                        .frame(height: 100)
+                    } else {
+                        ForEach(tags) { tag in
+                            sidebarRow(
+                                icon: "tag",
+                                label: tag.name,
+                                count: PhotoStats.inLibraryCount(tag),
+                                target: .tag(tag),
+                                iconColor: Color(hex: tag.colorHex)  // 标签用 tag 颜色
+                            )
+                            .contextMenu {
+                                Button(role: .destructive) {
+                                    deleteTag(tag)
+                                } label: {
+                                    Label("删除标签", systemImage: "trash")
+                                }
                             }
                         }
                     }
-                }
 
-                Button {
-                    newName = ""
-                    showingNewTagAlert = true
-                } label: {
-                    HStack(spacing: 8) {
-                        Image(systemName: "plus")
-                            .frame(width: 18)
-                            .foregroundStyle(Color.accentColor)
-                        Text("新建标签")
-                            .foregroundStyle(Color.accentColor)
+                    Button {
+                        newName = ""
+                        showingNewTagAlert = true
+                    } label: {
+                        HStack(spacing: SidebarStyle.rowIconTextSpacing) {
+                            Image(systemName: "plus")
+                                .frame(width: SidebarStyle.iconFrameWidth)
+                                .foregroundStyle(Color.accentColor)
+                            // V4.36.x: 显式 SidebarStyle.labelFont——与行 label 字号/字重完全一致
+                            Text("新建标签")
+                                .font(SidebarStyle.labelFont)
+                                .foregroundStyle(Color.accentColor)
+                        }
                     }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
             } header: {
-                SidebarSectionHeader("标签", icon: "tag", storageKey: "sidebar.section.tags")
+                SidebarSectionHeader("标签", icon: "tag", isExpanded: $isTagsExpanded)
             }
 
             // ─── Section 4: 最近删除（单独 section，底部入口）───

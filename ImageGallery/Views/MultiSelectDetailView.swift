@@ -72,7 +72,7 @@ struct MultiSelectDetailView: View {
                         }
                     } label: {
                         HStack {
-                            Label("移动到", systemImage: "folder")
+                            Label("移动到文件夹", systemImage: "folder")
                             Spacer()
                         }
                     }
@@ -105,7 +105,7 @@ struct MultiSelectDetailView: View {
                     onToggleFavorite()
                 } label: {
                     HStack {
-                        Label("收藏切换", systemImage: "star")
+                        Label("收藏", systemImage: "star")
                         Spacer()
                     }
                 }

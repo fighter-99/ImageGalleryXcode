@@ -22,7 +22,7 @@ struct StatusBar: View {
     var body: some View {
         HStack(spacing: Spacing.sm) {
             // 总数
-            Text("\(totalCount) 张照片")
+            Text("\(totalCount) 张")
 
             separator
 

@@ -105,4 +105,185 @@ enum PhotoStats {
         let remaining = total - elapsed
         return Int(remaining / 86400)
     }
+
+    // MARK: - 综合筛选（V4.36.6：Grid/List/Timeline 三视图共用）
+
+    /// V4.36.6: 抽 PhotoGridView.recomputePhotos 逻辑到 static helper
+    ///   旧版逻辑在 PhotoGridView 内联——List/Timeline 视图无法复用, 切换视图模式不生效
+    ///   新版 3 视图 (grid/list/timeline) 都通过此函数计算 visiblePhotos
+    ///   11 个参数覆盖 sidebar 全部 filter inputs + searchText + sortOption
+    ///   V4.36.x: 加 4 个工具栏筛选 popover 维度（folder multi / tag multi / shape / rating）
+    static func filtered(
+        _ photos: [Photo],
+        folder: Folder?,
+        tag: Tag?,
+        searchText: String,
+        sortOption: SortOption,
+        filterFavorites: Bool,
+        filterUnfiled: Bool,
+        filterDuplicates: Bool,
+        filterRecent7Days: Bool,
+        filterLargeFiles: Bool,
+        filterInTrash: Bool,
+        // V4.36.x: 工具栏筛选按钮 4 维（空集短路；维度内 OR；维度间 AND）
+        selectedFolderIDs: Set<UUID> = [],
+        selectedTagIDs: Set<UUID> = [],
+        selectedShapes: Set<PhotoShape> = [],
+        minRating: Int = 0
+    ) -> [Photo] {
+        var result = photos
+
+        if let folder {
+            result = result.filter { $0.folder?.id == folder.id }
+        }
+        if let tag {
+            result = result.filter { photo in photo.tags.contains { $0.id == tag.id } }
+        }
+        if filterFavorites {
+            result = result.filter { $0.isFavorite }
+        }
+        if filterUnfiled {
+            result = result.filter { $0.folder == nil }
+        }
+        if filterDuplicates {
+            let hashCounts = Dictionary(grouping: photos) { $0.fileHash }.mapValues { $0.count }
+            result = result.filter { photo in
+                guard let hash = photo.fileHash else { return false }
+                return (hashCounts[hash] ?? 0) > 1
+            }
+        }
+        // V2: 最近 7 天
+        if filterRecent7Days {
+            let cutoff = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
+            result = result.filter { $0.importedAt > cutoff }
+        }
+        // V2: 大图 > 5MB
+        if filterLargeFiles {
+            result = result.filter { $0.fileSize > 5_000_000 }
+        }
+        // V3.6: 回收站筛选
+        if filterInTrash {
+            result = result.filter { $0.trashedAt != nil }
+        } else {
+            // 非回收站视图：永远排除已删项
+            result = result.filter { $0.trashedAt == nil }
+        }
+        // V4.36.x: 工具栏筛选按钮 4 维（AND 串联；空集短路）
+        if !selectedFolderIDs.isEmpty { result = folderFilter(result, ids: selectedFolderIDs) }
+        if !selectedTagIDs.isEmpty { result = tagFilter(result, ids: selectedTagIDs) }
+        if !selectedShapes.isEmpty { result = shapeFilter(result, shapes: selectedShapes) }
+        if minRating > 0 { result = ratingFilter(result, minRating: minRating) }
+        // V3.6.3: 用 PhotoSearch 纯函数（含 folder.name 匹配）
+        result = PhotoSearch.filter(result, query: searchText)
+        // 排序
+        return sortOption.apply(to: result)
+    }
+
+    // MARK: - 4 个纯函数 helper（V4.36.x：工具栏筛选按钮的可独立单测单元）
+
+    /// 文件夹多选：photo.folder.id 在 ids 集合内即过
+    /// folder == nil 的照片不在任何 folder id 集合内 → 自动排除
+    static func folderFilter(_ photos: [Photo], ids: Set<UUID>) -> [Photo] {
+        photos.filter { photo in
+            guard let fid = photo.folder?.id else { return false }
+            return ids.contains(fid)
+        }
+    }
+
+    /// 标签多选：photo 含任一 ids 内的 tag 即过（OR 语义）
+    /// 无 tag 的照片不命中任何 tag id → 自动排除
+    static func tagFilter(_ photos: [Photo], ids: Set<UUID>) -> [Photo] {
+        photos.filter { photo in
+            photo.tags.contains { ids.contains($0.id) }
+        }
+    }
+
+    /// 形状多选：photo 形状在 shapes 集合内即过
+    /// 形状从 width/height 派生（PhotoShape.from；等号归 square）
+    static func shapeFilter(_ photos: [Photo], shapes: Set<PhotoShape>) -> [Photo] {
+        photos.filter { photo in
+            shapes.contains(PhotoShape.from(width: photo.width, height: photo.height))
+        }
+    }
+
+    /// 评分筛选：photo.rating >= minRating 即过（"≥N 星"语义）
+    /// 边界：等于 minRating 也算过
+    static func ratingFilter(_ photos: [Photo], minRating: Int) -> [Photo] {
+        photos.filter { $0.rating >= minRating }
+    }
+
+    // MARK: - 日期分组（V4.37.0：Photos.app 风格日期分段表头）
+
+    /// V4.37.0: Photos.app 风格日期分组——按 importedAt 5+1 个 bucket
+    ///   今天 / 昨天 / 本周 / 本月 / X 月 / X 年
+    ///   bucket 选择优先级（先匹配先返回）：
+    ///     1. 今天 (isDateInToday)
+    ///     2. 昨天 (isDateInYesterday)
+    ///     3. 本周 (date > now - 7days)
+    ///     4. 本月 (same month as now)
+    ///     5. X 月 (same year as now, different month)
+    ///     6. X 年 (different year)
+    ///   同 bucket 内按 importedAt 降序（最新照片在前）
+    ///   返回按 sortKey 降序（最新 group 在前）
+    static func groupByDate(_ photos: [Photo], now: Date = Date(), calendar: Calendar = .current) -> [DateGroup] {
+        var groups: [String: [Photo]] = [:]
+        var order: [String: (label: String, sortKey: Date)] = [:]
+
+        for photo in photos {
+            let date = photo.importedAt
+            let (key, label, sortKey) = bucketKey(for: date, now: now, calendar: calendar)
+            groups[key, default: []].append(photo)
+            if order[key] == nil {
+                order[key] = (label, sortKey)
+            }
+        }
+
+        return groups
+            .map { (key, photos) -> DateGroup in
+                let info = order[key]!
+                return DateGroup(
+                    id: key,
+                    label: info.label,
+                    sortKey: info.sortKey,
+                    photos: photos.sorted { $0.importedAt > $1.importedAt }
+                )
+            }
+            .sorted { $0.sortKey > $1.sortKey }
+    }
+
+    /// V4.37.0: 单张照片的 bucket 判定
+    private static func bucketKey(for date: Date, now: Date, calendar: Calendar) -> (key: String, label: String, sortKey: Date) {
+        if calendar.isDateInToday(date) {
+            return ("today", "今天", now)
+        }
+        if calendar.isDateInYesterday(date) {
+            let yesterday = calendar.date(byAdding: .day, value: -1, to: now) ?? now
+            return ("yesterday", "昨天", yesterday)
+        }
+        // 本周（7 天内但不是今天/昨天）
+        if let weekAgo = calendar.date(byAdding: .day, value: -7, to: now), date > weekAgo {
+            return ("thisWeek", "本周", date)
+        }
+        // 本月（同月但不在 7 天内）
+        if calendar.isDate(date, equalTo: now, toGranularity: .month) {
+            return ("thisMonth", "本月", date)
+        }
+        // 当前年内其他月
+        let year = calendar.component(.year, from: date)
+        let currentYear = calendar.component(.year, from: now)
+        if year == currentYear {
+            let month = calendar.component(.month, from: date)
+            return ("\(year)-\(month)", "\(month) 月", date)
+        }
+        // 往年
+        return ("\(year)", "\(year) 年", date)
+    }
+}
+
+/// V4.37.0: 日期分组（Photos.app 风格分段表头）
+struct DateGroup: Identifiable {
+    let id: String          // 唯一 key (e.g. "today" / "2024-05")
+    let label: String       // 显示标签 (e.g. "今天" / "5 月" / "2024 年")
+    let sortKey: Date       // 排序键（最新组在前）
+    let photos: [Photo]     // 该日期分组的照片（按 importedAt 降序）
 }
