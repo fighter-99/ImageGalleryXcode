@@ -101,6 +101,7 @@ struct ViewOptionsPopover: View {
 
     /// 段标题（icon + 小标题，Photos.app 风格）
     /// V4.41.0: 全部 token 化（caption2 + uppercase + 4pt icon 间距）——与 FilterPopover 对齐
+    /// V4.43.1: 加底边分隔线（0.5pt 6% primary）——段间视觉分组更明确
     @ViewBuilder
     private func popoverSection<Content: View>(
         title: String,
@@ -117,6 +118,10 @@ struct ViewOptionsPopover: View {
                     .foregroundStyle(.secondary)
                     .textCase(PopoverStyle.headerUppercased ? .uppercase : nil)
             }
+            // V4.43.1: 底边分隔线——macOS Photos 风格
+            Rectangle()
+                .fill(PopoverStyle.headerSeparatorColor)
+                .frame(height: PopoverStyle.headerSeparatorHeight)
             content()
         }
     }
@@ -158,6 +163,9 @@ struct ViewOptionsPopover: View {
                 )
             }
             .buttonStyle(.plain)
+            // V4.43.1: 状态变化动画——active/inactive bg 切换 0.15s easeInOut
+            //   hover bg 切换不加 .animation——mouse 移动会触发频繁 re-render
+            .animation(.easeInOut(duration: PopoverStyle.stateTransitionDuration), value: isActive)
             .onHover { hovering in
                 isHovered = hovering
             }
@@ -209,6 +217,7 @@ struct ViewOptionsPopover: View {
                 )
             }
             .buttonStyle(.plain)
+            .animation(.easeInOut(duration: PopoverStyle.stateTransitionDuration), value: isActive)
             .onHover { hovering in
                 isHovered = hovering
             }

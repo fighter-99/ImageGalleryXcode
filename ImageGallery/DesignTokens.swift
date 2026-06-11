@@ -408,6 +408,13 @@ enum PopoverStyle {
     static let headerIconSize: CGFloat = 10
     /// 段头文字 uppercase（macOS Photos 风格）
     static let headerUppercased: Bool = true
+    /// V4.43.1 NEW: 段头底边分隔线颜色——6% primary (SwiftUI)
+    ///   段间视觉分组更明确（macOS Photos 风格）
+    static let headerSeparatorColor: Color = Color.primary.opacity(0.06)
+    /// V4.43.1 NEW: 段头底边分隔线颜色——AppKit 版
+    static let headerSeparatorColorAppKit: NSColor = NSColor(white: 0, alpha: 0.06)
+    /// V4.43.1 NEW: 段头底边分隔线高度
+    static let headerSeparatorHeight: CGFloat = 0.5
 
     // ─── item（segment / list row） ───
     /// item 高度——V4.42.0: 28 → 32 (略增, 让 16pt icon + caption2 label 不挤)
@@ -454,4 +461,9 @@ enum PopoverStyle {
     static let inactiveBackgroundAppKit: NSColor = NSColor(white: 0, alpha: 0.10)
     /// inactive 文字
     static let inactiveTextAppKit: NSColor = .labelColor
+    /// V4.43.1 NEW: 状态变化过渡动画时长
+    ///   0.15s easeInOut——macOS 标准 "瞬时但不突兀" 过渡
+    ///   V4.17.0 DetailView spring 动画 (response 0.4, damping 0.8) 偏 Q 弹
+    ///   popover state 切换用更短更平——避免 "Q 弹" 在快速点击时累赘
+    static let stateTransitionDuration: Double = 0.15
 }

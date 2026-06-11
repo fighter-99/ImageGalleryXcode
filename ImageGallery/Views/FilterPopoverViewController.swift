@@ -359,6 +359,7 @@ final class FilterPopoverViewController: NSViewController, NSSearchFieldDelegate
         // V4.41.1: 10pt → 11pt (PopoverStyle.headerFontSize) + uppercase
         //   与 ViewOptionsPopover.popoverSection token 对齐
         //   中文 uppercase no-op（无大小写）但 token 一致 + 未来 i18n 友好
+        // V4.43.1: 加底边分隔线 0.5pt 6% primary——段间视觉分组更明确
         let displayTitle = PopoverStyle.headerUppercased ? title.uppercased() : title
         let label = NSTextField(labelWithString: displayTitle)
         label.font = NSFont.systemFont(ofSize: PopoverStyle.headerFontSize, weight: PopoverStyle.headerWeightAppKit)
@@ -366,11 +367,32 @@ final class FilterPopoverViewController: NSViewController, NSSearchFieldDelegate
         let imageView = NSImageView(image: NSImage(systemSymbolName: icon, accessibilityDescription: nil) ?? NSImage())
         imageView.imageScaling = .scaleProportionallyDown
         imageView.contentTintColor = .secondaryLabelColor
-        let stack = NSStackView(views: [imageView, label])
-        stack.orientation = .horizontal
-        stack.spacing = PopoverStyle.headerIconSpacing
-        stack.alignment = .centerY
-        return stack
+        let header = NSStackView(views: [imageView, label])
+        header.orientation = .horizontal
+        header.spacing = PopoverStyle.headerIconSpacing
+        header.alignment = .centerY
+
+        // V4.43.1: 底边分隔线——0.5pt 6% primary
+        let separator = NSBox()
+        separator.boxType = .separator
+        separator.alphaValue = 0.5  // 50% transparency on top of 12% NSColor → effective ~6%
+        let separatorContainer = NSView()
+        separatorContainer.translatesAutoresizingMaskIntoConstraints = false
+        separatorContainer.addSubview(separator)
+        separator.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            separator.leadingAnchor.constraint(equalTo: separatorContainer.leadingAnchor),
+            separator.trailingAnchor.constraint(equalTo: separatorContainer.trailingAnchor),
+            separator.topAnchor.constraint(equalTo: separatorContainer.topAnchor, constant: 3),
+            separator.heightAnchor.constraint(equalToConstant: PopoverStyle.headerSeparatorHeight),
+            separatorContainer.heightAnchor.constraint(equalToConstant: PopoverStyle.headerSeparatorHeight + 3)
+        ])
+
+        let vStack = NSStackView(views: [header, separatorContainer])
+        vStack.orientation = .vertical
+        vStack.spacing = 4
+        vStack.alignment = .leading
+        return vStack
     }
 
     /// checkbox + label 的 item
@@ -521,7 +543,12 @@ final class FilterPopoverViewController: NSViewController, NSSearchFieldDelegate
 
         // 3. 背景：active 实色 accent / inactive 6% primary
         //   6% black 等价 SwiftUI .primary.opacity(0.06)，自动暗色适配
+        // V4.43.1: NSAnimationContext 包裹 bezelColor 变更——0.15s easeInOut 平滑
+        //   SwiftUI 用 .animation(.easeInOut(duration:), value:)，AppKit 需手动
+        NSAnimationContext.beginGrouping()
+        NSAnimationContext.current.duration = PopoverStyle.stateTransitionDuration
         button.bezelColor = isActive ? PopoverStyle.activeBackgroundAppKit : PopoverStyle.inactiveBackgroundAppKit
+        NSAnimationContext.endGrouping()
     }
 
     private func handleFolderToggle(_ id: UUID) {
