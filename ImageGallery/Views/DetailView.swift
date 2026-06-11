@@ -57,36 +57,42 @@ struct DetailView: View {
         //   ↑ 2️⃣ 3️⃣ 4️⃣ sections 间 Divider 分隔，无 VStack spacing
         //   ↑ sections 内 padding 保留（info/tags/operations 元数据呼吸空间）
         // V4.27.0: ScrollView 改 ScrollViewReader——切换 photo 自动滚到大图顶部
-        ScrollViewReader { proxy in
-            ScrollView {
-                VStack(alignment: .leading, spacing: 0) {
-                    // 1️⃣ 大图区（顶部，0 padding 紧贴 detail panel 边缘）
-                    bigImageCard
+        // V4.30.0: GeometryReader 移到 detail panel body 顶层
+        //   读 detail panel visible area 高度——body 内 4 sections 按此 fit
+        //   大图 image 改 .frame(maxWidth: .infinity, maxHeight: .infinity)
+        //   + aspectRatio(.fit) 按 min(width, height) 缩放——image 完整 fit visible area
+        //   比 V4.29.0 (image 内 GeometryReader) 正确——避免 geo 读 image intrinsic height
+        GeometryReader { geo in
+            ScrollViewReader { proxy in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 0) {
+                        // 1️⃣ 大图区（顶部，0 padding 紧贴 detail panel 边缘）
+                        bigImageCard
+                            .frame(height: geo.size.height * 0.55)  // 限大图 55% detail panel
 
-                    Divider().padding(.vertical, Spacing.xs)
+                        Divider().padding(.vertical, Spacing.xs)
 
-                    // 2️⃣ 信息区（文件名 + 元数据）
-                    infoCard
+                        // 2️⃣ 信息区（文件名 + 元数据）
+                        infoCard
 
-                    Divider().padding(.vertical, Spacing.xs)
+                        Divider().padding(.vertical, Spacing.xs)
 
-                    // 3️⃣ 标签区
-                    tagsCard
+                        // 3️⃣ 标签区
+                        tagsCard
 
-                    Divider().padding(.vertical, Spacing.xs)
+                        Divider().padding(.vertical, Spacing.xs)
 
-                    // 4️⃣ 操作区
-                    operationsCard
+                        // 4️⃣ 操作区
+                        operationsCard
 
-                    Spacer(minLength: 0)
+                        Spacer(minLength: 0)
+                    }
                 }
-            }
-            .onChange(of: photo.id) { _, _ in
-                // V4.27.0: photo 切换时滚到大图顶部
-                //   用户滚动看元数据后切下一张, 自动回到大图起点
-                //   .id("bigImage") 在 bigImageCard Image 上——scrollTo target
-                withAnimation(Animations.quick) {
-                    proxy.scrollTo("bigImage", anchor: .top)
+                .onChange(of: photo.id) { _, _ in
+                    // V4.27.0: photo 切换时滚到大图顶部
+                    withAnimation(Animations.quick) {
+                        proxy.scrollTo("bigImage", anchor: .top)
+                    }
                 }
             }
         }
@@ -154,19 +160,19 @@ struct DetailView: View {
     private var bigImageCard: some View {
         Group {
             if let nsImage = bigImage {
-                // V4.29.0: GeometryReader 限制大图高度 = 父容器 visible area × 0.55
-                //   V4.28.0 maxHeight 600 固定值在 NSWindow 高度 < 800pt 时仍超出可见区
-                //   V4.27.0 单方向 fit (maxWidth: .infinity) 大图按 width fit 算 height 720pt
-                //   都造成"被窗口切断"——大图 + 元数据总高 1030pt > NSWindow visible 750pt
-                //   macOS Photos 实际: 大图占 detail panel 50-60% 高度, 元数据 fit 余下
-                //   GeometryReader 读父容器高度——大图限 maxHeight = parent × 0.55
-                GeometryReader { geo in
-                    Image(nsImage: nsImage)
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(maxWidth: .infinity, maxHeight: geo.size.height * 0.55)
-                        .id("bigImage")
-                }
+                // V4.30.0: 撤回 V4.29.0 image 内 GeometryReader
+                //   V4.29.0 错误: GeometryReader 包在 image 内部, geo.size.height
+                //   = image intrinsic height (NSImage 1621pt) × 0.55 = 892pt
+                //   ——仍超出 detail panel visible 750pt
+                //   V4.30.0 修复: GeometryReader 移到 detail panel body 顶层
+                //   image 改回 .frame(maxWidth: .infinity, maxHeight: .infinity)
+                //   aspectRatio(.fit) 按双方向 fit 父容器 (detail panel visible area)
+                //   ——SwiftUI 按 min(width, height) 缩放——image 完整 fit
+                Image(nsImage: nsImage)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .id("bigImage")
             } else if bigImageLoadFailed {
                 // V4.9.5: 加载失败——显示 photo 占位 + 错误 icon
                 RoundedRectangle(cornerRadius: Radius.md)
