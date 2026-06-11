@@ -90,6 +90,15 @@ final class FilterPopoverViewController: NSViewController {
     // MARK: - 视图生命周期
 
     override func loadView() {
+        // V4.45.0: NSVisualEffectView 包裹整个 popover——macOS Photos transl material
+        //   .popover 材质是 macOS 专门为 popover 设计的 subtle blur
+        //   让窗口背景色 / 工具栏毛玻璃透过来 = 真 macOS 风格
+        //   之前是不透明 window bg (纯色)——看起来"硬"
+        let visualEffect = NSVisualEffectView()
+        visualEffect.material = .popover      // macOS popover 专用材质
+        visualEffect.state = .active         // popover active 时显 blur
+        visualEffect.blendingMode = .behindWindow  // 跟窗口背景混合
+
         let outer = NSStackView()
         outer.orientation = .vertical
         outer.alignment = .leading
@@ -115,7 +124,18 @@ final class FilterPopoverViewController: NSViewController {
         rebuildContent()
         outer.addArrangedSubview(content)
 
-        self.view = outer
+        // V4.45.0: outer 嵌入 NSVisualEffectView
+        //   NSVisualEffectView 自动在所有 subview 背后渲染 blur effect
+        //   直接 addSubview 到 visualEffect 即可（不是 contentView.addSubview）
+        visualEffect.addSubview(outer)
+        NSLayoutConstraint.activate([
+            outer.leadingAnchor.constraint(equalTo: visualEffect.leadingAnchor),
+            outer.trailingAnchor.constraint(equalTo: visualEffect.trailingAnchor),
+            outer.topAnchor.constraint(equalTo: visualEffect.topAnchor),
+            outer.bottomAnchor.constraint(equalTo: visualEffect.bottomAnchor)
+        ])
+
+        self.view = visualEffect
     }
 
     /// 重建内容区
