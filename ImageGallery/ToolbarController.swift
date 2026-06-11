@@ -133,42 +133,43 @@ final class ToolbarController: NSObject, NSToolbarDelegate {
             item = makeSimpleItem(
                 id: id,
                 image: "sidebar.leading",
-                label: "Toggle Sidebar",
+                // V4.14.0: 本地化——之前 V4.8.0 硬编码英文，hover tooltip + Customize Toolbar 面板显示英文
+                label: "切换侧边栏",
                 action: #selector(handleToggleSidebar)
             )
         case .favorite:
             item = makeSimpleItem(
                 id: id,
                 image: "star",
-                label: "Favorite",
+                label: "收藏",
                 action: #selector(handleToggleFavorite)
             )
         case .export:
             item = makeSimpleItem(
                 id: id,
                 image: "square.and.arrow.up",
-                label: "Export",
+                label: "导出",
                 action: #selector(handleBatchExport)
             )
         case .delete:
             item = makeSimpleItem(
                 id: id,
                 image: "trash",
-                label: "Delete",
+                label: "删除",
                 action: #selector(handleDelete)
             )
         case .importItem:
             item = makeSimpleItem(
                 id: id,
                 image: "square.and.arrow.down",
-                label: "Import",
+                label: "导入",
                 action: #selector(handleImport)
             )
         case .viewOptions:
             item = makeSimpleItem(
                 id: id,
                 image: "rectangle.3.offgrid",
-                label: "View Options",
+                label: "视图选项",
                 action: #selector(handleShowViewOptions)
             )
         case .search:
@@ -248,8 +249,9 @@ final class ToolbarController: NSObject, NSToolbarDelegate {
         //   Photos.app / Finder / Mail / Notes 都用这个
         let searchItem = NSSearchToolbarItem(itemIdentifier: id.nsIdentifier)
         searchItem.label = ""  // V4.8.3: 不显示 "Search" 文字
-        searchItem.paletteLabel = "Search"
-        searchItem.toolTip = "Search photos, tags, notes"
+        // V4.14.0: 本地化——之前 V4.8.x 硬编码英文，Customize Toolbar 面板 + hover tooltip 显示英文
+        searchItem.paletteLabel = "搜索"
+        searchItem.toolTip = "搜索照片、标签、笔记"
 
         let searchField = searchItem.searchField
         searchField.placeholderString = "搜索照片、标签…"
