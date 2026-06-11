@@ -143,9 +143,16 @@ struct DetailView: View {
     private var bigImageCard: some View {
         Group {
             if let nsImage = bigImage {
+                // V4.26.0: 加 .frame(maxHeight: .infinity)——双方向 fit
+                //   V4.25.0 只删 maxHeight 360 但没加 .infinity——image 按 aspectRatio
+                //   算 fit 高度, 在窄 detail panel visible area 时仍超出被裁
+                //   .frame(maxWidth: .infinity, maxHeight: .infinity) + aspectRatio(.fit)
+                //   = SwiftUI 按 min(width, height) 缩放——image 完整 fit 父容器
+                //   视觉效果: 大图在 detail panel visible area 完整显示 (按比例缩放)
                 Image(nsImage: nsImage)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if bigImageLoadFailed {
                 // V4.9.5: 加载失败——显示 photo 占位 + 错误 icon
                 RoundedRectangle(cornerRadius: Radius.md)
