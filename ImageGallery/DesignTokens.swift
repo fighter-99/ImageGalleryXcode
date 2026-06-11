@@ -437,16 +437,17 @@ enum PopoverStyle {
     static let activeBackground: Color = .accentColor
     /// active 文字
     static let activeText: Color = .white
-    /// inactive 背景——V4.42.0: primary.opacity(0.06) → 0.10 (更多可见度)
-    ///   6% 太微妙——active vs inactive 区分度低
-    ///   10% 仍保持"未选"感但有清晰视觉提示
-    static let inactiveBackground: Color = Color.primary.opacity(0.10)
+    /// inactive 背景
+    ///   V4.42.0: primary.opacity(0.06) → 0.10 (更多可见度)
+    ///   V4.46.0: 0.10 → 0.14 — transl material 上 10% 实际视觉仅 ~5%
+    ///   14% 抵消 transl 透明度损失，保持 active vs inactive 区分度
+    static let inactiveBackground: Color = Color.primary.opacity(0.14)
     /// inactive 文字
     static let inactiveText: Color = .primary
     /// V4.43.0 NEW: hover 背景——inactive items 在鼠标悬停时显示
-    ///   10% → 14% (略加深，给"可点击"反馈)
+    ///   14% → 18% (略加深，给"可点击"反馈)
     ///   active items 不变 (accent 实色，hover 加深没意义)
-    static let hoverBackground: Color = Color.primary.opacity(0.14)
+    static let hoverBackground: Color = Color.primary.opacity(0.18)
 
     /// V4.43.0 NEW: sort item 文字字号——12pt (原 13pt .callout)
     ///   缩小让 sort item 视觉密度与 segment item (icon 16pt + label 11pt) 更协调
@@ -457,8 +458,11 @@ enum PopoverStyle {
     static let activeBackgroundAppKit: NSColor = .controlAccentColor
     /// active 文字
     static let activeTextAppKit: NSColor = .white
-    /// inactive 背景——V4.42.0: 6% black → 10% black (更多可见度)
-    static let inactiveBackgroundAppKit: NSColor = NSColor(white: 0, alpha: 0.10)
+    /// inactive 背景
+    ///   V4.42.0: 6% black → 10% black (更多可见度)
+    ///   V4.46.0: 0.10 → 0.14 — transl material 上 10% 实际视觉仅 ~5%
+    ///   14% 抵消 transl 透明度损失，保持 active vs inactive 区分度
+    static let inactiveBackgroundAppKit: NSColor = NSColor(white: 0, alpha: 0.14)
     /// inactive 文字
     static let inactiveTextAppKit: NSColor = .labelColor
     /// V4.43.1 NEW: 状态变化过渡动画时长

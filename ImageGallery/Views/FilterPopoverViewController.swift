@@ -93,10 +93,13 @@ final class FilterPopoverViewController: NSViewController {
         // V4.45.0: NSVisualEffectView 包裹整个 popover——macOS Photos transl material
         //   .popover 材质是 macOS 专门为 popover 设计的 subtle blur
         //   让窗口背景色 / 工具栏毛玻璃透过来 = 真 macOS 风格
-        //   之前是不透明 window bg (纯色)——看起来"硬"
+        // V4.46.0: state .active → .followsWindowActiveState
+        //   暗色下 .active 偏"闷" (绿色调透过来)
+        //   .followsWindowActiveState 跟窗口 active 状态走——popover 显示时是 active
+        //   popover 关闭时跟窗口 inactive 一起变——更通透感
         let visualEffect = NSVisualEffectView()
         visualEffect.material = .popover      // macOS popover 专用材质
-        visualEffect.state = .active         // popover active 时显 blur
+        visualEffect.state = .followsWindowActiveState
         visualEffect.blendingMode = .behindWindow  // 跟窗口背景混合
 
         let outer = NSStackView()
@@ -202,20 +205,23 @@ final class FilterPopoverViewController: NSViewController {
         ratingContainer.translatesAutoresizingMaskIntoConstraints = false
 
         let row1 = makeSegmentRow()
-        // "全部"——无评分筛选（keep 纯文字）
-        let noRating = makeIconTextSegmentItem(
-            icon: nil, text: "全部",
+        // V4.46.0: "全部" 改用 circle icon——与带星评分项视觉对称
+        //   之前纯文字 vs 其他带星——"全部" 看起来像 textbox 而非 button
+        let noRating = makeIconOnlySegmentItem(
+            icon: "circle",
             isActive: filterState.minRating == 0
         ) { [weak self] in
             self?.handleRatingToggle(0)
         }
         row1.addArrangedSubview(noRating)
         ratingButtons[0] = noRating
-        // V4.45.1: 真实 ⭐ 替代 "n星" 文字——macOS Photos 风格
-        //   SF Symbol `star.fill` 实心星 + 数字 n+——"≥N 星" 语义
+        // V4.46.0: 评分改纯 icon-only (去 "n+" 文字)——macOS Photos 风格
+        //   之前 V4.45.1 makeIconTextSegmentItem + text "1+"——但 NSButton.imagePosition = .imageOnly
+        //   抑制文字显示，截图里只看到星没数字
+        //   改 makeIconOnlySegmentItem 纯 icon = 文字消失,只显星 (Photos 标准)
         for n in 1...2 {
-            let button = makeIconTextSegmentItem(
-                icon: "star.fill", text: "\(n)+",
+            let button = makeIconOnlySegmentItem(
+                icon: "star.fill",
                 isActive: filterState.minRating == n
             ) { [weak self] in
                 self?.handleRatingToggle(n)
@@ -227,8 +233,8 @@ final class FilterPopoverViewController: NSViewController {
 
         let row2 = makeSegmentRow()
         for n in 3...5 {
-            let button = makeIconTextSegmentItem(
-                icon: "star.fill", text: "\(n)+",
+            let button = makeIconOnlySegmentItem(
+                icon: "star.fill",
                 isActive: filterState.minRating == n
             ) { [weak self] in
                 self?.handleRatingToggle(n)
