@@ -165,19 +165,26 @@ struct DetailView: View {
     private var bigImageCard: some View {
         Group {
             if let nsImage = bigImage {
-                // V4.30.0: 撤回 V4.29.0 image 内 GeometryReader
-                //   V4.29.0 错误: GeometryReader 包在 image 内部, geo.size.height
-                //   = image intrinsic height (NSImage 1621pt) × 0.55 = 892pt
-                //   ——仍超出 detail panel visible 750pt
-                //   V4.30.0 修复: GeometryReader 移到 detail panel body 顶层
-                //   image 改回 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                //   aspectRatio(.fit) 按双方向 fit 父容器 (detail panel visible area)
-                //   ——SwiftUI 按 min(width, height) 缩放——image 完整 fit
-                Image(nsImage: nsImage)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .id("bigImage")
+                // V4.32.0: 加 HStack + Spacer + image 限双方向按 bigImageCard section 实际尺寸
+                //   V4.30.0 失误: .frame(maxWidth: .infinity, maxHeight: .infinity) + .frame(height: 0.45 × visible)
+                //   image 撑满 width (500pt) + fixed height (338pt) —— aspectRatio 失真拉伸
+                //   → "大图占 detail panel 较宽" + "右侧被切"
+                // V4.32.0 修复: image 用 GeometryReader 读 bigImageCard section 实际尺寸 (500, 338)
+                //   .frame(maxWidth: cardGeo.size.width, maxHeight: cardGeo.size.height)
+                //   + aspectRatio(.fit) 按 min(width, height) 缩放
+                //   1080×1425 竖向图在 (500, 338) 容器内:
+                //   min(500, 338) = 338 → image 实际 width 256pt × height 338pt
+                //   居左 + Spacer 撑满右侧——image 居左 (Photos 实际风格)
+                GeometryReader { cardGeo in
+                    HStack {
+                        Image(nsImage: nsImage)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(maxWidth: cardGeo.size.width, maxHeight: cardGeo.size.height)
+                            .id("bigImage")
+                        Spacer(minLength: 0)
+                    }
+                }
             } else if bigImageLoadFailed {
                 // V4.9.5: 加载失败——显示 photo 占位 + 错误 icon
                 RoundedRectangle(cornerRadius: Radius.md)
