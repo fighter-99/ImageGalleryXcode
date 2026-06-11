@@ -119,6 +119,17 @@ struct ContentView: View {
     //   onAppear 调 PhotoStorage.verifyStorage()——失败时填错误消息，detail panel 显示错误态
     @State private var storageErrorMessage: String? = nil
 
+    // V4.12.0: 空格键 QuickLook——macOS Finder/Photos 标准
+    //   controller 通过 .background(QuickLookBridge) 接管 QLPreviewPanel
+    //   currentVisibleURLs 跟随 visiblePhotos 变化（每次访问重算）
+    //   @State 而非 @StateObject：controller 内部状态不需 SwiftUI 监听
+    @State private var quickLookController = QuickLookPreviewController()
+
+    /// V4.12.0: 当前 visiblePhotos 对应的 URL 列表（空格键 QuickLook 翻页用）
+    private var currentVisibleURLs: [URL] {
+        visiblePhotos.map { $0.fileURL }
+    }
+
     // 当前选中的强调色（从 accentColorID 解析）
     private var accentColor: AccentColor {
         AccentColor(rawValue: accentColorID) ?? .system
@@ -398,8 +409,21 @@ struct ContentView: View {
                 onEscape: { selection = .empty },
                 onSelectAll: { selection = selection.settingAll(in: visiblePhotos) },
                 onZoomIn: zoomIn,
-                onZoomOut: zoomOut
+                onZoomOut: zoomOut,
+                // V4.12.0: 空格键 QuickLook——仅选中单张时生效
+                //   计算 currentIndex (visiblePhotos 内的位置) + 整个 URL 列表
+                //   让 QLPreviewPanel 支持 ←→ 翻页（Photos.app 行为）
+                hasSelectedPhoto: singleSelectedPhoto != nil,
+                onSpace: {
+                    if let photo = singleSelectedPhoto,
+                       let idx = visiblePhotos.firstIndex(where: { $0.id == photo.id }) {
+                        quickLookController.show(urls: currentVisibleURLs, currentIndex: idx)
+                    }
+                }
             )
+            // V4.12.0: QLPreviewBridge 注入 view tree——SwiftUI 不显示（透明 NSView）
+            //   但参与 firstResponder 链，让 QLPreviewPanel 接管时能找到接管 view
+            .background(QuickLookBridge(controller: quickLookController))
             // 快捷键：⌘+1-6 切换侧边栏
             .contentKeyboardShortcuts(
                 sidebarSelection: $sidebarSelection,
@@ -1340,7 +1364,10 @@ extension View {
         onEscape: @escaping () -> Void,
         onSelectAll: @escaping () -> Void,
         onZoomIn: @escaping () -> Void,
-        onZoomOut: @escaping () -> Void
+        onZoomOut: @escaping () -> Void,
+        // V4.12.0: 空格键 QuickLook（macOS Finder/Photos 标准）
+        hasSelectedPhoto: Bool,
+        onSpace: @escaping () -> Void
     ) -> some View {
         self
             .onDeleteCommand(perform: onDelete)
@@ -1356,6 +1383,14 @@ extension View {
             .onKeyPress(.escape) {
                 if hasSelection {
                     onEscape()
+                    return .handled
+                }
+                return .ignored
+            }
+            // V4.12.0: 空格键 QuickLook——无选中时不响应（macOS Finder 行为一致）
+            .onKeyPress(.space) {
+                if hasSelectedPhoto {
+                    onSpace()
                     return .handled
                 }
                 return .ignored
