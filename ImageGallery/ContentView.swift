@@ -469,7 +469,11 @@ struct ContentView: View {
                 //   恢复 thumbnailSize 到用户偏好（storedThumbnailSize）
                 onResetZoom: resetThumbnailSize,
                 // V4.17.0: ⌘E 导出（macOS Finder 标准）—— 走 batchExport 路径
-                onExport: batchExport
+                onExport: batchExport,
+                // V4.49.1: ⌘↩ Return 进入沉浸式查看（macOS Photos 标准）
+                //   仅在选中单张时生效——多选/无选 .ignored
+                //   Photos.app 用 Return/Enter 进入全屏图片查看
+                onReturn: enterImmersiveFromSelection
             )
             // V4.12.0: QLPreviewBridge 注入 view tree——SwiftUI 不显示（透明 NSView）
             //   但参与 firstResponder 链，让 QLPreviewPanel 接管时能找到接管 view
@@ -776,6 +780,14 @@ struct ContentView: View {
             immersiveIndex = idx
             immersivePhoto = photo
         }
+    }
+
+    // V4.49.1: ⌘↩ Return 触发的进入沉浸式——从 singleSelectedPhoto 派发
+    //   Photos.app 标准：Return 键进入全屏查看当前选中
+    //   仅在单选时触发——多选/无选不响应
+    private func enterImmersiveFromSelection() {
+        guard let photo = singleSelectedPhoto else { return }
+        enterImmersive(photo)
     }
 
     // 清除所有筛选
@@ -1647,7 +1659,10 @@ extension View {
         // V4.15.0: ⌘0 reset zoom（macOS Photos/Finder 标准）
         onResetZoom: @escaping () -> Void,
         // V4.17.0: ⌘E 导出（macOS Finder 标准，⌘L 撤回——与 macOS Get Info 冲突）
-        onExport: @escaping () -> Void
+        onExport: @escaping () -> Void,
+        // V4.49.1: ⌘↩ Return 进入沉浸式查看（macOS Photos 标准）
+        //   仅选中单张时有效——多选/无选 .ignored
+        onReturn: @escaping () -> Void
     ) -> some View {
         self
             .onDeleteCommand(perform: onDelete)
@@ -1714,6 +1729,13 @@ extension View {
                     return .handled
                 }
                 return .ignored
+            }
+            // V4.49.1: ⌘↩ Return 进入沉浸式查看（macOS Photos 标准）
+            //   Photos.app 用 Return 键进入全屏图片——快捷键 ⌘↩ 标准
+            //   仅在 gridInputHandling 接受（多选/无选 .ignored 内部检查）
+            .onKeyPress(.return) {
+                onReturn()
+                return .handled
             }
             // V4.37.2: ⌘[ / ⌘] 上下张切换（macOS Quick Look / Finder 标准）
             //   Photos.app 用 ←→ 方向键（gridInputHandling 已有）
