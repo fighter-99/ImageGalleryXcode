@@ -68,12 +68,13 @@ struct DetailView: View {
                     VStack(alignment: .leading, spacing: 0) {
                         // 1️⃣ 大图区（顶部，0 padding 紧贴 detail panel 边缘）
                         bigImageCard
-                            // V4.31.0: 大图 0.55 → 0.45——操作按钮可见
-                            //   V4.30.0 0.55: 大图 412pt + 元数据 320pt + 操作 80pt = 812pt
-                            //   > 750pt visible——操作按钮被窗口底部切断
-                            //   V4.31.0 0.45: 大图 338pt + 元数据 + 操作 = 738pt < 750pt visible
-                            //   ——整体 fit 窗口, 无 "被切断" 视觉
-                            .frame(height: geo.size.height * 0.45)
+                            // V4.33.0: 大图 0.45 → 0.35——详图下方文本 fit NSWindow visible
+                            //   V4.32.0 0.45 + image aspectRatio fit: 1503×1080 横图实际 width 500pt height 359pt
+                            //   但 detail panel 实际 visible 高度 NSWindow 不同 (600-750pt 范围)
+                            //   0.45 × visible = 270-338pt——元数据 + 标签 + 操作仍超出
+                            //   V4.33.0 0.35: 大图 210-263pt + 元数据 + 标签 + 操作 ≈ 555pt < visible
+                            //   ——整体 fit NSWindow 任何高度, 文本内容不被裁
+                            .frame(height: geo.size.height * 0.35)
 
                         Divider().padding(.vertical, Spacing.xs)
 
