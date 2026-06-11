@@ -62,6 +62,11 @@ struct DetailPane: View {
     let storageError: String?
     let onRetryStorage: () -> Void
 
+    // V4.19.0: macOS 26 Liquid Glass 跨区域融合 namespace
+    //   与 ContentView @Namespace 配对，detail panel 玻璃 effect 纳入 union
+    //   视觉上 sidebar 底 + detail 顶 同一片玻璃（Photos.app 风格）
+    let glassNamespace: Namespace.ID
+
     var body: some View {
         // V3.6.44: 加 .id(viewKind) 让 SwiftUI 知道是"不同视图"（不是同一 view 内部状态变化）
         //   这样 .transition 才会触发；.animation 驱动 spring 过渡
@@ -148,6 +153,9 @@ struct DetailPane: View {
         }
         .id(viewKind)  // V3.6.44: 视图类型变化时强制 transition
         .transition(.opacity)
+        // V4.19.0: 加 .glassEffectID 把 detail panel 玻璃 effect 纳入 union
+        //   与 ContentView mainSplitPane 的 .glassEffectUnion(id: "mainSplit") 配对
+        .glassEffectID("detail", in: glassNamespace)
         // V3.6.46: 用户反馈详情面板"向右翻页"感太重，去掉 .move，只保留 .opacity
         //   切到 .standard（0.2s easeInOut）—— 详情面板切换不需 Q 弹，平滑即可
         .animation(Animations.standard, value: viewKind)

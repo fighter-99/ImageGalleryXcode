@@ -48,6 +48,11 @@ struct SidebarView: View {
     // V4.0.0.6: 排序（搬到侧栏顶部）
     @Binding var sortOption: SortOption
 
+    // V4.19.0: macOS 26 Liquid Glass 跨区域融合 namespace
+    //   与 ContentView @Namespace 配对，sidebar 玻璃 effect 纳入 union
+    //   视觉上 sidebar 底 + detail 顶 同一片玻璃（Photos.app 风格）
+    let glassNamespace: Namespace.ID
+
     // 弹窗控制
     @State private var showingNewFolderAlert = false
     @State private var showingNewTagAlert = false
@@ -86,8 +91,11 @@ struct SidebarView: View {
         // V4.18.0: 升级到 macOS 26 Liquid Glass——用 .glassEffect(.regular) 替代
         //   .background(.regularMaterial) view-level modifier
         //   优势：跨光照自适应 + 暗色模式自动调优 + 未来可加 glassEffectUnion
+        // V4.19.0: 加 .glassEffectID 把 sidebar 玻璃 effect 纳入 union
+        //   与 ContentView mainSplitPane 的 .glassEffectUnion(id: "mainSplit") 配对
         sidebarContent
             .glassEffect(.regular)
+            .glassEffectID("sidebar", in: glassNamespace)
     }
 
     /// V4.1.0f 移除：sidebarTopBar 整个组件删除（hide 按钮回到主工具栏）
@@ -488,11 +496,13 @@ struct SidebarView: View {
 }
 
 #Preview {
+    @Previewable @Namespace var glassNamespace
     SidebarView(
         selection: .constant(.all),
         photoSelection: .constant(SelectionState()),
         thumbnailSize: .constant(170),
-        sortOption: .constant(.importedAtDesc)
+        sortOption: .constant(.importedAtDesc),
+        glassNamespace: glassNamespace
     )
     .frame(width: 220, height: 600)
 }
