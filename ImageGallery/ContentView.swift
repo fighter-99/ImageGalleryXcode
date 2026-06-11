@@ -98,8 +98,8 @@ struct ContentView: View {
     @AppStorage("showSidebar") private var showSidebar = true
     @AppStorage("showDetail") private var showDetail = true
 
-    // 设置面板
-    @State private var showSettings = false
+    // V4.13.0: 撤回 V3.5.18 旧 @State showSettings——⌘, 现在走 Settings scene
+    //   独立 Preferences 窗口（macOS 标准），不再需要 ContentView sheet 状态
     @AppStorage("accentColorID") private var accentColorID: String = AccentColor.system.rawValue
 
     // V3.6 NEW: 回收站保留时长（默认 30 天）
@@ -457,13 +457,9 @@ struct ContentView: View {
                 onConfirmImportAllDuplicates: confirmImportAllDuplicates,
                 onCancelDuplicateImport: cancelDuplicateImport
             )
-            // V3.5.18：监听"设置..."菜单 + 弹设置 sheet + 应用强调色
-            // 抽到 helper 函数里避免 body 链过长触发 Swift 类型检查超时
-            .applySettingsChrome(
-                onOpenSettings: { showSettings = true },
-                showSettings: $showSettings,
-                tintColor: accentColor.color
-            )
+            // V4.13.0: 撤回 V3.5.18 sheet 路径——⌘, 现在走 Settings scene 独立窗口
+            //   applySettingsChrome 简化为只应用强调色（.tint + .environment(\.appAccent)）
+            .applySettingsChrome(tintColor: accentColor.color)
             // V4.7.0: 暴露 undoManager 给 Edit menu commands
             //   抽到 extension（exposeUndoManager）避免 body 链过长触发 type-check 超时
             .exposeUndoManager(undoManager)
@@ -1268,23 +1264,18 @@ struct ContentView: View {
 
 // MARK: - V3.5.18：设置面板 chrome helper
 //
-// 抽出 4 个 modifier 到独立 generic extension，避免 body 链超长触发
+// V4.13.0: 撤回 onOpenSettings + showSettings 参数——⌘, 现在走 Settings scene
+//   独立 Preferences 窗口（macOS 标准），不再需要 ContentView sheet 路径
+//   简化后只应用强调色（.tint + .environment(\.appAccent)）
+//
+// 抽出 modifier 到独立 generic extension，避免 body 链超长触发
 // Swift 编译器的 "unable to type-check this expression in reasonable time" 错误。
 // 同样模式可复用：任何"挂在已有视图链尾端"的 modifier 都能用此技巧。
 extension View {
-    func applySettingsChrome(
-        onOpenSettings: @escaping () -> Void,
-        showSettings: Binding<Bool>,
-        tintColor: Color
-    ) -> some View {
-        onReceive(NotificationCenter.default.publisher(for: .openSettingsRequested)) { _ in
-            onOpenSettings()
-        }
-        .sheet(isPresented: showSettings) {
-            SettingsView()
-        }
-        .tint(tintColor)
-        .environment(\.appAccent, tintColor)
+    func applySettingsChrome(tintColor: Color) -> some View {
+        self
+            .tint(tintColor)
+            .environment(\.appAccent, tintColor)
     }
 }
 

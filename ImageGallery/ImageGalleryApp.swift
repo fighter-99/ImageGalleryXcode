@@ -72,6 +72,13 @@ struct ImageGalleryApp: App {
         // V4.8.0: 删 .windowToolbarStyle——NSToolbar 在 ContentView.configureNSToolbar
         //   直接设置 window.toolbarStyle = .unified（避免双重设置冲突）
         .modelContainer(modelContainer)  // V3.6.7：显式 VersionedSchema 容器
+        // V4.13.0: macOS 标准 ⌘, 行为——独立 Preferences 窗口（不是 sheet）
+        //   之前 V3.5.D 用 NotificationCenter + sheet 弹在主窗口内——与 Photos/Finder
+        //   标准 ⌘, 行为不符（标准是独立 Preferences window，无交通灯，title = app name）
+        //   Settings scene (macOS 13+) 自动绑定 ⌘, + SettingsLink (macOS 14+)
+        Settings {
+            SettingsView()
+        }
         .commands {
             // macOS 原生 View 菜单（在 View 菜单里加 Toggle 项）
             CommandGroup(after: .sidebar) {
@@ -80,12 +87,14 @@ struct ImageGalleryApp: App {
                 Toggle("显示详情面板", isOn: showDetailBinding)
                     .keyboardShortcut("d", modifiers: [.command, .control])
             }
-            // V3.5.D：App 菜单的"设置..."项（macOS 标准位置 + ⌘, 快捷键）
+            // V4.13.0: 用 SettingsLink 触发 Settings scene（macOS 14+ 标准 API）
+            //   自动绑定 ⌘,（之前 V3.5.D 手动 keyboardShortcut 已被系统接管）
+            //   撤回 V3.5.D 旧方案：NotificationCenter + ContentView sheet 路径
+            //   （applySettingsChrome extension 内 sheet 路径待 ContentView 清理）
             CommandGroup(after: .appInfo) {
-                Button("设置…") {
-                    NotificationCenter.default.post(name: .openSettingsRequested, object: nil)
+                SettingsLink {
+                    Text("设置…")
                 }
-                .keyboardShortcut(",", modifiers: .command)
             }
             // V4.7.0 NEW: Undo/Redo Edit menu 集成
             //   CommandGroup(replacing: .undoRedo) 替换系统默认 Undo/Redo（macOS 标准位置）
