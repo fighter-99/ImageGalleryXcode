@@ -47,6 +47,17 @@ struct ImageGalleryApp: App {
     private let showSidebarBinding = Binding<Bool>(userDefaults: "showSidebar", default: true)
     private let showDetailBinding  = Binding<Bool>(userDefaults: "showDetail",  default: true)
 
+    // V4.37.0: viewModeBinding 监听 viewModeRaw key——与 ContentView @AppStorage("viewModeRaw") 同源
+    //   菜单项改 wrappedValue 写 UserDefaults → ContentView @AppStorage 自动 re-render
+    //   Photos.app / Finder View > View As 子菜单风格——单选 3 个视图模式
+    private let viewModeBinding = Binding<ViewMode>(
+        get: {
+            let raw = UserDefaults.standard.string(forKey: "viewModeRaw") ?? ViewMode.grid.rawValue
+            return ViewMode(rawValue: raw) ?? .grid
+        },
+        set: { UserDefaults.standard.set($0.rawValue, forKey: "viewModeRaw") }
+    )
+
     var body: some Scene {
         // V3.5.D：WindowGroup 加 id 让 macOS 能稳定追踪窗口(用于 frame autosave)
         // 同时加 defaultSize 给首次启动一个合理尺寸
@@ -99,6 +110,33 @@ struct ImageGalleryApp: App {
                     .keyboardShortcut("s", modifiers: [.command, .control])
                 Toggle("显示详情面板", isOn: showDetailBinding)
                     .keyboardShortcut("d", modifiers: [.command, .control])
+                // V4.37.0: macOS Photos 标准 ⌘I = Show Info Panel
+                //   与 ⌘Ctrl+D 同一动作（toggle 详情面板）——Photos.app ⌘I 行为
+                //   ⌘Ctrl+D 保留为项目传统快捷键不破坏现有用户习惯
+                Toggle("显示信息面板", isOn: showDetailBinding)
+                    .keyboardShortcut("i", modifiers: .command)
+                Divider()
+                // V4.37.0: 视图切换（缩略图/列表/时间线）——macOS Photos / Finder View > View As 风格
+                //   用 ⌥1/⌥2/⌥3 避开 ContentKeyboardShortcuts 占用的 ⌘1-6（侧边栏 section 切换）
+                //   Photos.app 用 ⌘1-5 是因为它没有多 section 侧边栏
+                Button {
+                    viewModeBinding.wrappedValue = .grid
+                } label: {
+                    Text("缩略图视图")
+                }
+                .keyboardShortcut("1", modifiers: .option)
+                Button {
+                    viewModeBinding.wrappedValue = .list
+                } label: {
+                    Text("列表视图")
+                }
+                .keyboardShortcut("2", modifiers: .option)
+                Button {
+                    viewModeBinding.wrappedValue = .timeline
+                } label: {
+                    Text("时间线视图")
+                }
+                .keyboardShortcut("3", modifiers: .option)
             }
             // V4.13.0: 用 SettingsLink 触发 Settings scene（macOS 14+ 标准 API）
             //   自动绑定 ⌘,（之前 V3.5.D 手动 keyboardShortcut 已被系统接管）
