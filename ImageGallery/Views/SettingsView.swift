@@ -2,174 +2,252 @@
 //  SettingsView.swift
 //  ImageGallery
 //
-//  V3.5.D：设置面板（sheet 形式）。
-//  当前只包含"强调色"选择。后续可扩展：默认缩略图大小、默认视图模式、行为偏好等。
+//  V3.6.13: 设置面板——单滚动视图 6 section（强调色/回收站/缩略图/视图/排序/外观）
+//  V4.13.0: 改 Settings scene——独立 Preferences 窗口（⌘,）
+//  V4.50.0: 改造 Photos 风格——sidebar 4 类 + detail 布局
+//    之前单滚动 VStack 改为 NavigationSplitView
+//    4 类别：通用 / 外观 / 图库 / 强调色
+//    删 "完成" 按钮（macOS 标准：红 traffic light 关闭窗口）
 //
-//  入口：菜单栏 ImageGallery > 设置...（⌘,）
-//  由 ContentView 监听 .openSettingsRequested 通知后弹出 sheet。
+//  设计原则：
+//  - sidebar 用系统 List .sidebar 风格——macOS 偏好设置标准
+//  - 每类独立子 View——@AppStorage 在子 View 里也能正常工作
+//  - 不改 @AppStorage keys（向后兼容用户已存的偏好）
 //
 
 import SwiftUI
 
-struct SettingsView: View {
-    @Environment(\.dismiss) var dismiss
-    @AppStorage("accentColorID") private var accentColorID: String = AccentColor.system.rawValue
-    // V3.6 NEW: 回收站保留时长（rawValue 用 @AppStorage 持久化）
-    @AppStorage("trashRetentionDays") private var retentionDays: Int = TrashRetentionDays.defaultValue.rawValue
-    // V3.6.13: 默认缩略图大小（同一 key 共享 ContentView 的 storedThumbnailSize）
-    @AppStorage("thumbnailSize") private var defaultThumbnailSize: Double = 170
-    // V3.6.13: 默认视图模式（PhotoGridView 用的 viewModeRaw key）
-    @AppStorage("viewModeRaw") private var defaultViewModeRaw: String = ViewMode.grid.rawValue
-    // V3.6.13: 默认排序
-    @AppStorage("sortOption") private var defaultSortOption: String = SortOption.importedAtDesc.rawValue
-    // V3.6.22: 应用外观（@AppStorage 持久化）
-    @AppStorage("appearanceMode") private var appearanceModeRaw: Int = AppearanceMode.defaultValue.rawValue
-    private var appearanceModeBinding: Binding<AppearanceMode> {
-        Binding(
-            get: { AppearanceMode(rawValue: appearanceModeRaw) ?? .system },
-            set: { appearanceModeRaw = $0.rawValue }
-        )
+// MARK: - V4.50.0: 设置类别（sidebar 项）
+
+enum SettingsCategory: String, CaseIterable, Identifiable, Hashable {
+    case general       // 通用：默认视图/排序
+    case appearance    // 外观：缩略图大小/外观模式
+    case library       // 图库：回收站保留时长
+    case accent        // 强调色
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .general:    return "通用"
+        case .appearance: return "外观"
+        case .library:    return "图库"
+        case .accent:     return "强调色"
+        }
     }
 
-    // V3.6.13: 用 let 显式类型避免 Swift 推断循环
+    /// macOS Photos 风格 SF Symbol——sidebar 类别 icon
+    var icon: String {
+        switch self {
+        case .general:    return "gearshape"
+        case .appearance: return "paintbrush"
+        case .library:    return "trash"
+        case .accent:     return "paintpalette"
+        }
+    }
+}
+
+// MARK: - V4.50.0: 主设置视图
+
+struct SettingsView: View {
+    @State private var selectedCategory: SettingsCategory = .general
+
+    var body: some View {
+        NavigationSplitView {
+            // Sidebar: 类别列表
+            List(SettingsCategory.allCases, selection: $selectedCategory) { category in
+                Label(category.title, systemImage: category.icon)
+                    .tag(category)
+            }
+            .navigationSplitViewColumnWidth(min: 160, ideal: 180, max: 220)
+        } detail: {
+            // Detail: 选中类别的设置内容
+            //   NavigationSplitView 自动提供 sidebar/detail 切换
+            //   Photos.app 标准：sidebar 选中高亮 + detail 切换
+            Group {
+                switch selectedCategory {
+                case .general:
+                    GeneralSettingsView()
+                case .appearance:
+                    AppearanceSettingsView()
+                case .library:
+                    LibrarySettingsView()
+                case .accent:
+                    AccentSettingsView()
+                }
+            }
+            .frame(minWidth: 420, minHeight: 320)
+        }
+        .navigationTitle("设置")
+        // V4.50.0: 删 .padding(Spacing.xl) 和固定 width 480 height 700
+        //   NavigationSplitView 自动撑开——macOS 标准偏好设置窗口自适应
+        //   Photos.app 偏好窗口也是自适应大小
+    }
+}
+
+// MARK: - V4.50.0: 4 类设置子 View
+//
+// 设计：每类独立 View + @AppStorage 在子 View
+//   优势：每类独立测试 + 维护，SettingsView 仅做 sidebar/detail 路由
+//
+
+// MARK: 通用（默认视图/排序）
+
+private struct GeneralSettingsView: View {
+    @AppStorage("viewModeRaw") private var defaultViewModeRaw: String = ViewMode.grid.rawValue
+    @AppStorage("sortOption") private var defaultSortOption: String = SortOption.importedAtDesc.rawValue
+
     private let defaultViewModeOptions: [ViewMode] = ViewMode.allCases
     private let defaultSortOptions: [SortOption] = SortOption.allCases
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.xl) {
-            // 标题
-            HStack {
-                Text("设置")
-                    .font(Typography.title)
-                Spacer()
+        SettingsSection(title: "默认视图模式", subtitle: "启动应用时使用的图片显示布局") {
+            Picker("视图模式", selection: $defaultViewModeRaw) {
+                Text("网格").tag(ViewMode.grid.rawValue)
+                Text("列表").tag(ViewMode.list.rawValue)
+                Text("时间线").tag(ViewMode.timeline.rawValue)
             }
-
-            Divider().background(Surface.separator)
-
-            // 强调色 section
-            VStack(alignment: .leading, spacing: Spacing.md) {
-                Text("强调色")
-                    .font(Typography.headline)
-
-                Text("选择应用的主色调，影响按钮、选中状态、链接等。")
-                    .font(Typography.caption)
-                    .foregroundStyle(Surface.textSecondary)
-
-                LazyVGrid(
-                    columns: Array(repeating: GridItem(.flexible(), spacing: Spacing.md), count: 5),
-                    spacing: Spacing.md
-                ) {
-                    ForEach(AccentColor.allCases) { accent in
-                        AccentSwatch(
-                            accent: accent,
-                            isSelected: accentColorID == accent.rawValue,
-                            onTap: { accentColorID = accent.rawValue }
-                        )
-                    }
-                }
-            }
-
-            // V3.6 NEW: 回收站 section
-            VStack(alignment: .leading, spacing: Spacing.md) {
-                Text("回收站")
-                    .font(Typography.headline)
-
-                Text("删除的图片会先进入回收站，超过下面设置的天数后会被自动永久删除。")
-                    .font(Typography.caption)
-                    .foregroundStyle(Surface.textSecondary)
-
-                Picker("自动清理", selection: $retentionDays) {
-                    ForEach(TrashRetentionDays.allCases) { days in
-                        Text(days.displayName).tag(days.rawValue)
-                    }
-                }
-                .pickerStyle(.segmented)
-            }
-
-            // V3.6.13 NEW: 缩略图 section
-            VStack(alignment: .leading, spacing: Spacing.md) {
-                Text("缩略图")
-                    .font(Typography.headline)
-
-                Text("设置默认缩略图大小（拖动滑块调整）。当前会话用 toolbar 临时改的会在重启后恢复默认值。")
-                    .font(Typography.caption)
-                    .foregroundStyle(Surface.textSecondary)
-
-                HStack {
-                    Slider(value: $defaultThumbnailSize, in: 100...250, step: 10)
-                    Text("\(Int(defaultThumbnailSize))")
-                        .font(Typography.captionMono)
-                        .foregroundStyle(Surface.textSecondary)
-                        .frame(width: 40, alignment: .trailing)
-                }
-            }
-
-            // V3.6.13 NEW: 视图模式 section
-            VStack(alignment: .leading, spacing: Spacing.md) {
-                Text("默认视图模式")
-                    .font(Typography.headline)
-
-                // V3.6.13: 不用 ForEach + enum，避免 Swift 推断循环
-                Picker("视图模式", selection: $defaultViewModeRaw) {
-                    Text("网格").tag(ViewMode.grid.rawValue)
-                    Text("列表").tag(ViewMode.list.rawValue)
-                    Text("时间线").tag(ViewMode.timeline.rawValue)
-                }
-                .pickerStyle(.segmented)
-            }
-
-            // V3.6.13 NEW: 默认排序 section
-            VStack(alignment: .leading, spacing: Spacing.md) {
-                Text("默认排序")
-                    .font(Typography.headline)
-
-                Picker("排序", selection: $defaultSortOption) {
-                    Text("导入时间 ↓").tag(SortOption.importedAtDesc.rawValue)
-                    Text("导入时间 ↑").tag(SortOption.importedAtAsc.rawValue)
-                    Text("文件名 A → Z").tag(SortOption.filenameAsc.rawValue)
-                    Text("文件名 Z → A").tag(SortOption.filenameDesc.rawValue)
-                    Text("文件大小 ↓").tag(SortOption.fileSizeDesc.rawValue)
-                    Text("文件大小 ↑").tag(SortOption.fileSizeAsc.rawValue)
-                    Text("自定义顺序").tag(SortOption.customOrder.rawValue)
-                }
-                .pickerStyle(.menu)
-            }
-
-            // V3.6.22 NEW: 外观 section
-            VStack(alignment: .leading, spacing: Spacing.md) {
-                Text("外观")
-                    .font(Typography.headline)
-
-                Text("应用整体外观。\"跟随系统\" 会随 macOS 切换自动调整。")
-                    .font(Typography.caption)
-                    .foregroundStyle(Surface.textSecondary)
-
-                Picker("外观", selection: appearanceModeBinding) {
-                    ForEach(AppearanceMode.allCases) { mode in
-                        Label(mode.displayName, systemImage: mode.icon).tag(mode)
-                    }
-                }
-                .pickerStyle(.segmented)
-            }
-
-            Spacer()
-
-            // 底部
-            HStack {
-                Spacer()
-                Button("完成") {
-                    dismiss()
-                }
-                .keyboardShortcut(.defaultAction)
-            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
         }
-        .padding(Spacing.xl)
-        .frame(width: 480, height: 700)  // V3.6.22: 加高以容纳新增"外观"section
-        .background(Surface.canvas)
+
+        SettingsSection(title: "默认排序", subtitle: "启动时图片按以下规则排序") {
+            Picker("排序", selection: $defaultSortOption) {
+                ForEach(defaultSortOptions) { option in
+                    Text(option.label).tag(option.rawValue)
+                }
+            }
+            .pickerStyle(.menu)
+            .labelsHidden()
+        }
     }
 }
 
-// MARK: - 强调色色板
+// MARK: 外观（缩略图大小/外观模式）
+
+private struct AppearanceSettingsView: View {
+    @AppStorage("thumbnailSize") private var defaultThumbnailSize: Double = 170
+    @AppStorage("appearanceMode") private var appearanceModeRaw: Int = AppearanceMode.defaultValue.rawValue
+
+    private var appearanceModeBinding: Binding<AppearanceMode> {
+        Binding(
+            get: { AppearanceMode(rawValue: appearanceModeRaw) ?? .defaultValue },
+            set: { appearanceModeRaw = $0.rawValue }
+        )
+    }
+
+    var body: some View {
+        SettingsSection(
+            title: "缩略图大小",
+            subtitle: "默认缩略图尺寸。当前会话用 toolbar 临时改的会在重启后恢复。"
+        ) {
+            HStack {
+                Slider(value: $defaultThumbnailSize, in: 100...250, step: 10)
+                Text("\(Int(defaultThumbnailSize))")
+                    .font(Typography.captionMono)
+                    .foregroundStyle(Surface.textSecondary)
+                    .frame(width: 40, alignment: .trailing)
+            }
+        }
+
+        SettingsSection(
+            title: "外观",
+            subtitle: "应用整体外观。\u{201C}跟随系统\u{201D} 会随 macOS 切换自动调整。"
+        ) {
+            Picker("外观", selection: appearanceModeBinding) {
+                ForEach(AppearanceMode.allCases) { mode in
+                    Label(mode.displayName, systemImage: mode.icon).tag(mode)
+                }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+        }
+    }
+}
+
+// MARK: 图库（回收站保留时长）
+
+private struct LibrarySettingsView: View {
+    @AppStorage("trashRetentionDays") private var retentionDays: Int = TrashRetentionDays.defaultValue.rawValue
+
+    var body: some View {
+        SettingsSection(
+            title: "自动清理",
+            subtitle: "删除的图片会先进入回收站，超过下面设置的天数后会被自动永久删除。"
+        ) {
+            Picker("保留时长", selection: $retentionDays) {
+                ForEach(TrashRetentionDays.allCases) { days in
+                    Text(days.displayName).tag(days.rawValue)
+                }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+        }
+    }
+}
+
+// MARK: 强调色
+
+private struct AccentSettingsView: View {
+    @AppStorage("accentColorID") private var accentColorID: String = AccentColor.system.rawValue
+
+    var body: some View {
+        SettingsSection(
+            title: "强调色",
+            subtitle: "选择应用的主色调，影响按钮、选中状态、链接等。"
+        ) {
+            LazyVGrid(
+                columns: Array(repeating: GridItem(.flexible(), spacing: Spacing.md), count: 5),
+                spacing: Spacing.md
+            ) {
+                ForEach(AccentColor.allCases) { accent in
+                    AccentSwatch(
+                        accent: accent,
+                        isSelected: accentColorID == accent.rawValue,
+                        onTap: { accentColorID = accent.rawValue }
+                    )
+                }
+            }
+        }
+    }
+}
+
+// MARK: - V4.50.0: 通用 settings section 容器
+
+/// Photos.app 偏好设置 panel 风格——每类设置有标题 + 副标题 + 内容
+/// 抽到统一组件减少 4 个子 View 重复
+private struct SettingsSection<Content: View>: View {
+    let title: String
+    let subtitle: String?
+    @ViewBuilder let content: () -> Content
+
+    init(title: String, subtitle: String? = nil, @ViewBuilder content: @escaping () -> Content) {
+        self.title = title
+        self.subtitle = subtitle
+        self.content = content
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Spacing.md) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(Typography.headline)
+                if let subtitle = subtitle {
+                    Text(subtitle)
+                        .font(Typography.caption)
+                        .foregroundStyle(Surface.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            content()
+        }
+        .padding(Spacing.lg)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Surface.panel, in: RoundedRectangle(cornerRadius: Radius.md, style: .continuous))
+    }
+}
+
+// MARK: - 强调色色板（V3.6.13 抽出独立 View）
 
 struct AccentSwatch: View {
     let accent: AccentColor
@@ -204,10 +282,5 @@ struct AccentSwatch: View {
             }
         }
         .buttonStyle(.plain)
-        .help(accent.displayName)
     }
-}
-
-#Preview {
-    SettingsView()
 }
