@@ -78,6 +78,7 @@ struct LibraryOverviewView: View {
     }
 
     /// V4.1.0 k: 顶部标题 + 统计
+    /// V4.11.0: allPhotos 为空时加欢迎语——新用户首次启动时强化 onboarding 引导
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 8) {
@@ -90,6 +91,13 @@ struct LibraryOverviewView: View {
             Text("\(totalCount) 张照片 · \(totalSizeFormatted)")
                 .font(.callout)
                 .foregroundStyle(.secondary)
+            // V4.11.0: 新用户首次启动引导
+            if totalCount == 0 {
+                Text("导入照片开始管理你的图库")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .padding(.top, 2)
+            }
         }
     }
 

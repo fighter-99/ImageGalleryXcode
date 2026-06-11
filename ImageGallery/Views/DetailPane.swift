@@ -8,7 +8,8 @@
 //  三种状态：
 //  1. 选中单张图 → DetailView（带元数据、标签、EXIF、上一张/下一张）
 //  2. 多选模式 → MultiSelectDetailView（提示批量操作快捷键）
-//  3. 无选中 → EmptyDetailView（提示选择图片）
+//  3. 无选中 → LibraryOverviewView（V4.1.0 k 取代旧 EmptyDetailView，
+//    本身含导入按钮——新用户首次启动时作为 onboarding 引导）
 //
 
 import SwiftUI
@@ -55,11 +56,18 @@ struct DetailPane: View {
     let onSelectFolder: (Folder) -> Void
     let onImport: () -> Void
 
+    // V4.11.0: 存储不可写错误（nil = OK）
+    //   PhotoStorage.verifyStorage() 失败时填消息，detail panel 切到错误态
+    //   重试按钮触发 onRetryStorage 重新检测
+    let storageError: String?
+    let onRetryStorage: () -> Void
+
     var body: some View {
         // V3.6.44: 加 .id(viewKind) 让 SwiftUI 知道是"不同视图"（不是同一 view 内部状态变化）
         //   这样 .transition 才会触发；.animation 驱动 spring 过渡
         //   viewKind 字符串反映当前显示的是哪种详情面板
         let viewKind: String = {
+            if storageError != nil { return "storage-error" }
             if sidebarSelection == .recentlyDeleted { return "trash" }
             if sidebarSelection == .duplicates { return "duplicates" }
             if let photo = singleSelectedPhoto { return "photo-\(photo.id)" }
@@ -68,8 +76,22 @@ struct DetailPane: View {
         }()
 
         return Group {
+            // V4.11.0: 存储不可写错误态——盖所有其他分支
+            //   用 EmptyStateView 错误样式（exclamationmark.triangle + destructive iconColor + 重试 CTA）
+            if let storageError {
+                EmptyStateView(
+                    icon: "exclamationmark.triangle",
+                    title: "存储不可用",
+                    subtitle: storageError,
+                    iconColor: .red,
+                    primaryAction: EmptyStateView.Action(
+                        label: "重试",
+                        systemImage: "arrow.clockwise",
+                        onTap: onRetryStorage
+                    )
+                )
             // V3.6: 回收站模式优先于其他（回收站视图里没有"单图操作"概念）
-            if sidebarSelection == .recentlyDeleted {
+            } else if sidebarSelection == .recentlyDeleted {
                 TrashDetailView(
                     count: count,
                     totalSize: totalSize,

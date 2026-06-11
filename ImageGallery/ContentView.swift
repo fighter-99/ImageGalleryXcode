@@ -115,6 +115,10 @@ struct ContentView: View {
     // ContentView 可能多次出现（开关窗口、切 sidebar），用 flag 避免重复清理
     @State private var hasPurgedExpiredTrash = false
 
+    // V4.11.0: 存储不可写错误（nil = 正常）
+    //   onAppear 调 PhotoStorage.verifyStorage()——失败时填错误消息，detail panel 显示错误态
+    @State private var storageErrorMessage: String? = nil
+
     // 当前选中的强调色（从 accentColorID 解析）
     private var accentColor: AccentColor {
         AccentColor(rawValue: accentColorID) ?? .system
@@ -370,6 +374,8 @@ struct ContentView: View {
                         hasPurgedExpiredTrash = true
                         purgeExpiredTrashOnStartup()
                     }
+                    // V4.11.0: 检测 Application Support 可写性（v3.6 死代码接入）
+                    checkStorage()
                 },
                 onStoredThumbnailChange: { thumbnailSize = CGFloat($0) },
                 onStoredSortChange: { sortOption = SortOption(rawValue: $0) ?? .importedAtDesc },
@@ -530,6 +536,18 @@ struct ContentView: View {
             hasSelection: selection.hasSelection,
             hasMultipleSelection: selection.isMultiSelect
         )
+    }
+
+    // V4.11.0: 检查 Application Support/ImageGallery/Photos/ 目录可写性
+    //   失败时填 storageErrorMessage 触发 detail panel 错误态
+    //   用户可点重试按钮再次检测（磁盘腾出空间 / 权限恢复后）
+    //   PhotoStorage.verifyStorage() 是 v3.6 写但从未调用的死代码——v4.11.0 接入
+    private func checkStorage() {
+        if PhotoStorage.shared.verifyStorage() {
+            storageErrorMessage = nil
+        } else {
+            storageErrorMessage = "无法写入存储目录。请检查磁盘空间、权限或「系统设置 → 隐私与安全 → 文件与文件夹」授权。"
+        }
     }
 
     // ⌘N 触发的创建文件夹
@@ -768,7 +786,10 @@ struct ContentView: View {
             libraryTotalSize: PhotoStats.totalSize(allPhotos),
             onSelectPhoto: { photo in selection = selection.selectingSingle(photo.id) },
             onSelectFolder: { folder in sidebarSelection = .folder(folder) },
-            onImport: startImport
+            onImport: startImport,
+            // V4.11.0: 存储不可写错误（nil = OK）
+            storageError: storageErrorMessage,
+            onRetryStorage: checkStorage
         )
     }
 
