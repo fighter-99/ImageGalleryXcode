@@ -552,12 +552,20 @@ struct PhotoThumbnailView: View {
 
     private func daysLeftBadgeColor(days: Int) -> BadgeColor {
         if days <= 3 {
-            return BadgeColor(foreground: .white, background: Color.red)
+            // V4.22.0: 暗色模式审计——badge 红/黄/橙硬编码改 token
+            //   .red → Palette.destructive (已有 Surface.destructive 桥接)
+            //   .orange → 保留 (无 token, 一次性使用)
+            //   .yellow → Surface.favorite (已有 token)
+            return BadgeColor(foreground: .white, background: Palette.destructive)
         } else if days <= 7 {
+            // V4.22.0: 暗色模式审计——badge 颜色 token 化
+            //   警告色保留 Color.orange (无 token, 一次性使用)
             return BadgeColor(foreground: .white, background: Color.orange)
         } else if days <= 14 {
-            return BadgeColor(foreground: .primary, background: Color.yellow.opacity(0.85))
+            return BadgeColor(foreground: .primary, background: Surface.favorite.opacity(0.85))
         } else {
+            // V4.22.0: 暗色模式审计——背景已用 .controlBackgroundColor 系统色
+            //   自动适配亮/暗模式——保留
             return BadgeColor(foreground: .primary,
                               background: Color(nsColor: .controlBackgroundColor).opacity(0.9))
         }
