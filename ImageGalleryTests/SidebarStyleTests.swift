@@ -104,8 +104,10 @@ struct SidebarStyleTests {
     }
 
     @Test func headerColorIsTertiaryEquivalent() {
-        // Photos.app 风格——.tertiary 等价值（Color 没有 .tertiary，用 secondary 70% opacity 模拟）
-        let expected = Color.secondary.opacity(0.7)
+        // V4.48.0: 0.7 → 0.85 opacity（与行 label 颜色接近，视觉协调）
+        //   0.7 太"淡"——段头"小一圈"不协调
+        //   0.85 接近 Color.secondary.opacity(0.85) 模拟
+        let expected = Color.secondary.opacity(0.85)
         #expect(SidebarStyle.headerColor == expected)
     }
 

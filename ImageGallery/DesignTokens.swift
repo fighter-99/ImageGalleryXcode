@@ -294,17 +294,26 @@ enum SidebarStyle {
     static let iconActive: Color = Color.accentColor
 
     // ─── section header ───
-    /// section header 字号——caption2 (11pt) semibold
-    static let headerFont: Font = .caption2.weight(.semibold)
-    /// section header 颜色——.tertiary 等价值
-    /// 注: Color 没有 .tertiary（tertiary 是 ShapeStyle 概念），用 secondary 70% opacity 模拟
-    static let headerColor: Color = Color.secondary.opacity(0.7)
+    /// section header 字号——V4.48.0: caption2 (11pt) → 12pt
+    ///   11pt 比行 label 13pt 小 2pt——段头"小一圈"不协调
+    ///   12pt 缩差到 1pt + 与行 label 视觉更对齐
+    ///   仍用 .semibold 保持"标题 vs 内容"层级
+    static let headerFont: Font = .system(size: 12, weight: .semibold)
+    /// section header 字号 (CGFloat 版) — token 一致性
+    static let headerFontSize: CGFloat = 12
+    /// section header 颜色——V4.48.0: secondary @ 0.7 → 0.85
+    ///   0.7 太"淡"——与其他文本脱节
+    ///   0.85 接近行 label 颜色 (Color.secondary 0.85) ——视觉协调
+    static let headerColor: Color = Color.secondary.opacity(0.85)
     /// section header 上下 padding——视觉分组空间
     static let headerPaddingHorizontal: CGFloat = 12
     static let headerPaddingTop: CGFloat = 10
     static let headerPaddingBottom: CGFloat = 4
     /// section header icon↔title 间距
     static let headerIconSpacing: CGFloat = 5
+    /// V4.48.0: section header icon 字号——10 → 12pt
+    ///   与行 icon 13pt 差从 3pt 缩到 1pt——段头 icon 不"小一圈"
+    static let headerIconSize: CGFloat = 12
 
     // ─── 智能 folder icon 语义色 ───
     //
