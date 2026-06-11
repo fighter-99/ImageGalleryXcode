@@ -56,27 +56,38 @@ struct DetailView: View {
         //   ↑ 1️⃣ 大图 0 padding 紧贴 detail panel 边缘（顶/底 0）——Photos 风格顶部大图
         //   ↑ 2️⃣ 3️⃣ 4️⃣ sections 间 Divider 分隔，无 VStack spacing
         //   ↑ sections 内 padding 保留（info/tags/operations 元数据呼吸空间）
-        ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
-                // 1️⃣ 大图区（顶部，0 padding 紧贴 detail panel 边缘）
-                bigImageCard
+        // V4.27.0: ScrollView 改 ScrollViewReader——切换 photo 自动滚到大图顶部
+        ScrollViewReader { proxy in
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    // 1️⃣ 大图区（顶部，0 padding 紧贴 detail panel 边缘）
+                    bigImageCard
 
-                Divider().padding(.vertical, Spacing.xs)
+                    Divider().padding(.vertical, Spacing.xs)
 
-                // 2️⃣ 信息区（文件名 + 元数据）
-                infoCard
+                    // 2️⃣ 信息区（文件名 + 元数据）
+                    infoCard
 
-                Divider().padding(.vertical, Spacing.xs)
+                    Divider().padding(.vertical, Spacing.xs)
 
-                // 3️⃣ 标签区
-                tagsCard
+                    // 3️⃣ 标签区
+                    tagsCard
 
-                Divider().padding(.vertical, Spacing.xs)
+                    Divider().padding(.vertical, Spacing.xs)
 
-                // 4️⃣ 操作区
-                operationsCard
+                    // 4️⃣ 操作区
+                    operationsCard
 
-                Spacer(minLength: 0)
+                    Spacer(minLength: 0)
+                }
+            }
+            .onChange(of: photo.id) { _, _ in
+                // V4.27.0: photo 切换时滚到大图顶部
+                //   用户滚动看元数据后切下一张, 自动回到大图起点
+                //   .id("bigImage") 在 bigImageCard Image 上——scrollTo target
+                withAnimation(Animations.quick) {
+                    proxy.scrollTo("bigImage", anchor: .top)
+                }
             }
         }
         // V4.1.0d: 改用 .regularMaterial——与侧栏、主工具栏统一
@@ -143,16 +154,20 @@ struct DetailView: View {
     private var bigImageCard: some View {
         Group {
             if let nsImage = bigImage {
-                // V4.26.0: 加 .frame(maxHeight: .infinity)——双方向 fit
-                //   V4.25.0 只删 maxHeight 360 但没加 .infinity——image 按 aspectRatio
-                //   算 fit 高度, 在窄 detail panel visible area 时仍超出被裁
-                //   .frame(maxWidth: .infinity, maxHeight: .infinity) + aspectRatio(.fit)
-                //   = SwiftUI 按 min(width, height) 缩放——image 完整 fit 父容器
-                //   视觉效果: 大图在 detail panel visible area 完整显示 (按比例缩放)
+                // V4.27.0: 改单方向 fit——大图按 detail panel 宽度 fit 算 aspectRatio 高度
+                //   V4.26.0 双方向 fit (maxWidth: .infinity + maxHeight: .infinity)
+                //   让大图按 min(width, height) 缩放——大图在 detail panel visible area 完整
+                //   显示但按高度 fit 缩放后**小于 detail panel 宽度**——两侧有黑边
+                //   macOS Photos 实际: 大图按 detail panel 宽度 fit 算 height,
+                //   height 可能超出 visible area——用户滚动 ScrollView 看完整大图
+                //   撤回 V4.26.0 双方向 fit——单方向 fit 让大图按 detail panel 宽度填满
+                //   ScrollViewReader 在 onChange(of: photo.id) 时 scrollTo(0, anchor: .top)
+                //   切换 photo 时自动滚到大图顶部 (user 滚动后切下一张自动 reset)
                 Image(nsImage: nsImage)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .frame(maxWidth: .infinity)
+                    .id("bigImage")  // V4.27.0: ScrollViewProxy 滚动目标
             } else if bigImageLoadFailed {
                 // V4.9.5: 加载失败——显示 photo 占位 + 错误 icon
                 RoundedRectangle(cornerRadius: Radius.md)
