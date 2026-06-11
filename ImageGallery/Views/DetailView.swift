@@ -68,7 +68,9 @@ struct DetailView: View {
         }
         // V4.1.0d: 改用 .regularMaterial——与侧栏、主工具栏统一
         //   整个控制区 = 半透明毛玻璃；主区 = opaque canvas（照片焦点）
-        .background(.regularMaterial)
+        // V4.18.0: 升级到 macOS 26 Liquid Glass——.glassEffect(.regular) 替代
+        //   .background(.regularMaterial) view-level modifier
+        .glassEffect(.regular)
         .frame(minWidth: 280)
         .alert("新建标签", isPresented: $showingAddTagAlert) {
             TextField("标签名称", text: $newTagName)
@@ -193,7 +195,8 @@ struct DetailView: View {
                         .foregroundStyle(.white)
                         .padding(.horizontal, Spacing.sm)
                         .padding(.vertical, Spacing.xs)
-                        .background(.ultraThinMaterial, in: Capsule())
+                        // V4.18.0: macOS 26 Liquid Glass——保留 Capsule shape
+                        .glassEffect(.regular, in: Capsule())
                 }
 
                 detailNavButton(systemName: "chevron.right", help: "下一张 (→)") {
@@ -217,7 +220,8 @@ struct DetailView: View {
                 .font(.system(size: 12, weight: .bold))
                 .foregroundStyle(.white)
                 .frame(width: 26, height: 26)
-                .background(.ultraThinMaterial, in: Circle())
+                // V4.18.0: macOS 26 Liquid Glass——保留 Circle shape
+                .glassEffect(.regular, in: Circle())
         }
         .buttonStyle(.plain)
         .help(help)

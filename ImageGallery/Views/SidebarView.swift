@@ -83,8 +83,11 @@ struct SidebarView: View {
         // V4.1.0f: 侧栏完全"无 UI"——hide 按钮搬回主工具栏
         //   视觉上侧栏直接从 section header 开始（更紧凑）
         //   整个 sidebarContent 用 .regularMaterial 背景（V4.1.0d 改）
+        // V4.18.0: 升级到 macOS 26 Liquid Glass——用 .glassEffect(.regular) 替代
+        //   .background(.regularMaterial) view-level modifier
+        //   优势：跨光照自适应 + 暗色模式自动调优 + 未来可加 glassEffectUnion
         sidebarContent
-            .background(.regularMaterial)
+            .glassEffect(.regular)
     }
 
     /// V4.1.0f 移除：sidebarTopBar 整个组件删除（hide 按钮回到主工具栏）
