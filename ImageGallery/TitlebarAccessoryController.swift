@@ -74,6 +74,13 @@ final class TitlebarAccessoryController: NSTitlebarAccessoryViewController {
     }
 
     required init?(coder: NSCoder) {
+        // V4.37.4 修复: NSTitlebarAccessoryViewController 继承 NSSecureCoding 协议要求 coder init
+        //   本类是 programmatic-only（不配 NIB）——给 let 属性空默认值满足 Swift two-phase init
+        //   系统永远不会调这个路径（NIB 不存在）——空默认值仅满足编译器
+        self.inactiveSymbol = ""
+        self.activeSymbol = ""
+        self.label = ""
+        self.onAction = nil
         super.init(coder: coder)
     }
 
