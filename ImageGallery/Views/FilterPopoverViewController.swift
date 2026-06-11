@@ -95,12 +95,14 @@ final class FilterPopoverViewController: NSViewController {
         //   让窗口背景色 / 工具栏毛玻璃透过来 = 真 macOS 风格
         // V4.46.0: state .active → .followsWindowActiveState
         //   暗色下 .active 偏"闷" (绿色调透过来)
-        //   .followsWindowActiveState 跟窗口 active 状态走——popover 显示时是 active
-        //   popover 关闭时跟窗口 inactive 一起变——更通透感
+        //   .followsWindowActiveState 跟窗口 active 状态走
+        // V4.47.0: blendingMode .behindWindow → .withinWindow
+        //   .withinWindow 让材质在窗口内 blend (相对自己周围)，不受窗口内容色偏影响
+        //   暗色下 popover 不再"闷"——保持 macOS Photos 风格的清透
         let visualEffect = NSVisualEffectView()
         visualEffect.material = .popover      // macOS popover 专用材质
         visualEffect.state = .followsWindowActiveState
-        visualEffect.blendingMode = .behindWindow  // 跟窗口背景混合
+        visualEffect.blendingMode = .withinWindow  // V4.47.0: 暗色下更清透
 
         let outer = NSStackView()
         outer.orientation = .vertical
@@ -309,11 +311,12 @@ final class FilterPopoverViewController: NSViewController {
 
     /// 顶部 header："筛选" + "清除全部" 按钮（仅激活时显示）
     /// V4.43.0: "清除全部" 降调——去下划线 + tertiaryLabelColor + 11pt
-    ///   原 V4.36.x 蓝色下划线"链接"风格抢主内容视觉重心
-    ///   现在 secondary action 不抢镜 (destructive action 视觉收敛)
+    /// V4.47.0: header 13 → 14pt + 视觉锤更明确
+    ///   13pt semibold 在 transl material 上视觉权重过弱
+    ///   14pt bold 更"标题感"——用户第一眼看到 popover 时找得到"这是筛选"
     private func makeHeader() -> NSView {
         let title = NSTextField(labelWithString: "筛选")
-        title.font = NSFont.systemFont(ofSize: 13, weight: .semibold)
+        title.font = NSFont.systemFont(ofSize: 14, weight: .bold)
         title.textColor = .labelColor
 
         let stack = NSStackView(views: [title, NSView()])  // spacer 用空 view 占位
@@ -519,21 +522,23 @@ final class FilterPopoverViewController: NSViewController {
         }
 
         // 2. icon：按状态动态 tint（不是预染色）——V4.41.1 修复
+        // V4.47.0: 修复 star/circle icon 不可见 bug——paletteColors 在 .followsWindowActiveState
+        //   transl popover 下渲染异常（截图里 5 个评分项 + "全部" 全部显示为空方块）
+        //   改用 contentTintColor 方式——更标准也稳定
         if let symbol = symbolName {
             let iconColor = isActive ? PopoverStyle.activeTextAppKit : PopoverStyle.inactiveTextAppKit
-            // V4.42.0: 加 pointSize + weight 到 config——icon 14pt → 16pt
-            //   与 ViewOptions popoverSegmentItem icon 16pt 对齐
             let sizeConfig = NSImage.SymbolConfiguration(
                 pointSize: PopoverStyle.iconFontSize,
                 weight: .medium
             )
-            let colorConfig = NSImage.SymbolConfiguration(paletteColors: [iconColor])
-            let combinedConfig = sizeConfig.applying(colorConfig)
             let img = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)?
-                .withSymbolConfiguration(combinedConfig)
+                .withSymbolConfiguration(sizeConfig)
             button.image = img
             button.imageScaling = .scaleProportionallyDown
             button.imagePosition = .imageOnly
+            // V4.47.0: contentTintColor 替代 paletteColors——更可靠的 tint 方式
+            //   NSImage(systemSymbolName:) 返回 template image, contentTintColor 直接上色
+            button.contentTintColor = iconColor
         } else {
             button.image = nil
         }

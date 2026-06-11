@@ -417,10 +417,12 @@ enum PopoverStyle {
     static let headerSeparatorHeight: CGFloat = 0.5
 
     // ─── item（segment / list row） ───
-    /// item 高度——V4.42.0: 28 → 32 (略增, 让 16pt icon + caption2 label 不挤)
-    ///   Photos 44pt 太舒展、toolbar 22pt 太紧凑、28pt 偏矮
-    ///   32pt 居中且让 icon+label 上下各有 ~8pt 留白
-    static let itemHeight: CGFloat = 32
+    /// item 高度
+    ///   V4.42.0: 28 → 32 (略增, 让 16pt icon + caption2 label 不挤)
+    ///   V4.47.0: 32 → 28 (回收)——V4.45.0 transl material + 4 段全展开
+    ///     让 popover 720pt 超窗口可视区。28pt 减 ~88pt 高度
+    ///     仍能装下 16pt icon (item 减 4pt 不挡 icon) = Photos 平衡点
+    static let itemHeight: CGFloat = 28
     /// item 圆角——V4.42.0: 6 → 8 (略增, 更现代圆润)
     static let itemCornerRadius: CGFloat = 8
     /// segment 之间的间距——V4.42.0: 4 → 6 (相邻 segment 不再贴紧)
@@ -430,6 +432,7 @@ enum PopoverStyle {
     /// item 内垂直 padding——V4.42.0 新增: 4pt (让 icon 不贴边)
     static let itemVerticalPadding: CGFloat = 4
     /// icon 字号——V4.42.0 新增: 16pt (从 14pt 增, 与 itemHeight 32 比例协调)
+    /// V4.47.0: 仍 16pt (item 28pt 装 16pt icon 上下 6pt 留白——更紧凑但图标清楚)
     static let iconFontSize: CGFloat = 16
 
     // ─── 状态色（SwiftUI 版本） ───
