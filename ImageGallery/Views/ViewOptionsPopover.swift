@@ -156,6 +156,7 @@ struct ViewOptionsPopover: View {
                 }
                 .foregroundStyle(isActive ? PopoverStyle.activeText : PopoverStyle.inactiveText)
                 .padding(.vertical, PopoverStyle.itemVerticalPadding)
+                .padding(.horizontal, PopoverStyle.itemHorizontalPadding)
                 .frame(maxWidth: .infinity, minHeight: PopoverStyle.itemHeight)
                 .background(
                     bg,
@@ -166,6 +167,15 @@ struct ViewOptionsPopover: View {
             // V4.43.1: 状态变化动画——active/inactive bg 切换 0.15s easeInOut
             //   hover bg 切换不加 .animation——mouse 移动会触发频繁 re-render
             .animation(.easeInOut(duration: PopoverStyle.stateTransitionDuration), value: isActive)
+            // V4.52.0: active 状态加 inset shadow——macOS Photos selected button 风格
+            //   "按下去"反馈：bg accent + 1.015 scale + inset shadow 三重视觉锤
+            //   SwiftUI shadow inset 用 .background + RoundedRectangle stroke 模拟
+            .overlay {
+                if isActive {
+                    RoundedRectangle(cornerRadius: PopoverStyle.itemCornerRadius, style: .continuous)
+                        .strokeBorder(Color.white.opacity(0.15), lineWidth: 0.5)
+                }
+            }
             .onHover { hovering in
                 isHovered = hovering
             }

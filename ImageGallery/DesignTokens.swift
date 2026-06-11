@@ -398,7 +398,8 @@ enum PopoverStyle {
     /// popover 内边距
     static let padding: CGFloat = Spacing.md
     /// 段间距——V4.42.0: 8 → 10 (更多垂直呼吸)
-    static let sectionSpacing: CGFloat = 10
+    /// V4.52.0: 10 → 12 (与 Photos 一致"宽间距"——段间更呼吸)
+    static let sectionSpacing: CGFloat = 12
     /// 2 列布局列间距（folder/tag 段用）
     static let columnGap: CGFloat = 8
 
@@ -439,7 +440,11 @@ enum PopoverStyle {
     /// 2 列布局的 VStack 行间距——V4.42.0: 2 → 4 (checkbox 行间更舒展)
     static let columnRowGap: CGFloat = 4
     /// item 内垂直 padding——V4.42.0 新增: 4pt (让 icon 不贴边)
-    static let itemVerticalPadding: CGFloat = 4
+    /// V4.52.0: 4 → 6pt (item 内 padding 增加——视觉"不挤")
+    static let itemVerticalPadding: CGFloat = 6
+    /// item 内水平 padding——V4.52.0 新增: 8pt (与垂直对称)
+    ///   之前只有 .padding(.horizontal, 8) 散在代码——token 化 + 略增
+    static let itemHorizontalPadding: CGFloat = 8
     /// icon 字号——V4.42.0 新增: 16pt (从 14pt 增, 与 itemHeight 32 比例协调)
     /// V4.47.0: 仍 16pt (item 28pt 装 16pt icon 上下 6pt 留白——更紧凑但图标清楚)
     static let iconFontSize: CGFloat = 16
