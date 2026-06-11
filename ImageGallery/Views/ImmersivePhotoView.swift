@@ -17,6 +17,11 @@ struct ImmersivePhotoView: View {
     let onDismiss: () -> Void
 
     @State private var isChromeVisible = true
+    // V4.38.0: 异步大图加载——避免 4000px 大图在主线程解码卡 UI
+    //   仿 PhotoGridView cell (V3.6.26) + DetailView bigImage (V4.9.5) 模式
+    //   photo.id 变化时自动取消旧 task
+    @State private var loadedImage: NSImage?
+    @State private var loadFailed = false
 
     /// 当前显示的图片
     private var currentPhoto: Photo? {
@@ -31,14 +36,16 @@ struct ImmersivePhotoView: View {
                 .ignoresSafeArea()
 
             // 2. 大图（居中）
+            // V4.38.0: async 加载——loadedImage 优先；加载中/失败时显示 fallback
             if let photo = currentPhoto {
-                if let nsImage = ImageLoader.loadImage(at: photo.fileURL, maxPixelSize: 4000) {
+                if let nsImage = loadedImage {
                     Image(nsImage: nsImage)
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .padding(40)
                 } else {
+                    // 加载中 + 加载失败都用同一 fallback（避免加 Shimmer 复杂度）
                     VStack(spacing: 16) {
                         Image(systemName: "photo")
                             .font(.system(size: 80))
@@ -70,6 +77,24 @@ struct ImmersivePhotoView: View {
             // 点击图片区域切换 chrome
             withAnimation {
                 isChromeVisible.toggle()
+            }
+        }
+        // V4.38.0: 异步大图加载——currentPhoto 变化时自动取消旧 task
+        //   maxPixelSize 4000（全屏大图）——后台线程解码不阻塞 UI
+        .task(id: currentPhoto?.id) {
+            guard let photo = currentPhoto else {
+                loadedImage = nil
+                return
+            }
+            loadFailed = false
+            let img = await ImageLoader.loadImageAsync(
+                at: photo.fileURL,
+                maxPixelSize: 4000
+            )
+            if img == nil {
+                loadFailed = true
+            } else {
+                loadedImage = img
             }
         }
         .focusable()

@@ -71,6 +71,11 @@ struct PhotoListRow: View {
     let isActive: Bool
 
     @State private var isHovered = false
+    // V4.38.0: 异步缩略图加载——避免列表快速滚动时 100px 缩略图主线程解码
+    //   仿 PhotoGridView cell 模式（V3.6.26 沉淀，V4.4.0 加 loadFailed 区分）
+    //   44x44 小尺寸——不引入 Shimmer 复杂度，加载中/失败同 fallback
+    @State private var loadedImage: NSImage?
+    @State private var loadFailed = false
 
     var body: some View {
         // V3.6.34: 同样 capture @Model 属性到 local（详见 PhotoGridView 同名注释）
@@ -78,7 +83,7 @@ struct PhotoListRow: View {
         return HStack(spacing: Spacing.md) {
             // 缩略图（紧凑：44x44，比之前的 56 更小）
             ZStack(alignment: .topTrailing) {
-                if let nsImage = ImageLoader.loadImage(at: photo.fileURL, maxPixelSize: 100) {
+                if let nsImage = loadedImage {
                     Image(nsImage: nsImage)
                         .resizable()
                         .aspectRatio(contentMode: .fill)
@@ -155,6 +160,20 @@ struct PhotoListRow: View {
         // V3.6.33: List 视图也支持拖出到 Finder / 侧栏
         // V3.6.34: 同样 capture @Model 属性到 local（详见 PhotoGridView 同名注释）
         .draggable(capturedFileURL)
+        // V4.38.0: 异步缩略图加载——photo.id 变化时自动取消旧 task
+        //   maxPixelSize 100（44x44 cell 足够）
+        .task(id: photo.id) {
+            loadFailed = false
+            let img = await ImageLoader.loadImageAsync(
+                at: photo.fileURL,
+                maxPixelSize: 100
+            )
+            if img == nil {
+                loadFailed = true
+            } else {
+                loadedImage = img
+            }
+        }
     }
 
     /// 行背景：选中 > 多选 > hover > 默认
@@ -339,11 +358,17 @@ struct TimelineThumbnail: View {
     let isInMultiSelect: Bool
     let isActive: Bool
 
+    // V4.38.0: 异步缩略图加载——timeline 滚动时 400px 缩略图主线程解码会卡
+    //   仿 PhotoGridView cell 模式（V3.6.26 + V4.4.0 loadFailed 区分）
+    //   timeline cell 约 60-120pt——不引入 Shimmer 复杂度，加载中/失败同 fallback
+    @State private var loadedImage: NSImage?
+    @State private var loadFailed = false
+
     var body: some View {
         // V3.6.34: 同样 capture @Model 属性到 local（详见 PhotoGridView 同名注释）
         let capturedFileURL = photo.fileURL
         return ZStack(alignment: .topTrailing) {
-            if let nsImage = ImageLoader.loadImage(at: photo.fileURL, maxPixelSize: 400) {
+            if let nsImage = loadedImage {
                 Image(nsImage: nsImage)
                     .resizable()
                     .aspectRatio(contentMode: .fill)
@@ -390,5 +415,19 @@ struct TimelineThumbnail: View {
         // V3.6.33: Timeline 视图也支持拖出到 Finder / 侧栏
         // V3.6.34: 同样 capture @Model 属性到 local（详见 PhotoGridView 同名注释）
         .draggable(capturedFileURL)
+        // V4.38.0: 异步缩略图加载——photo.id 变化时自动取消旧 task
+        //   maxPixelSize 400（timeline cell 足够，最大约 120pt 显示）
+        .task(id: photo.id) {
+            loadFailed = false
+            let img = await ImageLoader.loadImageAsync(
+                at: photo.fileURL,
+                maxPixelSize: 400
+            )
+            if img == nil {
+                loadFailed = true
+            } else {
+                loadedImage = img
+            }
+        }
     }
 }
