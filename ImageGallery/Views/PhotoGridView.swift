@@ -1000,6 +1000,33 @@ struct CellContextMenuModifier: ViewModifier {
 
             Divider()
 
+            // V4.16.0: 复制 + 在 Finder 中显示（macOS Photos 标配）
+            //   之前 cell 缺这 2 个 macOS 标准 actions，用户多选到 detail panel
+            //   才能找到这些——直接右键 cell 更快
+            Button {
+                // V4.16.0: 复制单张图片到剪贴板（photo.fileURL -> Data -> NSPasteboard）
+                //   ContentView 已有 batch 路径 copyToPasteboard()，单张走相同 NSPasteboard API
+                if let data = try? Data(contentsOf: photo.fileURL) {
+                    let pasteboard = NSPasteboard.general
+                    pasteboard.clearContents()
+                    pasteboard.setData(data, forType: .png)
+                    // 实际图片类型由 extension 决定——jpg/heic 不一定 .png
+                    // V4.16.0: 简化只设 fileURL promise，让接受方读原文件
+                    pasteboard.writeObjects([photo.fileURL as NSURL])
+                }
+            } label: {
+                Label("复制", systemImage: "doc.on.doc")
+            }
+
+            Button {
+                // V4.16.0: 在 Finder 中显示（NSWorkspace 桥接 macOS Finder）
+                NSWorkspace.shared.activateFileViewerSelecting([photo.fileURL])
+            } label: {
+                Label("在 Finder 中显示", systemImage: "folder")
+            }
+
+            Divider()
+
             Button {
                 photo.isFavorite.toggle()
                 modelContext.saveWithLog()

@@ -45,6 +45,9 @@ struct DetailView: View {
 
     var body: some View {
         // V3.5.21：详情面板卡片化 — ScrollView + VStack of cards
+        // V4.16.0: 加 .contextMenu——右击 detail panel 任意位置可复制
+        //   operationsCard 已有 3 个高频按钮（收藏/Finder/删除）
+        //   contextMenu 提供"复制"1 个补充 action（不重复 operationsCard）
         ScrollView {
             VStack(alignment: .leading, spacing: Spacing.md) {
                 // 1️⃣ 大图卡（顶部，占 50% 左右高度）
@@ -88,6 +91,17 @@ struct DetailView: View {
             Button("取消", role: .cancel) {}
         } message: {
             Text("图片将从图库中移除，文件也会被永久删除。")
+        }
+        // V4.16.0: 右击 detail panel 任意位置 → 复制（与 operationsCard 不重复）
+        .contextMenu {
+            Button {
+                // NSPasteboard 复制 photo.fileURL（URL promise——接受方读原文件）
+                let pasteboard = NSPasteboard.general
+                pasteboard.clearContents()
+                pasteboard.writeObjects([photo.fileURL as NSURL])
+            } label: {
+                Label("复制", systemImage: "doc.on.doc")
+            }
         }
     }
 
@@ -313,6 +327,8 @@ struct DetailView: View {
             // V4.5.0: 加 .controlSize(.large) 让按钮更舒展（同 MultiSelectDetailView V4.4.7）
             //   旧 .bordered + frame infinity 默认高度 ~26pt，内容占按钮 30% 宽，比例失衡
             //   .controlSize(.large) → 32pt 高 + 字号自动适配 → 与容器框比例协调
+            // V4.16.0: 加 "在 Finder 中显示" 按钮（3 按钮等宽，V4.5.0 注释的 2 按钮
+            //   扩为 3 按钮——detail panel 宽度足以容纳）
             HStack(spacing: Spacing.md) {
                 // 收藏切换
                 Button {
@@ -328,6 +344,21 @@ struct DetailView: View {
                 .buttonStyle(.bordered)
                 .controlSize(.large)
                 .tint(photo.isFavorite ? .yellow : .accentColor)
+
+                // V4.16.0: 在 Finder 中显示——macOS Photos 标配
+                //   NSWorkspace.activateFileViewerSelecting(_:) 高亮选中文件
+                //   并打开 Finder（如果已开则前置）
+                Button {
+                    NSWorkspace.shared.activateFileViewerSelecting([photo.fileURL])
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "folder")
+                        Text("在 Finder 中显示")
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.large)
 
                 // 删除
                 Button(role: .destructive) {
