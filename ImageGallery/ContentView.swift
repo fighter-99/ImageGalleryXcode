@@ -636,20 +636,22 @@ struct ContentView: View {
         //   state 变化通过 onStateChange 回调同步（双向）
         //   V4.36.x #4: 还接 onClearAll 回调 + filterStateChangedFromOutside 通知
         controller.filterContentProvider = { [self] in
-            let popoverVC = FilterPopoverViewController(
-                filterState: filterState,
-                folders: folders,
-                tags: allTags
-            )
+            // V4.85.0: 改用 FilterTopPopoverViewController——FilterPopover 拆 2 层 popover
+            //   顶层只显示 4 类别入口（folder/tag/shape/rating）——仿 Photos 8-item 简洁
+            //   onCategoryTap 暂不接入子 popover（V4.86+ 接入）
+            let popoverVC = FilterTopPopoverViewController(filterState: filterState)
             popoverVC.onStateChange = { [weak popoverVC] newState in
                 self.filterState = newState
-                // 不需要调 popoverVC.updateState——它自己已经更新了内部 filterState
                 _ = popoverVC
             }
-            // V4.36.x #3: "清除全部"按钮回调
             popoverVC.onClearAll = { [weak popoverVC] in
                 self.filterState = .empty
                 popoverVC?.updateState(.empty)
+            }
+            // V4.85.0: onCategoryTap 暂不接入子 popover——V4.86+ 实施
+            //   现在只接收到点击但不做任何事——子 popover 创建由 coordinator 接管
+            popoverVC.onCategoryTap = { _ in
+                // Phase 2+ 接入子 popover
             }
             return popoverVC
         }
