@@ -512,4 +512,28 @@ enum PopoverStyle {
     ///   V4.17.0 DetailView spring 动画 (response 0.4, damping 0.8) 偏 Q 弹
     ///   popover state 切换用更短更平——避免 "Q 弹" 在快速点击时累赘
     static let stateTransitionDuration: Double = 0.15
+
+    // ─── V4.79.0 NEW: 顶层 popover host 视觉 token ───
+    /// popover host 圆角——12pt
+    ///   item cornerRadius (4pt) 之外另设——host 比 item 大
+    ///   V4.45.0 FilterPopoverViewController 写死 12——抽 token
+    ///   V4.77.0 ViewOptionsPopoverHostController 写死 12——同上
+    static let hostCornerRadius: CGFloat = 12
+    /// popover host 边框宽度——0.5pt
+    ///   V4.67.0 引入——dark mode + transl material 边界强化
+    static let hostBorderWidth: CGFloat = 0.5
+
+    // ─── V4.79.0 NEW: 顶层 popover 4 类别行专用 token ───
+    /// 类别行高度——32pt（比 item 24pt 大——含 icon + title + count + chevron 4 元素）
+    static let categoryRowHeight: CGFloat = 32
+    /// 类别行 icon 字号——15pt（与 item icon 一致）
+    static let categoryRowIconSize: CGFloat = 15
+    /// 类别行 chevron 字号——9pt（chevron 比 icon 小——次要视觉元素）
+    static let categoryRowChevronSize: CGFloat = 9
+    /// 类别行 count badge 数字字号——11pt（次要信息）
+    static let categoryRowCountBadgeSize: CGFloat = 11
+    /// 类别行 count badge 高度——16pt（圆形/胶囊形高度）
+    static let categoryRowCountBadgeHeight: CGFloat = 16
+    /// 类别行 count badge 背景透明度——12% accent
+    static let categoryRowCountBadgeOpacity: CGFloat = 0.12
 }
