@@ -46,7 +46,21 @@ struct ViewOptionsPopover: View {
         // V4.78.0: 删 3 段头（视图/缩放/排序）+ 段头 icon + 1pt 分隔线
         //   仿 V4.61.0 FilterPopover 删段头——macOS Photos 扁平 menu 风格
         //   段间靠 10pt sectionSpacing 留白过渡（与 FilterPopover 一致）
+        //
+        // V5.3: 顶部加 "视图选项" header——跟 FilterTopPopover "筛选" header 视觉一致
+        //   之前无 header——用户截图 16 比对筛选下拉后反馈"风格不一致"
+        //   头部没标签→ 视觉上像孤儿弹窗；筛选有"筛选"两字作锚
+        //   仿 V4.84.0 FilterTopPopoverViewController 范式：
+        //     - 13pt semibold + labelColor（与"筛选"完全一致）
+        //     - leading 对齐 padding 12pt
+        //     - 上下用 sectionSpacing 10pt 与首段分隔
         VStack(alignment: .leading, spacing: PopoverStyle.sectionSpacing) {
+            // V5.3: 顶部 header——对齐 Filter 范式
+            Text("视图选项")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.primary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
             // 段 1: 视图模式
             HStack(spacing: PopoverStyle.segmentGap) {
                 ForEach(ViewMode.allCases) { mode in
@@ -76,7 +90,8 @@ struct ViewOptionsPopover: View {
             }
 
             // 段 3: 排序
-            VStack(alignment: .leading, spacing: 2) {
+            // V5.3: spacing 2 → 4pt 跟 Filter 段间呼吸感更对齐
+            VStack(alignment: .leading, spacing: 4) {
                 ForEach(SortOption.allCases) { option in
                     PopoverSortItem(
                         isActive: sortOption == option,
@@ -206,7 +221,11 @@ struct ViewOptionsPopover: View {
                 }
                 .padding(.horizontal, 8)
                 .padding(.vertical, PopoverStyle.itemVerticalPadding)
-                .frame(maxWidth: .infinity, minHeight: PopoverStyle.itemHeight, alignment: .leading)
+                // V5.3: minHeight 24 → 32pt——跟 FilterTop 32pt categoryRowHeight 对齐
+                //   之前 24pt + 6pt padding × 2 = 36pt 跟 Filter 32pt 差 4pt——视觉不齐
+                //   改用 categoryRowHeight——明确"这是 row 类不是 item 类"
+                //   注：segment item 仍用 24pt+padding（icon+text 竖排需更高），与 sort 不同
+                .frame(maxWidth: .infinity, minHeight: PopoverStyle.categoryRowHeight, alignment: .leading)
                 .background(
                     bg,
                     in: RoundedRectangle(cornerRadius: PopoverStyle.itemCornerRadius, style: .continuous)
