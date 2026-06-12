@@ -72,6 +72,10 @@ struct ActiveFiltersBar: View {
                 }
                 .padding(.horizontal, Spacing.md)
                 .padding(.vertical, 4)
+                // V4.56.0: filterState 变化时驱动 chip × 删除动画
+                //   仿 V3.6.38 多选 ✓ 圆点动画模式——.animation + .transition 配对
+                //   删 chip 时渐出（scale 0.8 + opacity 0）+ springGentle
+                .animation(Animations.springGentle, value: filterState)
             }
             .background(.bar)
         }
@@ -96,6 +100,9 @@ struct ActiveFiltersBar: View {
         .padding(.vertical, 4)
         .background(Color.accentColor.opacity(0.15))
         .clipShape(Capsule())
+        // V4.56.0: chip 渐出过渡——filterState 变化时（chip 从 ForEach 移除）触发
+        //   仿 V3.6.38 多选 ✓ 圆点 .transition(.scale.combined(with: .opacity))
+        .transition(.scale(scale: 0.8).combined(with: .opacity))
     }
 
     // MARK: - 名称查找 helper
