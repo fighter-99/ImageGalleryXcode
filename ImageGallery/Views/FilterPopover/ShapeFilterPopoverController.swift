@@ -8,15 +8,22 @@
 //
 //  范式：
 //    - 3 个 icon-only PhotoShape (landscape/portrait/square)
-//    - 240pt 宽 × 48pt 高（12 padding + 24 items）
+//    - 180pt 宽 × 60pt 高（V5.5 缩窄 + 增高——容纳 22pt icon）
 //    - NSVisualEffectView.popoverHost() 包裹（V4.80.0 helper）
 //    - 共享 PopoverItemFactory enum（V4.81.0）的 makeIconOnlySegmentItem / makeSegmentRow
+//
+//  V5.5: 3 个 icon 视觉混淆修复
+//    - 之前 iconFontSize 15pt——rectangle.fill / rectangle.portrait.fill / square.fill
+//      在 15pt 下像素约 15×10/10×15/15×15——白色填充在 transl 上视觉差异仅 5px
+//      用户截图 19 反馈"3 个 icon 全是一个样"
+//    - 现在 22pt——20×13/13×20/20×20——aspect ratio 9px 差异明显可见
+//    - 同时 preferredWidth 240→180pt——3 item 不需要 240pt 宽
 //
 
 import AppKit
 
 /// V4.88.0: Shape 二级 popover——3 个 PhotoShape (landscape/portrait/square)
-///   仿 macOS Photos 排序 popover 风格——非常窄（48pt）
+///   V5.5: 22pt icon + 180pt 宽——让 aspect ratio 视觉清晰
 final class ShapeFilterPopoverController: NSViewController {
     // MARK: - 回调
 
@@ -28,8 +35,9 @@ final class ShapeFilterPopoverController: NSViewController {
 
     // MARK: - 配置常量
 
-    private static let preferredWidth: CGFloat = 240
-    private static let preferredHeight: CGFloat = 48
+    private static let preferredWidth: CGFloat = 180
+    private static let preferredHeight: CGFloat = 60
+    private static let shapeIconSize: CGFloat = 22
     private static let padding: CGFloat = PopoverStyle.padding
 
     // MARK: - init
@@ -51,7 +59,8 @@ final class ShapeFilterPopoverController: NSViewController {
         for shape in PhotoShape.allCases {
             let button = PopoverItemFactory.makeIconOnlySegmentItem(
                 icon: shape.icon,
-                isActive: filterState.shapes.contains(shape)
+                isActive: filterState.shapes.contains(shape),
+                iconSize: Self.shapeIconSize  // V5.5: 22pt 让 aspect ratio 可见
             ) { [weak self] in
                 self?.handleToggle(shape)
             }

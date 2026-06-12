@@ -87,17 +87,19 @@ enum PopoverItemFactory {
     /// V4.36.x #1 + V4.68.0 彻底修: icon-only segment item
     ///   - V4.68.0: isBordered = false 完全去掉 bezel
     ///   - V4.69.0: iconTintOverride 参数——评分段 ⭐ 创建时直接传 .systemYellow
+    ///   - V5.5: iconSize 参数——形状段 15pt → 22pt 让 aspect ratio 可见
     static func makeIconOnlySegmentItem(
         icon: String,
         isActive: Bool,
         iconTintOverride: NSColor? = nil,
+        iconSize: CGFloat? = nil,
         action: @escaping () -> Void
     ) -> NSButton {
         let button = ClosureButton(title: "", action: action)
         // V4.68.0 彻底修: isBordered = false 完全去掉 bezel 渲染
         button.isBordered = false
         button.bezelStyle = .recessed  // 保留 isBordered=false 时无作用，但 hover/active 视觉仍 work
-        applySegmentStyle(button, isActive: isActive, text: nil, symbolName: icon, iconTintOverride: iconTintOverride)
+        applySegmentStyle(button, isActive: isActive, text: nil, symbolName: icon, iconTintOverride: iconTintOverride, iconSize: iconSize)
         return button
     }
 
@@ -120,17 +122,19 @@ enum PopoverItemFactory {
 
     // MARK: - 6. apply segment style
 
-    /// V4.41.1 + V4.62.0 + V4.68.0 + V4.69.0 + V4.72.0 精修
+    /// V4.41.1 + V4.62.0 + V4.68.0 + V4.69.0 + V4.72.0 + V5.5 精修
     ///   - active: accent bg + 白字/icon
     ///   - inactive: 透明 bg + labelColor icon
     ///   - V4.69.0: paletteColors 链式——评分 ⭐ gold baked
     ///   - V4.72.0: itemFontSize 12pt（item 不是段头）
+    ///   - V5.5: iconSize 参数——形状段 15pt → 22pt 让 aspect ratio 可见
     static func applySegmentStyle(
         _ button: NSButton,
         isActive: Bool,
         text: String?,
         symbolName: String? = nil,
-        iconTintOverride: NSColor? = nil
+        iconTintOverride: NSColor? = nil,
+        iconSize: CGFloat? = nil
     ) {
         // 1. 文字：active 白 / inactive labelColor
         if let text = text {
@@ -150,7 +154,7 @@ enum PopoverItemFactory {
         if let symbol = symbolName {
             let usePalette = iconTintOverride != nil
             let sizeConfig = NSImage.SymbolConfiguration(
-                pointSize: PopoverStyle.iconFontSize,
+                pointSize: iconSize ?? PopoverStyle.iconFontSize,
                 weight: .medium
             )
             let finalConfig: NSImage.SymbolConfiguration
@@ -164,6 +168,8 @@ enum PopoverItemFactory {
             let img = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)?
                 .withSymbolConfiguration(finalConfig)
             button.image = img
+            // V5.5: scaleProportionallyDown 保 aspect ratio——形状段 22pt 时 rectangle.fill
+            //   vs rectangle.portrait.fill 视觉差异可见（之前 15pt 时 5px 差异看不出来）
             button.imageScaling = .scaleProportionallyDown
             button.imagePosition = .imageOnly
             if usePalette {
