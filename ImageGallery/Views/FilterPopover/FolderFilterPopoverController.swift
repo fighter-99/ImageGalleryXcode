@@ -28,6 +28,10 @@ final class FolderFilterPopoverController: NSViewController {
     private var filterState: FilterState
     private let folders: [Folder]
 
+    // MARK: - 子视图引用（V5.4: viewDidLayout 计算 content height 用）
+
+    private var listContainer: NSView?
+
     // MARK: - 配置常量
 
     private static let preferredWidth: CGFloat = 240
@@ -71,6 +75,7 @@ final class FolderFilterPopoverController: NSViewController {
         }
         container.addSubview(visualEffect)
         visualEffect.addSubview(list)
+        self.listContainer = list
         // V5.2: 三层约束
         //   1. visualEffect 撑满 container
         //   2. list 12pt padding 在 visualEffect 内（V5.0 范式——修左侧切断）
@@ -91,9 +96,14 @@ final class FolderFilterPopoverController: NSViewController {
 
     override func viewDidLayout() {
         super.viewDidLayout()
+        // V5.4: 高度按内容收缩（修御姐/旗袍间距异常）
+        //   之前硬编码 216pt——按 8 item 算的，实际 10 item → NSPopover 内部拉伸
+        //   distribution=.fill 把按钮挤压，首个 item 偏移 → 御姐/旗袍 gap ~34pt 其他 ~30pt
+        //   现在 list.fittingSize.height + 2*padding 算实际高度——NSPopover 不再挤压
+        let contentHeight = (listContainer?.fittingSize.height ?? 0) + 2 * Self.padding
         preferredContentSize = NSSize(
             width: Self.preferredWidth,
-            height: Self.preferredHeight
+            height: contentHeight
         )
     }
 

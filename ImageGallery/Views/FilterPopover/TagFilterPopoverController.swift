@@ -76,9 +76,12 @@ final class TagFilterPopoverController: NSViewController {
         scrollView.translatesAutoresizingMaskIntoConstraints = false
 
         // V4.87.0: 1 列 checkbox list——V4.81.0 PopoverItemFactory 共享
+        // V5.4: 移除 '#' 前缀——用户截图 17 反馈"标签文本前的 # 多余"
+        //   之前 "#\(tag.name)" 加 # 是 V4.87.0 设计——模仿社交媒体 hashtag 风格
+        //   但实际使用中 # 是冗余的——tag 已经在 tag 类别下，# 视觉污染
         let list = PopoverItemFactory.makeOneColumnCheckList(items: tags) { [weak self] tag in
             PopoverItemFactory.makeCheckItem(
-                label: "#\(tag.name)",
+                label: tag.name,
                 isOn: self?.filterState.tags.contains(tag.id) ?? false
             ) { [weak self] in
                 self?.handleToggle(tag.id)
