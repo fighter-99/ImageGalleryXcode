@@ -337,35 +337,43 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
         btn.contentTintColor = filterIsActive ? .controlAccentColor : nil
     }
 
-    // MARK: - V5.9: popover 打开/关闭时按钮 "pressed" 视觉反馈
+    // MARK: - V5.9.1: popover 打开/关闭时按钮视觉反馈
 
-    /// V5.9: 设置工具栏按钮的 pressed 状态——NSPopover 打开/关闭时调
-    ///   - isOn = true: 按钮 state = .on（NSButton 系统 recessed bezel 显 pressed 背景）
-    ///   - isOn = false: 按钮 state = .off（默认）
-    ///   仿 macOS 标准 toolbar button 行为——popover 打开时按钮"被按住"
-    ///   用户立刻知道"我刚点的按钮是哪个、它正控制着一个 popover"
-    private func setButtonPressed(_ id: Identifier, isOn: Bool) {
-        guard let item = itemCache[id.nsIdentifier],
-              let button = item.view as? NSButton else { return }
-        button.state = isOn ? .on : .off
+    /// V5.9.1: popover 打开/关闭时改变工具栏按钮 icon + tint
+    ///   V5.9 用 NSButton.state 失败原因：item.view as? NSButton 对默认 NSToolbarItem 返回 nil
+    ///   （view options 用 makeSimpleItem 创建默认 item——没有 NSButton）
+    ///   改方案：直接改 item.image（icon）+ item.isBordered 控 pressed 外观
+    ///   - isOpen = true:  icon 切填充变体 + item.isBordered = true 显 pressed 背景
+    ///   - isOpen = false: icon 恢复默认 + item.isBordered = false 隐背景
+    ///   对 NSButton 类（filter）也走同路径——统一用 item 级别 API
+    private func setItemPressed(_ id: Identifier, isOpen: Bool, openIcon: String, defaultIcon: String) {
+        guard let item = itemCache[id.nsIdentifier] else { return }
+        // 切 icon
+        item.image = NSImage(systemSymbolName: isOpen ? openIcon : defaultIcon, accessibilityDescription: item.toolTip)
+        // 切 border（pressed 视觉）
+        item.isBordered = isOpen
     }
 
     // MARK: - V5.9: NSPopoverDelegate
 
-    /// V5.9: popover 关闭时（用户点外部 / 主动 close）——同步按钮 pressed 态
-    ///   - popover 是 view options：setButtonPressed(.viewOptions, false)
-    ///   - popover 是 filter top（coordinator 内部的 topPopover）：setButtonPressed(.filter, false)
+    /// V5.9.1: popover 关闭时（用户点外部 / 主动 close）——同步按钮 icon + border
+    ///   - popover 是 view options：setItemPressed(.viewOptions, false)
+    ///   - popover 是 filter top（coordinator 内部的 topPopover）：setItemPressed(.filter, false)
     func popoverDidClose(_ notification: Notification) {
         guard let popover = notification.object as? NSPopover else { return }
         // 区分是哪个 popover 关闭
         if popover === viewOptionsPopover {
-            setButtonPressed(.viewOptions, isOn: false)
+            setItemPressed(.viewOptions, isOpen: false,
+                          openIcon: "rectangle.3.offgrid.fill",
+                          defaultIcon: "rectangle.3.offgrid")
             viewOptionsPopover = nil
         } else if let coordinator = filterPopoverCoordinator,
                   let topPopover = coordinator.topPopover,
                   popover === topPopover {
-            // V5.9: 顶层 filter popover 关闭（用户点外部 / coordinator.closeAll）
-            setButtonPressed(.filter, isOn: false)
+            // V5.9.1: 顶层 filter popover 关闭（用户点外部 / coordinator.closeAll）
+            setItemPressed(.filter, isOpen: false,
+                          openIcon: "line.3.horizontal.decrease.circle.fill",
+                          defaultIcon: "line.3.horizontal.decrease")
         }
     }
 
@@ -432,7 +440,9 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
         if let popover = viewOptionsPopover, popover.isShown {
             popover.close()
             viewOptionsPopover = nil
-            setButtonPressed(.viewOptions, isOn: false)
+            setItemPressed(.viewOptions, isOpen: false,
+                          openIcon: "rectangle.3.offgrid.fill",
+                          defaultIcon: "rectangle.3.offgrid")
             return
         }
 
@@ -448,8 +458,10 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
         popover.contentViewController = contentProvider()
         popover.show(relativeTo: anchorView.bounds, of: anchorView, preferredEdge: .minY)
         self.viewOptionsPopover = popover
-        // V5.9: 按钮 "pressed" 视觉反馈——打开即变 on
-        setButtonPressed(.viewOptions, isOn: true)
+        // V5.9.1: icon 切填充变体 + border 显 pressed——"我正被使用"
+        setItemPressed(.viewOptions, isOpen: true,
+                      openIcon: "rectangle.3.offgrid.fill",
+                      defaultIcon: "rectangle.3.offgrid")
     }
     @objc private func handleSearchAction() {
         // Enter 键触发——已通过 textDidChangeNotification 实时同步
@@ -466,8 +478,10 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
         if let coordinator = filterPopoverCoordinator, coordinator.isTopShown {
             coordinator.closeAll()
             filterPopoverCoordinator = nil
-            // V5.9: 关闭时同步按钮 pressed 态
-            setButtonPressed(.filter, isOn: false)
+            // V5.9.1: 恢复默认 icon + 隐藏 border——"我不再被使用"
+            setItemPressed(.filter, isOpen: false,
+                          openIcon: "line.3.horizontal.decrease.circle.fill",
+                          defaultIcon: "line.3.horizontal.decrease")
             return
         }
 
@@ -486,8 +500,11 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
         })
         coordinator?.showTop(anchoredTo: anchorView)
         filterPopoverCoordinator = coordinator
-        // V5.9: 打开时按钮 pressed 视觉反馈——"我正被使用"
-        setButtonPressed(.filter, isOn: true)
+        // V5.9.1: icon 切填充变体（与 filterIsActive 视觉一致）+ border 显 pressed
+        //   注：filterIsActive 也走同 icon——打开时强制显示 active icon
+        setItemPressed(.filter, isOpen: true,
+                      openIcon: "line.3.horizontal.decrease.circle.fill",
+                      defaultIcon: "line.3.horizontal.decrease")
     }
 
     /// V4.36.x + V4.54.0: 同步激活筛选数 + active 视觉锤到 filter item
