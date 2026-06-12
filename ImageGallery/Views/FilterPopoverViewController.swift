@@ -207,6 +207,12 @@ final class FilterPopoverViewController: NSViewController {
 
         // 段 2: 标签
         // V4.61.0: 同上——删段头
+        // V4.70.0: folder-tag 段间加 1pt hairline——区分两种语义不同的 item 集合
+        //   folder 是"集合"——tag 是"标签"
+        //   只在两段都不为空时加（避免 folder 段 + 空 tag placeholder 之间出现奇怪分隔）
+        if !allFolders.isEmpty && !allTags.isEmpty {
+            content.addArrangedSubview(makeSectionSeparator())
+        }
         if allTags.isEmpty {
             content.addArrangedSubview(makeEmptyStatePlaceholder(
                 icon: "tag",
@@ -300,6 +306,31 @@ final class FilterPopoverViewController: NSViewController {
         label.font = NSFont.systemFont(ofSize: 11)
         label.textColor = .tertiaryLabelColor
         return label
+    }
+
+    /// V4.70.0: 段间 1pt hairline 分隔——区分 folder 集合 vs tag 标签两种语义
+    ///   0.5pt separator + 18% primary + 上下各 6pt padding
+    ///   不画整宽——只占 60% 宽，居左对齐
+    private func makeSectionSeparator() -> NSView {
+        let container = NSView()
+        container.translatesAutoresizingMaskIntoConstraints = false
+
+        let separator = NSBox()
+        separator.boxType = .separator
+        separator.alphaValue = 0.6  // 18% 视觉
+        separator.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(separator)
+
+        NSLayoutConstraint.activate([
+            // 上下各 6pt padding
+            container.heightAnchor.constraint(equalToConstant: 12 + 1),
+            // separator 居中 (vertical) + 60% 宽 + 偏左 12pt
+            separator.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 12),
+            separator.centerYAnchor.constraint(equalTo: container.centerYAnchor),
+            separator.widthAnchor.constraint(equalTo: container.widthAnchor, multiplier: 0.6, constant: -12),
+            separator.heightAnchor.constraint(equalToConstant: 1)
+        ])
+        return container
     }
 
     override func viewDidAppear() {
