@@ -31,7 +31,7 @@ struct MainLayoutView<PathBar: View, Split: View, StatusBarView: View>: View {
 
     // 修饰需要的值
     let undoManager: ImageGalleryUndoManager
-    let toast: ToastInfo?
+    let toastQueue: [ToastInfo]
     let visiblePhotos: [Photo]
 
     // 修饰需要的 action
@@ -43,7 +43,7 @@ struct MainLayoutView<PathBar: View, Split: View, StatusBarView: View>: View {
         @ViewBuilder statusBar: () -> StatusBarView,
         showSidebar: Binding<Bool>,
         undoManager: ImageGalleryUndoManager,
-        toast: ToastInfo?,
+        toastQueue: [ToastInfo],
         immersivePhoto: Binding<Photo?>,
         immersiveIndex: Binding<Int>,
         visiblePhotos: [Photo],
@@ -54,7 +54,7 @@ struct MainLayoutView<PathBar: View, Split: View, StatusBarView: View>: View {
         self.statusBar = statusBar()
         self._showSidebar = showSidebar
         self.undoManager = undoManager
-        self.toast = toast
+        self.toastQueue = toastQueue
         self._immersivePhoto = immersivePhoto
         self._immersiveIndex = immersiveIndex
         self.visiblePhotos = visiblePhotos
@@ -69,15 +69,15 @@ struct MainLayoutView<PathBar: View, Split: View, StatusBarView: View>: View {
         }
         // V3.5 Phase 2：把 undoManager 注入环境，让 DetailView 的撤销逻辑（添加/移除标签、重命名）能用
         .environment(\.undoManager, undoManager)
-        // Toast 浮层（中央上方）
+        // Toast 浮层（中央上方）—— V5.13: 读 toastQueue.first（队首显示中）
         .overlay(alignment: .top) {
-            if let toast = toast {
+            if let toast = toastQueue.first {
                 ToastView(message: toast.message, type: toast.type)
                     .padding(.top, 80)
                     .transition(.move(edge: .top).combined(with: .opacity))
             }
         }
-        .animation(Animations.springGentle, value: toast)
+        .animation(Animations.springGentle, value: toastQueue.first)
         // 沉浸式全屏看图
         .overlay {
             if immersivePhoto != nil {

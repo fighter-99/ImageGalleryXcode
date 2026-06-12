@@ -176,8 +176,8 @@ struct ContentView: View {
         AccentColor(rawValue: accentColorID) ?? .system
     }
 
-    // Toast 提示
-    @State private var toast: ToastInfo?
+    // Toast 提示（队列——V5.13 升级）
+    @State private var toastQueue: [ToastInfo] = []
     @State private var toastTask: Task<Void, Never>?
 
     // SwiftData：获取所有图片（用于状态栏显示总数）
@@ -809,7 +809,7 @@ struct ContentView: View {
             statusBar: { statusBarPane },
             showSidebar: $showSidebar,
             undoManager: undoManager,
-            toast: toast,
+            toastQueue: toastQueue,
             immersivePhoto: $immersivePhoto,
             immersiveIndex: $immersiveIndex,
             visiblePhotos: visiblePhotos,
@@ -1016,18 +1016,39 @@ struct ContentView: View {
         )
     }
 
-    // 显示 Toast（自动消失）
-    private func showToast(_ message: String, type: ToastView.ToastType = .info) {
+    /// V5.13: 入队 Toast（V4.36.x 单 in-flight 改 queue）
+    /// - 自动 dismiss：用 scheduleDismiss 单点维护 task
+    /// - 错误 toast 用 .long duration（5s）让用户看清
+    private func enqueueToast(_ message: String, type: ToastView.ToastType = .info, duration: ToastInfo.Duration = .normal) {
+        let info = ToastInfo(message: message, type: type, duration: duration)
+        toastQueue.append(info)
+        if toastQueue.count == 1 {
+            // 队列从空到非空——启动 dismiss task
+            scheduleDismiss(after: info.duration.seconds)
+        }
+        // 否则排队中——当前 dismiss task 处理完后会自动续 next
+    }
+
+    /// V5.13: dismiss task 单点维护
+    /// - 每次启动新 task 取消上一个（防 race）
+    /// - 队列空时停；非空时按队首 duration 续 task
+    private func scheduleDismiss(after seconds: TimeInterval) {
         toastTask?.cancel()
-        toast = ToastInfo(message: message, type: type)
-        toastTask = Task {
-            try? await Task.sleep(nanoseconds: 2_500_000_000)
-            if !Task.isCancelled {
-                await MainActor.run {
-                    self.toast = nil
-                }
+        toastTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
+            guard !Task.isCancelled else { return }
+            guard !toastQueue.isEmpty else { return }
+            toastQueue.removeFirst()
+            if let next = toastQueue.first {
+                scheduleDismiss(after: next.duration.seconds)
             }
         }
+    }
+
+    /// 兼容旧 showToast 调用（V4.36.x 8 处 call site 保持 0 改动）
+    ///   Day 5 错误 toast 改用 enqueueToast(message, type: .error, duration: .long)
+    private func showToast(_ message: String, type: ToastView.ToastType = .info) {
+        enqueueToast(message, type: type, duration: .normal)
     }
 
 
