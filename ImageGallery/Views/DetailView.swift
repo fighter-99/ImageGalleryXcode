@@ -416,63 +416,27 @@ struct DetailView: View {
     }
 
     /// 5️⃣ 操作卡
+    /// V5.7: 砍"收藏"和"在 Finder 中显示"两个按钮
+    ///   - 收藏：合并到评分——右键菜单 / 筛选 popover 替代
+    ///   - 在 Finder 中显示：右键菜单仍有
+    ///   只保留"删除"——最关键的危险操作必须显眼
     private var operationsCard: some View {
         detailCard {
             // V4.5.0: 加 .controlSize(.large) 让按钮更舒展（同 MultiSelectDetailView V4.4.7）
-            //   旧 .bordered + frame infinity 默认高度 ~26pt，内容占按钮 30% 宽，比例失衡
-            //   .controlSize(.large) → 32pt 高 + 字号自动适配 → 与容器框比例协调
-            // V4.16.0: 加 "在 Finder 中显示" 按钮（3 按钮等宽，V4.5.0 注释的 2 按钮
-            //   扩为 3 按钮——detail panel 宽度足以容纳）
-            HStack(spacing: Spacing.md) {
-                // 收藏切换
-                Button {
-                    photo.isFavorite.toggle()
-                    modelContext.saveWithLog()
-                } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: photo.isFavorite ? "star.fill" : "star")
-                        Text(photo.isFavorite ? "已收藏" : "收藏")
-                            .lineLimit(1)
-                    }
-                    .frame(maxWidth: .infinity)
+            // V5.7: 3 按钮 → 1 按钮（删除）——单按钮 fullWidth 占满
+            Button(role: .destructive) {
+                showingDeleteConfirm = true
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "trash")
+                    Text("删除")
+                        .lineLimit(1)
                 }
-                .buttonStyle(.bordered)
-                .controlSize(.large)
-                .tint(photo.isFavorite ? .yellow : .accentColor)
-                .fixedSize(horizontal: false, vertical: true)  // 垂直固定 + 水平可伸缩
-
-                // V4.16.0: 在 Finder 中显示——macOS Photos 标配
-                //   NSWorkspace.activateFileViewerSelecting(_:) 高亮选中文件
-                //   并打开 Finder（如果已开则前置）
-                Button {
-                    NSWorkspace.shared.activateFileViewerSelecting([photo.fileURL])
-                } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: "folder")
-                        Text("在 Finder 中显示")
-                            .lineLimit(1)
-                    }
-                    .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.large)
-                .fixedSize(horizontal: false, vertical: true)
-
-                // 删除
-                Button(role: .destructive) {
-                    showingDeleteConfirm = true
-                } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: "trash")
-                        Text("删除")
-                            .lineLimit(1)
-                    }
-                    .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.large)
-                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity)
             }
+            .buttonStyle(.bordered)
+            .controlSize(.large)
+            .fixedSize(horizontal: false, vertical: true)
         }
     }
 

@@ -96,14 +96,36 @@ struct CellContextMenuModifier: ViewModifier {
 
             Divider()
 
-            Button {
-                photo.isFavorite.toggle()
-                modelContext.saveWithLog()
+            // V5.7: 砍"收藏"按钮——合并到评分（5 星 = 收藏）
+            //   新增"评分"子菜单：1-5 星 + 清除评分
+            //   子菜单项：1-4 星用 `star` 空心，5 星用 `star.fill` 实心——视觉与筛选 popover 对齐
+            //   当前选中评分行用 checkmark 标记
+            Menu {
+                ForEach(1...5, id: \.self) { n in
+                    Button {
+                        photo.rating = n
+                        modelContext.saveWithLog()
+                    } label: {
+                        if photo.rating == n {
+                            Label("\(n) 星", systemImage: "star.fill")
+                        } else {
+                            Label("\(n) 星", systemImage: n == 5 ? "star.fill" : "star")
+                        }
+                    }
+                }
+                Divider()
+                Button {
+                    photo.rating = 0
+                    modelContext.saveWithLog()
+                } label: {
+                    if photo.rating == 0 {
+                        Label("清除评分", systemImage: "checkmark")
+                    } else {
+                        Text("清除评分")
+                    }
+                }
             } label: {
-                Label(
-                    photo.isFavorite ? "取消收藏" : "收藏",
-                    systemImage: photo.isFavorite ? "star.slash" : "star"
-                )
+                Label("评分", systemImage: photo.rating > 0 ? "star.fill" : "star")
             }
 
             Divider()

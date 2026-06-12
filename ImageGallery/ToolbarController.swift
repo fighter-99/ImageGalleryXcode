@@ -35,7 +35,7 @@ final class ToolbarController: NSObject, NSToolbarDelegate {
     // MARK: - Action 桥接（ContentView 设置 closure）
 
     var onToggleSidebar: (() -> Void)?
-    var onToggleFavorite: (() -> Void)?
+    // V5.7: 砍 onToggleFavorite——工具栏 ❤ 收藏按钮移除
     var onBatchExport: (() -> Void)?
     var onDelete: (() -> Void)?
     var onImport: (() -> Void)?
@@ -94,10 +94,8 @@ final class ToolbarController: NSObject, NSToolbarDelegate {
 
     // MARK: - 状态桥接
 
-    /// 5 actions 的 enabled 状态
-    var favoriteEnabled: Bool = false {
-        didSet { updateItemEnabled(.favorite, enabled: favoriteEnabled) }
-    }
+    /// 4 actions 的 enabled 状态
+    /// V5.7: 砍 favoriteEnabled——工具栏 ❤ 收藏按钮移除
     var exportEnabled: Bool = false {
         didSet { updateItemEnabled(.export, enabled: exportEnabled) }
     }
@@ -124,7 +122,7 @@ final class ToolbarController: NSObject, NSToolbarDelegate {
         case sidebarToggle
         case search
         case flexibleSpace
-        case favorite
+        // V5.7: 砍 favorite case——工具栏 ❤ 收藏按钮移除（走右键菜单评分 / 筛选 popover）
         case export
         case delete
         case importItem      // 避开 `import` 关键字
@@ -140,15 +138,15 @@ final class ToolbarController: NSObject, NSToolbarDelegate {
     // MARK: - NSToolbarDelegate
 
     /// 默认 item 顺序——决定 toolbar 的视觉布局
-    /// sidebar | search | flex | favorite | quickLook | export | delete | import | filter | viewOptions
+    /// sidebar | search | flex | quickLook | export | delete | import | filter | viewOptions
     /// V4.36.x: 在 importItem 之后、viewOptions 之前插入 filter（import→filter→viewOptions 形成设置组）
     /// V4.37.1: 在 favorite 之后插入 quickLook（"看"的语义紧邻 favorite/"标记"语义）
+    /// V5.7: 砍 favorite 项——侧栏/工具栏都不再放收藏入口（走右键菜单评分 / 筛选 popover）
     func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
         [
             Identifier.sidebarToggle.nsIdentifier,
             Identifier.search.nsIdentifier,
             Identifier.flexibleSpace.nsIdentifier,
-            Identifier.favorite.nsIdentifier,
             Identifier.quickLook.nsIdentifier,  // V4.37.1 NEW
             Identifier.export.nsIdentifier,
             Identifier.delete.nsIdentifier,
@@ -177,13 +175,7 @@ final class ToolbarController: NSObject, NSToolbarDelegate {
                 label: "切换侧边栏",
                 action: #selector(handleToggleSidebar)
             )
-        case .favorite:
-            item = makeSimpleItem(
-                id: id,
-                image: "star",
-                label: "收藏",
-                action: #selector(handleToggleFavorite)
-            )
+        // V5.7: 砍 .favorite case——工具栏 ❤ 收藏按钮移除
         case .quickLook:  // V4.37.1 NEW
             // V4.37.1: ⌘Y 快速查看——macOS Finder/Photos 标准 eye 图标
             //   复用 makeSimpleItem 模式，行为与 5 actions 一致
@@ -244,7 +236,7 @@ final class ToolbarController: NSObject, NSToolbarDelegate {
     func validateToolbarItem(_ item: NSToolbarItem) -> Bool {
         guard let id = Identifier(rawValue: item.itemIdentifier.rawValue) else { return true }
         switch id {
-        case .favorite: return favoriteEnabled
+        // V5.7: 砍 .favorite case
         case .export: return exportEnabled
         case .delete: return deleteEnabled
         case .quickLook: return quickLookEnabled   // V4.37.1 NEW
@@ -260,8 +252,8 @@ final class ToolbarController: NSObject, NSToolbarDelegate {
     }
 
     /// 全部状态更新（ContentView 在 .onChange 调用）
+    /// V5.7: 砍 favoriteEnabled 赋值——工具栏 ❤ 已移除
     func updateAllStates(hasSelection: Bool, hasMultipleSelection: Bool) {
-        favoriteEnabled = hasSelection
         exportEnabled = hasSelection
         deleteEnabled = hasSelection
         // V4.37.1: Quick Look 仅在单张选中时可用（多张 / 0 张 都灰显）
@@ -394,7 +386,7 @@ final class ToolbarController: NSObject, NSToolbarDelegate {
     // MARK: - Action Handlers
 
     @objc private func handleToggleSidebar() { onToggleSidebar?() }
-    @objc private func handleToggleFavorite() { onToggleFavorite?() }
+    // V5.7: 砍 handleToggleFavorite——工具栏 ❤ 收藏按钮移除
     @objc private func handleBatchExport() { onBatchExport?() }
     @objc private func handleDelete() { onDelete?() }
     @objc private func handleImport() { onImport?() }

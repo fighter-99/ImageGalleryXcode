@@ -270,14 +270,8 @@ struct PhotoThumbnailView: View {
             //   V3.6.51 注释说"删了"但代码仍在；选中状态靠 cellSelectionOverlay
             //   的 3pt accent 边框 + checkmark 角标已足够，无需整图染色
 
-            // 收藏星标
-            if photo.isFavorite {
-                Image(systemName: "star.fill")
-                    .foregroundStyle(.yellow)
-                    .padding(6)
-                    .background(.ultraThinMaterial, in: Circle())
-                    .padding(6)
-            }
+            // V5.7: 砍收藏星标 badge——收藏 = 评分 ≥ 5 走筛选 popover
+            //   缩略图左上角不再显示 ⭐——视觉更纯净，评分通过筛选可达
 
             // V3.6.6: 回收站剩余天数 badge（仅 trash 视图下显示）
             // V4.1.0: 颜色编码——≤3 红 / 4-7 橙 / 8-14 黄 / >14 灰

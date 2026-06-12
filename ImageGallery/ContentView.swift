@@ -23,7 +23,8 @@ import UniformTypeIdentifiers
 // 侧边栏选中项类型
 enum SidebarSelection: Hashable {
     case all
-    case favorites
+    // V5.7: 砍 .favorites——收藏 = 评分 ≥ 5，访问走筛选 popover
+    //   侧边栏只放主导航，不再掺杂筛选视图
     case unfiled
     case duplicates
 
@@ -222,7 +223,8 @@ struct ContentView: View {
     }
 
     private var filterFavorites: Bool {
-        if case .favorites = sidebarSelection { return true }
+        // V5.7: 砍 .favorites 侧边栏项——保留 property 兼容旧 filter API 签名
+        //   永远返回 false；用户想看"收藏"改走筛选 popover (评分 ≥ 5)
         return false
     }
 
@@ -309,7 +311,7 @@ struct ContentView: View {
     private var currentViewTitle: String {
         switch sidebarSelection {
         case .all, .none:           return "全部照片"
-        case .favorites:            return "收藏"
+        // V5.7: 砍 .favorites 侧边栏项——case 移除
         case .unfiled:              return "待整理"
         case .duplicates:           return "重复图"
         case .recent7Days:          return "最近 7 天"
@@ -484,7 +486,7 @@ struct ContentView: View {
                 onImport: startImport,
                 onNewFolder: { showingNewFolderAlert = true },
                 onResetFilters: resetFilters,
-                onToggleFavorite: toggleFavorite,
+                // V5.7: 砍 onToggleFavorite——工具栏 ❤ 收藏按钮已移除
                 onCopy: copyToPasteboard,
                 onToggleSortDirection: toggleSortDirection,
                 onToggleSidebar: { showSidebar.toggle() },
@@ -582,9 +584,7 @@ struct ContentView: View {
         controller.onToggleSidebar = { [self] in
             withAnimation(Animations.medium) { showSidebar.toggle() }
         }
-        controller.onToggleFavorite = { [self] in
-            toggleFavorite()
-        }
+        // V5.7: 砍 onToggleFavorite——工具栏 ❤ 收藏按钮已移除
         controller.onBatchExport = { [self] in
             batchExport()
         }
@@ -787,21 +787,8 @@ struct ContentView: View {
         filterState = .empty
     }
 
-    // 收藏切换（单选切换；多选批量反向）
-    private func toggleFavorite() {
-        if let photo = singleSelectedPhoto {
-            photo.isFavorite.toggle()
-            modelContext.saveWithLog()
-        } else if !selection.selectedIDs.isEmpty {
-            // V3.6.52: 用 selection.selectedPhotos(in:) 替手写 filter
-            let targetPhotos = selection.selectedPhotos(in: visiblePhotos)
-            let allFavorited = targetPhotos.allSatisfy { $0.isFavorite }
-            for photo in targetPhotos {
-                photo.isFavorite = !allFavorited
-            }
-            modelContext.saveWithLog()
-        }
-    }
+    // V5.7: 砍 toggleFavorite()——工具栏 ❤ 收藏按钮已移除
+    //   原逻辑：单选切换 / 多选批量反向——通过右键菜单评分 / 筛选 popover 替代
 
     // V4.8.0: 删 toolbarContent 定义——NSToolbar (AppKit) 接管所有 toolbar items
     // V4.9.1: 删 showViewOptions @State——View Options popover 改用 NSPopover 由 ToolbarController 管
@@ -992,7 +979,7 @@ struct ContentView: View {
             // V3.5.19：多选 batch 动作从原 PhotoGridView.multiSelectTopBar 搬过来
             onBatchMove: { folder in batchMove(to: folder) },
             onBatchAddTag: { tag in batchAddTag(tag) },
-            onBatchToggleFavorite: batchToggleFavorite,
+            // V5.7: 砍 onBatchToggleFavorite——多选面板的"收藏"按钮移除
             onBatchExport: batchExport,
             onBatchDelete: { showingBatchDeleteConfirm = true },
             // V3.6.52: 单字段 assignment 替 2 字段 pair
@@ -1419,18 +1406,7 @@ struct ContentView: View {
         }
     }
 
-    // ─── 批量收藏切换 ───
-    private func batchToggleFavorite() {
-        // V3.6.52: 用 selection.selectedPhotos(in:) 替手写 filter
-        let photosToToggle = selection.selectedPhotos(in: visiblePhotos)
-        guard !photosToToggle.isEmpty else { return }
-        // 全部已收藏 → 全部取消；否则 → 全部收藏
-        let allFavorited = photosToToggle.allSatisfy { $0.isFavorite }
-        for photo in photosToToggle {
-            photo.isFavorite = !allFavorited
-        }
-        modelContext.saveWithLog()
-    }
+    // ─── V5.7: 砍 batchToggleFavorite()——多选面板的"收藏"按钮已移除 ───
 
     // ─── 回收站操作（V3.6 NEW）───
 
@@ -1498,7 +1474,7 @@ struct ContentView: View {
         guard let selection = selection else { return "all" }
         switch selection {
         case .all: return "all"
-        case .favorites: return "favorites"
+        // V5.7: 砍 .favorites case
         case .unfiled: return "unfiled"
         case .duplicates: return "duplicates"
         case .recent7Days: return "recent7Days"
@@ -1513,7 +1489,7 @@ struct ContentView: View {
     private func restoreSelection(_ key: String) -> SidebarSelection? {
         switch key {
         case "all": return .all
-        case "favorites": return .favorites
+        // V5.7: 砍 "favorites" case
         case "unfiled": return .unfiled
         case "duplicates": return .duplicates
         case "recent7Days": return .recent7Days

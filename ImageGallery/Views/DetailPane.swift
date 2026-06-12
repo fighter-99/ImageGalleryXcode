@@ -37,7 +37,7 @@ struct DetailPane: View {
     // 多选操作（V3.5.19：从 mainLayout 接过来）
     let onBatchMove: (Folder?) -> Void
     let onBatchAddTag: (Tag) -> Void
-    let onBatchToggleFavorite: () -> Void
+    // V5.7: 砍 onBatchToggleFavorite——多选面板的"收藏"按钮移除
     let onBatchExport: () -> Void
     let onBatchDelete: () -> Void
     let onClearSelection: () -> Void
@@ -125,7 +125,7 @@ struct DetailPane: View {
                     allTags: allTags,
                     onMove: onBatchMove,
                     onAddTag: onBatchAddTag,
-                    onToggleFavorite: onBatchToggleFavorite,
+                    // V5.7: 砍 onToggleFavorite 传递
                     onExport: onBatchExport,
                     onDelete: onBatchDelete,
                     onClearSelection: onClearSelection

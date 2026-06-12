@@ -127,16 +127,13 @@ struct ImmersivePhotoView: View {
     private var topChrome: some View {
         HStack {
             // 文件名 + 索引
+            // V5.7: 砍收藏 ⭐——沉浸查看只显示文件名
             if let photo = currentPhoto {
                 HStack(spacing: 8) {
                     Text(photo.filename)
                         .foregroundStyle(.white)
                         .lineLimit(1)
                         .truncationMode(.middle)
-                    if photo.isFavorite {
-                        Image(systemName: "star.fill")
-                            .foregroundStyle(.yellow)
-                    }
                 }
                 .font(.callout)
             }

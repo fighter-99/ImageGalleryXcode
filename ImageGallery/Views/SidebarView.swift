@@ -78,10 +78,10 @@ struct SidebarView: View {
 
     // 各 section 的 item 数（用于显示在 section header 上）
     // V3.6.1：用 PhotoStats 纯函数集合（之前每行各自 filter，4 次遍历）
-    private var libraryCounts: (all: Int, favorites: Int, unfiled: Int, trashed: Int) {
+    // V5.7: 砍 favorites 字段——侧边栏不再有收藏入口（走筛选 popover 评分 ≥ 5）
+    private var libraryCounts: (all: Int, unfiled: Int, trashed: Int) {
         (
             all: PhotoStats.inLibrary(allPhotos).count,
-            favorites: PhotoStats.favorites(allPhotos).count,
             unfiled: PhotoStats.unfiled(allPhotos).count,
             trashed: PhotoStats.trashed(allPhotos).count
         )
@@ -122,7 +122,8 @@ struct SidebarView: View {
                     //   一眼区分内容类型（重复/最近/大图/收藏/最近删除）
                     //   色板：色相分散（HLS space 60°+ 间隔），避免混淆
                     sidebarRow(icon: "photo.on.rectangle.angled", label: "全部", count: libraryCounts.all, target: .all)
-                    sidebarRow(icon: "star", label: "收藏", count: libraryCounts.favorites, target: .favorites, iconColor: SidebarStyle.iconColorFavorite)
+                    // V5.7: 砍 sidebarRow "收藏"——侧边栏只放主导航
+                    //   收藏 = 评分 ≥ 5 走筛选 popover（用户在筛选 popover 内点击 ≥5 星即可看收藏）
                     sidebarRow(icon: "tray", label: "待整理", count: libraryCounts.unfiled, target: .unfiled)
                     if duplicateCount > 0 {
                         sidebarRow(icon: "doc.on.doc", label: "重复图", count: duplicateCount, target: .duplicates, iconColor: SidebarStyle.iconColorDuplicate)

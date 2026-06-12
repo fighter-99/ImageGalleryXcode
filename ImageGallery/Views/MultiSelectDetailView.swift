@@ -21,10 +21,10 @@ struct MultiSelectDetailView: View {
     let folders: [Folder]
     let allTags: [Tag]
 
-    // 5 个 batch 动作
+    // 4 个 batch 动作
+    // V5.7: 砍 onToggleFavorite——多选面板的"收藏"按钮移除
     let onMove: (Folder?) -> Void
     let onAddTag: (Tag) -> Void
-    let onToggleFavorite: () -> Void
     let onExport: () -> Void
     let onDelete: () -> Void
     let onClearSelection: () -> Void
@@ -100,17 +100,7 @@ struct MultiSelectDetailView: View {
                     .controlSize(.large)
                 }
 
-                // 收藏切换
-                Button {
-                    onToggleFavorite()
-                } label: {
-                    HStack {
-                        Label("收藏", systemImage: "star")
-                        Spacer()
-                    }
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.large)
+                // V5.7: 砍"收藏切换"按钮——收藏合并到评分（右键菜单 + 筛选 popover）
 
                 // 导出
                 Button {
@@ -166,7 +156,7 @@ struct MultiSelectDetailView: View {
         allTags: [Tag(name: "🌅 风景", colorHex: "#FF9500")],
         onMove: { _ in },
         onAddTag: { _ in },
-        onToggleFavorite: { },
+        // V5.7: 砍 onToggleFavorite
         onExport: { },
         onDelete: { },
         onClearSelection: { }

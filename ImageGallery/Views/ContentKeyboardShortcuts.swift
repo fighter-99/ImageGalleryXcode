@@ -22,18 +22,21 @@ extension View {
     /// - ⌘⇧S: 切换排序方向
     /// - ⌘⌃S: 切换侧栏显隐（macOS 标准）
     /// - ⌘Z / ⌘⇧Z: 撤销 / 重做（V4.7.0 起由 Edit menu 接管——见 ImageGalleryApp.UndoRedoMenuButtons）
+    ///   V5.7: 砍 ⌘2 .favorites 侧边栏项——保留其他 ⌘1,3-6 编号不变（用户肌肉记忆）
+    ///        砍 onToggleFavorite 参数——工具栏 ❤ 已移除
     func contentKeyboardShortcuts(
         sidebarSelection: Binding<SidebarSelection?>,
         onImport: @escaping () -> Void,
         onNewFolder: @escaping () -> Void,
         onResetFilters: @escaping () -> Void,
-        onToggleFavorite: @escaping () -> Void,
         onCopy: @escaping () -> Void,
         onToggleSortDirection: @escaping () -> Void,
         onToggleSidebar: @escaping () -> Void,
         onUndo: @escaping () -> Void = {},  // V4.7.0: 不再使用——保留参数避免破坏调用点
         onRedo: @escaping () -> Void = {},  // V4.7.0: 不再使用——保留参数避免破坏调用点
-        onFocusSearch: @escaping () -> Void = {}  // V3.6.23: ⌘F 聚焦搜索框（V3.5 ⌘F 之前给收藏，移除避免冲突 — 收藏快捷键改 ⌘D）
+        onFocusSearch: @escaping () -> Void = {},  // V3.6.23: ⌘F 聚焦搜索框（V3.5 ⌘F 之前给收藏，移除避免冲突 — 收藏快捷键改 ⌘D）
+        // V5.7: 砍 onToggleFavorite 参数——工具栏 ❤ 收藏按钮已移除
+        onToggleFavorite: @escaping () -> Void = {}  // V5.7: 保留默认空实现，调用点不破坏
     ) -> some View {
         background {
             Group {
@@ -43,9 +46,8 @@ extension View {
                 Button("") { sidebarSelection.wrappedValue = .all }
                     .keyboardShortcut("1", modifiers: .command)
                     .hidden()
-                Button("") { sidebarSelection.wrappedValue = .favorites }
-                    .keyboardShortcut("2", modifiers: .command)
-                    .hidden()
+                // V5.7: 砍 ⌘2 .favorites 绑定——侧边栏已无收藏入口
+                //   ⌘2 现在空着；其他编号不变（保持用户肌肉记忆）
                 Button("") { sidebarSelection.wrappedValue = .unfiled }
                     .keyboardShortcut("3", modifiers: .command)
                     .hidden()

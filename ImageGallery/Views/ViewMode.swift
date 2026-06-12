@@ -116,17 +116,13 @@ struct PhotoListRow: View {
                 }
             }
 
-            // 文件名 + 收藏星标
+            // 文件名
+            // V5.7: 砍收藏星标——收藏 = 评分 ≥ 5，列表行只显示文件名
             HStack(spacing: 4) {
                 Text(photo.filename)
                     .lineLimit(1)
                     .truncationMode(.middle)
                     .foregroundStyle(textColor)
-                if photo.isFavorite {
-                    Image(systemName: "star.fill")
-                        .font(.caption2)
-                        .foregroundStyle(Surface.favorite)
-                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
