@@ -446,32 +446,30 @@ struct DetailView: View {
         }
     }
 
-    /// V5.8: 5 颗 ⭐ 点选条——详情页直接评分
-    ///   - 5 颗 22pt ⭐ 横向排列
-    ///   - 点击第 N 颗 → photo.rating = N；再点同一颗 → photo.rating = 0（toggle）
-    ///   - 当前 rating 之前的实心（systemYellow），之后的空心（secondaryLabelColor）
-    ///   - 右侧文字 label 同步显示 N 星 / 未评分
+    /// V5.11 升级: 5 颗 ⭐ 点选条 macOS Photos 风格——hover 预览 + 视觉分层
+    ///   - 实心 N 颗 (systemYellow) + 空心 (5-N) 颗 (Color.secondary.opacity(0.5))
+    ///   - hover 预览: 鼠标悬停 N 颗 → 这 N 颗也显示填充（预览将要设置的评分）
+    ///   - 整体高度增加 6pt: padding(.vertical, 4) → padding(.vertical, 8)——更舒展
+    ///   - star 字号 22pt medium weight——比 .title2 略重，与按钮视觉一致
+    ///   - label 字号 .callout → .caption2——更 subtle
+    ///   仿 Photos.app 评分 popover 视觉锤
     private var ratingPickerRow: some View {
-        HStack(spacing: 6) {
-            ForEach(1...5, id: \.self) { n in
-                Button {
-                    photo.rating = (photo.rating == n) ? 0 : n
+        HStack(spacing: Spacing.sm) {
+            RatingStarsView(
+                rating: photo.rating,
+                onSet: { newRating in
+                    photo.rating = newRating
                     modelContext.saveWithLog()
-                } label: {
-                    Image(systemName: n <= photo.rating ? "star.fill" : "star")
-                        .font(.title2)
-                        .foregroundStyle(n <= photo.rating ? Color.yellow : Color.secondary)
                 }
-                .buttonStyle(.plain)
-                .help(n <= photo.rating ? "当前 \(n) 星（点击清除）" : "设为 \(n) 星")
-            }
+            )
             Spacer()
             Text(photo.rating > 0 ? "\(photo.rating) 星" : "未评分")
-                .font(.callout)
-                .foregroundStyle(photo.rating > 0 ? .primary : .secondary)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .monospacedDigit()
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.vertical, 4)
+        .padding(.vertical, 8)
     }
 
 
@@ -571,6 +569,52 @@ struct DetailView: View {
         formatter.countStyle = .file
         return formatter.string(fromByteCount: size)
     }
+}
+
+// MARK: - V5.11: RatingStarsView 5 颗 ⭐ hover 预览组件
+
+/// V5.11: 5 颗 ⭐ 点选条私有组件——macOS Photos 风格 hover 预览
+///   - 5 颗 22pt medium weight ⭐ 横向排列
+///   - hover 预览: @State 追踪鼠标位置——hover 到的星也显示填充（预览）— macOS Photos 同款
+///   - 视觉:
+///     - 实心 N 颗 (systemYellow) = max(rating, hoverRating) 之内的星
+///     - 空心 (5-N) 颗 = Color.secondary.opacity(0.5)——比 V5.8 浅，更不抢眼
+///   - 点击: 切换 rating——同星再点归 0（清除）
+///   - 性能: @State 局部，hoverRating 变化只触发本 view 重绘
+private struct RatingStarsView: View {
+    let rating: Int
+    let onSet: (Int) -> Void
+
+    @State private var hoverRating: Int = 0
+
+    /// 显示的填充范围——max(rating, hoverRating)
+    /// hover 时 hoverRating > rating，星星被"推"过去，预览效果
+    private var displayedRating: Int {
+        max(rating, hoverRating)
+    }
+
+    var body: some View {
+        HStack(spacing: 8) {
+            ForEach(1...5, id: \.self) { n in
+                Button {
+                    // 同星再点归 0（清除）——V5.8 行为不变
+                    onSet(rating == n ? 0 : n)
+                } label: {
+                    Image(systemName: n <= displayedRating ? "star.fill" : "star")
+                        .font(.system(size: 22, weight: .medium))
+                        .foregroundStyle(n <= displayedRating ? Color.yellow : Color.secondary.opacity(0.5))
+                }
+                .buttonStyle(.plain)
+                .onHover { isHovered in
+                    // 鼠标进入该星 → hoverRating = n（覆盖至 N）
+                    // 鼠标离开该星 → hoverRating = 0（恢复 actual rating）
+                    hoverRating = isHovered ? n : 0
+                }
+                .help(n <= rating ? "当前 \(n) 星（点击清除）" : "设为 \(n) 星")
+            }
+        }
+}
+
 }
 
 // ─── 标签 chip ───
