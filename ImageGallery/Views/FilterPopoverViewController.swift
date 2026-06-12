@@ -395,6 +395,9 @@ final class FilterPopoverViewController: NSViewController {
 
     /// checkbox + label 的 item
     /// V4.36.x #5: 统一文字颜色 labelColor——active 态用 checkbox + 浅蓝背景区分
+    /// V4.58.0: 长 folder/tag 名截断——cell.lineBreakMode = .byTruncatingMiddle
+    ///   之前直接传长名让 button 撑开列宽、2 列布局失衡
+    ///   现在中间省略号截断——保留原数据，视觉上每列等宽不溢出
     private func makeCheckItem(
         label: String,
         isOn: Bool,
@@ -406,6 +409,9 @@ final class FilterPopoverViewController: NSViewController {
         button.isBordered = false
         // 统一文字颜色（不随 state 变）
         button.contentTintColor = .labelColor
+        // V4.58.0: 中间省略号截断（macOS Photos 风格——长文件夹名截中间"旅行照..."）
+        button.cell?.lineBreakMode = .byTruncatingMiddle
+        button.cell?.truncatesLastVisibleLine = true
         return button
     }
 
