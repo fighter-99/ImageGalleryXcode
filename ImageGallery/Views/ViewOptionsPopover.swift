@@ -43,54 +43,47 @@ struct ViewOptionsPopover: View {
     @Binding var sortOption: SortOption
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        // V4.78.0: 删 3 段头（视图/缩放/排序）+ 段头 icon + 1pt 分隔线
+        //   仿 V4.61.0 FilterPopover 删段头——macOS Photos 扁平 menu 风格
+        //   段间靠 10pt sectionSpacing 留白过渡（与 FilterPopover 一致）
+        VStack(alignment: .leading, spacing: PopoverStyle.sectionSpacing) {
             // 段 1: 视图模式
-            popoverSection(title: "视图", icon: "square.grid.2x2") {
-                HStack(spacing: PopoverStyle.segmentGap) {
-                    ForEach(ViewMode.allCases) { mode in
-                        PopoverSegmentItem(
-                            isActive: viewMode == mode,
-                            iconName: mode.icon,
-                            label: mode.label,
-                            help: mode.label
-                        ) {
-                            viewMode = mode
-                        }
+            HStack(spacing: PopoverStyle.segmentGap) {
+                ForEach(ViewMode.allCases) { mode in
+                    PopoverSegmentItem(
+                        isActive: viewMode == mode,
+                        iconName: mode.icon,
+                        label: mode.label,
+                        help: mode.label
+                    ) {
+                        viewMode = mode
                     }
                 }
             }
-
-            Divider().padding(.vertical, 8)
 
             // 段 2: 缩放
-            popoverSection(title: "缩放", icon: "square.grid.3x3") {
-                HStack(spacing: PopoverStyle.segmentGap) {
-                    ForEach(ThumbnailDensity.allCases) { density in
-                        PopoverSegmentItem(
-                            isActive: ThumbnailDensity.nearest(to: thumbnailSize) == density,
-                            iconName: density.icon,
-                            label: density.label,
-                            help: "\(Int(density.size))pt"
-                        ) {
-                            thumbnailSize = density.size
-                        }
+            HStack(spacing: PopoverStyle.segmentGap) {
+                ForEach(ThumbnailDensity.allCases) { density in
+                    PopoverSegmentItem(
+                        isActive: ThumbnailDensity.nearest(to: thumbnailSize) == density,
+                        iconName: density.icon,
+                        label: density.label,
+                        help: "\(Int(density.size))pt"
+                    ) {
+                        thumbnailSize = density.size
                     }
                 }
             }
 
-            Divider().padding(.vertical, 8)
-
             // 段 3: 排序
-            popoverSection(title: "排序", icon: "arrow.up.arrow.down") {
-                VStack(alignment: .leading, spacing: 2) {
-                    ForEach(SortOption.allCases) { option in
-                        PopoverSortItem(
-                            isActive: sortOption == option,
-                            label: option.label,
-                            directionIcon: option.directionIcon
-                        ) {
-                            sortOption = option
-                        }
+            VStack(alignment: .leading, spacing: 2) {
+                ForEach(SortOption.allCases) { option in
+                    PopoverSortItem(
+                        isActive: sortOption == option,
+                        label: option.label,
+                        directionIcon: option.directionIcon
+                    ) {
+                        sortOption = option
                     }
                 }
             }
@@ -100,8 +93,9 @@ struct ViewOptionsPopover: View {
     }
 
     /// 段标题（icon + 小标题，Photos.app 风格）
-    /// V4.41.0: 全部 token 化（caption2 + uppercase + 4pt icon 间距）——与 FilterPopover 对齐
-    /// V4.43.1: 加底边分隔线（0.5pt 6% primary）——段间视觉分组更明确
+    /// V4.78.0: 砍 3 段头——body 内直接 HStack/VStack
+    ///   仿 V4.61.0 FilterPopover 删段头范式
+    @available(*, unavailable, message: "V4.78.0 砍 3 段头——body 内直接布局")
     @ViewBuilder
     private func popoverSection<Content: View>(
         title: String,
