@@ -345,7 +345,11 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
         button.target = self
         button.action = action
         button.isBordered = true
-        button.imageScaling = .scaleProportionallyDown
+        // V5.9.6: 删 button.imageScaling = .scaleProportionallyDown
+        //   之前 V5.9.2 加此行——但 imageScaleProportionallyDown 让 image 按 button bounds 缩放
+        //   toolbar 模式下 button 初始 bounds 经常是 0x0——image 缩到 0 → 整个 button 渲染异常
+        //   表现：view options 按钮背景消失（其他按钮都有圆形 pill 背景）
+        //   不设 imageScaling——image 按 intrinsic size 渲染，button 背景正常
         button.image = NSImage(systemSymbolName: image, accessibilityDescription: label)
         button.imagePosition = .imageOnly
         button.setContentHuggingPriority(.defaultLow, for: .horizontal)
