@@ -59,14 +59,11 @@ final class FolderFilterPopoverController: NSViewController {
             }
         }
         visualEffect.addSubview(list)
-        // V4.98.0: padding 12 → 6——NSPopover 自身有内置 inset 12pt
-        //   之前 padding 12 + popover inset 12 = 24pt 顶部空隙
-        //   改 padding 6 → 总空隙 18pt——视觉紧凑
         NSLayoutConstraint.activate([
-            list.leadingAnchor.constraint(equalTo: visualEffect.leadingAnchor, constant: Self.padding / 2),
-            list.trailingAnchor.constraint(equalTo: visualEffect.trailingAnchor, constant: -Self.padding / 2),
-            list.topAnchor.constraint(equalTo: visualEffect.topAnchor, constant: Self.padding / 2),
-            list.bottomAnchor.constraint(equalTo: visualEffect.bottomAnchor, constant: -Self.padding / 2)
+            list.leadingAnchor.constraint(equalTo: visualEffect.leadingAnchor, constant: 0),
+            list.trailingAnchor.constraint(equalTo: visualEffect.trailingAnchor, constant: 0),
+            list.topAnchor.constraint(equalTo: visualEffect.topAnchor, constant: Self.padding),
+            list.bottomAnchor.constraint(equalTo: visualEffect.bottomAnchor, constant: -Self.padding)
         ])
         self.view = visualEffect
     }
