@@ -119,15 +119,36 @@ final class FilterPopoverViewController: NSViewController {
 
         // V4.44.0: 删 NSSearchField——folder/tag 数量少无需过滤
 
+        // V4.60.0: 内容区嵌入 NSScrollView——4 段全展开 + 14 folder + 14 tag 时 ~620pt
+        //   接近窗口可视区，overflow 时静默截断——NSScroller 自动出现解决
+        //   autohidesScrollers = true 让内容 < 580pt 时 scroller 自动隐藏
+        let scrollView = NSScrollView()
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.hasVerticalScroller = true
+        scrollView.autohidesScrollers = true
+        scrollView.borderType = .noBorder
+        scrollView.drawsBackground = false
+
         // 内容区——可重建
         let content = NSStackView()
         content.orientation = .vertical
         content.alignment = .leading
         content.spacing = Self.sectionSpacing
-        content.translatesAutoresizingMaskIntoConstraints = false
         contentStack = content
         rebuildContent()
-        outer.addArrangedSubview(content)
+
+        // V4.60.0: 文档视图——frame 布局决定滚动范围
+        //   width = popover 内容宽（240 - 2*12 padding = 216）
+        //   height = stack 实际需要的高度（fittingSize 自动算）
+        let docWidth = Self.contentWidth - 2 * Self.padding
+        content.frame = NSRect(x: 0, y: 0, width: docWidth, height: content.fittingSize.height)
+        scrollView.documentView = content
+
+        // V4.60.0: 高度上限——超过时显示 scroller
+        //   580pt 是 macOS 标准 popover "可接受"最大高度（接近窗口可视区）
+        scrollView.heightAnchor.constraint(lessThanOrEqualToConstant: 580).isActive = true
+
+        outer.addArrangedSubview(scrollView)
 
         // V4.45.0: outer 嵌入 NSVisualEffectView
         //   NSVisualEffectView 自动在所有 subview 背后渲染 blur effect
