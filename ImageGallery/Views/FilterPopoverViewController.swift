@@ -338,7 +338,14 @@ final class FilterPopoverViewController: NSViewController {
         for (rating, button) in ratingButtons {
             // 评分段无 icon（"1星" 等纯文字）——symbolName = nil
             let text = button.attributedTitle.string
-            applySegmentStyle(button, isActive: filterState.minRating == rating, text: text)
+            // V4.66.0: 评分段 inactive icon tint gold（仿 Photos ⭐ 实际风格）
+            //   active 仍用 white（在 accent bg 上）——override 只影响 inactive
+            applySegmentStyle(
+                button,
+                isActive: filterState.minRating == rating,
+                text: text,
+                iconTintOverride: .systemYellow
+            )
         }
     }
 
@@ -506,11 +513,15 @@ final class FilterPopoverViewController: NSViewController {
     ///   - inactive: 6% primary 底 + labelColor 字（PopoverStyle.inactiveBackgroundAppKit + .inactiveTextAppKit）
     ///   - 之前 V4.36.x #5 写"永远白" + 25% 黑底——与 ViewOptions 不一致 + 暗色下 25% 黑底偏暗
     ///   - symbolName: 可选——传非 nil 时按状态动态 tint icon（active 白、inactive labelColor）
+    /// V4.66.0: 加 iconTintOverride 参数——评分段 inactive 显式 tint gold
+    ///   Photos 实际：所有 ⭐ 都是金色，无论 active/inactive
+    ///   之前走默认 inactiveTextAppKit (labelColor) → 视觉上是黑色 ⭐
     private func applySegmentStyle(
         _ button: NSButton,
         isActive: Bool,
         text: String?,
-        symbolName: String? = nil
+        symbolName: String? = nil,
+        iconTintOverride: NSColor? = nil
     ) {
         // 1. 文字：active 白 / inactive labelColor（系统色，暗色自动适配）
         if let text = text {
@@ -531,7 +542,16 @@ final class FilterPopoverViewController: NSViewController {
         //   transl popover 下渲染异常（截图里 5 个评分项 + "全部" 全部显示为空方块）
         //   改用 contentTintColor 方式——更标准也稳定
         if let symbol = symbolName {
-            let iconColor = isActive ? PopoverStyle.activeTextAppKit : PopoverStyle.inactiveTextAppKit
+            // V4.66.0: inactive 状态可显式 override icon tint（评分段用 gold）
+            //   active 仍用 activeTextAppKit (white) — 在 accent bg 上保持对比
+            let iconColor: NSColor
+            if isActive {
+                iconColor = PopoverStyle.activeTextAppKit
+            } else if let override = iconTintOverride {
+                iconColor = override
+            } else {
+                iconColor = PopoverStyle.inactiveTextAppKit
+            }
             let sizeConfig = NSImage.SymbolConfiguration(
                 pointSize: PopoverStyle.iconFontSize,
                 weight: .medium
