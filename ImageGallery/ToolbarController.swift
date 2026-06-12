@@ -489,7 +489,15 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
         popover.behavior = .transient  // 点外部自动关闭
         popover.delegate = self  // V5.9: 监听 popoverDidClose 同步按钮状态
         popover.contentViewController = contentProvider()
-        popover.show(relativeTo: anchorView.bounds, of: anchorView, preferredEdge: .minY)
+        // V5.9.3: 强制 layout + 延迟到下一 runloop——刚创建的 NSButton 还没进 window
+        //   popover.show(relativeTo:of:) 要求 anchor view 已在 view hierarchy 且有 frame
+        //   toolbar 委托返回 item 后，button 添加到 toolbar view 异步进行
+        //   强制 layoutSubtreeIfNeeded + DispatchQueue.main.async 确保 button 已布局
+        anchorView.layoutSubtreeIfNeeded()
+        DispatchQueue.main.async { [weak self, weak popover] in
+            guard let popover = popover else { return }
+            popover.show(relativeTo: anchorView.bounds, of: anchorView, preferredEdge: .minY)
+        }
         self.viewOptionsPopover = popover
         // V5.9.1: icon 切填充变体 + border 显 pressed——"我正被使用"
         setItemPressed(.viewOptions, isOpen: true,
@@ -523,6 +531,10 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
             return
         }
 
+        // V5.9.3: 强制 layout + 延迟到下一 runloop——与 handleShowViewOptions 同步
+        //   解决 NSButton 刚创建、frame=0 → popover anchor 无效
+        anchorView.layoutSubtreeIfNeeded()
+
         // V4.90.0: 创建 coordinator + 调 showTop
         //   ContentView 注入 factory + onStateChange closure
         let coordinator = filterCoordinatorFactory?({ [weak self] newState in
@@ -531,7 +543,9 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
             _ = newState
             _ = self
         })
-        coordinator?.showTop(anchoredTo: anchorView)
+        DispatchQueue.main.async { [weak coordinator] in
+            coordinator?.showTop(anchoredTo: anchorView)
+        }
         filterPopoverCoordinator = coordinator
         // V5.9.1: icon 切填充变体（与 filterIsActive 视觉一致）+ border 显 pressed
         //   注：filterIsActive 也走同 icon——打开时强制显示 active icon
