@@ -213,7 +213,11 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
             //   原因：双 SF Symbol + tint accent 需要保留 button 引用以便 setActive 时更新
             item = makeFilterItem(id: id)
         case .viewOptions:
-            item = makeSimpleItem(
+            // V5.9.2: 改 makeButtonItem 走自定义 NSButton 路径
+            //   之前 makeSimpleItem 创建默认 NSToolbarItem——item.view = nil
+            //   handleShowViewOptions 的 guard let anchorView = item.view 失败
+            //   popover 永远不打开——这是 V5.9.1 之后用户反馈的根因
+            item = makeButtonItem(
                 id: id,
                 image: "rectangle.3.offgrid",
                 label: "视图选项",
@@ -316,6 +320,35 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
         button.setContentHuggingPriority(.defaultLow, for: .horizontal)
         // V4.54.0: 初值同步 icon——setActive 时再切
         updateFilterButtonImage(button: button)
+        item.view = button
+
+        return item
+    }
+
+    /// V5.9.2: 通用工具栏按钮 item 工厂——popover-承载类按钮走 NSButton
+    ///   让 item.view = NSButton——popover 可锚定到 button.bounds
+    ///   之前 makeSimpleItem 用默认 NSToolbarItem——item.view = nil
+    ///   handleShowXxx 的 `guard let anchorView = item.view` 失败——popover 永远打不开
+    ///   典型受害者：view options（之前一直不工作的根因）
+    private func makeButtonItem(id: Identifier, image: String, label: String, action: Selector) -> NSToolbarItem {
+        let item = NSToolbarItem(itemIdentifier: id.nsIdentifier)
+        item.label = ""
+        item.paletteLabel = label
+        item.toolTip = label
+        item.target = self
+        item.action = action
+        item.isBordered = true
+
+        let button = NSButton()
+        button.bezelStyle = .recessed
+        button.toolTip = label
+        button.target = self
+        button.action = action
+        button.isBordered = true
+        button.imageScaling = .scaleProportionallyDown
+        button.image = NSImage(systemSymbolName: image, accessibilityDescription: label)
+        button.imagePosition = .imageOnly
+        button.setContentHuggingPriority(.defaultLow, for: .horizontal)
         item.view = button
 
         return item
