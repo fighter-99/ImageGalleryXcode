@@ -501,7 +501,11 @@ final class FilterPopoverViewController: NSViewController {
         action: @escaping () -> Void
     ) -> NSButton {
         let button = ClosureButton(title: "", action: action)
-        button.bezelStyle = .recessed
+        // V4.68.0 彻底修: isBordered = false 完全去掉 bezel 渲染
+        //   之前 bezelStyle = .recessed 仍带 bg 渐变，layer.backgroundColor 被遮盖
+        //   现在 button 自身无 bezel，layer.backgroundColor 真正生效
+        button.isBordered = false
+        button.bezelStyle = .recessed  // 保留 isBordered=false 时无作用，但 hover/active 视觉仍 work
         // V4.41.1: 不预染色——把 symbol name 传给 applySegmentStyle 让它按状态 tint
         applySegmentStyle(button, isActive: isActive, text: nil, symbolName: icon, iconTintOverride: iconTintOverride)
         return button
