@@ -100,6 +100,43 @@ final class FilterPopoverCoordinator {
         topPopover = popover
     }
 
+    /// V5.9.4: 用 positioningView + rect 显示顶层 popover——避开 view-based anchor 的两个坑
+    ///   1) 刚创建的 NSButton 还没进 window，anchor 无效
+    ///   2) .transient race condition：click 事件流持续 → 立即关闭
+    ///   用 contentView 作 positioningView（永远在 window 里）
+    ///   rect 是 1x1 像素小矩形，位置在按钮底部中心
+    func showTopAtRect(_ rect: NSRect, positioningView: NSView) {
+        // V4.89.0: 切换关闭（再点 toolbar 按钮 toggle）
+        if let top = topPopover, top.isShown {
+            top.close()
+            topPopover = nil
+            closeChild()
+            return
+        }
+
+        let topVC = FilterTopPopoverViewController(filterState: FilterState())
+        topVC.onCategoryTap = { [weak self] category in
+            guard let self = self, let anchor = self.anchorForCategory(category) else { return }
+            self.openChild(category, anchoredTo: anchor)
+        }
+        topVC.onStateChange = { [weak self] newState in
+            self?.onStateChange(newState)
+        }
+        topVC.onClearAll = { [weak self] in
+            guard let self = self else { return }
+            let empty = FilterState.empty
+            self.onStateChange(empty)
+            topVC.updateState(empty)
+        }
+
+        let popover = NSPopover()
+        popover.behavior = .transient
+        popover.contentViewController = topVC
+        // V5.9.4: positioningView + rect 路径——避开 view-based anchor 的两个坑
+        popover.show(relativeTo: rect, of: positioningView, preferredEdge: .minY)
+        topPopover = popover
+    }
+
     // MARK: - 子 popover
 
     /// V4.89.0: 显示子 popover——锚定到顶层 row.bounds

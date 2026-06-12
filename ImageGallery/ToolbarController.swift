@@ -489,14 +489,29 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
         popover.behavior = .transient  // 点外部自动关闭
         popover.delegate = self  // V5.9: 监听 popoverDidClose 同步按钮状态
         popover.contentViewController = contentProvider()
-        // V5.9.3: 强制 layout + 延迟到下一 runloop——刚创建的 NSButton 还没进 window
-        //   popover.show(relativeTo:of:) 要求 anchor view 已在 view hierarchy 且有 frame
-        //   toolbar 委托返回 item 后，button 添加到 toolbar view 异步进行
-        //   强制 layoutSubtreeIfNeeded + DispatchQueue.main.async 确保 button 已布局
-        anchorView.layoutSubtreeIfNeeded()
-        DispatchQueue.main.async { [weak self, weak popover] in
+        // V5.9.4: 改用 contentView 作 anchor + 屏幕坐标小矩形——避开两个坑:
+        //   1) popover.show(relativeTo:of:) 要求 anchor view 已在 view hierarchy + window
+        //      刚创建的 NSButton 同步调用时可能还没满足 → anchor 无效 → 静默失败
+        //   2) .transient 行为下，点击 anchor 也会关闭 popover（race condition）
+        //      同步 show 时 button 刚被点完——button click 事件持续 → 立即关闭
+        //   改用 contentView 作 positioningView（永远在 window 里）+ 屏幕坐标小矩形：
+        //   - 屏幕坐标小矩形（1x1 像素）位于按钮底部中心——视觉上仍是按钮下方
+        //   - contentView 永远在 window 里，避开 #1
+        //   - 0.1s 延迟让 button click 事件流结束，popover 不会被立即关闭（避开 #2）
+        guard let positioningView = anchorView.window?.contentView ?? NSApp.keyWindow?.contentView else { return }
+        let positioningWindow = positioningView.window!
+        let buttonFrameInScreen = positioningWindow.convertToScreen(anchorView.convert(anchorView.bounds, to: nil))
+        // 把屏幕坐标转回 positioningView 坐标——show(relativeTo:of:) 的 rect 在 positioningView 坐标系
+        let buttonFrameInPositioning = positioningView.convert(buttonFrameInScreen, from: nil)
+        let popoverAnchorRect = NSRect(
+            x: buttonFrameInPositioning.midX,
+            y: buttonFrameInPositioning.minY,
+            width: 1,
+            height: 1
+        )
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self, weak popover] in
             guard let popover = popover else { return }
-            popover.show(relativeTo: anchorView.bounds, of: anchorView, preferredEdge: .minY)
+            popover.show(relativeTo: popoverAnchorRect, of: positioningView, preferredEdge: .minY)
         }
         self.viewOptionsPopover = popover
         // V5.9.1: icon 切填充变体 + border 显 pressed——"我正被使用"
@@ -531,9 +546,18 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
             return
         }
 
-        // V5.9.3: 强制 layout + 延迟到下一 runloop——与 handleShowViewOptions 同步
-        //   解决 NSButton 刚创建、frame=0 → popover anchor 无效
-        anchorView.layoutSubtreeIfNeeded()
+        // V5.9.4: 与 handleShowViewOptions 一致——contentView 作 positioningView + 屏幕坐标小矩形
+        //   避开 view-based anchor 的两个坑（anchor 无效 + .transient race condition）
+        guard let positioningView = anchorView.window?.contentView ?? NSApp.keyWindow?.contentView else { return }
+        let positioningWindow = positioningView.window!
+        let buttonFrameInScreen = positioningWindow.convertToScreen(anchorView.convert(anchorView.bounds, to: nil))
+        let buttonFrameInPositioning = positioningView.convert(buttonFrameInScreen, from: nil)
+        let popoverAnchorRect = NSRect(
+            x: buttonFrameInPositioning.midX,
+            y: buttonFrameInPositioning.minY,
+            width: 1,
+            height: 1
+        )
 
         // V4.90.0: 创建 coordinator + 调 showTop
         //   ContentView 注入 factory + onStateChange closure
@@ -543,10 +567,11 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
             _ = newState
             _ = self
         })
-        DispatchQueue.main.async { [weak coordinator] in
-            coordinator?.showTop(anchoredTo: anchorView)
+        filterPopoverCoordinator = coordinator  // V5.9.4: 先存强引用，再 async——coordinator 不会被释放
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak coordinator] in
+            // V5.9.4: 改用 showTopAtRect 路径
+            coordinator?.showTopAtRect(popoverAnchorRect, positioningView: positioningView)
         }
-        filterPopoverCoordinator = coordinator
         // V5.9.1: icon 切填充变体（与 filterIsActive 视觉一致）+ border 显 pressed
         //   注：filterIsActive 也走同 icon——打开时强制显示 active icon
         setItemPressed(.filter, isOpen: true,
