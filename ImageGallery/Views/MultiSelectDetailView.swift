@@ -21,10 +21,12 @@ struct MultiSelectDetailView: View {
     let folders: [Folder]
     let allTags: [Tag]
 
-    // 4 个 batch 动作
+    // 5 个 batch 动作
     // V5.7: 砍 onToggleFavorite——多选面板的"收藏"按钮移除
+    // V5.12: 加 onBatchSetRating——多选面板加"评分"子菜单（与右键菜单评分同款）
     let onMove: (Folder?) -> Void
     let onAddTag: (Tag) -> Void
+    let onBatchSetRating: (Int) -> Void
     let onExport: () -> Void
     let onDelete: () -> Void
     let onClearSelection: () -> Void
@@ -100,6 +102,32 @@ struct MultiSelectDetailView: View {
                     .controlSize(.large)
                 }
 
+                // V5.12: 多选批量评分——5 星 + 清除 子菜单
+                //   与 V5.7 右键菜单评分完全同款（1-5 星用 star/星+5 字体区别 / 清除）
+                //   选中 N 张照片 → 一次设 N 星（避免逐张进详情页）
+                Menu {
+                    ForEach(1...5, id: \.self) { n in
+                        Button {
+                            onBatchSetRating(n)
+                        } label: {
+                            Label("\(n) 星", systemImage: n == 5 ? "star.fill" : "star")
+                        }
+                    }
+                    Divider()
+                    Button {
+                        onBatchSetRating(0)
+                    } label: {
+                        Label("清除评分", systemImage: "star.slash")
+                    }
+                } label: {
+                    HStack {
+                        Label("评分", systemImage: "star")
+                        Spacer()
+                    }
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.large)
+
                 // V5.7: 砍"收藏切换"按钮——收藏合并到评分（右键菜单 + 筛选 popover）
 
                 // 导出
@@ -156,7 +184,8 @@ struct MultiSelectDetailView: View {
         allTags: [Tag(name: "🌅 风景", colorHex: "#FF9500")],
         onMove: { _ in },
         onAddTag: { _ in },
-        // V5.7: 砍 onToggleFavorite
+        // V5.12: 加 onBatchSetRating
+        onBatchSetRating: { _ in },
         onExport: { },
         onDelete: { },
         onClearSelection: { }

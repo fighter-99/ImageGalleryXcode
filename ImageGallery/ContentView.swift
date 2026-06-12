@@ -490,6 +490,9 @@ struct ContentView: View {
                 onCopy: copyToPasteboard,
                 onToggleSortDirection: toggleSortDirection,
                 onToggleSidebar: { showSidebar.toggle() },
+                // V5.12: ⌘0-⌘5 评分快捷键
+                //   单选 → 设该照片；多选 → 批量设所有选中照片；无选中 → no-op
+                onSetRating: { rating in batchSetRating(rating) },
                 // V4.15.0: ⌘F 聚焦搜索框改由 NSSearchField (V4.8.1) 自身处理
                 //   撤回 V3.6.23 旧 notification 桥接——onFocusSearch 用默认 {} 空实现
                 //   contentKeyboardShortcuts 仍调 onFocusSearch（参数保留避免破坏）
@@ -980,6 +983,8 @@ struct ContentView: View {
             onBatchMove: { folder in batchMove(to: folder) },
             onBatchAddTag: { tag in batchAddTag(tag) },
             // V5.7: 砍 onBatchToggleFavorite——多选面板的"收藏"按钮移除
+            // V5.12: 加 onBatchSetRating——多选批量评分
+            onBatchSetRating: { rating in batchSetRating(rating) },
             onBatchExport: batchExport,
             onBatchDelete: { showingBatchDeleteConfirm = true },
             // V3.6.52: 单字段 assignment 替 2 字段 pair
@@ -1354,6 +1359,20 @@ struct ContentView: View {
         }
         modelContext.saveWithLog()
         // 加标签后保留多选（用户可能想加多个标签）
+    }
+
+    // V5.12: 批量评分
+    //   - 多选 N 张 → onBatchSetRating(M) 一次设 M 星
+    //   - M = 0 表示清除评分
+    //   - 与详情页 RatingStarsView 共用同一 photo.rating 字段
+    //   - ⌘0-⌘5 快捷键也走同一函数（ContentKeyboardShortcuts.onSetRating）
+    private func batchSetRating(_ rating: Int) {
+        let photosToRate = selection.selectedPhotos(in: visiblePhotos)
+        guard !photosToRate.isEmpty else { return }
+        for photo in photosToRate {
+            photo.rating = rating
+        }
+        modelContext.saveWithLog()
     }
 
     // ─── 批量导出 ───

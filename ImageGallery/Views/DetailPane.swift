@@ -38,6 +38,8 @@ struct DetailPane: View {
     let onBatchMove: (Folder?) -> Void
     let onBatchAddTag: (Tag) -> Void
     // V5.7: 砍 onBatchToggleFavorite——多选面板的"收藏"按钮移除
+    // V5.12: 加 onBatchSetRating——多选面板加"评分"子菜单
+    let onBatchSetRating: (Int) -> Void
     let onBatchExport: () -> Void
     let onBatchDelete: () -> Void
     let onClearSelection: () -> Void
@@ -125,7 +127,8 @@ struct DetailPane: View {
                     allTags: allTags,
                     onMove: onBatchMove,
                     onAddTag: onBatchAddTag,
-                    // V5.7: 砍 onToggleFavorite 传递
+                    // V5.12: 加 onBatchSetRating 传递
+                    onBatchSetRating: onBatchSetRating,
                     onExport: onBatchExport,
                     onDelete: onBatchDelete,
                     onClearSelection: onClearSelection
