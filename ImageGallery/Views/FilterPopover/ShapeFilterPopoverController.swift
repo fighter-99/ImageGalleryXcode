@@ -35,7 +35,7 @@ final class ShapeFilterPopoverController: NSViewController {
 
     // MARK: - 配置常量
 
-    private static let preferredWidth: CGFloat = 180
+    private static let preferredWidth: CGFloat = 240  // V5.6: 180→240pt——与 folder/tag 一致
     private static let preferredHeight: CGFloat = 60
     private static let shapeIconSize: CGFloat = 22
     private static let padding: CGFloat = PopoverStyle.padding

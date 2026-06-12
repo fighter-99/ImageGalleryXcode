@@ -38,7 +38,7 @@ final class RatingFilterPopoverController: NSViewController {
 
     // MARK: - 配置常量
 
-    private static let preferredWidth: CGFloat = 152
+    private static let preferredWidth: CGFloat = 240  // V5.6: 152→240pt——与 folder/tag 一致
     private static let rowHeight: CGFloat = 26
     private static let rowSpacing: CGFloat = 2
     private static let padding: CGFloat = PopoverStyle.padding
@@ -199,8 +199,18 @@ private final class RatingRowView: NSView {
         }
         starStack.setContentHuggingPriority(.required, for: .horizontal)
 
-        // HStack: stars + spacer + label
-        let rowStack = NSStackView(views: [starStack, titleLabel])
+        // V5.6: 右侧 flexible spacer——内容左对齐，剩余宽度填充
+        //   评分行宽 = preferredWidth(240) - 2*padding(12) = 216pt
+        //   内容（5 星 78pt + 间距 8pt + 文字 ~30pt = ~128pt）只占 60% 宽度
+        //   spacer 占剩余 88pt——视觉与 folder/tag 子 popover 等宽行高一致
+        let trailingSpacer = NSView()
+        trailingSpacer.translatesAutoresizingMaskIntoConstraints = false
+        trailingSpacer.setContentHuggingPriority(.defaultLow - 1, for: .horizontal)
+        trailingSpacer.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+
+        // HStack: stars + spacer + label + trailingSpacer
+        //   spacing 12pt 在 starStack 和 titleLabel 之间
+        let rowStack = NSStackView(views: [starStack, titleLabel, trailingSpacer])
         rowStack.orientation = .horizontal
         rowStack.spacing = 12
         rowStack.alignment = .centerY
