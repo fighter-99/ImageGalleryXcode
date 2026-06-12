@@ -618,18 +618,17 @@ struct ContentView: View {
         //   contentProvider 提供 NSHostingController(rootView: ViewOptionsPopover(...))
         //   viewMode 是 @AppStorage 的 computed property——用 Binding(get:set:) 构造 binding
         controller.viewOptionsContentProvider = { [self] in
-            // V4.45.0: .background(.clear) 让 SwiftUI 视图背景透明
-            //   NSPopover 看到 transparent contentView 时自动应用 .popover transl material
-            //   之前是 Color(.windowBackgroundColor) 不透明——挡住 popover 自带的毛玻璃
-            NSHostingController(rootView: ViewOptionsPopover(
+            // V4.77.0: 改用 ViewOptionsPopoverHostController (NSVisualEffectView 包裹)
+            //   与 FilterPopoverViewController 完全一致的 transl 行为
+            //   之前 V4.9.1 .background(.clear) 让 NSPopover 自动 transl——与 FilterPopover transl 行为不一致（用户反馈）
+            ViewOptionsPopoverHostController(swiftUIView: ViewOptionsPopover(
                 viewMode: Binding(
                     get: { self.viewMode },
                     set: { self.viewMode = $0 }
                 ),
                 thumbnailSize: $thumbnailSize,
                 sortOption: $sortOption
-            )
-            .background(.clear))
+            ))
         }
         // V4.36.x: Filter popover provider——纯 AppKit FilterPopoverViewController
         //   弃用 SwiftUI FilterPopover + NSHostingController（intrinsic size 协商不可控）
