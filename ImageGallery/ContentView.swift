@@ -527,14 +527,9 @@ struct ContentView: View {
                 if !selection.isEmpty {
                     selection = .empty
                 }
-                // V4.36.x #4: filterState 变化时通知 popover 同步 UI
-                //   场景：用户点 ActiveFiltersBar 上的 × 删 chip，但 popover 还开着
-                //   popover 监听此通知，调 updateState(newState) 同步 checkbox 状态
-                NotificationCenter.default.post(
-                    name: .filterStateChangedFromOutside,
-                    object: nil,
-                    userInfo: ["filterState": newState]
-                )
+                // V4.94.0: 删 .filterStateChangedFromOutside 通知
+                //   V4.90.0 Coordinator 直接接收 onStateChange——通知机制已不需要
+                //   旧 FilterPopoverViewController.swift 删后，notification 名 extension 消失
             }
             // V4.37.4: 同步 showDetail 状态到 titlebar accessory
             //   三个入口（titlebar 按钮 / ⌘I 菜单 / ⌘Ctrl+D 菜单）toggle 同一 @AppStorage

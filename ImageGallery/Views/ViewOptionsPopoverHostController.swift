@@ -46,20 +46,10 @@ final class ViewOptionsPopoverHostController: NSViewController {
     required init?(coder: NSCoder) { fatalError("not implemented") }
 
     override func loadView() {
-        // V4.77.0: NSVisualEffectView 包裹——与 FilterPopover 完全一致
-        //   material = .popover       // macOS popover 专用材质
-        //   state = .followsWindowActiveState  // 跟窗口 active 状态走
-        //   blendingMode = .withinWindow       // 暗色下不"闷"
-        let visualEffect = NSVisualEffectView()
-        visualEffect.material = .popover
-        visualEffect.state = .followsWindowActiveState
-        visualEffect.blendingMode = .withinWindow
-
-        // V4.77.0: 12pt 圆角 + 0.5pt hairline（仿 V4.67.0 范式）
-        visualEffect.wantsLayer = true
-        visualEffect.layer?.cornerRadius = 12
-        visualEffect.layer?.borderWidth = 0.5
-        visualEffect.layer?.borderColor = NSColor.separatorColor.cgColor
+        // V4.94.0: 改用 NSVisualEffectView.popoverHost() helper——V4.80.0 抽
+        //   与 FilterPopover / Folder/Tag/Shape/Rating 子 popover 完全一致
+        //   4 个属性 + 3 行 layer 样式全抽到 helper
+        let visualEffect = NSVisualEffectView.popoverHost()
 
         // V4.77.0: hostingView 加入——直接 addSubview
         //   与 FilterPopover outer.addArrangedSubview 模式一致
