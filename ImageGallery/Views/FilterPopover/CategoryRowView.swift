@@ -58,16 +58,20 @@ final class CategoryRowView: NSView {
         self.titleLabel.translatesAutoresizingMaskIntoConstraints = false
 
         // count badge bg (圆角矩形)
+        // V4.96.0: 强化视觉——12% → 20% accent bg
+        //   之前 12% 在 transl material 上太弱——截图 11 几乎看不到 count
+        //   20% accent 让 active count 视觉明显
         self.countBadgeBg = NSView()
         self.countBadgeBg.wantsLayer = true
         self.countBadgeBg.layer?.cornerRadius = PopoverStyle.categoryRowCountBadgeHeight / 2  // 8pt
         self.countBadgeBg.layer?.backgroundColor = NSColor.controlAccentColor
-            .withAlphaComponent(PopoverStyle.categoryRowCountBadgeOpacity).cgColor  // 12% accent
+            .withAlphaComponent(0.20).cgColor  // V4.96.0: 12% → 20%
         self.countBadgeBg.translatesAutoresizingMaskIntoConstraints = false
 
         // count badge text
+        // V4.96.0: .medium → .semibold——count 数字更醒目
         self.countBadge = NSTextField(labelWithString: "0")
-        self.countBadge.font = NSFont.systemFont(ofSize: PopoverStyle.categoryRowCountBadgeSize, weight: .medium)
+        self.countBadge.font = NSFont.systemFont(ofSize: PopoverStyle.categoryRowCountBadgeSize, weight: .semibold)
         self.countBadge.textColor = .labelColor
         self.countBadge.alignment = .center
         self.countBadge.translatesAutoresizingMaskIntoConstraints = false
