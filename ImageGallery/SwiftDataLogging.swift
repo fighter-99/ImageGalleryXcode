@@ -61,12 +61,13 @@ extension ModelContext {
     /// let success = modelContext.saveWithLog()
     /// ```
     @discardableResult
-    func saveWithLog() -> Bool {
+    func saveWithLog(onError: ((Error) -> Void)? = nil) -> Bool {
         do {
             try save()
             return true
         } catch {
             Logger.swiftData.error("SwiftData save failed: \(error.localizedDescription, privacy: .public)")
+            onError?(error)
             return false
         }
     }

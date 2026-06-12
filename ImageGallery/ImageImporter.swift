@@ -167,8 +167,13 @@ struct ImageImporter {
         return digest.map { String(format: "%02x", $0) }.joined()
     }
 
+    /// V5.13: 注入 PhotoStorage 便于测试（默认 .shared 向后兼容）
+    var storage: PhotoStorage = .shared
+
     /// 导入一组 URL，自动处理文件和文件夹
-    func importURLs(_ urls: [URL]) {
+    /// V5.13: 返回 ImportResult——inserted 数 + failures [(URL, Error)]，调用方接 toast
+    @discardableResult
+    func importURLs(_ urls: [URL]) -> ImportResult {
         print("📥 importURLs 收到 \(urls.count) 个 URL")
         for url in urls {
             print("   - \(url.path)")
@@ -188,9 +193,15 @@ struct ImageImporter {
         let total = allFiles.count
         onProgress?(0, total)
 
-        // 2. 逐个导入
+        // 2. 逐个导入——V5.13: 收集 failures 给调用方
+        var inserted = 0
+        var failures: [(url: URL, error: Error)] = []
         for (index, url) in allFiles.enumerated() {
-            importSingleImage(at: url)
+            if let error = importSingleImage(at: url) {
+                failures.append((url, error))
+            } else {
+                inserted += 1
+            }
             onProgress?(index + 1, total)
         }
 
@@ -198,6 +209,8 @@ struct ImageImporter {
         Task { @MainActor in
             RecentPhotosStore.shared.recordImports(allFiles)
         }
+
+        return ImportResult(inserted: inserted, failures: failures)
     }
 
     // MARK: - 私有方法
@@ -222,19 +235,21 @@ struct ImageImporter {
         }
     }
 
-    private func importSingleImage(at url: URL) {
+    /// V5.13: 返回 Optional<Error>——nil = 成功（或不支持格式跳过），非 nil = 失败
+    private func importSingleImage(at url: URL) -> Error? {
         guard supportedExtensions.contains(url.pathExtension.lowercased()) else {
             print("⏭️ 跳过不支持的格式: \(url.lastPathComponent)")
-            return
+            return nil  // 不支持格式 = 跳过而非失败
         }
 
         // V3.6: 用 PhotoStorage 服务复制文件（替代原硬编码路径）
+        // V5.13: 用注入的 storage（默认 .shared）便于测试
         let destURL: URL
         do {
-            destURL = try PhotoStorage.shared.importFile(from: url)
+            destURL = try storage.importFile(from: url)
         } catch {
             print("❌ 复制失败: \(url.lastPathComponent) - \(error.localizedDescription)")
-            return
+            return error
         }
 
         let fileSize = (try? FileManager.default.attributesOfItem(atPath: destURL.path)[.size] as? Int64) ?? 0
@@ -261,8 +276,10 @@ struct ImageImporter {
         do {
             try modelContext.save()
             print("✅ 已导入: \(url.lastPathComponent)")
+            return nil
         } catch {
             print("❌ 保存失败: \(error.localizedDescription)")
+            return error
         }
     }
 
@@ -286,4 +303,17 @@ struct ImageImporter {
         let digest = hasher.finalize()
         return digest.map { String(format: "%02x", $0) }.joined()
     }
+}
+
+// MARK: - V5.13: ImportResult
+
+/// V5.13: 导入结果——inserted 数 + 失败列表
+/// - inserted: 成功导入数（含跳过的不支持格式——不算失败）
+/// - failures: (URL, Error) 对——调用方接 toast
+struct ImportResult {
+    let inserted: Int
+    let failures: [(url: URL, error: Error)]
+
+    var hasFailures: Bool { !failures.isEmpty }
+    var failureCount: Int { failures.count }
 }

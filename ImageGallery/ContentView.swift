@@ -1234,6 +1234,7 @@ struct ContentView: View {
     }
 
     /// V3.6.24: 实际跑导入（dialog 确认后调用，或无重复时直接调）
+    /// V5.13: 接 ImportResult——成功 1 个 success toast + 失败 N 个 error toasts
     private func importPhotos(urls: [URL]) {
         importProgress = ImportProgress(current: 0, total: 0, isImporting: true)
         let importer = ImageImporter(modelContext: modelContext, folder: currentFolder) { current, total in
@@ -1247,7 +1248,15 @@ struct ContentView: View {
                 }
             }
         }
-        importer.importURLs(urls)
+        let result = importer.importURLs(urls)
+        // 成功 summary toast
+        if result.inserted > 0 {
+            enqueueToast("已导入 \(result.inserted) 张图片", type: .success)
+        }
+        // 失败 error toast（每个失败 1 个）—— 错误用 .long 让用户看清
+        for (url, _) in result.failures {
+            enqueueToast("导入失败：\(url.lastPathComponent)", type: .error, duration: .long)
+        }
     }
 
     // ─── 拖拽导入 ───
@@ -1323,7 +1332,14 @@ struct ContentView: View {
     private func deleteSinglePhoto() {
         guard let photo = singleSelectedPhoto else { return }
         // V3.6：删除 = 移到回收站（软删），文件保留在 Photos/ 原位
-        RecycleBinService(storage: .shared, modelContext: modelContext).recycle(photo)
+        // V5.13: 注入 onError 失败时 toast
+        RecycleBinService(
+            storage: .shared,
+            modelContext: modelContext,
+            onError: { error in
+                enqueueToast("移到回收站失败：\(error.localizedDescription)", type: .error, duration: .long)
+            }
+        ).recycle(photo)
         // V3.6.52: 单字段清空替 2 字段 pair
         selection = .empty
         showToast("已移到回收站（\(retentionDays) 天后永久删除）", type: .info)
@@ -1393,7 +1409,10 @@ struct ContentView: View {
         BatchSetRatingMath.applyRating(rating, count: photosToRate.count) { index, r in
             photosToRate[index].rating = r
         }
-        modelContext.saveWithLog()
+        // V5.13: 失败 toast（onError 默认 no-op 向后兼容）
+        modelContext.saveWithLog { _ in
+            enqueueToast("批量评分失败", type: .error, duration: .long)
+        }
     }
 
     // ─── 批量导出 ───
@@ -1424,10 +1443,13 @@ struct ContentView: View {
                 }
                 successCount += 1
             } catch {
-                print("❌ 导出失败: \(photo.filename) - \(error)")
+                // V5.13: 删 print 改 error toast（每个失败 1 个）—— 错误用 .long 让用户看清
+                enqueueToast("导出失败：\(photo.filename)", type: .error, duration: .long)
             }
         }
-        showToast("已导出 \(successCount) 张图片", type: .success)
+        if successCount > 0 {
+            showToast("已导出 \(successCount) 张图片", type: .success)
+        }
     }
 
     /// 避免导出时文件名冲突
@@ -1455,6 +1477,7 @@ struct ContentView: View {
     ///   - operation: 实际的 SwiftData 变更（recycle / restore / purge）
     ///   - message: toast 消息生成器（接收处理数量）
     ///   - type: toast 类型（默认 .info；恢复用 .success）
+    /// V5.13: 注入 onError → RecycleBinService 失败时 toast
     private func performOnSelectedTrash(
         _ operation: (RecycleBinService, [Photo]) -> Void,
         message: (Int) -> String,
@@ -1463,7 +1486,17 @@ struct ContentView: View {
         // V3.6.52: 用 selection.selectedPhotos(in:) 替手写 filter
         let photos = selection.selectedPhotos(in: visiblePhotos)
         guard !photos.isEmpty else { return }
-        let service = RecycleBinService(storage: .shared, modelContext: modelContext)
+        let service = RecycleBinService(
+            storage: .shared,
+            modelContext: modelContext,
+            onError: { error in
+                enqueueToast(
+                    "回收站操作失败：\(error.localizedDescription)",
+                    type: .error,
+                    duration: .long
+                )
+            }
+        )
         operation(service, photos)
         let count = photos.count
         selection = .empty
@@ -1491,7 +1524,14 @@ struct ContentView: View {
     private func emptyTrash() {
         let trashed = allPhotos.filter { $0.isInTrash }
         guard !trashed.isEmpty else { return }
-        RecycleBinService(storage: .shared, modelContext: modelContext).purgeAll(trashed)
+        // V5.13: 注入 onError → purge 失败时 toast
+        RecycleBinService(
+            storage: .shared,
+            modelContext: modelContext,
+            onError: { error in
+                enqueueToast("清空回收站失败：\(error.localizedDescription)", type: .error, duration: .long)
+            }
+        ).purgeAll(trashed)
         let count = trashed.count
         // V3.6.52: 单字段清空替 2 字段 pair
         selection = .empty
@@ -1504,7 +1544,14 @@ struct ContentView: View {
         let visible = visiblePhotos.filter { !$0.isInTrash }
         let purgeable = PhotoStats.duplicatesToPurge(in: visible)
         guard !purgeable.isEmpty else { return }
-        let service = RecycleBinService(storage: .shared, modelContext: modelContext)
+        // V5.13: 注入 onError → 批量 recycle 失败时 toast
+        let service = RecycleBinService(
+            storage: .shared,
+            modelContext: modelContext,
+            onError: { error in
+                enqueueToast("批量移到回收站失败：\(error.localizedDescription)", type: .error, duration: .long)
+            }
+        )
         for photo in purgeable { service.recycle(photo) }
         showToast("已移到回收站 \(purgeable.count) 张重复图", type: .info)
     }

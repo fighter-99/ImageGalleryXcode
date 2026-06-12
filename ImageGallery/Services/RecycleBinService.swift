@@ -18,33 +18,45 @@ import SwiftData
 final class RecycleBinService {
     private let storage: PhotoStorage
     private let modelContext: ModelContext
+    private let onError: (Error) -> Void
 
-    init(storage: PhotoStorage = .shared, modelContext: ModelContext) {
+    init(
+        storage: PhotoStorage = .shared,
+        modelContext: ModelContext,
+        onError: ((Error) -> Void)? = nil
+    ) {
         self.storage = storage
         self.modelContext = modelContext
+        self.onError = onError ?? { _ in }
     }
 
     /// 把 photo 移到回收站
     /// - 设置 trashedAt = Date()（文件保留在 Photos/ 目录原位，避免额外 IO）
     /// - 立即持久化到 SwiftData
+    /// V5.13: 失败通过 onError 上抛（默认 no-op = 向后兼容 8 处旧 call site）
     func recycle(_ photo: Photo) {
         photo.trashedAt = Date()
-        modelContext.saveWithLog()
+        modelContext.saveWithLog(onError: onError)
     }
 
     /// 从回收站恢复
+    /// V5.13: 失败通过 onError 上抛
     func restore(_ photo: Photo) {
         photo.trashedAt = nil
-        modelContext.saveWithLog()
+        modelContext.saveWithLog(onError: onError)
     }
 
     /// 永久删除一个 photo（文件 + SwiftData 记录）
+    /// V5.13: 文件删失败 → onError；SwiftData save 失败 → onError
+    ///   （之前 try? + silent saveWithLog——数据丢失风险）
     func purge(_ photo: Photo) {
-        // 先删文件（可能不存在，吞错）
-        try? storage.delete(photoURL: photo.fileURL)
-        // 再删 SwiftData 记录
+        do {
+            try storage.delete(photoURL: photo.fileURL)
+        } catch {
+            onError(error)
+        }
         modelContext.delete(photo)
-        modelContext.saveWithLog()
+        modelContext.saveWithLog(onError: onError)
     }
 
     /// 永久删除多个 photo
