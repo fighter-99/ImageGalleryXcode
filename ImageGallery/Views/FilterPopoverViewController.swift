@@ -154,8 +154,15 @@ final class FilterPopoverViewController: NSViewController {
         }
 
         // 段 1: 文件夹
-        if !allFolders.isEmpty {
-            content.addArrangedSubview(makeSectionHeader("文件夹", icon: "folder"))
+        // V4.59.0: 段头始终显示——空时显示 placeholder，引导用户新建
+        //   之前 if !allFolders.isEmpty 直接不显示段——首次使用困惑（看不到筛选维度）
+        content.addArrangedSubview(makeSectionHeader("文件夹", icon: "folder"))
+        if allFolders.isEmpty {
+            content.addArrangedSubview(makeEmptyStatePlaceholder(
+                icon: "folder.badge.plus",
+                message: "暂无文件夹\n右键侧边栏「我的文件夹」新建"
+            ))
+        } else {
             content.addArrangedSubview(makeTwoColumnCheckList(items: allFolders) { folder in
                 let button = self.makeCheckItem(
                     label: folder.name,
@@ -169,8 +176,14 @@ final class FilterPopoverViewController: NSViewController {
         }
 
         // 段 2: 标签
-        if !allTags.isEmpty {
-            content.addArrangedSubview(makeSectionHeader("标签", icon: "tag"))
+        // V4.59.0: 同上——段头始终显示
+        content.addArrangedSubview(makeSectionHeader("标签", icon: "tag"))
+        if allTags.isEmpty {
+            content.addArrangedSubview(makeEmptyStatePlaceholder(
+                icon: "tag",
+                message: "暂无标签\n右键侧边栏「标签」新建"
+            ))
+        } else {
             content.addArrangedSubview(makeTwoColumnCheckList(items: allTags) { tag in
                 let button = self.makeCheckItem(
                     label: "#\(tag.name)",
@@ -391,6 +404,31 @@ final class FilterPopoverViewController: NSViewController {
         vStack.spacing = 4
         vStack.alignment = .leading
         return vStack
+    }
+
+    /// V4.59.0 NEW: 空状态占位——folder/tag 段无内容时显示
+    ///   icon + 提示文字，引导用户到侧边栏新建
+    ///   Photos 风格：弱化灰、保持视觉一致（非"无内容"突现）
+    private func makeEmptyStatePlaceholder(icon: String, message: String) -> NSView {
+        let imageView = NSImageView(image: NSImage(systemSymbolName: icon, accessibilityDescription: nil) ?? NSImage())
+        imageView.imageScaling = .scaleProportionallyDown
+        imageView.contentTintColor = .tertiaryLabelColor  // V4.43.0 范式：tertiary = 弱化
+
+        let label = NSTextField(labelWithString: message)
+        label.font = NSFont.systemFont(ofSize: 11)
+        label.textColor = .tertiaryLabelColor
+        // 2 行提示：第 1 行"暂无文件夹"，第 2 行"右键侧边栏...新建"
+        label.usesSingleLineMode = false
+        label.maximumNumberOfLines = 0
+        label.lineBreakMode = .byWordWrapping
+
+        let stack = NSStackView(views: [imageView, label])
+        stack.orientation = .horizontal
+        stack.alignment = .centerY
+        stack.spacing = 8
+        stack.edgeInsets = NSEdgeInsets(top: 4, left: 4, bottom: 4, right: 4)
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        return stack
     }
 
     /// checkbox + label 的 item
