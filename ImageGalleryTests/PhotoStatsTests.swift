@@ -25,11 +25,9 @@ struct PhotoStatsTests {
     }
 
     @Test func favoritesFiltersByIsFavorite() {
-        // PhotoStats.favorites 不过滤 trashed（保持 SidebarView 旧行为：所有 favorite 都计数）
-        let p1 = makePhoto(isFavorite: true, inTrash: false)
-        let p2 = makePhoto(isFavorite: false, inTrash: false)
-        let p3 = makePhoto(isFavorite: true, inTrash: true)
-        #expect(PhotoStats.favorites([p1, p2, p3]).count == 2)
+        // V5.8: 删 favoritesFiltersByIsFavorite 测试——PhotoStats.favorites 已删
+        //   收藏 = 评分 ≥ 5——筛选逻辑由 FilterState.minRating 处理（ratingFilter 测试覆盖）
+        //   PhotoStats.favorites 替代方案：直接 filter photo.rating >= 5（业务调用方代码）
     }
 
     @Test func unfiledExcludesTrashed() {
@@ -175,7 +173,6 @@ struct PhotoStatsTests {
     }
 
     private func makePhoto(
-        isFavorite: Bool = false,
         inTrash: Bool = false,
         fileSize: Int64 = 0,
         fileHash: String? = nil,
@@ -188,7 +185,8 @@ struct PhotoStatsTests {
             width: 0,
             height: 0
         )
-        photo.isFavorite = isFavorite
+        // V5.8: 砍 isFavorite helper 参数——PhotoStats.favorites 已删
+        //   收藏 = 评分 ≥ 5——本测试不涉及该逻辑
         photo.trashedAt = inTrash ? Date() : nil
         photo.fileHash = fileHash
         photo.importedAt = importedAt

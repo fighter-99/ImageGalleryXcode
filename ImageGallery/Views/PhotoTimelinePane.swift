@@ -17,7 +17,7 @@ struct PhotoTimelinePane: View {
     let folder: Folder?
     let tag: Tag?
     let searchText: String
-    let filterFavorites: Bool
+    // V5.8: 砍 filterFavorites
     let filterUnfiled: Bool
     let filterDuplicates: Bool
     let filterRecent7Days: Bool

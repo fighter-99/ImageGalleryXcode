@@ -43,7 +43,7 @@ struct PhotoGridView: View {
     let folder: Folder?
     let tag: Tag?
     let searchText: String
-    let filterFavorites: Bool
+    // V5.8: 砍 filterFavorites——V5.7 砍 .favorites 侧边栏后 dead
     let filterUnfiled: Bool
     let filterDuplicates: Bool
     let filterRecent7Days: Bool
@@ -96,7 +96,6 @@ struct PhotoGridView: View {
         hasher.combine(tag?.id)
         hasher.combine(searchText)
         hasher.combine(sortOption)
-        hasher.combine(filterFavorites)
         hasher.combine(filterUnfiled)
         hasher.combine(filterDuplicates)
         hasher.combine(filterRecent7Days)
@@ -119,7 +118,7 @@ struct PhotoGridView: View {
             tag: tag,
             searchText: searchText,
             sortOption: sortOption,
-            filterFavorites: filterFavorites,
+            // V5.8: 砍 filterFavorites
             filterUnfiled: filterUnfiled,
             filterDuplicates: filterDuplicates,
             filterRecent7Days: filterRecent7Days,
@@ -197,7 +196,7 @@ struct PhotoGridView: View {
         if !trimmed.isEmpty { return "搜索：\(trimmed)" }
         if let folder = folder { return folder.name }
         if let tag = tag { return "#\(tag.name)" }
-        if filterFavorites { return "收藏" }
+        // V5.8: 砍"收藏"——侧边栏无收藏入口
         if filterUnfiled { return "待整理" }
         if filterDuplicates { return "重复图" }
         if filterRecent7Days { return "最近 7 天" }
@@ -303,7 +302,7 @@ struct PhotoGridView: View {
         // V4.36.x: 工具栏筛选激活 → 漏斗 icon
         if isFilterActive { return "line.3.horizontal.decrease.circle" }
         if !searchText.trimmingCharacters(in: .whitespaces).isEmpty { return "magnifyingglass" }
-        if filterFavorites { return "star" }
+        // V5.8: 砍"收藏"图标分支
         if filterUnfiled { return "tray" }
         if folder != nil { return "folder" }
         if tag != nil { return "tag" }
@@ -318,7 +317,7 @@ struct PhotoGridView: View {
         // V4.36.x: 工具栏筛选激活但无匹配
         if isFilterActive { return "没有匹配筛选的图片" }
         if !searchText.trimmingCharacters(in: .whitespaces).isEmpty { return "没有匹配的图片" }
-        if filterFavorites { return "还没有收藏的图片" }
+        // V5.8: 砍"收藏"空状态文本
         if filterUnfiled { return "没有待整理的图片" }
         if folder != nil { return "这个文件夹是空的" }
         if tag != nil { return "没有带此标签的图片" }
@@ -333,7 +332,7 @@ struct PhotoGridView: View {
         // V4.36.x: 提示调整筛选条件
         if isFilterActive { return "尝试减少筛选条件或调整侧边栏" }
         if !searchText.trimmingCharacters(in: .whitespaces).isEmpty { return "试试其他关键词" }
-        if filterFavorites { return "在图片详情中点击 ⭐ 收藏" }
+        // V5.8: 砍"收藏"空状态提示
         if filterUnfiled { return "把图片移动到文件夹来整理" }
         if folder != nil { return "导入图片后会自动放到此文件夹" }
         if tag != nil { return "在图片详情中添加此标签" }
@@ -344,9 +343,10 @@ struct PhotoGridView: View {
 
     private var emptyShowImport: Bool {
         let trimmed = searchText.trimmingCharacters(in: .whitespaces)
-        return trimmed.isEmpty && !filterFavorites && !filterUnfiled
+        return trimmed.isEmpty && !filterUnfiled
             && folder == nil && tag == nil && !filterDuplicates
             && !filterInTrash  // V3.6 NEW: 回收站空状态不显示导入按钮
+        // V5.8: 砍!filterFavorites——dead
     }
 
     // ─── 根据视图模式切换 ───
@@ -586,7 +586,7 @@ struct PhotoGridView: View {
         folder: nil,
         tag: nil,
         searchText: "",
-        filterFavorites: false,
+        // V5.8: 砍 filterFavorites
         filterUnfiled: false,
         filterDuplicates: false,
         filterRecent7Days: false,

@@ -21,7 +21,7 @@ struct PhotoGridPane: View {
     let folder: Folder?
     let tag: Tag?
     let searchText: String
-    let filterFavorites: Bool
+    // V5.8: 砍 filterFavorites
     let filterUnfiled: Bool
     let filterDuplicates: Bool
     let filterRecent7Days: Bool
@@ -52,7 +52,7 @@ struct PhotoGridPane: View {
             folder: folder,
             tag: tag,
             searchText: searchText,
-            filterFavorites: filterFavorites,
+            // V5.8: 砍 filterFavorites
             filterUnfiled: filterUnfiled,
             filterDuplicates: filterDuplicates,
             filterRecent7Days: filterRecent7Days,

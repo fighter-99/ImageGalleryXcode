@@ -27,10 +27,8 @@ enum PhotoStats {
         photos.filter { !$0.isInTrash }
     }
 
-    /// 收藏的图库照片（在图库 + isFavorite）
-    static func favorites(_ photos: [Photo]) -> [Photo] {
-        photos.filter(\.isFavorite)
-    }
+    // V5.8: 砍 favorites()——V5.7 砍 .favorites 侧边栏后无 caller
+    //   "收藏" 现在 = 评分 ≥ 5，由 FilterState.minRating 处理（不走 PhotoStats.favorites）
 
     /// 待整理照片（在图库 + folder == nil）
     static func unfiled(_ photos: [Photo]) -> [Photo] {
@@ -119,7 +117,7 @@ enum PhotoStats {
         tag: Tag?,
         searchText: String,
         sortOption: SortOption,
-        filterFavorites: Bool,
+        // V5.8: 砍 filterFavorites 参数——V5.7 砍 .favorites 侧边栏后 dead
         filterUnfiled: Bool,
         filterDuplicates: Bool,
         filterRecent7Days: Bool,
@@ -139,9 +137,7 @@ enum PhotoStats {
         if let tag {
             result = result.filter { photo in photo.tags.contains { $0.id == tag.id } }
         }
-        if filterFavorites {
-            result = result.filter { $0.isFavorite }
-        }
+        // V5.8: 砍 filterFavorites 分支——dead
         if filterUnfiled {
             result = result.filter { $0.folder == nil }
         }

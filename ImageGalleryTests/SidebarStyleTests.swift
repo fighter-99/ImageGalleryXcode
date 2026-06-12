@@ -121,21 +121,21 @@ struct SidebarStyleTests {
             SidebarStyle.iconColorDuplicate,   // .orange
             SidebarStyle.iconColorRecent,      // .blue
             SidebarStyle.iconColorLarge,       // .purple
-            SidebarStyle.iconColorFavorite,    // .yellow
+            // V5.8: 砍 iconColorFavorite——收藏 = 评分 ≥ 5 走筛选 popover
             SidebarStyle.iconColorTrash        // .orange (与 duplicate 同色)
         ]
         let uniqueColors = Set(colors.map { String(describing: $0) })
-        #expect(uniqueColors.count == 4, "5 个 slots 共享 4 个独立色相：橙/蓝/紫/金")
+        #expect(uniqueColors.count == 3, "4 个 slots 共享 3 个独立色相：橙/蓝/紫")
     }
 
     @Test func smartFolderIconColorsMatchSystemColors() {
         // 锁定具体色值——避免未来某次"统一化"改动破坏视觉锚点
         // 重复图 + 最近删除 都用 orange（同色族警示）
+        // V5.8: 砍 iconColorFavorite 测试——V5.7 砍 .favorites 侧边栏时遗漏
         #expect(SidebarStyle.iconColorDuplicate == .orange)
         #expect(SidebarStyle.iconColorTrash == .orange)
         #expect(SidebarStyle.iconColorRecent == .blue)
         #expect(SidebarStyle.iconColorLarge == .purple)
-        #expect(SidebarStyle.iconColorFavorite == .yellow)
     }
 
     // MARK: - Font token 引用一致性

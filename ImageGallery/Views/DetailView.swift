@@ -416,28 +416,62 @@ struct DetailView: View {
     }
 
     /// 5️⃣ 操作卡
+    /// V5.8: 加 5 颗 ⭐ 点选条——单张照片视图直接评分
+    ///   - 取代 V5.7 砍掉的"收藏"按钮——收藏 = 评分 ≥ 5
+    ///   - 点击第 N 颗 → photo.rating = N；再点同一颗 → photo.rating = 0
+    ///   - 视觉：实心 N 颗（systemYellow）+ 空心 (5-N) 颗（secondaryLabelColor）
+    ///   - 比右键菜单 → 评分 → 1 星 快捷 3 步
     /// V5.7: 砍"收藏"和"在 Finder 中显示"两个按钮
-    ///   - 收藏：合并到评分——右键菜单 / 筛选 popover 替代
-    ///   - 在 Finder 中显示：右键菜单仍有
     ///   只保留"删除"——最关键的危险操作必须显眼
     private var operationsCard: some View {
         detailCard {
-            // V4.5.0: 加 .controlSize(.large) 让按钮更舒展（同 MultiSelectDetailView V4.4.7）
-            // V5.7: 3 按钮 → 1 按钮（删除）——单按钮 fullWidth 占满
-            Button(role: .destructive) {
-                showingDeleteConfirm = true
-            } label: {
-                HStack(spacing: 4) {
-                    Image(systemName: "trash")
-                    Text("删除")
-                        .lineLimit(1)
+            VStack(spacing: Spacing.md) {
+                // V5.8: 5 颗 ⭐ 点选条
+                ratingPickerRow
+                // V5.7: 3 按钮 → 1 按钮（删除）——单按钮 fullWidth 占满
+                Button(role: .destructive) {
+                    showingDeleteConfirm = true
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "trash")
+                        Text("删除")
+                            .lineLimit(1)
+                    }
+                    .frame(maxWidth: .infinity)
                 }
-                .frame(maxWidth: .infinity)
+                .buttonStyle(.bordered)
+                .controlSize(.large)
+                .fixedSize(horizontal: false, vertical: true)
             }
-            .buttonStyle(.bordered)
-            .controlSize(.large)
-            .fixedSize(horizontal: false, vertical: true)
         }
+    }
+
+    /// V5.8: 5 颗 ⭐ 点选条——详情页直接评分
+    ///   - 5 颗 22pt ⭐ 横向排列
+    ///   - 点击第 N 颗 → photo.rating = N；再点同一颗 → photo.rating = 0（toggle）
+    ///   - 当前 rating 之前的实心（systemYellow），之后的空心（secondaryLabelColor）
+    ///   - 右侧文字 label 同步显示 N 星 / 未评分
+    private var ratingPickerRow: some View {
+        HStack(spacing: 6) {
+            ForEach(1...5, id: \.self) { n in
+                Button {
+                    photo.rating = (photo.rating == n) ? 0 : n
+                    modelContext.saveWithLog()
+                } label: {
+                    Image(systemName: n <= photo.rating ? "star.fill" : "star")
+                        .font(.title2)
+                        .foregroundStyle(n <= photo.rating ? Color.yellow : Color.secondary)
+                }
+                .buttonStyle(.plain)
+                .help(n <= photo.rating ? "当前 \(n) 星（点击清除）" : "设为 \(n) 星")
+            }
+            Spacer()
+            Text(photo.rating > 0 ? "\(photo.rating) 星" : "未评分")
+                .font(.callout)
+                .foregroundStyle(photo.rating > 0 ? .primary : .secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, 4)
     }
 
 

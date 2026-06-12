@@ -22,10 +22,8 @@ struct SidebarSelectionTests {
         #expect(serialized == "all")
     }
 
-    @Test func favoritesCaseRoundTripsCorrectly() {
-        let serialized = serializeSelectionForTesting(.favorites)
-        #expect(serialized == "favorites")
-    }
+    // V5.8: 删 favoritesCaseRoundTripsCorrectly 测试——.favorites case 已删
+    //   收藏 = 评分 ≥ 5 走筛选 popover，不再有对应 SidebarSelection case
 
     @Test func unfiledCaseRoundTripsCorrectly() {
         let serialized = serializeSelectionForTesting(.unfiled)
@@ -59,17 +57,18 @@ struct SidebarSelectionTests {
         // 防止以后删 case 时漏改其他 switch
         // (编译期 exhaustive switch 也会强制检查)
         // V3.6: 加 .recentlyDeleted
-        let simple: [SidebarSelection] = [.all, .favorites, .unfiled, .duplicates, .recent7Days, .largeFiles, .recentlyDeleted]
-        #expect(simple.count == 7)
+        // V5.8: 砍 .favorites——收藏 = 评分 ≥ 5 走筛选 popover
+        let simple: [SidebarSelection] = [.all, .unfiled, .duplicates, .recent7Days, .largeFiles, .recentlyDeleted]
+        #expect(simple.count == 6)
     }
 
     // MARK: - 测试辅助函数(模拟 ContentView 中的逻辑)
 
     /// 复制 ContentView.serializeSelection 的简单 case 逻辑
+    /// V5.8: 砍 .favorites case
     private func serializeSelectionForTesting(_ selection: SidebarSelection) -> String {
         switch selection {
         case .all: return "all"
-        case .favorites: return "favorites"
         case .unfiled: return "unfiled"
         case .duplicates: return "duplicates"
         case .recent7Days: return "recent7Days"

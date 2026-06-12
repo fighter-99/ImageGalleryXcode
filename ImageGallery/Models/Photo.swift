@@ -24,6 +24,10 @@ final class Photo {
     var height: Int
 
     // ─── 用户标记 ───
+    // V5.8: isFavorite 字段保留 stored（SwiftData schema 约束——改 computed 需要 schema migration）
+    //   语义上 = (rating >= 5)——V5.7 砍 UI 后本字段是 dead data
+    //   V5.8 加 migrateFavoriteToRating() 一次性把历史数据 rating 升到 5
+    //   未来 round 9 做 SwiftData VersionedSchema migration 彻底删字段
     var isFavorite: Bool
     var note: String
 
@@ -75,5 +79,23 @@ final class Photo {
         self.sortOrder = Int(Date().timeIntervalSince1970)
         // V4.36.x：评分默认未评分（0）；与字段默认值一致，显式赋值更清晰
         self.rating = 0
+    }
+
+    // MARK: - V5.8: 一次性数据迁移
+
+    /// V5.8: 把历史 isFavorite=true 数据的 rating 升到 5
+    ///   语义合并：收藏 = 评分 ≥ 5——isFavorite 字段保留 stored（SwiftData schema 约束）
+    ///   改 computed 需要 VersionedSchema migration——下一轮做
+    ///   本次先把数据对齐——isFavorite=true 的照片 rating 必须 ≥ 5
+    ///   调用：ContentView 启动 .onAppear 跑一次（幂等——重复跑无副作用）
+    static func migrateFavoriteToRating(in photos: [Photo], context: ModelContext) {
+        var migrated = 0
+        for photo in photos where photo.isFavorite && photo.rating < 5 {
+            photo.rating = 5
+            migrated += 1
+        }
+        if migrated > 0 {
+            try? context.save()
+        }
     }
 }

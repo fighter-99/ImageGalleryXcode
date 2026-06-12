@@ -326,8 +326,8 @@ enum SidebarStyle {
     static let iconColorRecent: Color = .blue
     /// 大图——紫色（文件体积/重量）
     static let iconColorLarge: Color = .purple
-    /// 收藏——金色（重要/标记）
-    static let iconColorFavorite: Color = .yellow
+    // V5.8: 砍 iconColorFavorite——V5.7 砍 .favorites 侧边栏后无 caller
+    //   收藏 = 评分 ≥ 5，由筛选 popover 体现
     /// 最近删除——橙色（警示，与重复图共用色族但更饱和）
     /// 条件：trashed > 0 时显示，空时不显示（保持简洁）
     static let iconColorTrash: Color = .orange

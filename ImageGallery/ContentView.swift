@@ -84,7 +84,7 @@ struct ContentView: View {
             tag: currentTag,
             searchText: searchText,
             sortOption: sortOption,
-            filterFavorites: filterFavorites,
+            // V5.8: 砍 filterFavorites——V5.7 砍 .favorites 侧边栏后 dead
             filterUnfiled: filterUnfiled,
             filterDuplicates: filterDuplicates,
             filterRecent7Days: filterRecent7Days,
@@ -222,11 +222,8 @@ struct ContentView: View {
         return nil
     }
 
-    private var filterFavorites: Bool {
-        // V5.7: 砍 .favorites 侧边栏项——保留 property 兼容旧 filter API 签名
-        //   永远返回 false；用户想看"收藏"改走筛选 popover (评分 ≥ 5)
-        return false
-    }
+    // V5.8: 砍 filterFavorites property——V5.7 砍 .favorites 侧边栏后此 property 永远 false
+    //   用户想看"收藏"改走筛选 popover (评分 ≥ 5)
 
     private var filterUnfiled: Bool {
         if case .unfiled = sidebarSelection { return true }
@@ -438,6 +435,9 @@ struct ContentView: View {
                     }
                     // V4.11.0: 检测 Application Support 可写性（v3.6 死代码接入）
                     checkStorage()
+                    // V5.8: 一次性数据迁移——isFavorite=true 的照片 rating 升到 5
+                    //   收藏 = 评分 ≥ 5 语义合并——历史数据对齐
+                    Photo.migrateFavoriteToRating(in: allPhotos, context: modelContext)
                 },
                 onStoredThumbnailChange: { thumbnailSize = CGFloat($0) },
                 onStoredSortChange: { sortOption = SortOption(rawValue: $0) ?? .importedAtDesc },
@@ -887,7 +887,7 @@ struct ContentView: View {
                 folder: currentFolder,
                 tag: currentTag,
                 searchText: searchText,
-                filterFavorites: filterFavorites,
+                // V5.8: 砍 filterFavorites
                 filterUnfiled: filterUnfiled,
                 filterDuplicates: filterDuplicates,
                 filterRecent7Days: filterRecent7Days,
@@ -919,7 +919,7 @@ struct ContentView: View {
                 folder: currentFolder,
                 tag: currentTag,
                 searchText: searchText,
-                filterFavorites: filterFavorites,
+                // V5.8: 砍 filterFavorites
                 filterUnfiled: filterUnfiled,
                 filterDuplicates: filterDuplicates,
                 filterRecent7Days: filterRecent7Days,
@@ -941,7 +941,7 @@ struct ContentView: View {
                 folder: currentFolder,
                 tag: currentTag,
                 searchText: searchText,
-                filterFavorites: filterFavorites,
+                // V5.8: 砍 filterFavorites
                 filterUnfiled: filterUnfiled,
                 filterDuplicates: filterDuplicates,
                 filterRecent7Days: filterRecent7Days,
