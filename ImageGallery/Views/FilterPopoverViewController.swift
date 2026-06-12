@@ -263,10 +263,14 @@ final class FilterPopoverViewController: NSViewController {
         //   之前 V4.45.1 makeIconTextSegmentItem + text "1+"——但 NSButton.imagePosition = .imageOnly
         //   抑制文字显示，截图里只看到星没数字
         //   改 makeIconOnlySegmentItem 纯 icon = 文字消失,只显星 (Photos 标准)
+        // V4.69.0: 评分 ⭐ 创建时显式传 iconTintOverride = .systemYellow
+        //   仿 macOS Photos 实际：所有 ⭐ 都是金色（无论 active/inactive）
+        //   之前 V4.66.0 只改 updateState 内的 applySegmentStyle 调用——不生效
         for n in 1...2 {
             let button = makeIconOnlySegmentItem(
                 icon: "star.fill",
-                isActive: filterState.minRating == n
+                isActive: filterState.minRating == n,
+                iconTintOverride: .systemYellow
             ) { [weak self] in
                 self?.handleRatingToggle(n)
             }
@@ -279,7 +283,8 @@ final class FilterPopoverViewController: NSViewController {
         for n in 3...5 {
             let button = makeIconOnlySegmentItem(
                 icon: "star.fill",
-                isActive: filterState.minRating == n
+                isActive: filterState.minRating == n,
+                iconTintOverride: .systemYellow  // V4.69.0: 评分 ⭐ gold
             ) { [weak self] in
                 self?.handleRatingToggle(n)
             }
@@ -485,15 +490,20 @@ final class FilterPopoverViewController: NSViewController {
     /// V4.41.1: 改为按状态动态 tint——active 白、inactive labelColor
     ///   之前预染色白色 + 25% 黑底 = inactive 状态白字白 icon 视觉糊
     ///   现在 6% black 底 + labelColor icon = Photos 风格"未选"感
+    /// V4.69.0: 加 iconTintOverride 参数——评分段创建时直接传 .systemYellow
+    ///   之前 V4.66.0 只改了 updateState 内的 applySegmentStyle 调用（不传 symbolName）
+    ///   而创建时已走默认 labelColor 路径——所以 ⭐ 一直显示黑色
+    ///   修法：评分段创建时显式传 iconTintOverride——直接生效
     private func makeIconOnlySegmentItem(
         icon: String,
         isActive: Bool,
+        iconTintOverride: NSColor? = nil,
         action: @escaping () -> Void
     ) -> NSButton {
         let button = ClosureButton(title: "", action: action)
         button.bezelStyle = .recessed
         // V4.41.1: 不预染色——把 symbol name 传给 applySegmentStyle 让它按状态 tint
-        applySegmentStyle(button, isActive: isActive, text: nil, symbolName: icon)
+        applySegmentStyle(button, isActive: isActive, text: nil, symbolName: icon, iconTintOverride: iconTintOverride)
         return button
     }
 
