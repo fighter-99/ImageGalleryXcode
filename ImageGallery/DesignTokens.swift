@@ -440,9 +440,9 @@ enum PopoverStyle {
     ///     让 popover 720pt 超窗口可视区。28pt 减 ~88pt 高度
     ///     仍能装下 16pt icon (item 减 4pt 不挡 icon) = Photos 平衡点
     ///   V4.64.0: 28 → 26 (向 macOS Photos 实际紧凑感靠拢)
-    ///     砍段头后段间无显式分隔，item 28pt 偏松
-    ///     26pt 装 16pt icon (item 减 10pt) + 1 列 row 间距 2pt = 紧凑 Photos 风
-    static let itemHeight: CGFloat = 26
+    ///   V4.71.0: 26 → 24 (更接近 Photos 实际 22-24pt 范围)
+    ///     装 15pt icon (item 减 9pt) + 1 列 row 间距 2pt = 更紧凑
+    static let itemHeight: CGFloat = 24
     /// item 圆角——V4.42.0: 6 → 8 (略增, 更现代圆润)
     ///   V4.64.0: 8 → 4 (向 macOS Photos 实际风格靠拢)
     ///     Photos 排序 popover item 圆角很小（接近 0）
