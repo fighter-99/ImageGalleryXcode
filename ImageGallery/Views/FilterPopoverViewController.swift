@@ -114,8 +114,9 @@ final class FilterPopoverViewController: NSViewController {
         )
         outer.translatesAutoresizingMaskIntoConstraints = false
 
-        // 顶部：header（"筛选" + "清除全部"）
-        outer.addArrangedSubview(makeHeader())
+        // V4.61.0: 删顶部 header（"筛选" + "清除全部"）——macOS Photos 扁平 menu 风格
+        //   "筛选" 与 anchor button "筛选" 语义重复
+        //   "清除全部" 入口在 V4.36.x ActiveFiltersBar 已有——保留一处即可
 
         // V4.44.0: 删 NSSearchField——folder/tag 数量少无需过滤
 
@@ -175,9 +176,10 @@ final class FilterPopoverViewController: NSViewController {
         }
 
         // 段 1: 文件夹
-        // V4.59.0: 段头始终显示——空时显示 placeholder，引导用户新建
-        //   之前 if !allFolders.isEmpty 直接不显示段——首次使用困惑（看不到筛选维度）
-        content.addArrangedSubview(makeSectionHeader("文件夹", icon: "folder"))
+        // V4.61.0: 删段头 + 段头 icon + 1pt 分隔线（macOS Photos 扁平 menu 风格）
+        //   段间靠 8pt 留白过渡（V4.64.0 才改 8pt，当前保持 12pt）
+        //   V4.59.0: 段头始终显示——空时显示 placeholder，引导用户新建
+        //     删段头后: 段内首项加 folder icon (makeFolderItemWithIcon) 标识"段类型"
         if allFolders.isEmpty {
             content.addArrangedSubview(makeEmptyStatePlaceholder(
                 icon: "folder.badge.plus",
@@ -197,8 +199,7 @@ final class FilterPopoverViewController: NSViewController {
         }
 
         // 段 2: 标签
-        // V4.59.0: 同上——段头始终显示
-        content.addArrangedSubview(makeSectionHeader("标签", icon: "tag"))
+        // V4.61.0: 同上——删段头
         if allTags.isEmpty {
             content.addArrangedSubview(makeEmptyStatePlaceholder(
                 icon: "tag",
@@ -218,7 +219,7 @@ final class FilterPopoverViewController: NSViewController {
         }
 
         // 段 3: 形状（不参与搜索过滤）
-        content.addArrangedSubview(makeSectionHeader("形状", icon: "rectangle"))
+        // V4.61.0: 删段头
         let shapeStack = makeSegmentRow()
         for shape in PhotoShape.allCases {
             let button = makeIconOnlySegmentItem(
@@ -233,7 +234,7 @@ final class FilterPopoverViewController: NSViewController {
         content.addArrangedSubview(shapeStack)
 
         // 段 4: 评分（不参与搜索过滤）
-        content.addArrangedSubview(makeSectionHeader("评分", icon: "star"))
+        // V4.61.0: 删段头
         let ratingContainer = NSStackView()
         ratingContainer.orientation = .vertical
         ratingContainer.alignment = .leading
@@ -342,90 +343,6 @@ final class FilterPopoverViewController: NSViewController {
     }
 
     // MARK: - 子视图工厂
-
-    /// 顶部 header："筛选" + "清除全部" 按钮（仅激活时显示）
-    /// V4.43.0: "清除全部" 降调——去下划线 + tertiaryLabelColor + 11pt
-    /// V4.47.0: header 13 → 14pt + 视觉锤更明确
-    ///   13pt semibold 在 transl material 上视觉权重过弱
-    ///   14pt bold 更"标题感"——用户第一眼看到 popover 时找得到"这是筛选"
-    private func makeHeader() -> NSView {
-        let title = NSTextField(labelWithString: "筛选")
-        title.font = NSFont.systemFont(ofSize: 14, weight: .bold)
-        title.textColor = .labelColor
-
-        let stack = NSStackView(views: [title, NSView()])  // spacer 用空 view 占位
-        stack.orientation = .horizontal
-        stack.alignment = .centerY
-        stack.distribution = .fill
-        stack.translatesAutoresizingMaskIntoConstraints = false
-
-        // V4.43.0: "清除全部" 按钮——仅在筛选激活时显示
-        // 降调：去下划线 + tertiaryLabelColor + 11pt + 蓝色链接感消失
-        if filterState.isActive {
-            let clearButton = NSButton(title: "清除全部", target: self, action: #selector(handleClearAllTapped))
-            clearButton.bezelStyle = .recessed
-            clearButton.controlSize = .small
-            clearButton.font = NSFont.systemFont(ofSize: 11)
-            clearButton.isBordered = false
-            clearButton.contentTintColor = .tertiaryLabelColor  // V4.43.0: secondary → tertiary
-            // V4.43.0: 去下划线——plain text + tertiary 色 = 弱化 destructive action 视觉
-            let attrTitle = NSAttributedString(
-                string: "清除全部",
-                attributes: [
-                    .foregroundColor: NSColor.tertiaryLabelColor
-                    // 移除 .underlineStyle 字段
-                ]
-            )
-            clearButton.attributedTitle = attrTitle
-            stack.addArrangedSubview(clearButton)
-        }
-
-        return stack
-    }
-
-    @objc private func handleClearAllTapped() {
-        onClearAll?()
-    }
-
-    private func makeSectionHeader(_ title: String, icon: String) -> NSView {
-        // V4.41.1: 10pt → 11pt (PopoverStyle.headerFontSize) + uppercase
-        //   与 ViewOptionsPopover.popoverSection token 对齐
-        //   中文 uppercase no-op（无大小写）但 token 一致 + 未来 i18n 友好
-        // V4.43.1: 加底边分隔线 0.5pt 6% primary——段间视觉分组更明确
-        let displayTitle = PopoverStyle.headerUppercased ? title.uppercased() : title
-        let label = NSTextField(labelWithString: displayTitle)
-        label.font = NSFont.systemFont(ofSize: PopoverStyle.headerFontSize, weight: PopoverStyle.headerWeightAppKit)
-        label.textColor = .secondaryLabelColor
-        let imageView = NSImageView(image: NSImage(systemSymbolName: icon, accessibilityDescription: nil) ?? NSImage())
-        imageView.imageScaling = .scaleProportionallyDown
-        imageView.contentTintColor = .secondaryLabelColor
-        let header = NSStackView(views: [imageView, label])
-        header.orientation = .horizontal
-        header.spacing = PopoverStyle.headerIconSpacing
-        header.alignment = .centerY
-
-        // V4.43.1: 底边分隔线——0.5pt 6% primary
-        let separator = NSBox()
-        separator.boxType = .separator
-        separator.alphaValue = 0.5  // 50% transparency on top of 12% NSColor → effective ~6%
-        let separatorContainer = NSView()
-        separatorContainer.translatesAutoresizingMaskIntoConstraints = false
-        separatorContainer.addSubview(separator)
-        separator.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            separator.leadingAnchor.constraint(equalTo: separatorContainer.leadingAnchor),
-            separator.trailingAnchor.constraint(equalTo: separatorContainer.trailingAnchor),
-            separator.topAnchor.constraint(equalTo: separatorContainer.topAnchor, constant: 3),
-            separator.heightAnchor.constraint(equalToConstant: PopoverStyle.headerSeparatorHeight),
-            separatorContainer.heightAnchor.constraint(equalToConstant: PopoverStyle.headerSeparatorHeight + 3)
-        ])
-
-        let vStack = NSStackView(views: [header, separatorContainer])
-        vStack.orientation = .vertical
-        vStack.spacing = 4
-        vStack.alignment = .leading
-        return vStack
-    }
 
     /// V4.59.0 NEW: 空状态占位——folder/tag 段无内容时显示
     ///   icon + 提示文字，引导用户到侧边栏新建
