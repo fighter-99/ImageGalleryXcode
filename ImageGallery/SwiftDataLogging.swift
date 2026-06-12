@@ -42,6 +42,12 @@ extension Logger {
         subsystem: "com.iridescent.ImageGallery",
         category: "recycleBin"
     )
+
+    /// V5.13.1: 临时 popover 定位诊断日志（修完 bug 删）
+    static let popoverDebug = Logger(
+        subsystem: "com.iridescent.ImageGallery",
+        category: "popoverDebug"
+    )
 }
 
 // MARK: - SwiftData ModelContext 统一错误处理

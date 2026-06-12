@@ -26,6 +26,7 @@
 
 import AppKit
 import SwiftUI
+import os
 
 @MainActor
 final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
@@ -480,10 +481,18 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
         popover.behavior = .transient  // 点外部自动关闭
         popover.delegate = self  // V5.9: 监听 popoverDidClose 同步按钮状态
         popover.contentViewController = contentProvider()
+        // V5.13.1: 临时诊断 popover 位置——记录 anchor 在 window 坐标
+        let anchorInWindow = anchorView.convert(anchorView.bounds, to: nil)
+        Logger.popoverDebug.info("ViewOptions anchor in window: \(anchorInWindow.origin.x, privacy: .public),\(anchorInWindow.origin.y, privacy: .public) size \(anchorInWindow.size.width, privacy: .public)x\(anchorInWindow.size.height, privacy: .public)")
         // V5.9.5: 回退到 V5.8 的最简模式——anchorView.bounds + of: anchorView
         //   V5.9.3 / V5.9.4 各种复杂修法（async/screen coords/0.1s 延迟）都没修好
         //   V5.8 这个最简代码 filter 一直能用——先回退确认基础
         popover.show(relativeTo: anchorView.bounds, of: anchorView, preferredEdge: .minY)
+        // V5.13.1: 诊断 popover 显示位置
+        if let popoverWindow = popover.contentViewController?.view.window {
+            let popoverFrame = popoverWindow.frame
+            Logger.popoverDebug.info("ViewOptions popover frame: x=\(popoverFrame.origin.x, privacy: .public) y=\(popoverFrame.origin.y, privacy: .public) w=\(popoverFrame.size.width, privacy: .public) h=\(popoverFrame.size.height, privacy: .public)")
+        }
         self.viewOptionsPopover = popover
         // V5.9.7: 不调 setItemPressed——NSToolbarItem + NSButton 自己处理 pressed 态
     }
@@ -519,10 +528,18 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
             _ = newState
             _ = self
         })
+        // V5.13.1: 临时诊断 popover 位置——记录 anchor 在 window 坐标
+        let anchorInWindow = anchorView.convert(anchorView.bounds, to: nil)
+        Logger.popoverDebug.info("Filter anchor in window: \(anchorInWindow.origin.x, privacy: .public),\(anchorInWindow.origin.y, privacy: .public) size \(anchorInWindow.size.width, privacy: .public)x\(anchorInWindow.size.height, privacy: .public)")
         // V5.9.5: 回退到 V5.8 的最简模式——coordinator?.showTop(anchoredTo: anchorView)
         //   V5.9.3 / V5.9.4 各种修法没修好；先回退确认基础
         coordinator?.showTop(anchoredTo: anchorView)
         filterPopoverCoordinator = coordinator
+        // V5.13.1: 诊断 popover 显示位置
+        if let coord = filterPopoverCoordinator, let popoverWindow = coord.topPopover?.contentViewController?.view.window {
+            let popoverFrame = popoverWindow.frame
+            Logger.popoverDebug.info("Filter popover frame: x=\(popoverFrame.origin.x, privacy: .public) y=\(popoverFrame.origin.y, privacy: .public) w=\(popoverFrame.size.width, privacy: .public) h=\(popoverFrame.size.height, privacy: .public)")
+        }
         // V5.9.7: 不调 setItemPressed
     }
 
