@@ -80,7 +80,6 @@ final class TagFilterPopoverController: NSViewController {
         NSLayoutConstraint.activate([
             scrollView.leadingAnchor.constraint(equalTo: visualEffect.leadingAnchor, constant: 0),
             scrollView.trailingAnchor.constraint(equalTo: visualEffect.trailingAnchor, constant: 0),
-            // V4.99.0: padding 0（scrollview 撑满 visualEffect 边缘）——与 FolderFilterPopover 保持一致
             scrollView.topAnchor.constraint(equalTo: visualEffect.topAnchor, constant: 0),
             scrollView.bottomAnchor.constraint(equalTo: visualEffect.bottomAnchor, constant: 0),
             // V4.60.0: 高度上限——超过时显示 scroller
