@@ -64,6 +64,8 @@ struct SettingsView: View {
             // Detail: 选中类别的设置内容
             //   NavigationSplitView 自动提供 sidebar/detail 切换
             //   Photos.app 标准：sidebar 选中高亮 + detail 切换
+            //   V4.55.0: 加 .id + .transition + .animation——切换时 detail 内容淡入+右移
+            //     仿 V3.6.44 DetailPane 模式（.id(viewKind) 强制 SwiftUI 视为不同视图触发 transition）
             Group {
                 switch selectedCategory {
                 case .general:
@@ -76,7 +78,10 @@ struct SettingsView: View {
                     AccentSettingsView()
                 }
             }
+            .id(selectedCategory)  // V4.55.0: 强制 SwiftUI 视为不同视图（transition 关键）
+            .transition(.opacity.combined(with: .move(edge: .trailing)))  // V4.55.0: 渐入+右移——Photos 风格
             .frame(minWidth: 420, minHeight: 320)
+            .animation(Animations.standard, value: selectedCategory)  // V4.55.0: 驱动 transition
         }
         .navigationTitle("设置")
         // V4.50.0: 删 .padding(Spacing.xl) 和固定 width 480 height 700
