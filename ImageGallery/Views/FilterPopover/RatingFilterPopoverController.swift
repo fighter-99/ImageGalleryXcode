@@ -71,9 +71,11 @@ final class RatingFilterPopoverController: NSViewController {
             row.addArrangedSubview(button)
         }
         visualEffect.addSubview(row)
+        // V4.99.0: padding 12→6——与 FolderFilterPopover 保持一致
+        //   减 NSPopover 内置 inset——视觉紧凑
         NSLayoutConstraint.activate([
-            row.leadingAnchor.constraint(equalTo: visualEffect.leadingAnchor, constant: Self.padding),
-            row.trailingAnchor.constraint(equalTo: visualEffect.trailingAnchor, constant: -Self.padding),
+            row.leadingAnchor.constraint(equalTo: visualEffect.leadingAnchor, constant: Self.padding / 2),
+            row.trailingAnchor.constraint(equalTo: visualEffect.trailingAnchor, constant: -Self.padding / 2),
             row.centerYAnchor.constraint(equalTo: visualEffect.centerYAnchor)
         ])
         self.view = visualEffect
