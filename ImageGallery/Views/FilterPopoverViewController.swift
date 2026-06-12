@@ -562,29 +562,38 @@ final class FilterPopoverViewController: NSViewController {
         // V4.47.0: 修复 star/circle icon 不可见 bug——paletteColors 在 .followsWindowActiveState
         //   transl popover 下渲染异常（截图里 5 个评分项 + "全部" 全部显示为空方块）
         //   改用 contentTintColor 方式——更标准也稳定
+        // V4.69.0 彻底修: 评分段 ⭐ 用 paletteColors + applying 链式渲染金色
+        //   之前 contentTintOverride + contentTintColor 对 multi-color SF Symbol (star.fill) 失效
+        //   paletteColors 是 NSImage.SymbolConfiguration 的属性——V4.46.0 之前用过
+        //   active 时用 white palette（在 accent bg 上）——保持对比
         if let symbol = symbolName {
-            // V4.66.0: inactive 状态可显式 override icon tint（评分段用 gold）
-            //   active 仍用 activeTextAppKit (white) — 在 accent bg 上保持对比
-            let iconColor: NSColor
-            if isActive {
-                iconColor = PopoverStyle.activeTextAppKit
-            } else if let override = iconTintOverride {
-                iconColor = override
-            } else {
-                iconColor = PopoverStyle.inactiveTextAppKit
-            }
+            let usePalette = iconTintOverride != nil
             let sizeConfig = NSImage.SymbolConfiguration(
                 pointSize: PopoverStyle.iconFontSize,
                 weight: .medium
             )
+            let finalConfig: NSImage.SymbolConfiguration
+            if usePalette {
+                // V4.69.0: applying(_:) 链式 paletteColors——把 color baked 进 image
+                let palette: [NSColor] = isActive ? [.white] : [iconTintOverride!]
+                let paletteConfig = NSImage.SymbolConfiguration(paletteColors: palette)
+                finalConfig = sizeConfig.applying(paletteConfig) ?? sizeConfig
+            } else {
+                finalConfig = sizeConfig
+            }
             let img = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)?
-                .withSymbolConfiguration(sizeConfig)
+                .withSymbolConfiguration(finalConfig)
             button.image = img
             button.imageScaling = .scaleProportionallyDown
             button.imagePosition = .imageOnly
-            // V4.47.0: contentTintColor 替代 paletteColors——更可靠的 tint 方式
-            //   NSImage(systemSymbolName:) 返回 template image, contentTintColor 直接上色
-            button.contentTintColor = iconColor
+            if usePalette {
+                // V4.69.0: paletteColors 已 baked color 进 image——clear contentTintColor
+                button.contentTintColor = nil
+            } else {
+                // 原 V4.47.0 路径：contentTintColor 上色
+                let iconColor = isActive ? PopoverStyle.activeTextAppKit : PopoverStyle.inactiveTextAppKit
+                button.contentTintColor = iconColor
+            }
         } else {
             button.image = nil
         }
