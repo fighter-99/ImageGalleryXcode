@@ -8,6 +8,12 @@
 //  - 顶部关闭按钮（Esc 退出）
 //  - 缩放：双击放大（V2.6+）
 //
+//  V4.57.0: 顶/底 chrome 升级 transl material pill
+//    之前：LinearGradient 黑色 60% → 透明 渐变带
+//    现在：Capsule + VisualEffectMaterial(.popover)——macOS Photos 实际风格
+//    仿 V4.45.0 + V4.47.0 popover transl material 范式
+//    （material = .popover, state = .followsWindowActiveState, blendingMode = .withinWindow）
+//
 
 import SwiftUI
 
@@ -142,22 +148,24 @@ struct ImmersivePhotoView: View {
                 Image(systemName: "xmark.circle.fill")
                     .font(.title2)
                     .foregroundStyle(.white.opacity(0.9))
-                    .background(Circle().fill(.black.opacity(0.3)))
+                    // V4.57.0: 删 .background(Circle().fill(.black.opacity(0.3)))
+                    //   transl material pill 已经有底色——内嵌黑色圆形底是冗余
             }
             .buttonStyle(.plain)
             .keyboardShortcut(.escape, modifiers: [])
         }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        // V4.57.0: transl material pill——macOS Photos 风格
+        //   仿 V4.45.0 + V4.47.0 popover transl material 范式
+        //   之前是 LinearGradient 黑色 60% → 透明 80pt 高渐变带
+        //   现在是 NSVisualEffectView .popover 胶囊——chrome 浮动在大图上
+        //   注：VisualEffectMaterial 是 NSViewRepresentable（不是 ShapeStyle），
+        //   不能用 .background(_, in: Capsule()) 模式——改用 .background() + .clipShape() 标准模式
+        .background(VisualEffectMaterial())
+        .clipShape(Capsule())
         .padding(.horizontal, 24)
         .padding(.top, 16)
-        .background(
-            LinearGradient(
-                colors: [.black.opacity(0.6), .clear],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .frame(height: 80)
-            .allowsHitTesting(false)
-        )
     }
 
     private var bottomChrome: some View {
@@ -203,17 +211,18 @@ struct ImmersivePhotoView: View {
             .disabled(!canNext)
             .opacity(canNext ? 1 : 0.3)
         }
+        .padding(.horizontal, 32)
+        .padding(.vertical, 12)
+        // V4.57.0: transl material pill——macOS Photos 风格
+        //   仿 V4.45.0 + V4.47.0 popover transl material 范式
+        //   之前是 LinearGradient 透明 → 黑色 60% 120pt 高渐变带
+        //   现在是 NSVisualEffectView .popover 胶囊——chrome 浮动在大图上
+        //   注：VisualEffectMaterial 是 NSViewRepresentable（不是 ShapeStyle），
+        //   不能用 .background(_, in: Capsule()) 模式——改用 .background() + .clipShape() 标准模式
+        .background(VisualEffectMaterial())
+        .clipShape(Capsule())
         .padding(.horizontal, 60)
         .padding(.bottom, 24)
-        .background(
-            LinearGradient(
-                colors: [.clear, .black.opacity(0.6)],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .frame(height: 120)
-            .allowsHitTesting(false)
-        )
     }
 
     // MARK: - 翻页
