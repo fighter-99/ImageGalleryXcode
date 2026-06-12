@@ -103,6 +103,13 @@ final class FilterPopoverViewController: NSViewController {
         visualEffect.material = .popover      // macOS popover 专用材质
         visualEffect.state = .followsWindowActiveState
         visualEffect.blendingMode = .withinWindow  // V4.47.0: 暗色下更清透
+        // V4.67.0: 加 0.5pt hairline 强化 popover 边界——dark mode + transl material
+        //   让 popover 边缘与周围区分更清晰（仿 macOS Photos 实际风格）
+        //   NSVisualEffectView 没有 borderWidth——用 layer-backed + layer.borderWidth
+        visualEffect.wantsLayer = true
+        visualEffect.layer?.borderWidth = 0.5
+        visualEffect.layer?.borderColor = NSColor.separatorColor.cgColor
+        visualEffect.layer?.cornerRadius = 12  // V4.67.0: 增大圆角，匹配 Photos
 
         let outer = NSStackView()
         outer.orientation = .vertical
