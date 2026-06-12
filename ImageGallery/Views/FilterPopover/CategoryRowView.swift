@@ -45,7 +45,8 @@ final class CategoryRowView: NSView {
 
     /// V5.9: 是否 active（子 popover 打开中 / 子 popover 锚点）
     ///   外部（coordinator）通过 setActive(_:) 切换
-    private var isActive: Bool = false {
+    /// V5.14: private(set) 让测试可读
+    private(set) var isActive: Bool = false {
         didSet { updateAppearance() }
     }
 
@@ -54,8 +55,10 @@ final class CategoryRowView: NSView {
     private let backgroundLayer: NSView  // V5.9: 三态背景载体
     private let iconView: NSImageView
     private let titleLabel: NSTextField
-    private let countBadge: NSTextField
-    private let countBadgeBg: NSView
+    /// V5.14: 从 private 改 internal——测试读 countBadge.stringValue
+    let countBadge: NSTextField
+    /// V5.14: 从 private 改 internal——测试读 countBadgeBg.isHidden
+    let countBadgeBg: NSView
     private let chevronView: NSImageView
     private let mainStack: NSStackView
 
