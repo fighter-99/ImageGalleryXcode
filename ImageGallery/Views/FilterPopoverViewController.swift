@@ -720,20 +720,5 @@ final class FilterPopoverViewController: NSViewController {
     }
 }
 
-// MARK: - NSButton + closure 桥接
-
-private final class ClosureButton: NSButton {
-    private let actionClosure: () -> Void
-
-    init(title: String, action: @escaping () -> Void) {
-        self.actionClosure = action
-        super.init(frame: .zero)
-        self.title = title
-        self.target = self
-        self.action = #selector(invoke)
-    }
-
-    required init?(coder: NSCoder) { fatalError("not implemented") }
-
-    @objc private func invoke() { actionClosure() }
-}
+// MARK: - V4.81.0: ClosureButton 已迁到 PopoverItemFactory.swift
+//   原 private final class ClosureButton 改 internal（跨文件用）—— 删本文件实现
