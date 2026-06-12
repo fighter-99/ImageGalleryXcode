@@ -53,6 +53,11 @@ final class FilterPopoverCoordinator {
         self.onStateChange = onStateChange
     }
 
+    // MARK: - 公开状态
+
+    /// V4.90.0: 顶层 popover 是否显示——ToolbarController 用此判断 toggle
+    var isTopShown: Bool { topPopover?.isShown == true }
+
     // MARK: - 顶层 popover
 
     /// V4.89.0: 显示顶层 popover——锚定到 toolbar 按钮

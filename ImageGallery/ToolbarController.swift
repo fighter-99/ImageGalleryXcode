@@ -65,14 +65,15 @@ final class ToolbarController: NSObject, NSToolbarDelegate {
     /// transient 行为下点击外部自动关闭
     private var viewOptionsPopover: NSPopover?
 
-    // MARK: - Filter popover 桥接（V4.36.x NEW）——仿 V4.9.1 viewOptionsContentProvider
+    // MARK: - Filter popover 桥接（V4.36.x + V4.89.0 重构）——FilterPopoverCoordinator 接管
 
-    /// V4.36.x: ContentView 提供 popover 内容（NSHostingController 包 SwiftUI FilterPopover）
-    /// 同样的 NSPopover + NSHostingController 模式——state 在 ContentView 通过 @Binding 双向改
-    var filterContentProvider: (() -> NSViewController)?
+    /// V4.89.0: ContentView 提供 coordinator 工厂（接收 folders/tags + onStateChange）
+    ///   coordinator 内部管 顶层 + 4 子 popover lifecycle
+    ///   ToolbarController 只持 coordinator 强引用
+    var filterCoordinatorFactory: ((@escaping (FilterState) -> Void) -> FilterPopoverCoordinator)?
 
-    /// V4.36.x: Filter popover 强引用（避免被释放）
-    private var filterPopover: NSPopover?
+    /// V4.90.0: Filter popover coordinator 强引用（避免被释放）
+    private var filterPopoverCoordinator: FilterPopoverCoordinator?
 
     /// V4.36.x: 激活筛选总数（用于工具栏 hover tooltip 角标 "筛选 (N)"）
     /// ContentView 通过 .onChange(of: filterState.activeCount) 同步此值
@@ -433,23 +434,28 @@ final class ToolbarController: NSObject, NSToolbarDelegate {
     ///   完全仿 V4.9.1 handleShowViewOptions 模式：NSPopover + item.view 锚定
     ///   NSPopover 自动处理屏幕边界，比 SwiftUI .popover() 在 NSToolbar 里更可靠
     @objc private func handleShowFilter() {
-        if let popover = filterPopover, popover.isShown {
-            popover.close()
-            filterPopover = nil
+        // V4.90.0: 切换关闭（再点 toolbar 按钮 toggle）——coordinator 内部管 toggle
+        if let coordinator = filterPopoverCoordinator, coordinator.isTopShown {
+            coordinator.closeAll()
+            filterPopoverCoordinator = nil
             return
         }
 
-        guard let contentProvider = filterContentProvider,
-              let item = itemCache[Identifier.filter.nsIdentifier],
+        guard let item = itemCache[Identifier.filter.nsIdentifier],
               let anchorView = item.view else {
             return
         }
 
-        let popover = NSPopover()
-        popover.behavior = .transient  // 点外部自动关闭
-        popover.contentViewController = contentProvider()
-        popover.show(relativeTo: anchorView.bounds, of: anchorView, preferredEdge: .minY)
-        self.filterPopover = popover
+        // V4.90.0: 创建 coordinator + 调 showTop
+        //   ContentView 注入 factory + onStateChange closure
+        let coordinator = filterCoordinatorFactory?({ [weak self] newState in
+            // V4.90.0: 写回 ContentView filterState——coordinator 不直接管 ContentView state
+            //   实际由 ContentView .onChange 推——coordinator 只管 popover lifecycle
+            _ = newState
+            _ = self
+        })
+        coordinator?.showTop(anchoredTo: anchorView)
+        filterPopoverCoordinator = coordinator
     }
 
     /// V4.36.x + V4.54.0: 同步激活筛选数 + active 视觉锤到 filter item

@@ -635,25 +635,18 @@ struct ContentView: View {
         //   AppKit controller 直接 preferredContentSize，NSPopover 读这个值
         //   state 变化通过 onStateChange 回调同步（双向）
         //   V4.36.x #4: 还接 onClearAll 回调 + filterStateChangedFromOutside 通知
-        controller.filterContentProvider = { [self] in
-            // V4.85.0: 改用 FilterTopPopoverViewController——FilterPopover 拆 2 层 popover
-            //   顶层只显示 4 类别入口（folder/tag/shape/rating）——仿 Photos 8-item 简洁
-            //   onCategoryTap 暂不接入子 popover（V4.86+ 接入）
-            let popoverVC = FilterTopPopoverViewController(filterState: filterState)
-            popoverVC.onStateChange = { [weak popoverVC] newState in
-                self.filterState = newState
-                _ = popoverVC
-            }
-            popoverVC.onClearAll = { [weak popoverVC] in
-                self.filterState = .empty
-                popoverVC?.updateState(.empty)
-            }
-            // V4.85.0: onCategoryTap 暂不接入子 popover——V4.86+ 实施
-            //   现在只接收到点击但不做任何事——子 popover 创建由 coordinator 接管
-            popoverVC.onCategoryTap = { _ in
-                // Phase 2+ 接入子 popover
-            }
-            return popoverVC
+        // V4.90.0: filterContentProvider 改 filterCoordinatorFactory——coordinator 接管 lifecycle
+        //   coordinator 内置 顶层 + 4 子 popover 强引用
+        //   onStateChange: 写回 ContentView @State filterState
+        controller.filterCoordinatorFactory = { [self] onStateChange in
+            return FilterPopoverCoordinator(
+                folders: folders,
+                tags: allTags,
+                onStateChange: { newState in
+                    self.filterState = newState
+                    onStateChange(newState)
+                }
+            )
         }
         // V4.36.x: 首次同步角标（onChange 不会在初始化时触发，必须手动 push）
         controller.filterActiveCount = filterState.activeCount
