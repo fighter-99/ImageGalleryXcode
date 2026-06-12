@@ -186,7 +186,7 @@ final class FilterPopoverViewController: NSViewController {
                 message: "暂无文件夹\n右键侧边栏「我的文件夹」新建"
             ))
         } else {
-            content.addArrangedSubview(makeTwoColumnCheckList(items: allFolders) { folder in
+            content.addArrangedSubview(makeOneColumnCheckList(items: allFolders) { folder in
                 let button = self.makeCheckItem(
                     label: folder.name,
                     isOn: filterState.folders.contains(folder.id)
@@ -206,7 +206,7 @@ final class FilterPopoverViewController: NSViewController {
                 message: "暂无标签\n右键侧边栏「标签」新建"
             ))
         } else {
-            content.addArrangedSubview(makeTwoColumnCheckList(items: allTags) { tag in
+            content.addArrangedSubview(makeOneColumnCheckList(items: allTags) { tag in
                 let button = self.makeCheckItem(
                     label: "#\(tag.name)",
                     isOn: filterState.tags.contains(tag.id)
@@ -391,8 +391,31 @@ final class FilterPopoverViewController: NSViewController {
         return button
     }
 
+    /// 1 列 checkbox 列表——仿 macOS Photos 排序 popover 风格
+    /// V4.63.0: 砍 2 列布局（之前 HStack + 2 VStack 复杂）——1 列 + fill 撑满宽度
+    ///   - 2 列问题：fillEqually 对齐 + V4.58.0 byTruncatingMiddle 截断
+    ///   - 1 列优势：每行独立视觉单元 + 无对齐问题
+    ///   - 副作用：folder/tag 多时 popover 变高，V4.60.0 NSScrollView 兜底
+    private func makeOneColumnCheckList<T: AnyObject, Button: NSButton>(
+        items: [T],
+        itemBuilder: (T) -> Button
+    ) -> NSView {
+        let vStack = NSStackView()
+        vStack.orientation = .vertical
+        vStack.alignment = .leading
+        vStack.distribution = .fill  // V4.63.0: 子 view 撑满 VStack 宽度
+        vStack.spacing = 2  // V4.63.0: 1 列时 row 间距 2pt 紧凑
+        vStack.translatesAutoresizingMaskIntoConstraints = false
+        for item in items {
+            vStack.addArrangedSubview(itemBuilder(item))
+        }
+        return vStack
+    }
+
     /// 2 列紧凑列表：HStack + 2 VStack（左列先满）
     /// V4.42.0: VStack spacing 2 → PopoverStyle.columnRowGap (4) — checkbox 行间更舒展
+    /// V4.63.0: 砍——1 列布局替代
+    @available(*, unavailable, message: "V4.63.0 砍 2 列布局——用 makeOneColumnCheckList")
     private func makeTwoColumnCheckList<T: AnyObject, Button: NSButton>(
         items: [T],
         itemBuilder: (T) -> Button
