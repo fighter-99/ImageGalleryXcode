@@ -47,8 +47,19 @@ final class FolderFilterPopoverController: NSViewController {
     // MARK: - 视图生命周期
 
     override func loadView() {
+        // V5.2 重构：container(NSView) → visualEffect(NSVisualEffectView) → list(NSStackView) 三层
+        //   之前 self.view = visualEffect 单层——visualEffect 既是 contentView 又是 list 的父
+        //   问题：visualEffect 默认 TAMC=true——frame 由 autoresizing mask 管
+        //   list 约束基于 visualEffect anchor——autoresizing 模式下 list frame 算出 -24 负值
+        //   checkbox 紧贴左边框——V5.0 加的 12pt padding 没生效
+        //
+        //   现在 container 当 contentView——visualEffect 是 container 的子 view
+        //   两者都 TAMC=false——约束显式求值，list 12pt padding 稳定生效
+        let container = NSView()
+        container.translatesAutoresizingMaskIntoConstraints = false
         // V4.86.0: NSVisualEffectView 包裹——V4.80.0 popoverHost() helper
         let visualEffect = NSVisualEffectView.popoverHost()
+        visualEffect.translatesAutoresizingMaskIntoConstraints = false
         // 1 列 checkbox list——V4.81.0 PopoverItemFactory 共享
         let list = PopoverItemFactory.makeOneColumnCheckList(items: folders) { [weak self] folder in
             PopoverItemFactory.makeCheckItem(
@@ -58,14 +69,24 @@ final class FolderFilterPopoverController: NSViewController {
                 self?.handleToggle(folder.id)
             }
         }
+        container.addSubview(visualEffect)
         visualEffect.addSubview(list)
+        // V5.2: 三层约束
+        //   1. visualEffect 撑满 container
+        //   2. list 12pt padding 在 visualEffect 内（V5.0 范式——修左侧切断）
         NSLayoutConstraint.activate([
-            list.leadingAnchor.constraint(equalTo: visualEffect.leadingAnchor, constant: 0),
-            list.trailingAnchor.constraint(equalTo: visualEffect.trailingAnchor, constant: 0),
+            // 1. visualEffect 撑满 container
+            visualEffect.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            visualEffect.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            visualEffect.topAnchor.constraint(equalTo: container.topAnchor),
+            visualEffect.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+            // 2. list 12pt padding（V5.0 范式）
+            list.leadingAnchor.constraint(equalTo: visualEffect.leadingAnchor, constant: Self.padding),
+            list.trailingAnchor.constraint(equalTo: visualEffect.trailingAnchor, constant: -Self.padding),
             list.topAnchor.constraint(equalTo: visualEffect.topAnchor, constant: Self.padding),
             list.bottomAnchor.constraint(equalTo: visualEffect.bottomAnchor, constant: -Self.padding)
         ])
-        self.view = visualEffect
+        self.view = container
     }
 
     override func viewDidLayout() {
