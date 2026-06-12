@@ -94,7 +94,7 @@ final class ShapeFilterPopoverController: NSViewController {
 
     // MARK: - toggle
 
-    private func handleToggle(_ shape: PhotoShape) {
+    func handleToggle(_ shape: PhotoShape) {
         if filterState.shapes.contains(shape) {
             filterState.shapes.remove(shape)
         } else {

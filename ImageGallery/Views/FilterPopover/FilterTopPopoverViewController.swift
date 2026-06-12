@@ -185,7 +185,7 @@ final class FilterTopPopoverViewController: NSViewController {
 
     // MARK: - 计数 / summary 计算
 
-    private func count(for category: FilterCategory) -> Int {
+    func count(for category: FilterCategory) -> Int {
         switch category {
         case .folder: return filterState.folders.count
         case .tag: return filterState.tags.count
@@ -195,7 +195,7 @@ final class FilterTopPopoverViewController: NSViewController {
     }
 
     /// V4.84.0: rating 类别用 summary 而非 count——表达"≥N 星"语义
-    private func summary(for category: FilterCategory) -> String? {
+    func summary(for category: FilterCategory) -> String? {
         if category == .rating, filterState.minRating > 0 {
             return "≥ \(filterState.minRating) ★"
         }

@@ -40,7 +40,18 @@ extension View {
         // V5.7: 砍 onToggleFavorite 参数——工具栏 ❤ 收藏按钮已移除
         onToggleFavorite: @escaping () -> Void = {}  // V5.7: 保留默认空实现，调用点不破坏
     ) -> some View {
-        background {
+        // V5.13：抽到 RatingShortcuts.routes 路由表，便于测试
+        //   用 local @ViewBuilder function 避免 Group 内混合 Button + ForEach 触发类型推断失败
+        @ViewBuilder
+        func makeRatingButtons() -> some View {
+            ForEach(RatingShortcuts.routes, id: \.rating) { route in
+                Button("") { onSetRating(route.rating) }
+                    .keyboardShortcut(route.key, modifiers: route.modifiers)
+                    .hidden()
+            }
+        }
+
+        return background {
             Group {
                 Button("") { onImport() }
                     .keyboardShortcut("o", modifiers: .command)
@@ -87,24 +98,8 @@ extension View {
                 // V5.12: ⌘0 清除评分 + ⌘1-⌘5 设为 N 星（仿 macOS Photos 标准）
                 //   ⌘0-⌘5 不与其他快捷键冲突
                 //   ⌘D/⌘F 等给搜索/收藏之类——V5.7 已释放 ⌘F 槽位
-                Button("") { onSetRating(0) }
-                    .keyboardShortcut("0", modifiers: .command)
-                    .hidden()
-                Button("") { onSetRating(1) }
-                    .keyboardShortcut("1", modifiers: .command)
-                    .hidden()
-                Button("") { onSetRating(2) }
-                    .keyboardShortcut("2", modifiers: .command)
-                    .hidden()
-                Button("") { onSetRating(3) }
-                    .keyboardShortcut("3", modifiers: .command)
-                    .hidden()
-                Button("") { onSetRating(4) }
-                    .keyboardShortcut("4", modifiers: .command)
-                    .hidden()
-                Button("") { onSetRating(5) }
-                    .keyboardShortcut("5", modifiers: .command)
-                    .hidden()
+                // V5.13：抽到 RatingShortcuts.routes 路由表，便于测试
+                makeRatingButtons()
 
                 // V4.7.0: ⌘Z 撤销 / ⌘⇧Z 重做 改由 Edit menu 接管（ImageGalleryApp.UndoRedoMenuButtons）
                 //   之前这里有 hidden Button 触发 onUndo/onRedo

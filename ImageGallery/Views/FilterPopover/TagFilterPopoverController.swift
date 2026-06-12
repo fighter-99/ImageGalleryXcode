@@ -144,7 +144,7 @@ final class TagFilterPopoverController: NSViewController {
 
     // MARK: - toggle
 
-    private func handleToggle(_ id: UUID) {
+    func handleToggle(_ id: UUID) {
         if filterState.tags.contains(id) {
             filterState.tags.remove(id)
         } else {

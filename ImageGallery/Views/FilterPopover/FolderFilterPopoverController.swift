@@ -121,7 +121,7 @@ final class FolderFilterPopoverController: NSViewController {
 
     // MARK: - toggle
 
-    private func handleToggle(_ id: UUID) {
+    func handleToggle(_ id: UUID) {
         if filterState.folders.contains(id) {
             filterState.folders.remove(id)
         } else {

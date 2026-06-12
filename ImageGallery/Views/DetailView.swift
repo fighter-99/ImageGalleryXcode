@@ -589,8 +589,9 @@ private struct RatingStarsView: View {
 
     /// 显示的填充范围——max(rating, hoverRating)
     /// hover 时 hoverRating > rating，星星被"推"过去，预览效果
+    /// V5.13：抽到 RatingStarsMath.displayedRating 便于纯函数测试
     private var displayedRating: Int {
-        max(rating, hoverRating)
+        RatingStarsMath.displayedRating(current: rating, hover: hoverRating)
     }
 
     var body: some View {
@@ -598,7 +599,8 @@ private struct RatingStarsView: View {
             ForEach(1...5, id: \.self) { n in
                 Button {
                     // 同星再点归 0（清除）——V5.8 行为不变
-                    onSet(rating == n ? 0 : n)
+                    // V5.13：抽到 RatingStarsMath.nextRating 便于纯函数测试
+                    onSet(RatingStarsMath.nextRating(after: n, current: rating))
                 } label: {
                     Image(systemName: n <= displayedRating ? "star.fill" : "star")
                         .font(.system(size: 22, weight: .medium))

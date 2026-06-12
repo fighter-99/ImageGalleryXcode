@@ -133,7 +133,7 @@ final class RatingFilterPopoverController: NSViewController {
 
     // MARK: - toggle
 
-    private func handleToggle(_ rating: Int) {
+    func handleToggle(_ rating: Int) {
         filterState.minRating = rating
         onStateChange?(filterState)
     }
@@ -147,7 +147,7 @@ final class RatingFilterPopoverController: NSViewController {
 ///   - Active 态：10% accent bg + labelColor 文字
 ///   - Inactive 态：透明 bg + secondaryLabelColor 文字 + 5 颗灰色星
 ///   - 固定高度 26pt
-private final class RatingRowView: NSView {
+final class RatingRowView: NSView {
     private let filledCount: Int
     private let onTap: () -> Void
 

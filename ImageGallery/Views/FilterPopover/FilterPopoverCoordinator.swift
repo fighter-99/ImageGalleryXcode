@@ -201,10 +201,10 @@ final class FilterPopoverCoordinator {
         return lastWrittenState ?? FilterState()
     }
 
-    private var lastWrittenState: FilterState?
+    private(set) var lastWrittenState: FilterState?
 
     /// V4.89.0: 子 popover 创建（按 category 分发）
-    private func makeChildViewController(category: FilterCategory, filterState: FilterState) -> NSViewController {
+    func makeChildViewController(category: FilterCategory, filterState: FilterState) -> NSViewController {
         lastWrittenState = filterState
         switch category {
         case .folder:
