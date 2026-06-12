@@ -73,9 +73,12 @@ final class CategoryRowView: NSView {
         self.countBadge.translatesAutoresizingMaskIntoConstraints = false
 
         // chevron
+        // V4.95.0: tertiaryLabelColor → secondaryLabelColor——在 transl material 上更明显
+        //   之前 tertiaryLabelColor 太弱——截图 11 chevron 几乎不可见
+        //   secondaryLabelColor 在 V4.79.0 categoryRowChevronSize 9pt 仍有足够视觉重量
         self.chevronView = NSImageView(image: NSImage(systemSymbolName: "chevron.right", accessibilityDescription: nil) ?? NSImage())
         self.chevronView.imageScaling = .scaleProportionallyDown
-        self.chevronView.contentTintColor = .tertiaryLabelColor
+        self.chevronView.contentTintColor = .secondaryLabelColor
         self.chevronView.translatesAutoresizingMaskIntoConstraints = false
         self.chevronView.setContentHuggingPriority(.required, for: .horizontal)
 
