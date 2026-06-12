@@ -408,6 +408,7 @@ enum PopoverStyle {
 
     // ─── 段头（section header） ───
     /// 段头字号——caption2 (11pt)
+    /// V4.61.0 删 FilterPopoverViewController 段头后此 token 实际未用——保留兼容
     static let headerFontSize: CGFloat = 11
     /// 段头字重（SwiftUI 版本）——Font.Weight
     static let headerWeight: Font.Weight = .semibold
@@ -417,6 +418,13 @@ enum PopoverStyle {
     static let headerWeightAppKit: NSFont.Weight = .semibold
     /// 段头 icon↔title 间距——V4.42.0: 4 → 6 (icon 与 title 更舒展)
     static let headerIconSpacing: CGFloat = 6
+
+    // ─── item 文字（list row） ───
+    /// V4.72.0 NEW: item 文字字号——12pt
+    ///   之前 L585 用 headerFontSize (11pt) 是错的——item 不是段头
+    ///   12pt = macOS 系统 popover item 文字标准（Photos 实际 ~13pt）
+    ///   item 24pt 配 12pt 字号 + 15pt icon = Photos 实际比例
+    static let itemFontSize: CGFloat = 12
     /// 段头 icon 字号
     static let headerIconSize: CGFloat = 10
     /// 段头文字 uppercase（macOS Photos 风格）

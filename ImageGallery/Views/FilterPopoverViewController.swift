@@ -582,7 +582,9 @@ final class FilterPopoverViewController: NSViewController {
                 string: text,
                 attributes: [
                     .foregroundColor: color,
-                    .font: NSFont.systemFont(ofSize: PopoverStyle.headerFontSize, weight: .medium)
+                    // V4.72.0: 用 itemFontSize (12pt) 而非 headerFontSize (11pt)
+                    //   item 不是段头——两者字号应解耦
+                    .font: NSFont.systemFont(ofSize: PopoverStyle.itemFontSize, weight: .medium)
                 ]
             )
         } else {
