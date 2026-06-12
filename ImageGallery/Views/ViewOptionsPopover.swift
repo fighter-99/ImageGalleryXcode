@@ -167,15 +167,9 @@ struct ViewOptionsPopover: View {
             // V4.43.1: 状态变化动画——active/inactive bg 切换 0.15s easeInOut
             //   hover bg 切换不加 .animation——mouse 移动会触发频繁 re-render
             .animation(.easeInOut(duration: PopoverStyle.stateTransitionDuration), value: isActive)
-            // V4.52.0: active 状态加 inset shadow——macOS Photos selected button 风格
-            //   "按下去"反馈：bg accent + 1.015 scale + inset shadow 三重视觉锤
-            //   SwiftUI shadow inset 用 .background + RoundedRectangle stroke 模拟
-            .overlay {
-                if isActive {
-                    RoundedRectangle(cornerRadius: PopoverStyle.itemCornerRadius, style: .continuous)
-                        .strokeBorder(Color.white.opacity(0.15), lineWidth: 0.5)
-                }
-            }
+            // V4.62.0: 砍 1.015 scale + 15% white inner stroke 三重视觉锤
+            //   macOS Photos 实际只用 1 锤（accent bg + tint icon）——见截图2
+            //   砍 V4.52.0 strokeBorder——避免 transl 上 '凸起' 错觉
             .onHover { hovering in
                 isHovered = hovering
             }
@@ -225,11 +219,8 @@ struct ViewOptionsPopover: View {
                 )
             }
             .buttonStyle(.plain)
-            // V4.51.0: active 1.015 scale——V4.17.0 cell pattern 锦上添花
-            //   scaleEffect 在 background 之后——active 时 icon+text 微放大
-            //   视觉上"被选中"——accent bg 之外第二重视觉锤
-            .scaleEffect(isActive ? 1.015 : 1.0)
-            .animation(.easeInOut(duration: PopoverStyle.stateTransitionDuration), value: isActive)
+            // V4.62.0: 砍 V4.51.0 active 1.015 scale 视觉锤——macOS Photos 实际只用 1 锤
+            //   重复的 .animation 也合并掉
             .animation(.easeInOut(duration: PopoverStyle.stateTransitionDuration), value: isActive)
             .onHover { hovering in
                 isHovered = hovering
