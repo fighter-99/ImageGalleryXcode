@@ -2,18 +2,16 @@
 //  BatchSetRatingMath.swift
 //  ImageGallery
 //
-//  V5.13：ContentView.batchSetRating 的纯函数 seam——选中 photo 过滤 + 批量评分循环。
+//  V5.13：ContentView.batchSetRating 的批量评分循环 seam。
 //  抽到此处是为 Milestone 2A 的 BatchSetRatingMathTests 可不依赖 SwiftData 测。
+//
+//  注意：`selection.selectedPhotos(in:)` 这层过滤留在 ContentView 直接调
+//  SelectionState 方法（SelectionStateTests 已覆盖），不做冗余包装。
 //
 
 import Foundation
 
 enum BatchSetRatingMath {
-    /// 选中的 photos 与 visible 列表的交集（纯函数包装 selection.selectedPhotos）
-    static func photosToRate(selection: SelectionState, visible: [Photo]) -> [Photo] {
-        selection.selectedPhotos(in: visible)
-    }
-
     /// 批量设置评分——对每个 photo 调 apply closure
     ///   抽 closure-based 是为测试能用 stub 替代 Photo 实例（无需 SwiftData in-memory）
     /// - Parameter rating: 要设置的 rating（0 = 清除，1-5 = 设置）

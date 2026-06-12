@@ -26,10 +26,17 @@ struct ToastInfo: Equatable, Identifiable {
         }
     }
 
-    let id: UUID = UUID()
+    let id: UUID
     let message: String
     let type: ToastView.ToastType
-    let duration: Duration = .normal
+    let duration: Duration
+
+    init(message: String, type: ToastView.ToastType, duration: Duration = .normal) {
+        self.id = UUID()
+        self.message = message
+        self.type = type
+        self.duration = duration
+    }
 
     /// 自定义 Equatable：忽略 id（UUID 每次 init 不同，message/type/duration 才是业务语义）
     static func == (lhs: ToastInfo, rhs: ToastInfo) -> Bool {

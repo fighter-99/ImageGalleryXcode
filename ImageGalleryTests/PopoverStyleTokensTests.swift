@@ -1,0 +1,145 @@
+//
+//  PopoverStyleTokensTests.swift
+//  ImageGalleryTests
+//
+//  V5.13：DesignTokens 静态 token 验证——间距/圆角/popover 视觉/工具栏/侧栏。
+//  Token 是 V4.41-V4.79 视觉迭代沉淀，数字背后是 macOS Photos 紧凑感对齐决策，
+//  测试锁住这些数字防意外改动。
+//
+
+import Testing
+import SwiftUI
+import AppKit
+@testable import ImageGallery
+
+struct PopoverStyleTokensTests {
+    // MARK: - Spacing 间距系统
+
+    @Test func spacingTokensAreFourMultiples() {
+        #expect(Spacing.xs == 4)
+        #expect(Spacing.sm == 8)
+        #expect(Spacing.md == 12)
+        #expect(Spacing.lg == 16)
+        #expect(Spacing.xl == 20)
+        #expect(Spacing.xxl == 24)
+    }
+
+    // MARK: - Radius 圆角系统
+
+    @Test func radiusTokensAreCorrect() {
+        #expect(Radius.sm == 6)
+        #expect(Radius.md == 8)
+        #expect(Radius.lg == 12)
+        #expect(Radius.thumb == 6)  // V4.4.0 缩略图统一
+    }
+
+    // MARK: - PopoverStyle 布局
+
+    @Test func popoverLayoutTokensMatchVersionedDecisions() {
+        #expect(PopoverStyle.width == 240)
+        #expect(PopoverStyle.padding == Spacing.md)
+        #expect(PopoverStyle.sectionSpacing == 10)  // V4.64.0 紧凑感
+        #expect(PopoverStyle.columnGap == 8)
+    }
+
+    // MARK: - PopoverStyle item 高度/圆角/字号
+
+    @Test func popoverItemTokensArePhotosCompact() {
+        #expect(PopoverStyle.itemHeight == 24)         // V4.71.0
+        #expect(PopoverStyle.itemCornerRadius == 4)    // V4.64.0
+        #expect(PopoverStyle.itemFontSize == 12)       // V4.72.0
+        #expect(PopoverStyle.iconFontSize == 15)       // V4.64.0
+        #expect(PopoverStyle.sortItemFontSize == 13)   // V4.64.0
+    }
+
+    // MARK: - PopoverStyle 段头
+
+    @Test func popoverHeaderTokens() {
+        #expect(PopoverStyle.headerFontSize == 11)
+        #expect(PopoverStyle.headerIconSize == 10)
+        #expect(PopoverStyle.headerIconSpacing == 6)  // V4.42.0
+        #expect(PopoverStyle.headerUppercased == true)
+        #expect(PopoverStyle.headerSeparatorHeight == 1)  // V4.53.0
+    }
+
+    // MARK: - PopoverStyle item padding + 段内间距
+
+    @Test func popoverSegmentGapTokens() {
+        #expect(PopoverStyle.segmentGap == 6)             // V4.42.0
+        #expect(PopoverStyle.columnRowGap == 4)           // V4.42.0
+        #expect(PopoverStyle.itemVerticalPadding == 6)    // V4.52.0
+        #expect(PopoverStyle.itemHorizontalPadding == 8)  // V4.52.0
+    }
+
+    // MARK: - PopoverStyle 状态过渡 + host 圆角边框
+
+    @Test func popoverHostAndTransitionTokens() {
+        #expect(PopoverStyle.stateTransitionDuration == 0.15)  // V4.43.1
+        #expect(PopoverStyle.hostCornerRadius == 12)           // V4.79.0
+        #expect(PopoverStyle.hostBorderWidth == 0.5)           // V4.67.0
+    }
+
+    // MARK: - PopoverStyle 4 类别行专用（V4.79.0 NEW）
+
+    @Test func popoverCategoryRowTokens() {
+        #expect(PopoverStyle.categoryRowHeight == 32)
+        #expect(PopoverStyle.categoryRowIconSize == 15)
+        #expect(PopoverStyle.categoryRowChevronSize == 9)
+        #expect(PopoverStyle.categoryRowCountBadgeSize == 11)
+        #expect(PopoverStyle.categoryRowCountBadgeHeight == 16)
+        #expect(PopoverStyle.categoryRowCountBadgeOpacity == 0.12)
+    }
+
+    // MARK: - ToolbarStyle
+
+    @Test func toolbarStyleTokens() {
+        #expect(ToolbarStyle.height == 52)
+        #expect(ToolbarStyle.heightCompact == 28)  // V4.0.2
+        #expect(ToolbarStyle.spacing == 8)
+    }
+
+    // MARK: - SidebarStyle 行 + icon
+
+    @Test func sidebarStyleRowTokens() {
+        #expect(SidebarStyle.rowHeight == 28)
+        #expect(SidebarStyle.rowHorizontalPadding == 8)
+        #expect(SidebarStyle.rowBackgroundInset == 4)
+        #expect(SidebarStyle.rowCornerRadius == Radius.sm)  // 与其他 UI 统一
+        #expect(SidebarStyle.rowIconTextSpacing == 8)
+        #expect(SidebarStyle.rowTextCountSpacing == 4)
+    }
+
+    @Test func sidebarStyleIconTokens() {
+        #expect(SidebarStyle.iconSize == 13)
+        #expect(SidebarStyle.iconFrameWidth == 18)
+    }
+
+    // MARK: - SearchFieldMetrics + StatusBarMetrics + WindowChrome
+
+    @Test func searchAndStatusBarMetrics() {
+        #expect(SearchFieldMetrics.width == 180)         // V4.2.4
+        #expect(SearchFieldMetrics.widthExpanded == 360)
+        #expect(SearchFieldMetrics.height == 30)
+        #expect(StatusBarMetrics.height == 24)
+        #expect(StatusBarMetrics.progressBarHeight == 3)
+        #expect(StatusBarMetrics.popoverWidth == 360)
+    }
+
+    @Test func windowChromeAndModeMetrics() {
+        #expect(WindowChrome.topInset == 0)
+        #expect(WindowChrome.navButtonPadding == 12)
+        #expect(WindowModeMetrics.viewerToolbarHeight == 32)
+        #expect(WindowModeMetrics.viewerImagePadding == 40)
+    }
+
+    // MARK: - SidebarStyle 智能 folder 语义色
+
+    @Test func sidebarStyleIconColorsAreFiveDistinctColors() {
+        // 色板：HLS 60°+ 间隔（橙/蓝/紫/橙重复——4 类别中 trash 复用 orange）
+        // V5.8 砍 iconColorFavorite 后剩 4 个色（duplicate/recent/large/trash）
+        // 这里只验 duplicate ≠ recent ≠ large（避免重复用 orange）
+        #expect(SidebarStyle.iconColorDuplicate != SidebarStyle.iconColorRecent)
+        #expect(SidebarStyle.iconColorRecent != SidebarStyle.iconColorLarge)
+        #expect(SidebarStyle.iconColorDuplicate != SidebarStyle.iconColorLarge)
+    }
+}

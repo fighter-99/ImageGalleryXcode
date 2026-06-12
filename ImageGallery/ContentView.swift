@@ -1367,7 +1367,7 @@ struct ContentView: View {
     //   - 与详情页 RatingStarsView 共用同一 photo.rating 字段
     //   - ⌘0-⌘5 快捷键也走同一函数（ContentKeyboardShortcuts.onSetRating）
     private func batchSetRating(_ rating: Int) {
-        let photosToRate = BatchSetRatingMath.photosToRate(selection: selection, visible: visiblePhotos)
+        let photosToRate = selection.selectedPhotos(in: visiblePhotos)
         guard !photosToRate.isEmpty else { return }
         BatchSetRatingMath.applyRating(rating, count: photosToRate.count) { index, r in
             photosToRate[index].rating = r
