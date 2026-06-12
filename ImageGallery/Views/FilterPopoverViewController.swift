@@ -576,20 +576,23 @@ final class FilterPopoverViewController: NSViewController {
         }
 
         // 3. 背景：active 实色 accent / inactive 完全透明
-        //   V4.65.0: 砍 inactive 14% primary 背景——在 V4.45.0 transl material popover 上
-        //   14% 视觉仅 ~5%（V4.46.0 注释），实际看起来是"黑底胶囊"——用户反馈
-        //   macOS Photos 实际：inactive = 完全透明，只靠 active 视觉锤区分
+        //   V4.65.0: bezelColor = .clear 失败——NSButton .recessed bezel 系统不响应 .clear
+        //     实际仍带 bg 渐变（V4.46.0 14% primary 在 transl 上视觉过弱=黑底胶囊）
+        //   V4.68.0: 改用 layer.backgroundColor 替代 bezelColor——CALayer 渲染不受 bezel 影响
+        //     button.wantsLayer = true + layer.backgroundColor + layer.cornerRadius
+        //     真正实现 inactive 完全透明
         //   副作用：3 个形状 icon 平铺视觉"轻"——但 Photos 排序 popover 也是这样
-        // V4.43.1: NSAnimationContext 包裹 bezelColor 变更——0.15s easeInOut 平滑
+        // V4.43.1: NSAnimationContext 包裹 bg 变更——0.15s easeInOut 平滑
         //   SwiftUI 用 .animation(.easeInOut(duration:), value:)，AppKit 需手动
         NSAnimationContext.beginGrouping()
         NSAnimationContext.current.duration = PopoverStyle.stateTransitionDuration
-        if isActive {
-            button.bezelColor = PopoverStyle.activeBackgroundAppKit
-        } else {
-            // V4.65.0: inactive = .clear 透明——之前 14% primary 在 transl 上视觉过弱
-            button.bezelColor = .clear
-        }
+        button.wantsLayer = true  // V4.68.0: layer 渲染 bg，绕过 bezel
+        button.layer?.backgroundColor = isActive
+            ? PopoverStyle.activeBackgroundAppKit.cgColor
+            : NSColor.clear.cgColor  // V4.68.0: inactive = 真透明
+        button.layer?.cornerRadius = PopoverStyle.itemCornerRadius
+        // 修之前 V4.65.0 设的 bezelColor——不再使用但保留兼容
+        button.bezelColor = isActive ? PopoverStyle.activeBackgroundAppKit : .clear
         NSAnimationContext.endGrouping()
     }
 
