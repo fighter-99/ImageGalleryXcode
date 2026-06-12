@@ -99,17 +99,9 @@ final class FilterPopoverViewController: NSViewController {
         // V4.47.0: blendingMode .behindWindow → .withinWindow
         //   .withinWindow 让材质在窗口内 blend (相对自己周围)，不受窗口内容色偏影响
         //   暗色下 popover 不再"闷"——保持 macOS Photos 风格的清透
-        let visualEffect = NSVisualEffectView()
-        visualEffect.material = .popover      // macOS popover 专用材质
-        visualEffect.state = .followsWindowActiveState
-        visualEffect.blendingMode = .withinWindow  // V4.47.0: 暗色下更清透
-        // V4.67.0: 加 0.5pt hairline 强化 popover 边界——dark mode + transl material
-        //   让 popover 边缘与周围区分更清晰（仿 macOS Photos 实际风格）
-        //   NSVisualEffectView 没有 borderWidth——用 layer-backed + layer.borderWidth
-        visualEffect.wantsLayer = true
-        visualEffect.layer?.borderWidth = 0.5
-        visualEffect.layer?.borderColor = NSColor.separatorColor.cgColor
-        visualEffect.layer?.cornerRadius = 12  // V4.67.0: 增大圆角，匹配 Photos
+        // V4.82.0: 改用 NSVisualEffectView.popoverHost() helper——与 V4.77.0 ViewOptionsPopover 完全一致
+        //   4 行 material/state/blendingMode + 3 行 layer 样式全抽到 helper
+        let visualEffect = NSVisualEffectView.popoverHost()
 
         let outer = NSStackView()
         outer.orientation = .vertical
@@ -193,8 +185,8 @@ final class FilterPopoverViewController: NSViewController {
                 message: "暂无文件夹\n右键侧边栏「我的文件夹」新建"
             ))
         } else {
-            content.addArrangedSubview(makeOneColumnCheckList(items: allFolders) { folder in
-                let button = self.makeCheckItem(
+            content.addArrangedSubview(PopoverItemFactory.makeOneColumnCheckList(items: allFolders) { folder in
+                let button = PopoverItemFactory.makeCheckItem(
                     label: folder.name,
                     isOn: filterState.folders.contains(folder.id)
                 ) { [weak self] in
@@ -219,8 +211,8 @@ final class FilterPopoverViewController: NSViewController {
                 message: "暂无标签\n右键侧边栏「标签」新建"
             ))
         } else {
-            content.addArrangedSubview(makeOneColumnCheckList(items: allTags) { tag in
-                let button = self.makeCheckItem(
+            content.addArrangedSubview(PopoverItemFactory.makeOneColumnCheckList(items: allTags) { tag in
+                let button = PopoverItemFactory.makeCheckItem(
                     label: "#\(tag.name)",
                     isOn: filterState.tags.contains(tag.id)
                 ) { [weak self] in
@@ -233,9 +225,9 @@ final class FilterPopoverViewController: NSViewController {
 
         // 段 3: 形状（不参与搜索过滤）
         // V4.61.0: 删段头
-        let shapeStack = makeSegmentRow()
+        let shapeStack = PopoverItemFactory.makeSegmentRow()
         for shape in PhotoShape.allCases {
-            let button = makeIconOnlySegmentItem(
+            let button = PopoverItemFactory.makeIconOnlySegmentItem(
                 icon: shape.icon,
                 isActive: filterState.shapes.contains(shape)
             ) { [weak self] in
@@ -254,10 +246,10 @@ final class FilterPopoverViewController: NSViewController {
         ratingContainer.spacing = PopoverStyle.segmentGap
         ratingContainer.translatesAutoresizingMaskIntoConstraints = false
 
-        let row1 = makeSegmentRow()
+        let row1 = PopoverItemFactory.makeSegmentRow()
         // V4.46.0: "全部" 改用 circle icon——与带星评分项视觉对称
         //   之前纯文字 vs 其他带星——"全部" 看起来像 textbox 而非 button
-        let noRating = makeIconOnlySegmentItem(
+        let noRating = PopoverItemFactory.makeIconOnlySegmentItem(
             icon: "circle",
             isActive: filterState.minRating == 0
         ) { [weak self] in
@@ -273,7 +265,7 @@ final class FilterPopoverViewController: NSViewController {
         //   仿 macOS Photos 实际：所有 ⭐ 都是金色（无论 active/inactive）
         //   之前 V4.66.0 只改 updateState 内的 applySegmentStyle 调用——不生效
         for n in 1...2 {
-            let button = makeIconOnlySegmentItem(
+            let button = PopoverItemFactory.makeIconOnlySegmentItem(
                 icon: "star.fill",
                 isActive: filterState.minRating == n,
                 iconTintOverride: .systemYellow
@@ -285,9 +277,9 @@ final class FilterPopoverViewController: NSViewController {
         }
         ratingContainer.addArrangedSubview(row1)
 
-        let row2 = makeSegmentRow()
+        let row2 = PopoverItemFactory.makeSegmentRow()
         for n in 3...5 {
-            let button = makeIconOnlySegmentItem(
+            let button = PopoverItemFactory.makeIconOnlySegmentItem(
                 icon: "star.fill",
                 isActive: filterState.minRating == n,
                 iconTintOverride: .systemYellow  // V4.69.0: 评分 ⭐ gold
@@ -376,14 +368,14 @@ final class FilterPopoverViewController: NSViewController {
         }
         // V4.41.1: 传 symbolName 让 applySegmentStyle 按状态 tint icon
         for (shape, button) in shapeButtons {
-            applySegmentStyle(button, isActive: filterState.shapes.contains(shape), text: nil, symbolName: shape.icon)
+            PopoverItemFactory.applySegmentStyle(button, isActive: filterState.shapes.contains(shape), text: nil, symbolName: shape.icon)
         }
         for (rating, button) in ratingButtons {
             // 评分段无 icon（"1星" 等纯文字）——symbolName = nil
             let text = button.attributedTitle.string
             // V4.66.0: 评分段 inactive icon tint gold（仿 Photos ⭐ 实际风格）
             //   active 仍用 white（在 accent bg 上）——override 只影响 inactive
-            applySegmentStyle(
+            PopoverItemFactory.applySegmentStyle(
                 button,
                 isActive: filterState.minRating == rating,
                 text: text,
@@ -417,239 +409,6 @@ final class FilterPopoverViewController: NSViewController {
         stack.edgeInsets = NSEdgeInsets(top: 4, left: 4, bottom: 4, right: 4)
         stack.translatesAutoresizingMaskIntoConstraints = false
         return stack
-    }
-
-    /// checkbox + label 的 item
-    /// V4.36.x #5: 统一文字颜色 labelColor——active 态用 checkbox + 浅蓝背景区分
-    /// V4.58.0: 长 folder/tag 名截断——cell.lineBreakMode = .byTruncatingMiddle
-    ///   之前直接传长名让 button 撑开列宽、2 列布局失衡
-    ///   现在中间省略号截断——保留原数据，视觉上每列等宽不溢出
-    private func makeCheckItem(
-        label: String,
-        isOn: Bool,
-        action: @escaping () -> Void
-    ) -> NSButton {
-        let button = ClosureButton(title: label, action: action)
-        button.setButtonType(.switch)
-        button.state = isOn ? .on : .off
-        button.isBordered = false
-        // 统一文字颜色（不随 state 变）
-        button.contentTintColor = .labelColor
-        // V4.58.0: 中间省略号截断（macOS Photos 风格——长文件夹名截中间"旅行照..."）
-        button.cell?.lineBreakMode = .byTruncatingMiddle
-        button.cell?.truncatesLastVisibleLine = true
-        return button
-    }
-
-    /// 1 列 checkbox 列表——仿 macOS Photos 排序 popover 风格
-    /// V4.63.0: 砍 2 列布局（之前 HStack + 2 VStack 复杂）——1 列 + fill 撑满宽度
-    ///   - 2 列问题：fillEqually 对齐 + V4.58.0 byTruncatingMiddle 截断
-    ///   - 1 列优势：每行独立视觉单元 + 无对齐问题
-    ///   - 副作用：folder/tag 多时 popover 变高，V4.60.0 NSScrollView 兜底
-    private func makeOneColumnCheckList<T: AnyObject, Button: NSButton>(
-        items: [T],
-        itemBuilder: (T) -> Button
-    ) -> NSView {
-        let vStack = NSStackView()
-        vStack.orientation = .vertical
-        vStack.alignment = .leading
-        vStack.distribution = .fill  // V4.63.0: 子 view 撑满 VStack 宽度
-        vStack.spacing = 2  // V4.63.0: 1 列时 row 间距 2pt 紧凑
-        vStack.translatesAutoresizingMaskIntoConstraints = false
-        for item in items {
-            vStack.addArrangedSubview(itemBuilder(item))
-        }
-        return vStack
-    }
-
-    /// 2 列紧凑列表：HStack + 2 VStack（左列先满）
-    /// V4.42.0: VStack spacing 2 → PopoverStyle.columnRowGap (4) — checkbox 行间更舒展
-    /// V4.63.0: 砍——1 列布局替代
-    @available(*, unavailable, message: "V4.63.0 砍 2 列布局——用 makeOneColumnCheckList")
-    private func makeTwoColumnCheckList<T: AnyObject, Button: NSButton>(
-        items: [T],
-        itemBuilder: (T) -> Button
-    ) -> NSView {
-        let half = (items.count + 1) / 2
-        let leftItems = Array(items.prefix(half))
-        let rightItems = Array(items.dropFirst(half))
-
-        let leftVStack = NSStackView()
-        leftVStack.orientation = .vertical
-        leftVStack.alignment = .leading
-        leftVStack.spacing = PopoverStyle.columnRowGap
-        leftVStack.translatesAutoresizingMaskIntoConstraints = false
-        for item in leftItems {
-            leftVStack.addArrangedSubview(itemBuilder(item))
-        }
-
-        let rightVStack = NSStackView()
-        rightVStack.orientation = .vertical
-        rightVStack.alignment = .leading
-        rightVStack.spacing = PopoverStyle.columnRowGap
-        rightVStack.translatesAutoresizingMaskIntoConstraints = false
-        for item in rightItems {
-            rightVStack.addArrangedSubview(itemBuilder(item))
-        }
-
-        let hStack = NSStackView(views: [leftVStack, rightVStack])
-        hStack.orientation = .horizontal
-        hStack.distribution = .fillEqually
-        hStack.spacing = Self.columnGap
-        hStack.alignment = .top
-        hStack.translatesAutoresizingMaskIntoConstraints = false
-        return hStack
-    }
-
-    /// 单行 segment（用于形状段——3 个 icon-only 按钮）
-    private func makeSegmentRow() -> NSStackView {
-        let stack = NSStackView()
-        stack.orientation = .horizontal
-        stack.spacing = PopoverStyle.segmentGap
-        stack.distribution = .fillEqually
-        stack.alignment = .centerY
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        return stack
-    }
-
-    /// icon-only segment item（用于形状——只 SF Symbol，无文字）
-    /// V4.36.x #1: 解决"3 个带文字 segment 装不下 200pt"裁切
-    /// V4.36.x: 用 SF Symbol 的 paletteColors **预染色**为白色
-    ///   之前尝试 image.isTemplate + contentTintColor 都不生效
-    ///   （NSButton 无 title 时 tint 行为不可靠）
-    ///   paletteColors 直接生成白色 image——绕开 NSButton tint 系统
-    /// V4.41.1: 改为按状态动态 tint——active 白、inactive labelColor
-    ///   之前预染色白色 + 25% 黑底 = inactive 状态白字白 icon 视觉糊
-    ///   现在 6% black 底 + labelColor icon = Photos 风格"未选"感
-    /// V4.69.0: 加 iconTintOverride 参数——评分段创建时直接传 .systemYellow
-    ///   之前 V4.66.0 只改了 updateState 内的 applySegmentStyle 调用（不传 symbolName）
-    ///   而创建时已走默认 labelColor 路径——所以 ⭐ 一直显示黑色
-    ///   修法：评分段创建时显式传 iconTintOverride——直接生效
-    private func makeIconOnlySegmentItem(
-        icon: String,
-        isActive: Bool,
-        iconTintOverride: NSColor? = nil,
-        action: @escaping () -> Void
-    ) -> NSButton {
-        let button = ClosureButton(title: "", action: action)
-        // V4.68.0 彻底修: isBordered = false 完全去掉 bezel 渲染
-        //   之前 bezelStyle = .recessed 仍带 bg 渐变，layer.backgroundColor 被遮盖
-        //   现在 button 自身无 bezel，layer.backgroundColor 真正生效
-        button.isBordered = false
-        button.bezelStyle = .recessed  // 保留 isBordered=false 时无作用，但 hover/active 视觉仍 work
-        // V4.41.1: 不预染色——把 symbol name 传给 applySegmentStyle 让它按状态 tint
-        applySegmentStyle(button, isActive: isActive, text: nil, symbolName: icon, iconTintOverride: iconTintOverride)
-        return button
-    }
-
-    /// icon + text segment item
-    /// V4.45.1: 评分段改用真 ⭐ SF Symbol "star.fill" + "n+" 文字
-    ///   之前是 "n星" 纯文字——现在视觉上一眼是评分筛选
-    ///   Photos 风格：实心星 + 数字 = 表达"≥N 星"语义
-    private func makeIconTextSegmentItem(
-        icon: String?,
-        text: String,
-        isActive: Bool,
-        action: @escaping () -> Void
-    ) -> NSButton {
-        let button = ClosureButton(title: "", action: action)
-        button.bezelStyle = .recessed
-        applySegmentStyle(button, isActive: isActive, text: text, symbolName: icon)
-        return button
-    }
-
-    // MARK: - 状态同步
-
-    /// V4.41.1: 全部颜色 + 字号 token 化——与 ViewOptions popoverSegmentItem 对齐
-    ///   - active: accent 底 + 白字/icon（PopoverStyle.activeBackgroundAppKit + .activeTextAppKit）
-    ///   - inactive: 6% primary 底 + labelColor 字（PopoverStyle.inactiveBackgroundAppKit + .inactiveTextAppKit）
-    ///   - 之前 V4.36.x #5 写"永远白" + 25% 黑底——与 ViewOptions 不一致 + 暗色下 25% 黑底偏暗
-    ///   - symbolName: 可选——传非 nil 时按状态动态 tint icon（active 白、inactive labelColor）
-    /// V4.66.0: 加 iconTintOverride 参数——评分段 inactive 显式 tint gold
-    ///   Photos 实际：所有 ⭐ 都是金色，无论 active/inactive
-    ///   之前走默认 inactiveTextAppKit (labelColor) → 视觉上是黑色 ⭐
-    private func applySegmentStyle(
-        _ button: NSButton,
-        isActive: Bool,
-        text: String?,
-        symbolName: String? = nil,
-        iconTintOverride: NSColor? = nil
-    ) {
-        // 1. 文字：active 白 / inactive labelColor（系统色，暗色自动适配）
-        if let text = text {
-            let color = isActive ? PopoverStyle.activeTextAppKit : PopoverStyle.inactiveTextAppKit
-            button.attributedTitle = NSAttributedString(
-                string: text,
-                attributes: [
-                    .foregroundColor: color,
-                    // V4.72.0: 用 itemFontSize (12pt) 而非 headerFontSize (11pt)
-                    //   item 不是段头——两者字号应解耦
-                    .font: NSFont.systemFont(ofSize: PopoverStyle.itemFontSize, weight: .medium)
-                ]
-            )
-        } else {
-            button.attributedTitle = NSAttributedString()
-        }
-
-        // 2. icon：按状态动态 tint（不是预染色）——V4.41.1 修复
-        // V4.47.0: 修复 star/circle icon 不可见 bug——paletteColors 在 .followsWindowActiveState
-        //   transl popover 下渲染异常（截图里 5 个评分项 + "全部" 全部显示为空方块）
-        //   改用 contentTintColor 方式——更标准也稳定
-        // V4.69.0 彻底修: 评分段 ⭐ 用 paletteColors + applying 链式渲染金色
-        //   之前 contentTintOverride + contentTintColor 对 multi-color SF Symbol (star.fill) 失效
-        //   paletteColors 是 NSImage.SymbolConfiguration 的属性——V4.46.0 之前用过
-        //   active 时用 white palette（在 accent bg 上）——保持对比
-        if let symbol = symbolName {
-            let usePalette = iconTintOverride != nil
-            let sizeConfig = NSImage.SymbolConfiguration(
-                pointSize: PopoverStyle.iconFontSize,
-                weight: .medium
-            )
-            let finalConfig: NSImage.SymbolConfiguration
-            if usePalette {
-                // V4.69.0: applying(_:) 链式 paletteColors——把 color baked 进 image
-                let palette: [NSColor] = isActive ? [.white] : [iconTintOverride!]
-                let paletteConfig = NSImage.SymbolConfiguration(paletteColors: palette)
-                finalConfig = sizeConfig.applying(paletteConfig) ?? sizeConfig
-            } else {
-                finalConfig = sizeConfig
-            }
-            let img = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)?
-                .withSymbolConfiguration(finalConfig)
-            button.image = img
-            button.imageScaling = .scaleProportionallyDown
-            button.imagePosition = .imageOnly
-            if usePalette {
-                // V4.69.0: paletteColors 已 baked color 进 image——clear contentTintColor
-                button.contentTintColor = nil
-            } else {
-                // 原 V4.47.0 路径：contentTintColor 上色
-                let iconColor = isActive ? PopoverStyle.activeTextAppKit : PopoverStyle.inactiveTextAppKit
-                button.contentTintColor = iconColor
-            }
-        } else {
-            button.image = nil
-        }
-
-        // 3. 背景：active 实色 accent / inactive 完全透明
-        //   V4.65.0: bezelColor = .clear 失败——NSButton .recessed bezel 系统不响应 .clear
-        //     实际仍带 bg 渐变（V4.46.0 14% primary 在 transl 上视觉过弱=黑底胶囊）
-        //   V4.68.0: 改用 layer.backgroundColor 替代 bezelColor——CALayer 渲染不受 bezel 影响
-        //     button.wantsLayer = true + layer.backgroundColor + layer.cornerRadius
-        //     真正实现 inactive 完全透明
-        //   副作用：3 个形状 icon 平铺视觉"轻"——但 Photos 排序 popover 也是这样
-        // V4.43.1: NSAnimationContext 包裹 bg 变更——0.15s easeInOut 平滑
-        //   SwiftUI 用 .animation(.easeInOut(duration:), value:)，AppKit 需手动
-        NSAnimationContext.beginGrouping()
-        NSAnimationContext.current.duration = PopoverStyle.stateTransitionDuration
-        button.wantsLayer = true  // V4.68.0: layer 渲染 bg，绕过 bezel
-        button.layer?.backgroundColor = isActive
-            ? PopoverStyle.activeBackgroundAppKit.cgColor
-            : NSColor.clear.cgColor  // V4.68.0: inactive = 真透明
-        button.layer?.cornerRadius = PopoverStyle.itemCornerRadius
-        // 修之前 V4.65.0 设的 bezelColor——不再使用但保留兼容
-        button.bezelColor = isActive ? PopoverStyle.activeBackgroundAppKit : .clear
-        NSAnimationContext.endGrouping()
     }
 
     private func handleFolderToggle(_ id: UUID) {
