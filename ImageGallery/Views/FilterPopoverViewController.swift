@@ -548,13 +548,21 @@ final class FilterPopoverViewController: NSViewController {
             button.image = nil
         }
 
-        // 3. 背景：active 实色 accent / inactive 6% primary
-        //   6% black 等价 SwiftUI .primary.opacity(0.06)，自动暗色适配
+        // 3. 背景：active 实色 accent / inactive 完全透明
+        //   V4.65.0: 砍 inactive 14% primary 背景——在 V4.45.0 transl material popover 上
+        //   14% 视觉仅 ~5%（V4.46.0 注释），实际看起来是"黑底胶囊"——用户反馈
+        //   macOS Photos 实际：inactive = 完全透明，只靠 active 视觉锤区分
+        //   副作用：3 个形状 icon 平铺视觉"轻"——但 Photos 排序 popover 也是这样
         // V4.43.1: NSAnimationContext 包裹 bezelColor 变更——0.15s easeInOut 平滑
         //   SwiftUI 用 .animation(.easeInOut(duration:), value:)，AppKit 需手动
         NSAnimationContext.beginGrouping()
         NSAnimationContext.current.duration = PopoverStyle.stateTransitionDuration
-        button.bezelColor = isActive ? PopoverStyle.activeBackgroundAppKit : PopoverStyle.inactiveBackgroundAppKit
+        if isActive {
+            button.bezelColor = PopoverStyle.activeBackgroundAppKit
+        } else {
+            // V4.65.0: inactive = .clear 透明——之前 14% primary 在 transl 上视觉过弱
+            button.bezelColor = .clear
+        }
         NSAnimationContext.endGrouping()
     }
 
