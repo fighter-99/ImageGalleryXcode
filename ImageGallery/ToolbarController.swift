@@ -28,7 +28,7 @@ import AppKit
 import SwiftUI
 
 @MainActor
-final class ToolbarController: NSObject, NSToolbarDelegate {
+final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
     /// 单例——NSToolbarDelegate 是 weak 引用，必须有强引用
     static let shared = ToolbarController()
 
@@ -337,6 +337,38 @@ final class ToolbarController: NSObject, NSToolbarDelegate {
         btn.contentTintColor = filterIsActive ? .controlAccentColor : nil
     }
 
+    // MARK: - V5.9: popover 打开/关闭时按钮 "pressed" 视觉反馈
+
+    /// V5.9: 设置工具栏按钮的 pressed 状态——NSPopover 打开/关闭时调
+    ///   - isOn = true: 按钮 state = .on（NSButton 系统 recessed bezel 显 pressed 背景）
+    ///   - isOn = false: 按钮 state = .off（默认）
+    ///   仿 macOS 标准 toolbar button 行为——popover 打开时按钮"被按住"
+    ///   用户立刻知道"我刚点的按钮是哪个、它正控制着一个 popover"
+    private func setButtonPressed(_ id: Identifier, isOn: Bool) {
+        guard let item = itemCache[id.nsIdentifier],
+              let button = item.view as? NSButton else { return }
+        button.state = isOn ? .on : .off
+    }
+
+    // MARK: - V5.9: NSPopoverDelegate
+
+    /// V5.9: popover 关闭时（用户点外部 / 主动 close）——同步按钮 pressed 态
+    ///   - popover 是 view options：setButtonPressed(.viewOptions, false)
+    ///   - popover 是 filter top（coordinator 内部的 topPopover）：setButtonPressed(.filter, false)
+    func popoverDidClose(_ notification: Notification) {
+        guard let popover = notification.object as? NSPopover else { return }
+        // 区分是哪个 popover 关闭
+        if popover === viewOptionsPopover {
+            setButtonPressed(.viewOptions, isOn: false)
+            viewOptionsPopover = nil
+        } else if let coordinator = filterPopoverCoordinator,
+                  let topPopover = coordinator.topPopover,
+                  popover === topPopover {
+            // V5.9: 顶层 filter popover 关闭（用户点外部 / coordinator.closeAll）
+            setButtonPressed(.filter, isOn: false)
+        }
+    }
+
     private func makeSearchItem(id: Identifier) -> NSToolbarItem {
         // V4.8.2: 用 NSSearchToolbarItem 替代裸 NSToolbarItem + NSSearchField
         //   NSSearchToolbarItem (macOS 11+) 是 NSToolbar 专用 search item 包装
@@ -400,6 +432,7 @@ final class ToolbarController: NSObject, NSToolbarDelegate {
         if let popover = viewOptionsPopover, popover.isShown {
             popover.close()
             viewOptionsPopover = nil
+            setButtonPressed(.viewOptions, isOn: false)
             return
         }
 
@@ -411,9 +444,12 @@ final class ToolbarController: NSObject, NSToolbarDelegate {
 
         let popover = NSPopover()
         popover.behavior = .transient  // 点外部自动关闭
+        popover.delegate = self  // V5.9: 监听 popoverDidClose 同步按钮状态
         popover.contentViewController = contentProvider()
         popover.show(relativeTo: anchorView.bounds, of: anchorView, preferredEdge: .minY)
         self.viewOptionsPopover = popover
+        // V5.9: 按钮 "pressed" 视觉反馈——打开即变 on
+        setButtonPressed(.viewOptions, isOn: true)
     }
     @objc private func handleSearchAction() {
         // Enter 键触发——已通过 textDidChangeNotification 实时同步
@@ -430,6 +466,8 @@ final class ToolbarController: NSObject, NSToolbarDelegate {
         if let coordinator = filterPopoverCoordinator, coordinator.isTopShown {
             coordinator.closeAll()
             filterPopoverCoordinator = nil
+            // V5.9: 关闭时同步按钮 pressed 态
+            setButtonPressed(.filter, isOn: false)
             return
         }
 
@@ -448,6 +486,8 @@ final class ToolbarController: NSObject, NSToolbarDelegate {
         })
         coordinator?.showTop(anchoredTo: anchorView)
         filterPopoverCoordinator = coordinator
+        // V5.9: 打开时按钮 pressed 视觉反馈——"我正被使用"
+        setButtonPressed(.filter, isOn: true)
     }
 
     /// V4.36.x + V4.54.0: 同步激活筛选数 + active 视觉锤到 filter item

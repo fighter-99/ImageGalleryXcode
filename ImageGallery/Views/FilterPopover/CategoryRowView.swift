@@ -17,12 +17,17 @@
 //    - 子 popover 需要 row 作 anchor——NSView 能直接给 popover.show(relativeTo:of:)
 //    - 内部结构稳定，外部只需 update(count:summary:) 增量更新
 //
+//  V5.9: 三态视觉锤（macOS Photos 选中风格）
+//    1. 默认：  透明背景 + secondary icon/text
+//    2. Hover： 10% labelColor 背景 + primary icon/text
+//    3. Active：85% accent 背景 + 白 icon/text（子 popover 打开中）
+//    之前只有 cursor 变化——行点击无任何视觉反馈
+//
 
 import AppKit
 
 /// V4.83.0: 顶层 popover 4 类别入口行视图
-///   点击触发 onTap closure（coordinator 接管）
-///   子 popover 锚定到此 view 的 bounds
+///   V5.9: 三态视觉锤（hover / active / has-filter via count badge）
 final class CategoryRowView: NSView {
     /// 点击回调——coordinator 接管
     var onTap: (() -> Void)?
@@ -30,8 +35,23 @@ final class CategoryRowView: NSView {
     /// 类别标识（folder / tag / shape / rating）——用于子 popover 路由
     let category: FilterCategory
 
+    // MARK: - 状态（V5.9 新增三态视觉）
+
+    /// V5.9: 是否 hover（鼠标在 row 范围内）
+    ///   didSet 触发 background/icon/text 颜色更新
+    private var isHovered: Bool = false {
+        didSet { updateAppearance() }
+    }
+
+    /// V5.9: 是否 active（子 popover 打开中 / 子 popover 锚点）
+    ///   外部（coordinator）通过 setActive(_:) 切换
+    private var isActive: Bool = false {
+        didSet { updateAppearance() }
+    }
+
     // MARK: - 子视图
 
+    private let backgroundLayer: NSView  // V5.9: 三态背景载体
     private let iconView: NSImageView
     private let titleLabel: NSTextField
     private let countBadge: NSTextField
@@ -43,6 +63,12 @@ final class CategoryRowView: NSView {
 
     init(category: FilterCategory) {
         self.category = category
+
+        // V5.9: 背景层——三态背景颜色承载
+        self.backgroundLayer = NSView()
+        self.backgroundLayer.wantsLayer = true
+        self.backgroundLayer.layer?.cornerRadius = PopoverStyle.itemCornerRadius
+        self.backgroundLayer.translatesAutoresizingMaskIntoConstraints = false
 
         // icon
         self.iconView = NSImageView(image: NSImage(systemSymbolName: category.icon, accessibilityDescription: nil) ?? NSImage())
@@ -95,6 +121,15 @@ final class CategoryRowView: NSView {
 
         super.init(frame: .zero)
 
+        // V5.9: 背景层在最底层——撑满 row
+        addSubview(backgroundLayer)
+        NSLayoutConstraint.activate([
+            backgroundLayer.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 6),
+            backgroundLayer.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -6),
+            backgroundLayer.topAnchor.constraint(equalTo: topAnchor, constant: 2),
+            backgroundLayer.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -2)
+        ])
+
         // count badge: 文字叠在 bg 上
         countBadgeBg.addSubview(countBadge)
         NSLayoutConstraint.activate([
@@ -110,7 +145,6 @@ final class CategoryRowView: NSView {
         mainStack.addArrangedSubview(titleLabel)
         mainStack.addArrangedSubview(countBadgeBg)
         mainStack.addArrangedSubview(chevronView)
-
         addSubview(mainStack)
         NSLayoutConstraint.activate([
             mainStack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 12),
@@ -126,6 +160,9 @@ final class CategoryRowView: NSView {
             chevronView.widthAnchor.constraint(equalToConstant: PopoverStyle.categoryRowChevronSize),
             chevronView.heightAnchor.constraint(equalToConstant: PopoverStyle.categoryRowChevronSize)
         ])
+
+        // V5.9: 初始外观（默认态）
+        updateAppearance()
     }
 
     required init?(coder: NSCoder) { fatalError("not implemented") }
@@ -147,7 +184,40 @@ final class CategoryRowView: NSView {
         }
     }
 
-    // MARK: - mouseDown
+    // MARK: - V5.9: 三态视觉切换
+
+    /// V5.9: 外部（coordinator）切换 active 状态——子 popover 打开时 true
+    ///   关闭 active 由 coordinator 在 popoverDidClose 回调
+    func setActive(_ active: Bool) {
+        isActive = active
+    }
+
+    /// V5.9: 三态视觉更新
+    ///   优先级：active > hover > default
+    ///   颜色：背景 / icon / title / chevron / count badge
+    private func updateAppearance() {
+        if isActive {
+            // Active 态：85% accent bg + 白前景（macOS Photos 选中风格）
+            backgroundLayer.layer?.backgroundColor = NSColor.controlAccentColor.withAlphaComponent(0.85).cgColor
+            iconView.contentTintColor = .white
+            titleLabel.textColor = .white
+            chevronView.contentTintColor = .white
+        } else if isHovered {
+            // Hover 态：10% labelColor bg + primary 前景
+            backgroundLayer.layer?.backgroundColor = NSColor.labelColor.withAlphaComponent(0.10).cgColor
+            iconView.contentTintColor = .labelColor
+            titleLabel.textColor = .labelColor
+            chevronView.contentTintColor = .secondaryLabelColor
+        } else {
+            // 默认态：透明 bg + secondary 前景
+            backgroundLayer.layer?.backgroundColor = .clear
+            iconView.contentTintColor = .secondaryLabelColor
+            titleLabel.textColor = .labelColor
+            chevronView.contentTintColor = .secondaryLabelColor
+        }
+    }
+
+    // MARK: - 鼠标事件
 
     /// V4.83.0: 整行点击触发 onTap——子 popover 打开逻辑由 coordinator 接管
     override func mouseDown(with event: NSEvent) {
@@ -157,6 +227,31 @@ final class CategoryRowView: NSView {
     /// V4.83.0: 整行可点击——光标变 pointer
     override func resetCursorRects() {
         addCursorRect(bounds, cursor: .pointingHand)
+    }
+
+    // MARK: - V5.9: Hover 检测
+
+    /// V5.9: 注册 tracking area——mouseEntered/Exited 触发 isHovered 切换
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        for area in trackingAreas {
+            removeTrackingArea(area)
+        }
+        let area = NSTrackingArea(
+            rect: bounds,
+            options: [.mouseEnteredAndExited, .activeInKeyWindow, .inVisibleRect],
+            owner: self,
+            userInfo: nil
+        )
+        addTrackingArea(area)
+    }
+
+    override func mouseEntered(with event: NSEvent) {
+        isHovered = true
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        isHovered = false
     }
 }
 

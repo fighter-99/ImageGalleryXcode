@@ -29,7 +29,9 @@ import AppKit
 final class FilterPopoverCoordinator {
     // MARK: - 状态
 
-    private var topPopover: NSPopover?
+    /// V5.9: 改为 internal（默认）——ToolbarController 需在 popoverDidClose 区分顶层 popover
+    ///   配合 ToolbarController.popoverDidClose 用 popover === topPopover 判断
+    private(set) var topPopover: NSPopover?
     private var childPopover: NSPopover?
 
     /// V4.89.0: 当前打开的子 popover 类别——close 后清 nil
@@ -129,12 +131,18 @@ final class FilterPopoverCoordinator {
         popover.show(relativeTo: anchor.bounds, of: anchor, preferredEdge: .minY)
         childPopover = popover
         currentChildCategory = category
+        // V5.9: 顶层 row 标 active——行变 85% accent + 白前景
+        topVC.setActiveCategory(category)
     }
 
     private func closeChild() {
         childPopover?.close()
         childPopover = nil
         currentChildCategory = nil
+        // V5.9: 取消顶层 row active——所有 row 回到 default/hover 态
+        if let topVC = topPopover?.contentViewController as? FilterTopPopoverViewController {
+            topVC.setActiveCategory(nil)
+        }
     }
 
     // MARK: - 关闭全部

@@ -167,6 +167,18 @@ final class FilterTopPopoverViewController: NSViewController {
         }
     }
 
+    // MARK: - V5.9: 切换 row active 状态
+
+    /// V5.9: 切换某 category row 的 active 状态——子 popover 打开/关闭时调
+    ///   - category = nil: 全部 row 取消 active（关闭所有子 popover）
+    ///   - category = .tag: 标签 row active = true（标签子 popover 打开中）
+    ///   配合 CategoryRowView 三态视觉锤（default / hover / active）
+    func setActiveCategory(_ category: FilterCategory?) {
+        for (cat, row) in categoryRows {
+            row.setActive(cat == category)
+        }
+    }
+
     private func updateClearButtonVisibility() {
         clearButton.isHidden = !filterState.isActive
     }
