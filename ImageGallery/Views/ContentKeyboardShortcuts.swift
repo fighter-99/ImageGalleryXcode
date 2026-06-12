@@ -13,17 +13,17 @@ import SwiftUI
 
 extension View {
     /// ContentView 的全局快捷键：
-    /// - ⌘1-6: 切换侧栏智能文件夹
     /// - ⌘O: 导入
     /// - ⌘N: 新建文件夹
     /// - ⌘R: 重置筛选
-    /// - ⌘F: 收藏/取消收藏
+    /// - ⌘F: 聚焦搜索框
     /// - ⌘C: 复制到剪贴板
     /// - ⌘⇧S: 切换排序方向
     /// - ⌘⌃S: 切换侧栏显隐（macOS 标准）
     /// - ⌘Z / ⌘⇧Z: 撤销 / 重做（V4.7.0 起由 Edit menu 接管——见 ImageGalleryApp.UndoRedoMenuButtons）
     /// - V5.12: ⌘0 清除评分 + ⌘1-⌘5 设为 N 星（仿 macOS Photos 标准）
-    ///   V5.7: 砍 ⌘2 .favorites 侧边栏项——保留其他 ⌘1,3-6 编号不变（用户肌肉记忆）
+    /// - V5.15: 删 ⌘1-6 sidebar smart folder 快捷键——⌘1-5 与 rating 评分快捷键冲突
+    ///        仿 macOS Photos 把 ⌘1-5 让给 rating（侧栏 mouse 交互 + ⌘⌃S 切显隐足够）
     ///        砍 onToggleFavorite 参数——工具栏 ❤ 已移除
     func contentKeyboardShortcuts(
         sidebarSelection: Binding<SidebarSelection?>,
@@ -56,23 +56,10 @@ extension View {
                 Button("") { onImport() }
                     .keyboardShortcut("o", modifiers: .command)
                     .hidden()
-                Button("") { sidebarSelection.wrappedValue = .all }
-                    .keyboardShortcut("1", modifiers: .command)
-                    .hidden()
-                // V5.7: 砍 ⌘2 .favorites 绑定——侧边栏已无收藏入口
-                //   ⌘2 现在空着；其他编号不变（保持用户肌肉记忆）
-                Button("") { sidebarSelection.wrappedValue = .unfiled }
-                    .keyboardShortcut("3", modifiers: .command)
-                    .hidden()
-                Button("") { sidebarSelection.wrappedValue = .duplicates }
-                    .keyboardShortcut("4", modifiers: .command)
-                    .hidden()
-                Button("") { sidebarSelection.wrappedValue = .recent7Days }
-                    .keyboardShortcut("5", modifiers: .command)
-                    .hidden()
-                Button("") { sidebarSelection.wrappedValue = .largeFiles }
-                    .keyboardShortcut("6", modifiers: .command)
-                    .hidden()
+                // V5.15：删 ⌘1-6 sidebar smart folder 快捷键——⌘1-5 与 rating 评分快捷键冲突
+                //   仿 macOS Photos 把 ⌘1-5 让给 rating
+                //   sidebar 仍可 ⌘⌃S 切显隐 + 鼠标点击
+                // _ = sidebarSelection  // 保留参数防破坏调用点
 
                 Button("") { onNewFolder() }
                     .keyboardShortcut("n", modifiers: .command)
@@ -96,7 +83,7 @@ extension View {
                     .hidden()
 
                 // V5.12: ⌘0 清除评分 + ⌘1-⌘5 设为 N 星（仿 macOS Photos 标准）
-                //   ⌘0-⌘5 不与其他快捷键冲突
+                // V5.15: ⌘1-6 sidebar 已删——⌘0-5 独占
                 //   ⌘D/⌘F 等给搜索/收藏之类——V5.7 已释放 ⌘F 槽位
                 // V5.13：抽到 RatingShortcuts.routes 路由表，便于测试
                 makeRatingButtons()
