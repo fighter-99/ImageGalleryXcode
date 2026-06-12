@@ -399,7 +399,10 @@ enum PopoverStyle {
     static let padding: CGFloat = Spacing.md
     /// 段间距——V4.42.0: 8 → 10 (更多垂直呼吸)
     /// V4.52.0: 10 → 12 (与 Photos 一致"宽间距"——段间更呼吸)
-    static let sectionSpacing: CGFloat = 12
+    /// V4.64.0: 12 → 10 (向 macOS Photos 实际紧凑感靠拢)
+    ///   Photos 排序 popover 段间距 ~10pt
+    ///   段头删除后段间靠留白过渡——过宽反而"散"
+    static let sectionSpacing: CGFloat = 10
     /// 2 列布局列间距（folder/tag 段用）
     static let columnGap: CGFloat = 8
 
@@ -436,9 +439,15 @@ enum PopoverStyle {
     ///   V4.47.0: 32 → 28 (回收)——V4.45.0 transl material + 4 段全展开
     ///     让 popover 720pt 超窗口可视区。28pt 减 ~88pt 高度
     ///     仍能装下 16pt icon (item 减 4pt 不挡 icon) = Photos 平衡点
-    static let itemHeight: CGFloat = 28
+    ///   V4.64.0: 28 → 26 (向 macOS Photos 实际紧凑感靠拢)
+    ///     砍段头后段间无显式分隔，item 28pt 偏松
+    ///     26pt 装 16pt icon (item 减 10pt) + 1 列 row 间距 2pt = 紧凑 Photos 风
+    static let itemHeight: CGFloat = 26
     /// item 圆角——V4.42.0: 6 → 8 (略增, 更现代圆润)
-    static let itemCornerRadius: CGFloat = 8
+    ///   V4.64.0: 8 → 4 (向 macOS Photos 实际风格靠拢)
+    ///     Photos 排序 popover item 圆角很小（接近 0）
+    ///     4pt = 微弱圆角，保留现代感 + Photos 紧凑感
+    static let itemCornerRadius: CGFloat = 4
     /// segment 之间的间距——V4.42.0: 4 → 6 (相邻 segment 不再贴紧)
     static let segmentGap: CGFloat = 6
     /// 2 列布局的 VStack 行间距——V4.42.0: 2 → 4 (checkbox 行间更舒展)
@@ -451,7 +460,9 @@ enum PopoverStyle {
     static let itemHorizontalPadding: CGFloat = 8
     /// icon 字号——V4.42.0 新增: 16pt (从 14pt 增, 与 itemHeight 32 比例协调)
     /// V4.47.0: 仍 16pt (item 28pt 装 16pt icon 上下 6pt 留白——更紧凑但图标清楚)
-    static let iconFontSize: CGFloat = 16
+    /// V4.64.0: 16 → 15pt (向 macOS Photos 实际紧凑感靠拢)
+    ///   26pt item 装 15pt icon 上下 5pt 留白 = 紧凑 Photos 风
+    static let iconFontSize: CGFloat = 15
 
     // ─── 状态色（SwiftUI 版本） ───
     /// active 背景
@@ -472,7 +483,9 @@ enum PopoverStyle {
 
     /// V4.43.0 NEW: sort item 文字字号——12pt (原 13pt .callout)
     ///   缩小让 sort item 视觉密度与 segment item (icon 16pt + label 11pt) 更协调
-    static let sortItemFontSize: CGFloat = 12
+    ///   V4.64.0: 12 → 13pt (向 macOS Photos 实际紧凑感靠拢)
+    ///     13pt 是 macOS 系统 popover 文字标准——itemHeight 26pt 配 13pt
+    static let sortItemFontSize: CGFloat = 13
 
     // ─── 状态色（AppKit 版本） ───
     /// active 背景：NSColor.controlAccentColor（与 SwiftUI .accentColor 同源）
