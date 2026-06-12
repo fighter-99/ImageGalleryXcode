@@ -80,6 +80,12 @@ final class ToolbarController: NSObject, NSToolbarDelegate {
         didSet { updateFilterBadge() }
     }
 
+    /// V4.54.0 NEW: filter 按钮激活状态——决定 icon + tint 视觉锤
+    ///   filterActiveCount > 0 时为 true
+    ///   computed property（而非独立 didSet）——保证永远与 filterActiveCount 同步，无须 ContentView 额外 push
+    ///   仿 V4.37.4 TitlebarAccessoryController.setActive 模式（双 symbol + tint）
+    var filterIsActive: Bool { filterActiveCount > 0 }
+
     /// V4.36.x: 工具栏筛选按钮的 SwiftUI view provider（暂未使用——V4.36.x 回归 NSButton 风格）
     ///   用 SwiftUI .popover() 而非 NSPopover，避免窗口裁切
     ///   ContentView 设置时 return NSHostingView(rootView: FilterToolbarButton(...))
@@ -207,15 +213,12 @@ final class ToolbarController: NSObject, NSToolbarDelegate {
                 label: "导入",
                 action: #selector(handleImport)
             )
-        case .filter:  // V4.36.x NEW
+        case .filter:  // V4.36.x NEW + V4.54.0 状态感知升级
             // V4.36.x: 回归 NSButton 风格——与其他 5 actions 完全一致
             //   SwiftUI popover 在 NSToolbar 里点击响应不可靠（事件被 toolbar 拦截）
-            item = makeSimpleItem(
-                id: id,
-                image: "line.3.horizontal.decrease",
-                label: "筛选",
-                action: #selector(handleShowFilter)
-            )
+            // V4.54.0: filter 按钮需要状态感知（仿 V4.37.4 titlebar accessory）——单独构造
+            //   原因：双 SF Symbol + tint accent 需要保留 button 引用以便 setActive 时更新
+            item = makeFilterItem(id: id)
         case .viewOptions:
             item = makeSimpleItem(
                 id: id,
@@ -294,6 +297,51 @@ final class ToolbarController: NSObject, NSToolbarDelegate {
         item.view = button
 
         return item
+    }
+
+    /// V4.54.0 NEW: 工具栏 filter 按钮——双 SF Symbol + setActive 视觉锤
+    ///   仿 V4.37.4 TitlebarAccessoryController 双 symbol + tint 模式
+    ///   inactive: line.3.horizontal.decrease (outline)
+    ///   active:   line.3.horizontal.decrease.circle.fill (fill + circle 高亮)
+    ///   Photos.app 风格——toggle 按钮 active 时 icon 切填充 + tint 强调色
+    private func makeFilterItem(id: Identifier) -> NSToolbarItem {
+        let item = NSToolbarItem(itemIdentifier: id.nsIdentifier)
+        item.label = ""  // V4.8.3: 空 label + displayMode = .iconOnly 双重保险隐藏文字
+        item.paletteLabel = "筛选"  // Customize Toolbar 面板显示
+        item.toolTip = "筛选"  // 初值；filterActiveCount > 0 时被 updateFilterBadge 覆盖
+        item.target = self
+        item.action = #selector(handleShowFilter)
+        item.isBordered = true
+
+        let button = NSButton()
+        button.bezelStyle = .recessed  // 跟 NSToolbar 系统按钮风格一致
+        button.toolTip = "筛选"
+        button.target = self
+        button.action = #selector(handleShowFilter)
+        button.isBordered = true
+        button.imagePosition = .imageOnly
+        button.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        // V4.54.0: 初值同步 icon——setActive 时再切
+        updateFilterButtonImage(button: button)
+        item.view = button
+
+        return item
+    }
+
+    /// V4.54.0 NEW: 同步 filter button image + tint——所有 filterIsActive 变化走这里
+    ///   仿 V4.37.4 TitlebarAccessoryController.updateButtonImage 模式
+    ///   icon: inactiveSymbol ↔ activeSymbol（line.3.horizontal.decrease ↔ ...circle.fill）
+    ///   tint: 系统默认（nil）↔ .controlAccentColor（强调色）
+    private func updateFilterButtonImage(button: NSButton? = nil) {
+        let btn = button ?? (itemCache[Identifier.filter.nsIdentifier]?.view as? NSButton)
+        guard let btn = btn else { return }
+        let symbol = filterIsActive
+            ? "line.3.horizontal.decrease.circle.fill"
+            : "line.3.horizontal.decrease"
+        btn.image = NSImage(systemSymbolName: symbol, accessibilityDescription: "筛选")
+        // V4.54.0: 激活时 tint 强调色（Photos.app 同款——toggle 按钮 active 时显色）
+        // nil = 系统默认（保持与其他 5 actions 不主动 tint 一致）
+        btn.contentTintColor = filterIsActive ? .controlAccentColor : nil
     }
 
     private func makeSearchItem(id: Identifier) -> NSToolbarItem {
@@ -404,11 +452,13 @@ final class ToolbarController: NSObject, NSToolbarDelegate {
         self.filterPopover = popover
     }
 
-    /// V4.36.x: 同步激活筛选数到 filter item 的 tooltip
+    /// V4.36.x + V4.54.0: 同步激活筛选数 + active 视觉锤到 filter item
+    ///   V4.36.x: 改 tooltip "筛选 (N)"
+    ///   V4.54.0: 同时调 updateFilterButtonImage 切 icon (outline ↔ fill.circle) + tint 强调色
     ///   V4.8.3: displayMode = .iconOnly 不显示 title，故用 tooltip 显示 "筛选 (N)"
-    ///   hover 才显符合 macOS HIG，零侵入
     private func updateFilterBadge() {
         guard let item = itemCache[Identifier.filter.nsIdentifier] else { return }
         item.toolTip = filterActiveCount > 0 ? "筛选 (\(filterActiveCount))" : "筛选"
+        updateFilterButtonImage()  // V4.54.0: 同步 icon + tint
     }
 }
