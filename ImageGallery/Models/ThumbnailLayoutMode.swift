@@ -24,11 +24,13 @@ enum ThumbnailLayoutMode: Int, CaseIterable, Identifiable {
 
     var id: Int { rawValue }
 
-    /// V5.19 默认：.masonry（Photos.app Days 风格——末行不满不补齐）
-    ///   - V5.17 默认 .masonryStretch (Flickr 末行拉满) 被反馈"末行变形"
-    ///   - Photos.app Days 视图不加 stretch——末行按原 aspect 渲染
-    ///   - 老用户 @AppStorage 有 storedLayoutModeRaw 不会受影响（仅新装/重置生效）
-    static let defaultValue: ThumbnailLayoutMode = .masonry
+    /// V5.20 默认：.square（Photos.app Library 视图——统一方形 cell，无 ragged right edge）
+    ///   - V5.19 默认 .masonry 被反馈"右边缘空缺 + 不对齐"
+    ///   - 截图 27 vs 截图 28 对比：Photos Library 是统一方形——上下行 column 完美对齐
+    ///   - 改 .square 后末行自然填满，无空缺
+    ///   - 老用户 @AppStorage 有 storedLayoutModeRaw 不受影响（仅新装/重置生效）
+    ///   - .masonry / .masonryStretch 仍保留——可手动切回
+    static let defaultValue: ThumbnailLayoutMode = .square
 
     var displayName: String {
         switch self {

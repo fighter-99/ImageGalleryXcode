@@ -82,11 +82,12 @@ struct ThumbnailLayoutModeTests {
 
     // MARK: - 默认值
 
-    @Test func defaultValueIsMasonry() {
-        // V5.19: 默认改 .masonry（Photos.app Days 风格，末行不满不补齐）
-        // V5.17 默认 .masonryStretch 被反馈"末行变形"——1 张竖图被拉成横长方形
-        // 老用户 @AppStorage 有 storedLayoutModeRaw 不会受影响（仅新装/重置生效）
-        #expect(ThumbnailLayoutMode.defaultValue == .masonry)
+    @Test func defaultValueIsSquare() {
+        // V5.20: 默认改 .square（Photos.app Library 视图——统一方形 grid，无 ragged right edge）
+        // V5.19 默认 .masonry 被反馈"右边缘空缺 + 不对齐"
+        // 截图 27 vs 截图 28 对比：Photos Library 是统一方形——column 完美对齐
+        // 老用户 @AppStorage 有 storedLayoutModeRaw 不受影响（仅新装/重置生效）
+        #expect(ThumbnailLayoutMode.defaultValue == .square)
     }
 
     // MARK: - masonryParams 映射（关键：决定 PhotoGridView 调 MasonryMath 的参数）
