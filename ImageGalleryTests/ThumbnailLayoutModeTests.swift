@@ -7,7 +7,7 @@
 //  - 3 个 case 完整（保护 ViewOptionsPopover / masonryRowsView 调度表）
 //  - rawValue 稳定（@AppStorage("thumbnailLayoutMode") 持久化契约）
 //  - displayName / icon 非空
-//  - defaultValue = .masonryStretch（V5.16.2 现行行为，老用户无感升级）
+//  - defaultValue = .masonry（V5.19 默认——Photos Days 风格末行不满不补齐）
 //  - masonryParams(rowHeight:) 映射到 MasonryMath 3 模式
 //    · .square:         uniformWidth = rowHeight, stretchLastRow = false
 //    · .masonry:        uniformWidth = nil,        stretchLastRow = false
@@ -82,10 +82,11 @@ struct ThumbnailLayoutModeTests {
 
     // MARK: - 默认值
 
-    @Test func defaultValueIsMasonryStretch() {
-        // 首次安装 / @AppStorage 缺失 → .masonryStretch（V5.16.2 现行行为）
-        // 老用户升级无感——还是看到熟悉的"按比例（满行）"
-        #expect(ThumbnailLayoutMode.defaultValue == .masonryStretch)
+    @Test func defaultValueIsMasonry() {
+        // V5.19: 默认改 .masonry（Photos.app Days 风格，末行不满不补齐）
+        // V5.17 默认 .masonryStretch 被反馈"末行变形"——1 张竖图被拉成横长方形
+        // 老用户 @AppStorage 有 storedLayoutModeRaw 不会受影响（仅新装/重置生效）
+        #expect(ThumbnailLayoutMode.defaultValue == .masonry)
     }
 
     // MARK: - masonryParams 映射（关键：决定 PhotoGridView 调 MasonryMath 的参数）
