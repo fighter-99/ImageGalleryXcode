@@ -63,6 +63,9 @@ struct PhotoGridView: View {
     // V3.6.6: 保留时长（用于缩略图剩余天数 badge）
     let retentionDays: Int
     let thumbnailSize: CGFloat
+    // V5.17: 缩略图布局模式（3 选项）—— 由 ContentView.layoutMode 透传
+    //   决定 MasonryMath 的 uniformWidth / stretchLastRow 二元组
+    let layoutMode: ThumbnailLayoutMode
     let sortOption: SortOption
 
     // 通知父视图
@@ -463,6 +466,10 @@ struct PhotoGridView: View {
     }
 
     // V5.16: 装箱 + 渲染多行 masonry——平铺/分组布局共用
+    // V5.17: layoutMode 决定 (uniformWidth, stretchLastRow) 组合
+    //   - .square:         uniformWidth=rowHeight, stretchLastRow=false
+    //   - .masonry:        uniformWidth=nil,        stretchLastRow=false
+    //   - .masonryStretch: uniformWidth=nil,        stretchLastRow=true
     @ViewBuilder
     private func masonryRowsView(
         photos: [Photo],
@@ -478,16 +485,16 @@ struct PhotoGridView: View {
                 aspectRatio: aspectRatio(of: photo)
             )
         }
+        // V5.17: ThumbnailLayoutMode.masonryParams 把 3 选项映射到 MasonryMath 双参数
+        //   enum 转换逻辑收敛在 enum 本体，PhotoGridView 直接拿结果调 MasonryMath
+        let params = layoutMode.masonryParams(rowHeight: rowHeight)
         let rows = MasonryMath.groupIntoRows(
             items: items,
             availableWidth: availableWidth,
             rowHeight: rowHeight,
             spacing: cellSpacing,
-            // V5.16.2: 改回 masonry 模式（不传 uniformWidth）+ stretchLastRow
-            //   cell 宽 = rowHeight × photoAspect → portrait 0% letterbox
-            //   末行不满则把多余宽均分到末行每个 cell → 消除"空右缘"
-            //   保留 MasonryMath 双模式（uniformWidth + stretchLastRow 可组合或独立用）
-            stretchLastRow: true
+            uniformWidth: params.uniformWidth,
+            stretchLastRow: params.stretchLastRow
         )
 
         LazyVStack(alignment: .leading, spacing: rowSpacing) {
@@ -656,6 +663,7 @@ struct PhotoGridView: View {
         filterMinRating: 0,
         retentionDays: 30,  // V3.6.6
         thumbnailSize: 170,
+        layoutMode: .masonryStretch,  // V5.17 默认
         sortOption: .importedAtDesc,
         onVisiblePhotosChange: { _ in },
         onImport: {},

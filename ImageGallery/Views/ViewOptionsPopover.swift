@@ -40,6 +40,9 @@ import SwiftUI
 struct ViewOptionsPopover: View {
     @Binding var viewMode: ViewMode
     @Binding var thumbnailSize: CGFloat
+    // V5.17: 缩略图布局模式 3 选项（方格 / 按比例 / 按比例满行）
+    //   紧跟缩放段——两者都是 grid cell 维度控制，逻辑分组相邻
+    @Binding var thumbnailLayoutMode: ThumbnailLayoutMode
     @Binding var sortOption: SortOption
 
     var body: some View {
@@ -89,7 +92,23 @@ struct ViewOptionsPopover: View {
                 }
             }
 
-            // 段 3: 排序
+            // 段 3: 布局（V5.17 新增）—— 方格 / 按比例 / 按比例满行 3 选项
+            //   与缩放同段型：3 个 icon segment 横排
+            //   紧跟缩放：两者都是 grid cell 维度控制，逻辑分组相邻
+            HStack(spacing: PopoverStyle.segmentGap) {
+                ForEach(ThumbnailLayoutMode.allCases) { mode in
+                    PopoverSegmentItem(
+                        isActive: thumbnailLayoutMode == mode,
+                        iconName: mode.icon,
+                        label: mode.displayName,
+                        help: mode.displayName
+                    ) {
+                        thumbnailLayoutMode = mode
+                    }
+                }
+            }
+
+            // 段 4: 排序
             // V5.3: spacing 2 → 4pt 跟 Filter 段间呼吸感更对齐
             VStack(alignment: .leading, spacing: 4) {
                 ForEach(SortOption.allCases) { option in
@@ -247,10 +266,12 @@ struct ViewOptionsPopover: View {
 #Preview("ViewOptionsPopover") {
     @Previewable @State var viewMode: ViewMode = .grid
     @Previewable @State var density: CGFloat = 170
+    @Previewable @State var layoutMode: ThumbnailLayoutMode = .masonryStretch  // V5.17
     @Previewable @State var sort: SortOption = .importedAtDesc
     return ViewOptionsPopover(
         viewMode: $viewMode,
         thumbnailSize: $density,
+        thumbnailLayoutMode: $layoutMode,  // V5.17
         sortOption: $sort
     )
 }

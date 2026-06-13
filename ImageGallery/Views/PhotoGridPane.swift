@@ -36,6 +36,8 @@ struct PhotoGridPane: View {
     // V3.6.6: 保留时长（透传给 PhotoThumbnailView 显示剩余天数 badge）
     let retentionDays: Int
     let thumbnailSize: CGFloat
+    // V5.17: 缩略图布局模式（3 选项）—— 透传到 PhotoGridView.masonryRowsView
+    let layoutMode: ThumbnailLayoutMode
     let sortOption: SortOption
     let onVisiblePhotosChange: ([Photo]) -> Void
     let onImport: () -> Void
@@ -65,6 +67,8 @@ struct PhotoGridPane: View {
             filterMinRating: filterMinRating,
             retentionDays: retentionDays,
             thumbnailSize: thumbnailSize,
+            // V5.17: 透传 layoutMode → PhotoGridView.masonryRowsView dispatch
+            layoutMode: layoutMode,
             sortOption: sortOption,
             onVisiblePhotosChange: onVisiblePhotosChange,
             onImport: onImport,

@@ -196,6 +196,15 @@ struct ContentView: View {
     @AppStorage("thumbnailSize") private var storedThumbnailSize: Double = 200  // V5.16: 170→200 行高
     @AppStorage("sidebarSelection") private var storedSidebarKey: String = "all"
     @AppStorage("sortOption") private var storedSortOption: String = SortOption.importedAtDesc.rawValue
+    // V5.17: 缩略图布局模式（3 选项 .square / .masonry / .masonryStretch）
+    //   镜像 AppearanceMode Int-backed pattern
+    //   @AppStorage 持久化 + computed 读写 + 透传给 ViewOptionsPopover/PhotoGridPane
+    //   nonmutating set 必备——否则 closure 内 [self] capture 后 setter 改 self 编译失败
+    @AppStorage("thumbnailLayoutMode") private var storedLayoutModeRaw: Int = ThumbnailLayoutMode.defaultValue.rawValue
+    private var layoutMode: ThumbnailLayoutMode {
+        get { ThumbnailLayoutMode(rawValue: storedLayoutModeRaw) ?? .defaultValue }
+        nonmutating set { storedLayoutModeRaw = newValue.rawValue }
+    }
 
     // V3.5.12：三栏列宽（HStack + 自定义 drag handles，避开 NSSplitView）
     @AppStorage("sidebarColumnWidth") private var storedSidebarWidth: Double = 220
@@ -620,12 +629,18 @@ struct ContentView: View {
             // V4.77.0: 改用 ViewOptionsPopoverHostController (NSVisualEffectView 包裹)
             //   与 FilterPopoverViewController 完全一致的 transl 行为
             //   之前 V4.9.1 .background(.clear) 让 NSPopover 自动 transl——与 FilterPopover transl 行为不一致（用户反馈）
+            // V5.17: 加 thumbnailLayoutMode binding 传 3 模式布局切换
             ViewOptionsPopoverHostController(swiftUIView: ViewOptionsPopover(
                 viewMode: Binding(
                     get: { self.viewMode },
                     set: { self.viewMode = $0 }
                 ),
                 thumbnailSize: $thumbnailSize,
+                // V5.17: thumbnailLayoutMode 在 sortOption 之前（ViewOptionsPopover init 顺序）
+                thumbnailLayoutMode: Binding(
+                    get: { self.layoutMode },
+                    set: { self.layoutMode = $0 }
+                ),
                 sortOption: $sortOption
             ))
         }
@@ -904,6 +919,9 @@ struct ContentView: View {
                 filterMinRating: filterState.minRating,
                 retentionDays: retentionDays,
                 thumbnailSize: thumbnailSize,
+                // V5.17: 缩略图布局模式 3 选项（方格 / 按比例 / 按比例满行）
+                //   透传到 PhotoGridView.masonryRowsView 决定 uniformWidth/stretchLastRow
+                layoutMode: layoutMode,
                 sortOption: sortOption,
                 // V4.36.6: visiblePhotos 改 computed property, 此 callback 不再需要
                 //   保留参数避免破坏 PhotoGridPane 签名——传 noop
