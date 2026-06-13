@@ -160,11 +160,15 @@ struct PhotoThumbnailView: View {
     /// V4.4.0: Reduced Motion 时所有 scale 强制 1.0（accessibility）
     /// V5.17: 砍 hover scale 1.01 / 选中 1.015（V4.62.0 教训"3 重视觉锤 = 累赘"）
     ///   之前 isActive 1.015 / hover 1.01 / ✓ 角标——3 锤叠加
-    ///   Photos.app / Finder 无 hover scale——只 accent tint + ✓ 角标
-    ///   currentScale 保留属性（1.0 兜底）以防 .scaleEffect(currentScale) 误删
+    /// V5.23: hover scale 回归——V5.17 砍后 cell 鼠标划过无反应（用户反馈"死"感）
+    ///   极轻微 1.005（不到 1% 缩放）— 配合 hover accent border 1 锤仍不超
+    ///   选中态不 hover scale（cellSelectionOverlay 已显选中态）—— 互斥
     private var currentScale: CGFloat {
         if reduceMotion { return 1.0 }            // V4.4.0: accessibility
-        return 1.0                                 // V5.17: hover/active scale 全砍
+        if isHovered && !isActive && !isInMultiSelect {
+            return 1.005                            // V5.23: 极轻微 lift 感
+        }
+        return 1.0
     }
 
     /// V3.6.51: cell 选中视觉的单一 overlay（之前散在 3 个 overlay modifier）
@@ -200,6 +204,20 @@ struct PhotoThumbnailView: View {
             return CGFloat(photo.width) / CGFloat(photo.height)
         }
         return 1.0
+    }
+
+    /// V5.23: Hover 视觉反馈——subtle 1pt accent border + 1.005 scale
+    ///   - V5.17 砍 hover scale 后 cell 鼠标划过无反应（用户反馈"死"感）
+    ///   - V4.4.2 / V4.4.3 教训：不要 shadow（会成"浅框"幽灵），不要 scale > 1.02（视觉锤堆叠）
+    ///   - accent border 50% opacity（subtle 而可见）+ 1.005 scale（极轻微 lift 感）
+    ///   - 选中态不显示 hover border（cellSelectionOverlay 已显 选中态）—— 1 锤不超 3 锤
+    @ViewBuilder
+    private var cellHoverOverlay: some View {
+        if isHovered && !isActive && !isInMultiSelect {
+            RoundedRectangle(cornerRadius: Radius.thumb)
+                .strokeBorder(Color.accentColor.opacity(0.5), lineWidth: 1)
+                .transition(.opacity)
+        }
     }
 
     var body: some View {
@@ -365,7 +383,13 @@ struct PhotoThumbnailView: View {
         //   状态切换时所有视觉元素（边框 + ✓）一起淡入淡出，无'先后'错觉
         //   V3.6.51 也彻底删除 selectionOverlayMulti 染色（16% accent 太显眼被读成'浅框'）
         .overlay(cellSelectionOverlay)
+        // V5.23: hover overlay——1pt accent border 50% opacity
+        //   与 cellSelectionOverlay 共用 .transition 动画时序保持一致
+        .overlay(cellHoverOverlay)
         // V5.17: 砍 hover scale 1.01 / 选中 1.015（V4.62.0 教训"3 重视觉锤 = 累赘"）
+        //   之前 isActive 1.015 / hover 1.01 / ✓ 角标——3 锤叠加
+        //   Photos.app / Finder 无 hover scale——只 accent tint + ✓ 角标
+        //   currentScale 保留属性（1.0 兜底）以防误加回
         //   之前 isActive 1.015 / hover 1.01 / ✓ 角标——3 锤叠加
         //   Photos.app / Finder 无 hover scale——只 accent tint + ✓ 角标
         //   currentScale 保留属性（1.0 兜底）以防误加回
@@ -411,10 +435,11 @@ struct PhotoThumbnailView: View {
         .focused($isFocused)
         .focusable(true)
         .focusEffectDisabled(true)  // V4.4.6: 禁用系统 focus ring
-        // V3.6.40: hover 动画升级 .standard → .springGentle（按压更"Q弹"感）
-        // scaleEffect(currentScale) 在前面
-        // animation 之前是 Animations.standard，现改 spring
-        // 删除重复 .animation 块
+        // V5.23: 极轻微 hover scale——V5.17 砍后 cell 鼠标划过无反应
+        //   scaleEffect 在所有 .focusable/.help 之前——影响的是整个 cell
+        //   V4.62.0 教训：scale 不超 1.02（视觉锤堆叠）——本次 1.005 极轻微
+        .scaleEffect(currentScale)
+        .animation(Animations.springGentle, value: isHovered)
         // V3.6.10: hover tooltip（文件名 + 尺寸 + 文件大小）
         .help(tooltipText)
         // 拖拽：支持内部文件夹移动 + 拖到 Finder 导出原图
