@@ -112,6 +112,11 @@ struct PhotoThumbnailView: View {
     ///   V4.4.0 教训：之前 16% accent overlay 蒙层被砍"浅框"——降到 0.10 + cell 背景 fill 而非 overlay
     ///   V4.4.1 教训：.strokeBorder 而非 .stroke——本 commit 直接不用 border
     ///   收敛视觉锤：border=0（砍）+ tint 0.10/0.15（1 锤）+ ✓ 角标（多选时 1 锤）= 1-2 锤
+    /// V5.19: 内 cell 2pt padding——Photos.app "framed photo" 风格
+    ///   之前 image 完全 fill cell——视觉紧贴边界
+    ///   2pt padding 让 image 周围有 2pt 窗口背景呼吸感（cellSpacing 20pt 之外）
+    ///   镜像 iOS Photos.app / Finder thumbnail 视觉——像被"框"住的图
+    static let innerCellPadding: CGFloat = 2
     enum CellSelectionState {
         case none       // 默认
         case single     // isActive 单选
@@ -317,9 +322,15 @@ struct PhotoThumbnailView: View {
         //   多选点击是高频操作，spring 反弹感在选择场景下反而像'卡顿'
         .animation(Animations.standard, value: isInMultiSelect)
         .frame(maxWidth: .infinity)
+        // V5.19: 内 cell 2pt padding——Photos.app "framed photo" 风格
+        //   之前 image 完全 fill cell——视觉紧贴边界
+        //   2pt padding 让 image 周围有 2pt 窗口背景呼吸感（cellSpacing 20pt 之外再加一点）
+        //   镜像 iOS Photos.app / Finder thumbnail 视觉——像被"框"住的图
+        .padding(Self.innerCellPadding)
         // V5.16: cell 形状 = (cellWidth, rowHeight)——外部 MasonryRow 算好传入
-        //   cellWidth = rowHeight × photo.aspectRatio → image 完全 fill cell 无留白
+        //   cellWidth = rowHeight × photo.aspectRatio → cell frame 大小
         //   行内所有 cell 高齐 rowHeight（行底部无 jagged）
+        //   V5.19: image 在 cell 内缩 4pt (2pt × 2) —— padding 不影响 cell frame
         .frame(width: cellWidth, height: rowHeight)
         // V4.4.5: cell 背景 controlBackgroundColor → windowBackgroundColor
         //   ↑ 终于找到「浅框」真正源头——cell 背景比窗口背景浅一档
