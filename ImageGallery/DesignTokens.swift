@@ -37,7 +37,11 @@ enum Radius {
     /// 之前 cell 外层 cornerRadius 6 vs selectionOverlay/加载占位/多选蒙层
     /// 用 Radius.md (8pt) 不一致 → 选中边框 8pt 罩在 6pt cell 上漏 1pt 白边
     /// 现在所有缩略图相关 RoundedRectangle 统一引用 Radius.thumb
-    static let thumb: CGFloat = 6
+    /// V5.27: 6pt → 3pt——macOS Photos / Finder thumbnail 标准
+    ///   - 6pt 偏大，让 cell "卡片" 感强 (iOS Photos 风格)
+    ///   - 3pt 更 "原生"，不抢图
+    ///   - 一处改全局一致：cell image clip / loading shimmer / failure placeholder / selection overlay
+    static let thumb: CGFloat = 3
 }
 
 // MARK: - 表面色（V3.1 NEW：Photos.app 风格语义化）

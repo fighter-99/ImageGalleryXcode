@@ -30,7 +30,7 @@ struct PopoverStyleTokensTests {
         #expect(Radius.sm == 6)
         #expect(Radius.md == 8)
         #expect(Radius.lg == 12)
-        #expect(Radius.thumb == 6)  // V4.4.0 缩略图统一
+        #expect(Radius.thumb == 3)  // V5.27: 6 → 3 (macOS Photos / Finder thumbnail 标准)
     }
 
     // MARK: - PopoverStyle 布局
