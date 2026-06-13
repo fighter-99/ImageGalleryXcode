@@ -108,22 +108,26 @@ struct PhotoThumbnailView: View {
     /// 之前 isActive 和 isInMultiSelect 两个独立 bool 各自驱动 3-4 个 modifier，
     /// 多个独立动画叠加产生'双层边框'错觉（用户多次反馈'先浅框再深蓝'）
     /// 现在统一为单一 CellSelectionState enum，单一来源
+    /// V5.17: 砍 3pt 粗边框改 Photos.app 风格——cell-wide tint + ✓ 角标
+    ///   V4.4.0 教训：之前 16% accent overlay 蒙层被砍"浅框"——降到 0.10 + cell 背景 fill 而非 overlay
+    ///   V4.4.1 教训：.strokeBorder 而非 .stroke——本 commit 直接不用 border
+    ///   收敛视觉锤：border=0（砍）+ tint 0.10/0.15（1 锤）+ ✓ 角标（多选时 1 锤）= 1-2 锤
     enum CellSelectionState {
         case none       // 默认
         case single     // isActive 单选
         case multi      // isInMultiSelect 多选
 
-        var borderWidth: CGFloat {
-            switch self {
-            case .none:   return 0      // 一直绘制 lineWidth=0 时不显示
-            case .single, .multi: return 3  // 单选和多选都用 3pt（视觉一致）
-            }
-        }
+        /// V5.17: 0 border 改 subtle tint
+        var borderWidth: CGFloat { 0 }
 
-        var borderColor: Color {
+        var borderColor: Color { .clear }
+
+        /// V5.17: cell-wide tint 强度——用 Color.accentColor.opacity 系统 accent 自适应
+        var tintOpacity: Double {
             switch self {
-            case .none:   return .clear
-            case .single, .multi: return Palette.selectionBorder
+            case .none:   return 0
+            case .single: return 0.10  // single 选中——subtle accent
+            case .multi:  return 0.15  // multi 选中——强化（多个 cell 同时高亮）
             }
         }
 
@@ -149,31 +153,31 @@ struct PhotoThumbnailView: View {
     /// V3.6.47: scale priority 修——选中 1.025 > hover 1.02
     ///   之前选中 1.015 < hover 1.02，点击 cell 反而变小（反 UX）
     /// V4.4.0: Reduced Motion 时所有 scale 强制 1.0（accessibility）
+    /// V5.17: 砍 hover scale 1.01 / 选中 1.015（V4.62.0 教训"3 重视觉锤 = 累赘"）
+    ///   之前 isActive 1.015 / hover 1.01 / ✓ 角标——3 锤叠加
+    ///   Photos.app / Finder 无 hover scale——只 accent tint + ✓ 角标
+    ///   currentScale 保留属性（1.0 兜底）以防 .scaleEffect(currentScale) 误删
     private var currentScale: CGFloat {
         if reduceMotion { return 1.0 }            // V4.4.0: accessibility
-        // V4.1.0 C: hover 从 1.025 → 1.01（更微妙——"凸起"而非"放大"）
-        if isActive { return 1.015 }              // 单选：放大 1.5%（之前 2.5%）
-        if isHovered && !isInMultiSelect { return 1.01 }  // hover：放大 1%
-        return 1.0
+        return 1.0                                 // V5.17: hover/active scale 全砍
     }
 
     /// V3.6.51: cell 选中视觉的单一 overlay（之前散在 3 个 overlay modifier）
-    /// - 边框（单选 + 多选共用 lineWidth=3、Palette.selectionBorder，opacity 0/1）
-    /// - ✓ checkmark（仅 multi）
-    /// 不再有多选时的 selectionOverlayMulti 染色（V3.6.50 之前反复被误读为"淡色框"）
-    /// V4.4.0: cornerRadius 从 Radius.md (8pt) → Radius.thumb (6pt)
-    /// V4.4.1: `.stroke` → `.strokeBorder` 修「浅框」幽灵
-    ///   `.stroke(lineWidth: 3)` 是 center-aligned——外侧 1.5pt 飞出 cell 圆角范围
-    ///   在直线段 vs 圆角处厚度不一致（圆角处变薄、直线段变厚），且飞出部分
-    ///   在 grid spacing 上显成"细蓝边"。
-    ///   `.strokeBorder` 完全在 path 内绘制 → 边框完全在 cell 内，无飞出无几何错位
+    /// V5.17: 砍 3pt 粗边框（state.borderWidth 0）改 cell-wide tint
+    ///   RoundedRectangle.fill(Color.accentColor.opacity(state.tintOpacity))
+    ///   0.10 (single) / 0.15 (multi) 系统 accent 自适应
+    ///   V4.4.0 教训：之前 16% accent overlay 蒙层被砍"浅框"——降到 0.10 + cell 背景 fill 而非 overlay
+    ///   V4.4.1 教训：.strokeBorder 而非 .stroke——本 commit 直接不用 border
+    ///   视觉锤收敛：tint（1 锤）+ ✓ 角标（多选时 1 锤）= 1-2 锤
     @ViewBuilder
     private var cellSelectionOverlay: some View {
         let state = selectionState
         ZStack {
             RoundedRectangle(cornerRadius: Radius.thumb)
-                .strokeBorder(state.borderColor, lineWidth: state.borderWidth)
+                .fill(Color.accentColor.opacity(state.tintOpacity))
             if state.showsCheckmark {
+                // 角标 ✓ 保留——V3.6.51 selection state machine 设计
+                // 单选不显 ✓（subtle），多选显 ✓（更明确）
                 Image(systemName: "checkmark.circle.fill")
                     .font(.title2)
                     .foregroundStyle(.white, Color.accentColor)
@@ -340,9 +344,10 @@ struct PhotoThumbnailView: View {
         //   状态切换时所有视觉元素（边框 + ✓）一起淡入淡出，无'先后'错觉
         //   V3.6.51 也彻底删除 selectionOverlayMulti 染色（16% accent 太显眼被读成'浅框'）
         .overlay(cellSelectionOverlay)
-        // V3.6.35: 缩放优先级 选中 (1.025) > hover (1.02) > 默认
-        //   按压 0.95 scale 撤销（避免跟 .draggable 抢事件）
-        .scaleEffect(currentScale)
+        // V5.17: 砍 hover scale 1.01 / 选中 1.015（V4.62.0 教训"3 重视觉锤 = 累赘"）
+        //   之前 isActive 1.015 / hover 1.01 / ✓ 角标——3 锤叠加
+        //   Photos.app / Finder 无 hover scale——只 accent tint + ✓ 角标
+        //   currentScale 保留属性（1.0 兜底）以防误加回
         // V4.4.2: 删除 resting shadow——这就是「浅框」幽灵的真正源头
         //   V3.1 引入「始终浮起感」: resting Elevation.subtle (radius=2, y=1, opacity=0.08)
         //   但 shadow 在 cell 四周扩散 2pt，在浅色 grid 间距上呈现为"一圈淡色光晕"
