@@ -747,10 +747,14 @@ private struct MasonryRowView: View {
     // V5.18: 日期 caption 开关——masonryDateGroupedLayout 传 true，masonryFlatLayout 传 false
     let showDateCaption: Bool
 
-    /// V5.18: caption 预留高度（caption2 11pt + 上下 padding）——image 让出
-    private static let captionReservedHeight: CGFloat = 16
+    /// V5.21: caption 预留高度从 16 → 20pt（caption2 11pt → callout 14pt 字号变化）
+    ///   - V5.18 设 16pt 是配 caption2 (11pt) 的 ~13pt line height
+    ///   - V5.21 改 callout (14pt) 后实际 line height ~18pt + 2pt VStack spacing = 20pt
+    ///   - 16pt 留 slot 会把 callout 14pt 文字 clip 掉底
+    ///   - 镜像 V5.21 字号调整必同步调预留高度的契约
+    private static let captionReservedHeight: CGFloat = 20
 
-    /// V5.18: 最小 rowHeight 才显示 caption——rowHeight 太小时 caption 16pt 会挤压 image
+    /// V5.18: 最小 rowHeight 才显示 caption——rowHeight 太小时 caption 20pt 会挤压 image
     private static let minRowHeightForCaption: CGFloat = 100
 
     var body: some View {
