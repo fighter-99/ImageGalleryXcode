@@ -12,9 +12,13 @@
 //    - 顶 padding Spacing.sm → Spacing.lg（段间更舒展，与 Photos 一致）
 //    - 计数右侧继续保留（ImageGallery 增强；Photos 无 count）
 //
+//  V5.21: count 颜色 secondary → primary + 字重 medium (深背景上对比度)
+//    - 之前 count "637 张图片" 在深背景上偏淡，截图 29 几乎看不清
+//    - 仍比 label 字号小 (callout vs system 24pt)——不抢 label 视觉权重
+//
 //  设计要点：
 //  - 标题 24pt bold + primary 色，Photos.app 段落视觉权重
-//  - 计数 callout secondary 右侧——PhotoGallery 增强（用户一眼能看段内数量）
+//  - 计数 callout primary medium 右侧（V5.21 加深——深背景可见性）
 //  - 顶 16pt 底 4pt padding，让段头与上一段照片明显分隔
 //  - 整行可点击（toggle 该日期段的"详情/隐藏"——V4.37.0 暂不实现，仅占位）
 //
@@ -32,10 +36,12 @@ struct DateSectionHeader: View {
                 .font(.system(size: 24, weight: .bold))
                 .foregroundStyle(.primary)
             Spacer()
-            // V5.18: count 移到右侧 + secondary 色（避免和 label 抢权重）
+            // V5.21: count "637 张图片" 颜色 secondary → primary + 字重 medium
+            //   之前 secondary 在深背景上偏淡，截图 29 几乎看不清
+            //   仍 callout 字号（比 label 24pt 小）——不抢 label 视觉权重
             Text("\(count) 张")
-                .font(.callout)
-                .foregroundStyle(.secondary)
+                .font(.callout.weight(.medium))
+                .foregroundStyle(.primary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         // V5.18: 顶 padding Spacing.sm → Spacing.lg (16pt)，段间舒展
