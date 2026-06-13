@@ -259,6 +259,16 @@ struct PhotoThumbnailView: View {
                 Spacer(minLength: 0)
             }
             .frame(maxWidth: .infinity)
+            // V5.21: 加 subtle card 背景 (反转 V4.23.0 "cell 完全透明" 决定)
+            //   V4.23.0 决定时无 .square 默认——masonry 模式 image 完全 fill cell 看不见 letterbox
+            //   V5.20 改 .square 默认后 portrait 3:4 照片在 240² cell 内有 ~40pt 横向 letterbox
+            //   V5.21 V4.23.0 反转：加 4% 白色 tint 浅框——letterbox 区有"卡片"感
+            //   配合 V5.20 innerCellPadding 4pt：image + card 双重呼吸感
+            //   masonry 模式 image 完全覆盖 card，视觉无变化（兼容老用户）
+            .background(
+                RoundedRectangle(cornerRadius: Radius.thumb)
+                    .fill(Color.white.opacity(0.04))
+            )
             // V3.6.26: 异步加载缩略图（缓存命中立即返回；未命中后台线程解码）
             // V4.4.0: 加载失败时 set loadFailed=true（loadImageAsync 返回 nil 视为失败）
             // V5.17: 600→1200 retina 优化（HiDPI 屏 200pt cell 锐化）
