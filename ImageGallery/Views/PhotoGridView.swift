@@ -239,13 +239,17 @@ struct PhotoGridView: View {
     @ViewBuilder
     private var photoGrid: some View {
         GeometryReader { geo in
-            // V5.16: 减左右 padding (24pt) 拿真可用宽
-            let availableWidth = geo.size.width - 2 * Spacing.md
+            // V5.28: edge-to-edge——grid 占满整个 content area
+            //   - V5.16 减 2 * Spacing.md (24pt) 算 availableWidth
+            //   - V5.28 改用全宽——无外 padding
+            //   - 镜像 macOS Photos.app Library (cell 顶到 toolbar, 底到 status bar)
+            let availableWidth = geo.size.width
             let rowHeight: CGFloat = thumbnailSize  // 缩略图大小 = 行高
             // V5.19: rowSpacing 8pt → 16pt, cellSpacing 12pt → 20pt
             // V5.27: 20pt → 8pt, 16pt → 8pt——macOS Photos Library 节奏
-            let rowSpacing: CGFloat = Spacing.sm     // 8pt
-            let cellSpacing: CGFloat = 8
+            // V5.28: 8pt → 4pt——更紧凑的 Photos.app 实际 (2-3pt 太紧, 4pt 折衷)
+            let rowSpacing: CGFloat = 4              // V5.28: 8pt → 4pt
+            let cellSpacing: CGFloat = 4             // V5.28: 8pt → 4pt
 
             // V4.37.1: 条件分支——isDateBased 时按日期分组, 否则平铺
             Group {
@@ -298,7 +302,7 @@ struct PhotoGridView: View {
                     }
                 }
             }
-            .padding()
+            // V5.28: 删 .padding()——edge-to-edge
             .animation(Animations.medium, value: photos.count)
         }
     }
@@ -323,7 +327,7 @@ struct PhotoGridView: View {
                     showDateCaption: false
                 )
             }
-            .padding()
+            // V5.28: 删 .padding()——edge-to-edge
             .animation(Animations.medium, value: photos.count)
         }
     }
@@ -363,7 +367,7 @@ struct PhotoGridView: View {
                 onTap: handleTap,
                 onDoubleTap: onDoubleTap
             )
-            .padding()
+            // V5.28: 删 .padding()——edge-to-edge
         }
     }
 
