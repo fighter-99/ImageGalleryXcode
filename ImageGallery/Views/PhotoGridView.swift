@@ -132,14 +132,7 @@ struct PhotoGridView: View {
     }
 
     // ─── 列数 ───
-    private var columnCount: Int {
-        let t = thumbnailSize
-        if t < 110 { return 5 }
-        if t < 150 { return 4 }
-        if t < 200 { return 3 }
-        if t < 250 { return 3 }
-        return 2
-    }
+    // V5.16: 删 columnCount 硬编码——V4.36.0 后无引用（masonry 布局不需要）
 
     // 多选模式
     // V3.6.52: 原 isMultiSelect (count > 0) 改名为 hasSelection
@@ -377,57 +370,53 @@ struct PhotoGridView: View {
     }
 
     // ─── 图片网格 ───
-    // V4.36.0: 自然宽高比 cell——column width 按容器宽 + thumbnailSize 计算
-    //   旧 columnCount 硬编码 (5/4/3/3/2 by thumbnailSize) → 窗口宽度不影响列数
-    //   新 numCols = floor((containerWidth + spacing) / (thumbnailSize + spacing))
-    //     → 窗口变宽自动多列，变窄自动少列
-    //   cell 高度按 photo.aspectRatio 自然延伸（image fill cell，不再 .fit 留白）
-    //   旧 cellHeight 固定 170pt → 竖向照片上下留白、横向照片左右留白（信息密度低）
-    //   新 cellHeight = cellSize / photoAspectRatio → 无留白、信息密度 ↑30-50%
-    //   GridItem alignment: .bottom——同 row 内短 item 底对齐（Photos.app "skyline"）
-    // V4.36.3: cellSize 用 availableWidth (fullWidth - 2 * padding) 算——对称 padding
-    //   旧 cellSize 按 geo.size.width 全宽算 → LazyVGrid 用 .padding() 后右列 cell 溢出右侧 padding
-    //   新 cellSize 按 availableWidth (减 24pt) 算 → cell 完全在 padding 内，左右对称
-    // V4.37.0: LazyVStack + 多个 LazyVGrid——按 importedAt 分段（Photos.app 风格）
-    //   段头 "今天" / "昨天" / "本周" / "本月" / "X 月" / "X 年"
-    //   段头不吸顶（让照片流连续），只做视觉分组
-    //   groupByDate 复用 PhotoStats.filtered 的结果——已 filter + sort 的 visiblePhotos
-    // V4.37.1: 条件分组——只在 sortOption.isDateBased 时显示日期段头
-    //   按文件名/大小排序时，日期段头会切碎字母顺序/大小顺序的连续浏览节奏
-    //   此时回退到 V4.36.6 平铺布局（单个 LazyVGrid）
-    //   与 Photos.app "Days/Months/Years vs All Photos (by name)" 行为对齐
+    // V5.16: masonry 重构——Photos.app "Aspect Ratio" 视图风格
+    //   - 行内 cell 高度统一 = rowHeight（thumbnailSize）
+    //   - cell 宽度 = rowHeight × photo.aspectRatio（变宽）
+    //   - 行 reflow: MasonryMath.groupIntoRows 算好每行 cell 列表
+    //   - LazyVStack of MasonryRow（每行 HStack 固定高）
+    //   - 列宽固定 (cellSize) 公式全删——masonry 模式不需要
+    //   - 缩略图大小 (thumbnailSize) 语义从"列宽"改"行高"——Settings 不动
     @ViewBuilder
     private var photoGrid: some View {
         GeometryReader { geo in
-            let spacing: CGFloat = Spacing.md  // 12pt
-            // V4.36.3: 减左右 padding (24pt) 拿真可用宽——否则 cellSize 算大了 24pt
+            // V5.16: 减左右 padding (24pt) 拿真可用宽
             let availableWidth = geo.size.width - 2 * Spacing.md
-            let idealCount = Int(floor((availableWidth + spacing) / (thumbnailSize + spacing)))
-            // 至少 1 列，最多 8 列（避免窄 cell 失去视觉意义）
-            let numCols = max(1, min(8, idealCount))
-            let totalSpacing = CGFloat(numCols - 1) * spacing
-            let cellSize = (availableWidth - totalSpacing) / CGFloat(numCols)
-            let columns = Array(
-                repeating: GridItem(.fixed(cellSize), spacing: spacing, alignment: .bottom),
-                count: numCols
-            )
+            let rowHeight: CGFloat = thumbnailSize  // 缩略图大小 = 行高
+            let rowSpacing: CGFloat = Spacing.sm     // 8pt 垂直间距（Photos.app 比例）
+            let cellSpacing: CGFloat = Spacing.md   // 12pt cell 间距
 
             // V4.37.1: 条件分支——isDateBased 时按日期分组，否则平铺
             Group {
                 if sortOption.isDateBased {
-                    dateGroupedLayout(columns: columns, spacing: spacing, cellSize: cellSize)
+                    masonryDateGroupedLayout(
+                        availableWidth: availableWidth,
+                        rowHeight: rowHeight,
+                        rowSpacing: rowSpacing,
+                        cellSpacing: cellSpacing
+                    )
                 } else {
-                    flatLayout(columns: columns, spacing: spacing, cellSize: cellSize)
+                    masonryFlatLayout(
+                        availableWidth: availableWidth,
+                        rowHeight: rowHeight,
+                        rowSpacing: rowSpacing,
+                        cellSpacing: cellSpacing
+                    )
                 }
             }
         }
     }
 
-    // V4.37.1: 日期分组布局（importedAt 排序时用）
+    // V5.16: masonry 日期分组布局
     //   段头 "今天" / "昨天" / "本周" / "本月" / "X 月" / "X 年"
-    //   LazyVStack + 多个 LazyVGrid（每个 group 一个）
+    //   LazyVStack + 多组 MasonryRow（每个 group 一行集合）
     @ViewBuilder
-    private func dateGroupedLayout(columns: [GridItem], spacing: CGFloat, cellSize: CGFloat) -> some View {
+    private func masonryDateGroupedLayout(
+        availableWidth: CGFloat,
+        rowHeight: CGFloat,
+        rowSpacing: CGFloat,
+        cellSpacing: CGFloat
+    ) -> some View {
         let groups = PhotoStats.groupByDate(photos)
 
         ScrollView {
@@ -435,11 +424,13 @@ struct PhotoGridView: View {
                 ForEach(groups) { group in
                     VStack(alignment: .leading, spacing: Spacing.md) {
                         DateSectionHeader(label: group.label, count: group.photos.count)
-                        LazyVGrid(columns: columns, spacing: spacing) {
-                            ForEach(group.photos) { photo in
-                                photoCell(photo, cellSize: cellSize)
-                            }
-                        }
+                        masonryRowsView(
+                            photos: group.photos,
+                            availableWidth: availableWidth,
+                            rowHeight: rowHeight,
+                            rowSpacing: rowSpacing,
+                            cellSpacing: cellSpacing
+                        )
                     }
                 }
             }
@@ -448,31 +439,92 @@ struct PhotoGridView: View {
         }
     }
 
-    // V4.37.1: 平铺布局（filename/size/custom 排序时用）
-    //   单个 LazyVGrid，照片按 sortOption 全局顺序排
+    // V5.16: masonry 平铺布局（filename/size/custom 排序时用）
     @ViewBuilder
-    private func flatLayout(columns: [GridItem], spacing: CGFloat, cellSize: CGFloat) -> some View {
+    private func masonryFlatLayout(
+        availableWidth: CGFloat,
+        rowHeight: CGFloat,
+        rowSpacing: CGFloat,
+        cellSpacing: CGFloat
+    ) -> some View {
         ScrollView {
-            LazyVGrid(columns: columns, spacing: spacing) {
-                ForEach(photos) { photo in
-                    photoCell(photo, cellSize: cellSize)
-                }
+            VStack(alignment: .leading, spacing: 0) {
+                masonryRowsView(
+                    photos: photos,
+                    availableWidth: availableWidth,
+                    rowHeight: rowHeight,
+                    rowSpacing: rowSpacing,
+                    cellSpacing: cellSpacing
+                )
             }
             .padding()
             .animation(Animations.medium, value: photos.count)
         }
     }
 
-    // V4.37.1: 抽出单 cell 渲染——dateGroupedLayout 和 flatLayout 共用
+    // V5.16: 装箱 + 渲染多行 masonry——平铺/分组布局共用
     @ViewBuilder
-    private func photoCell(_ photo: Photo, cellSize: CGFloat) -> some View {
+    private func masonryRowsView(
+        photos: [Photo],
+        availableWidth: CGFloat,
+        rowHeight: CGFloat,
+        rowSpacing: CGFloat,
+        cellSpacing: CGFloat
+    ) -> some View {
+        let items = photos.map { photo in
+            MasonryMath.Item(
+                id: photo.id,
+                width: rowHeight * aspectRatio(of: photo),
+                aspectRatio: aspectRatio(of: photo)
+            )
+        }
+        let rows = MasonryMath.groupIntoRows(
+            items: items,
+            availableWidth: availableWidth,
+            rowHeight: rowHeight,
+            spacing: cellSpacing
+        )
+
+        LazyVStack(alignment: .leading, spacing: rowSpacing) {
+            ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
+                MasonryRowView(
+                    itemIds: row.items.map(\.id),
+                    itemWidths: row.items.map(\.width),
+                    photos: photos,
+                    rowHeight: rowHeight,
+                    cellSpacing: cellSpacing,
+                    selection: selection,
+                    folders: folders,
+                    allTags: allTags,
+                    retentionDays: retentionDays,
+                    deletePhoto: deletePhoto,
+                    handleTap: handleTap,
+                    onDoubleTap: onDoubleTap
+                )
+            }
+        }
+    }
+
+    // V5.16: 单张照片宽高比（aspectRatio 为 0 或缺省时 fallback 1.0）
+    private func aspectRatio(of photo: Photo) -> CGFloat {
+        if photo.width > 0 && photo.height > 0 {
+            return CGFloat(photo.width) / CGFloat(photo.height)
+        }
+        return 1.0
+    }
+
+    // V4.37.1: 抽出单 cell 渲染——masonryRowsView 共用
+    // V5.16: 改签名 cellSize → cellWidth + rowHeight
+    @ViewBuilder
+    private func photoCell(_ photo: Photo, cellWidth: CGFloat, rowHeight: CGFloat) -> some View {
         PhotoThumbnailView(
             photo: photo,
             isInMultiSelect: selection.contains(photo.id),
             isActive: selection.singleSelectedID == photo.id,
             folders: folders,
             allTags: allTags,
-            cellSize: cellSize,
+            cellWidth: cellWidth,
+            rowHeight: rowHeight,
             retentionDays: retentionDays,
             onDelete: { deletePhoto(photo) },
             onTap: { handleTap(photo) },
@@ -609,4 +661,57 @@ struct PhotoGridView: View {
         onExportComplete: { _ in }
     )
     .frame(width: 600, height: 400)
+}
+
+// MARK: - V5.16: MasonryRowView
+
+/// V5.16: masonry 单行渲染——HStack + 固定行高 + 变 cell 宽
+///   - 行内 cell 高度统一 = rowHeight（行底部齐）
+///   - cell 宽度 = itemWidths[i]（MasonryMath 算好的具体值）
+///   - 跨 cell 共享 selection/folders/tags 状态
+private struct MasonryRowView: View {
+    let itemIds: [UUID]
+    let itemWidths: [CGFloat]
+    let photos: [Photo]
+    let rowHeight: CGFloat
+    let cellSpacing: CGFloat
+    let selection: SelectionState
+    let folders: [Folder]
+    let allTags: [Tag]
+    let retentionDays: Int
+    let deletePhoto: (Photo) -> Void
+    let handleTap: (Photo) -> Void
+    let onDoubleTap: (Photo) -> Void
+
+    var body: some View {
+        HStack(alignment: .top, spacing: cellSpacing) {
+            ForEach(Array(itemIds.enumerated()), id: \.element) { index, itemId in
+                if let photo = photos.first(where: { $0.id == itemId }) {
+                    cellContent(photo: photo, width: itemWidths[index])
+                }
+            }
+        }
+        .frame(height: rowHeight, alignment: .top)
+    }
+
+    @ViewBuilder
+    private func cellContent(photo: Photo, width: CGFloat) -> some View {
+        PhotoThumbnailView(
+            photo: photo,
+            isInMultiSelect: selection.contains(photo.id),
+            isActive: selection.singleSelectedID == photo.id,
+            folders: folders,
+            allTags: allTags,
+            cellWidth: width,
+            rowHeight: rowHeight,
+            retentionDays: retentionDays,
+            onDelete: { deletePhoto(photo) },
+            onTap: { handleTap(photo) },
+            onDoubleTap: { onDoubleTap(photo) }
+        )
+        .transition(.asymmetric(
+            insertion: .scale(scale: 0.8).combined(with: .opacity),
+            removal: .scale(scale: 0.6).combined(with: .opacity)
+        ))
+    }
 }

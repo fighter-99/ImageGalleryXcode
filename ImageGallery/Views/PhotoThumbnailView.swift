@@ -6,6 +6,11 @@
 //    旧 cellHeight 固定 170pt → 竖向照片上下留白 / 横向照片左右留白
 //    新 cellHeight = cellSize / aspectRatio → image 完全填满 cell 无留白
 //
+//  V5.16: 改 cellSize → cellWidth + rowHeight（masonry 外部算好）
+//    旧公式 cellHeight = cellSize / aspectRatio → 行底部参差（截图 23）
+//    新 row 高度统一 = rowHeight，cell 宽度 = rowHeight × photo.aspectRatio
+//    MasonryRow 算好每行 cell 宽传入——行内 cell 高齐
+//
 //  V4.39.0: 从 PhotoGridView.swift 拆出独立文件
 //    PhotoGridView 1180 → 580 行（V4.10.0 ContentView 拆分模式延续）
 //    PBXFileSystemSynchronizedRootGroup 自动同步——无需改 pbxproj
@@ -26,20 +31,14 @@ struct PhotoThumbnailView: View {
     let isActive: Bool          // 是否是当前单选激活（蓝色边框）
     let folders: [Folder]
     let allTags: [Tag]
-    // V4.36.0: cellSize = column width（不再传固定 cellHeight）
-    let cellSize: CGFloat
+    // V5.16: 删 cellSize 改 cellWidth + rowHeight（masonry 布局外部算好）
+    //   旧 cellHeight = cellSize / aspectRatio 导致行底部参差（截图 23）
+    //   新 cell 形状 = (cellWidth, rowHeight)，cellWidth = rowHeight × photo.aspectRatio
+    let cellWidth: CGFloat
+    let rowHeight: CGFloat
     // V3.6.6: 保留时长（用于显示 trash 视图下的剩余天数 badge）
     let retentionDays: Int
 
-    /// V4.36.0: cell 实际高度 = 列宽 / 图片宽高比
-    ///   旧 170pt 固定 → 竖向照片 1080×1503 在 170pt 宽 cell 内 = height 236pt
-    ///     留白 66pt (顶+底), 信息密度低
-    ///   新 cellSize 200pt 宽 / 0.72 ratio = cellHeight 278pt → 完全 fill，无留白
-    private var cellHeight: CGFloat {
-        let ratio = aspectRatio
-        guard ratio > 0 else { return cellSize }
-        return cellSize / ratio
-    }
     let onDelete: () -> Void
     let onTap: () -> Void
     let onDoubleTap: () -> Void
@@ -311,10 +310,10 @@ struct PhotoThumbnailView: View {
         //   多选点击是高频操作，spring 反弹感在选择场景下反而像'卡顿'
         .animation(Animations.standard, value: isInMultiSelect)
         .frame(maxWidth: .infinity)
-        // V4.36.0: 显式 cellSize × cellHeight——cell 高度按 photoAspectRatio 算
-        //   旧仅 .frame(height: cellHeight) + cellWidth = columnWidth (隐式) → 竖向照片上下留白
-        //   新 .frame(width: cellSize, height: cellHeight) → image fill cell 无留白
-        .frame(width: cellSize, height: cellHeight)
+        // V5.16: cell 形状 = (cellWidth, rowHeight)——外部 MasonryRow 算好传入
+        //   cellWidth = rowHeight × photo.aspectRatio → image 完全 fill cell 无留白
+        //   行内所有 cell 高齐 rowHeight（行底部无 jagged）
+        .frame(width: cellWidth, height: rowHeight)
         // V4.4.5: cell 背景 controlBackgroundColor → windowBackgroundColor
         //   ↑ 终于找到「浅框」真正源头——cell 背景比窗口背景浅一档
         //   旧 Palette.cellBackground = Surface.elevated = controlBackgroundColor ≈ #2C2C2C

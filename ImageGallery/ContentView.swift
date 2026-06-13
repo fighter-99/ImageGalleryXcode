@@ -58,7 +58,8 @@ struct ContentView: View {
     @State private var searchText = ""
 
     // 缩略图大小
-    @State private var thumbnailSize: CGFloat = 170  // V3.6.13: 保留 @State 用 toolbar 临时调，onChange 同步 stored
+    @State private var thumbnailSize: CGFloat = 200  // V5.16: 170→200 行高（更宽裕视觉）
+    // V3.6.13: 保留 @State 用 toolbar 临时调，onChange 同步 stored
     // V3.6.13: viewMode 改用 @AppStorage 持久化（SettingsView 可设默认）
     @AppStorage("viewModeRaw") private var viewModeRaw: String = ViewMode.grid.rawValue
     private var viewMode: ViewMode {
@@ -192,7 +193,7 @@ struct ContentView: View {
     @State private var undoManager = ImageGalleryUndoManager()
 
     // 启动记忆
-    @AppStorage("thumbnailSize") private var storedThumbnailSize: Double = 170
+    @AppStorage("thumbnailSize") private var storedThumbnailSize: Double = 200  // V5.16: 170→200 行高
     @AppStorage("sidebarSelection") private var storedSidebarKey: String = "all"
     @AppStorage("sortOption") private var storedSortOption: String = SortOption.importedAtDesc.rawValue
 

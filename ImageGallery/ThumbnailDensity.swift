@@ -17,10 +17,11 @@ enum ThumbnailDensity: String, CaseIterable, Identifiable {
     var id: String { rawValue }
 
     /// 对应的实际缩略图大小（pt）
+    /// V5.16: medium 170→200（行高 200pt 视觉更宽裕，缩略图原值即 200pt）
     var size: CGFloat {
         switch self {
         case .small:  return 110
-        case .medium: return 170
+        case .medium: return 200
         case .large:  return 240
         }
     }

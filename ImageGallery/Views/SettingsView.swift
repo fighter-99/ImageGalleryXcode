@@ -131,7 +131,7 @@ private struct GeneralSettingsView: View {
 // MARK: 外观（缩略图大小/外观模式）
 
 private struct AppearanceSettingsView: View {
-    @AppStorage("thumbnailSize") private var defaultThumbnailSize: Double = 170
+    @AppStorage("thumbnailSize") private var defaultThumbnailSize: Double = 200  // V5.16: 170→200 行高
     @AppStorage("appearanceMode") private var appearanceModeRaw: Int = AppearanceMode.defaultValue.rawValue
 
     private var appearanceModeBinding: Binding<AppearanceMode> {
