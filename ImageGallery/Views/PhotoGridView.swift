@@ -386,8 +386,11 @@ struct PhotoGridView: View {
             // V5.16: 减左右 padding (24pt) 拿真可用宽
             let availableWidth = geo.size.width - 2 * Spacing.md
             let rowHeight: CGFloat = thumbnailSize  // 缩略图大小 = 行高
-            let rowSpacing: CGFloat = Spacing.sm     // 8pt 垂直间距（Photos.app 比例）
-            let cellSpacing: CGFloat = Spacing.md   // 12pt cell 间距
+            // V5.19: rowSpacing 8pt → 16pt, cellSpacing 12pt → 20pt (Photos Days 风格留白)
+            //   之前太挤——照片像"贴"在一起；Photos.app 行间更舒展
+            //   上下 16pt + 左右 20pt 让视觉重量更平衡
+            let rowSpacing: CGFloat = Spacing.lg     // 16pt 垂直间距
+            let cellSpacing: CGFloat = 20            // 20pt cell 间距（> Spacing.lg 16pt）
 
             // V4.37.1: 条件分支——isDateBased 时按日期分组，否则平铺
             Group {
@@ -737,7 +740,8 @@ private struct MasonryRowView: View {
             VStack(spacing: 2) {
                 photoImage(photo: photo, width: width, height: imageHeight)
                 Text(dateCaptionText(for: photo))
-                    .font(.caption2)
+                    // V5.19: caption2 (11pt) → caption (12pt) — V5.18 反馈"caption 几乎看不到"
+                    .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                     .frame(maxWidth: .infinity, alignment: .leading)
