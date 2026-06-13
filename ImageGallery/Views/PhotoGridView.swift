@@ -2,17 +2,18 @@
 //  PhotoGridView.swift
 //  ImageGallery
 //
-//  中间主显示区。展示图片网格，支持：
+//  中间主显示区。展示图片网格, 支持:
 //  - 按文件夹/标签/收藏/待整理/重复图 筛选
 //  - 按文件名/标签名/笔记搜索
-//  - 瀑布流布局：每张图按原始宽高比显示
-//  - 删除图片（右键 / 选中后 Delete 键）
-//  - 多选：单击/⌘+点击/⇧+点击/⌘+A
-//  - 顶部多选操作栏（已选 N 张 + 批量删除 + 取消）
+//  - 瀑布流布局: 每张图按原始宽高比显示
+//  - 删除图片 (右键 / 选中后 Delete 键)
+//  - 多选: 单击/⌘+点击/⇧+点击/⌘+A
 //
-//  V3.6.52: 重构选中状态——3 Binding (selectedPhoto/selectedIDs/lastSelectedID) 合并为
-//  1 Binding<SelectionState>；applyTapOutcome 收成 1 行；deletePhoto 用 selection.removing(_:)；
-//  局部 isMultiSelect 重命名为 hasSelection（与 ContentView 的 count>1 区分）
+//  V3.6.52: 重构选中状态——3 Binding 合并为 1 Binding<SelectionState>
+//  V5.29: 拆出 4 个 view (PhotoGridEmptyState/LoadingState/RowView/LayoutView)
+//    - 838 行 → ~250 行 (仅保留调度 + 状态管理)
+//    - layout 算法用 GridLayout.computeRows (model 层, 纯函数)
+//    - cell 渲染用 PhotoRowView (单行, 接收 GridRow)
 //
 
 import SwiftUI
@@ -27,7 +28,7 @@ struct PhotoGridView: View {
     @Query(sort: \Folder.createdAt, order: .forward) private var folders: [Folder]
     @Query(sort: \Tag.createdAt, order: .forward) private var allTags: [Tag]
 
-    // 视图模式（启动记忆）
+    // 视图模式 (启动记忆)
     @AppStorage("viewModeRaw") private var viewModeRaw: String = ViewMode.grid.rawValue
     private var viewMode: ViewMode {
         get { ViewMode(rawValue: viewModeRaw) ?? .grid }
@@ -35,8 +36,7 @@ struct PhotoGridView: View {
     }
 
     // 双向绑定
-    // V3.6.52: 3 个绑定（selectedPhoto/selectedIDs/lastSelectedID）合并为 1 个
-    // SelectionState binding——单一真相源，消除 3 字段手工同步的 5+ 处易错点
+    // V3.6.52: 3 个绑定合并为 1 个 SelectionState binding——单一真相源
     @Binding var selection: SelectionState
 
     // 筛选条件
@@ -50,20 +50,20 @@ struct PhotoGridView: View {
     let filterLargeFiles: Bool
     // V3.6 NEW: 回收站筛选
     let filterInTrash: Bool
-    // V4.36.x: 工具栏筛选按钮 4 维（透传到 PhotoStats.filtered）
+    // V4.36.x: 工具栏筛选按钮 4 维 (透传到 PhotoStats.filtered)
     let selectedFolderIDs: Set<UUID>
     let selectedTagIDs: Set<UUID>
     let selectedShapes: Set<PhotoShape>
     let filterMinRating: Int
-    // V4.36.x: 工具栏筛选激活标记（空态文案感知）
+    // V4.36.x: 工具栏筛选激活标记 (空态文案感知)
     var isFilterActive: Bool {
         !selectedFolderIDs.isEmpty || !selectedTagIDs.isEmpty
             || !selectedShapes.isEmpty || filterMinRating > 0
     }
-    // V3.6.6: 保留时长（用于缩略图剩余天数 badge）
+    // V3.6.6: 保留时长 (用于缩略图剩余天数 badge)
     let retentionDays: Int
     let thumbnailSize: CGFloat
-    // V5.17: 缩略图布局模式（3 选项）—— 由 ContentView.layoutMode 透传
+    // V5.17: 缩略图布局模式 (3 选项)—— 由 ContentView.layoutMode 透传
     //   决定 MasonryMath 的 uniformWidth / stretchLastRow 二元组
     let layoutMode: ThumbnailLayoutMode
     let sortOption: SortOption
@@ -77,20 +77,18 @@ struct PhotoGridView: View {
     // V4.9.0: 清空所有 filter (searchText + folder + tag + 所有 filter 状态)
     //   用于"无搜索结果"和"空 folder/tag"等空状态次 CTA——"查看全部"
     let onClearFilters: () -> Void
-    // V4.9.3: 加载中状态（导入时 brief 闪烁——主 grid 显示 Shimmer 占位）
+    // V4.9.3: 加载中状态 (导入时 brief 闪烁——主 grid 显示 Shimmer 占位)
     let isImporting: Bool = false
-    // 必须在最末尾（Swift init 顺序要求）
+    // 必须在最末尾 (Swift init 顺序要求)
     let onExportComplete: (Int) -> Void
 
     // ─── 综合筛选 ───
-    // V3.6.5：从 computed property 改为 @State 缓存 + filterSignature 失效
-    // 原因：computed property 每次 body 求值都跑 9 遍 filter + 1 sort；且
-    // `.onChange(of: photos)` 因为总是返回新数组（filter 链）会无限触发
+    // V3.6.5: 从 computed property 改为 @State 缓存 + filterSignature 失效
     @State private var photos: [Photo] = []
 
     /// 全部 filter inputs 的 hash 签名
-    /// 任何一个变化都触发 recomputePhotos（避免 N 个 onChange）
-    /// 注意：只用 allPhotos.count 而非 allPhotos 本身，避免大数组 hash
+    /// 任何一个变化都触发 recomputePhotos (避免 N 个 onChange)
+    /// 注意: 只用 allPhotos.count 而非 allPhotos 本身, 避免大数组 hash
     private var filterSignature: Int {
         var hasher = Hasher()
         hasher.combine(allPhotos.count)
@@ -104,7 +102,7 @@ struct PhotoGridView: View {
         hasher.combine(filterRecent7Days)
         hasher.combine(filterLargeFiles)
         hasher.combine(filterInTrash)
-        // V4.36.x: 工具栏筛选 4 维（Set 有标准 Hashable；任一变化触发重算）
+        // V4.36.x: 工具栏筛选 4 维 (Set 有标准 Hashable; 任一变化触发重算)
         hasher.combine(selectedFolderIDs)
         hasher.combine(selectedTagIDs)
         hasher.combine(selectedShapes)
@@ -114,7 +112,6 @@ struct PhotoGridView: View {
 
     private func recomputePhotos() {
         // V4.36.6: 抽到 PhotoStats.filtered static helper——List/Timeline 视图共用
-        // V4.36.x: 增 4 参（工具栏筛选按钮）
         photos = PhotoStats.filtered(
             allPhotos,
             folder: folder,
@@ -134,31 +131,35 @@ struct PhotoGridView: View {
         )
     }
 
-    // ─── 列数 ───
-    // V5.16: 删 columnCount 硬编码——V4.36.0 后无引用（masonry 布局不需要）
-
     // 多选模式
     // V3.6.52: 原 isMultiSelect (count > 0) 改名为 hasSelection
-    //   与 ContentView 的 isMultiSelect (count > 1) 区分——前者供空状态抑制用，
+    //   与 ContentView 的 isMultiSelect (count > 1) 区分——前者供空状态抑制用,
     //   后者供 DetailPane 切换布局用
     private var hasSelection: Bool { selection.hasSelection }
 
     var body: some View {
         VStack(spacing: 0) {
-            // V3.5.19：移除 multiSelectTopBar
-            // 批量操作搬到详情面板的 MultiSelectDetailView 里了
-
-            // V4.9.3: 加载中优先于空状态（导入时 brief Shimmer）
+            // V4.9.3: 加载中优先于空状态 (导入时 brief Shimmer)
             if isImporting {
-                loadingGrid
+                PhotoGridLoadingState(thumbnailSize: thumbnailSize)
                     .transition(.opacity)
             } else if photos.isEmpty && !hasSelection {
-                emptyState
-                    // V3.6.43: 空状态 fade in/out（之前是突现）
-                    .transition(.opacity)
+                PhotoGridEmptyState(
+                    searchText: searchText,
+                    folder: folder,
+                    tag: tag,
+                    filterUnfiled: filterUnfiled,
+                    filterDuplicates: filterDuplicates,
+                    filterRecent7Days: filterRecent7Days,
+                    filterLargeFiles: filterLargeFiles,
+                    filterInTrash: filterInTrash,
+                    isFilterActive: isFilterActive,
+                    onImport: onImport,
+                    onClearFilters: onClearFilters
+                )
+                .transition(.opacity)
             } else {
                 contentView
-                    // V3.6.43: 内容 fade in/out
                     .transition(.opacity)
             }
         }
@@ -170,202 +171,44 @@ struct PhotoGridView: View {
         .animation(Animations.quick, value: isImporting)
         .navigationTitle(navigationTitle)
         .onAppear {
-            // V3.6.5：首次出现时算一次 photos（之前 photos 是 computed，每次 re-render 重算）
+            // V3.6.5: 首次出现时算一次 photos
             recomputePhotos()
             onVisiblePhotosChange(photos)
         }
-        // V3.6.5：filterSignature 变化时（任一 filter input）触发重算 + 通知父视图
+        // V3.6.5: filterSignature 变化时 (任一 filter input) 触发重算 + 通知父视图
         .onChange(of: filterSignature) { _, _ in
             recomputePhotos()
             onVisiblePhotosChange(photos)
         }
     }
 
-    // （原 defaultTopBar 已删除：与系统顶栏的视图模式/导入按钮重复。
-    //   Eagle 原则要求单一主工具栏。V3.0 工具栏优化时彻底合并。）
-
-
-    // （原 titleText 已删除：与系统顶栏的 status "共 N 张" 重复信息。）
-
     private var navigationTitle: String {
         let trimmed = searchText.trimmingCharacters(in: .whitespaces)
-        if !trimmed.isEmpty { return "搜索：\(trimmed)" }
+        if !trimmed.isEmpty { return "搜索: \(trimmed)" }
         if let folder = folder { return folder.name }
         if let tag = tag { return "#\(tag.name)" }
         // V5.8: 砍"收藏"——侧边栏无收藏入口
         if filterUnfiled { return "待整理" }
         if filterDuplicates { return "重复图" }
         if filterRecent7Days { return "最近 7 天" }
-        if filterLargeFiles { return "大图（>5MB）" }
+        if filterLargeFiles { return "大图(>5MB)" }
         if filterInTrash { return "回收站" }  // V4.36.x: 统一为"回收站"
         return "全部"
-    }
-
-    private var emptyState: some View {
-        // V3.6.9：用统一 EmptyStateView 组件
-        // V4.9.0: 区分 3 种 empty 场景，提供主 + 次 CTA
-        //   - 无图片（首次启动）→ 主"导入图片"
-        //   - 空相册/标签 → 主"导入图片" + 次"查看全部"
-        //   - 无搜索结果 → 主"清除搜索" + 次"查看全部"
-        EmptyStateView(
-            icon: emptyIcon,
-            title: emptyText,
-            subtitle: emptyHint,
-            iconColor: Color.accentColor.opacity(0.6),
-            primaryAction: emptyPrimaryAction.map {
-                EmptyStateView.Action(
-                    label: $0.label,
-                    systemImage: $0.systemImage,
-                    onTap: $0.onTap
-                )
-            },
-            secondaryAction: emptySecondaryAction.map {
-                EmptyStateView.Action(
-                    label: $0.label,
-                    systemImage: $0.systemImage,
-                    onTap: $0.onTap
-                )
-            }
-        )
-    }
-
-    /// V4.9.3: 加载中 Shimmer 占位 grid
-    ///   场景: 导入时 brief 闪烁（SwiftData 还没返回 photos）
-    ///   复用 V4.4.0 Shimmer modifier
-    private var loadingGrid: some View {
-        // 12 个 Shimmer 占位 cell（足够填满可见区域）
-        let columns = [GridItem(.adaptive(minimum: thumbnailSize), spacing: Spacing.xs)]
-        return LazyVGrid(columns: columns, spacing: Spacing.xs) {
-            ForEach(0..<12, id: \.self) { _ in
-                RoundedRectangle(cornerRadius: Radius.thumb)
-                    .fill(Surface.cardBackground)
-                    .frame(width: thumbnailSize, height: thumbnailSize)
-                    .modifier(Shimmer(duration: 1.2))
-            }
-        }
-        .padding(Spacing.md)
-    }
-
-    /// V4.9.0: 主 CTA 配置（label + systemImage + onTap）
-    private struct EmptyCTA {
-        let label: String
-        var systemImage: String? = nil
-        let onTap: () -> Void
-    }
-
-    /// V4.9.0: 主 CTA——根据 empty 场景返回不同操作
-    private var emptyPrimaryAction: EmptyCTA? {
-        // 无搜索结果 → "清除搜索"（通过 onClearFilters 触发：清 searchText + 切回全部）
-        if !searchText.trimmingCharacters(in: .whitespaces).isEmpty {
-            return EmptyCTA(
-                label: "清除搜索",
-                systemImage: "xmark.circle",
-                onTap: { onClearFilters() }
-            )
-        }
-        // 首次启动（无任何 filter） → "导入图片"
-        if emptyShowImport {
-            return EmptyCTA(
-                label: "导入图片",
-                systemImage: "square.and.arrow.down",
-                onTap: onImport
-            )
-        }
-        return nil  // 其他场景无主 CTA（如回收站空、收藏空等）
-    }
-
-    /// V4.9.0: 次 CTA——切换到"全部" 视图
-    ///   用于空相册/空标签/无搜索结果等"当前 filter 无结果但全部有图"场景
-    private var emptySecondaryAction: EmptyCTA? {
-        // 无搜索结果 → "查看全部"（回到全部视图）
-        if !searchText.trimmingCharacters(in: .whitespaces).isEmpty {
-            return EmptyCTA(
-                label: "查看全部",
-                onTap: { onClearFilters() }
-            )
-        }
-        // folder/tag 模式空 → "查看全部"
-        if folder != nil || tag != nil {
-            return EmptyCTA(
-                label: "查看全部",
-                onTap: { onClearFilters() }
-            )
-        }
-        return nil
-    }
-
-    private var emptyIcon: String {
-        // V4.36.x: 工具栏筛选激活 → 漏斗 icon
-        if isFilterActive { return "line.3.horizontal.decrease.circle" }
-        if !searchText.trimmingCharacters(in: .whitespaces).isEmpty { return "magnifyingglass" }
-        // V5.8: 砍"收藏"图标分支
-        if filterUnfiled { return "tray" }
-        if folder != nil { return "folder" }
-        if tag != nil { return "tag" }
-        if filterDuplicates { return "doc.on.doc" }
-        if filterRecent7Days { return "clock.arrow.circlepath" }
-        if filterLargeFiles { return "large.circle" }
-        if filterInTrash { return "trash" }  // V3.6 NEW
-        return "photo.on.rectangle.angled"
-    }
-
-    private var emptyText: String {
-        // V4.36.x: 工具栏筛选激活但无匹配
-        if isFilterActive { return "没有匹配筛选的图片" }
-        if !searchText.trimmingCharacters(in: .whitespaces).isEmpty { return "没有匹配的图片" }
-        // V5.8: 砍"收藏"空状态文本
-        if filterUnfiled { return "没有待整理的图片" }
-        if folder != nil { return "这个文件夹是空的" }
-        if tag != nil { return "没有带此标签的图片" }
-        if filterDuplicates { return "没有重复的图片" }
-        if filterRecent7Days { return "最近 7 天没有新图" }
-        if filterLargeFiles { return "没有大于 5 MB 的图" }
-        if filterInTrash { return "回收站是空的" }  // V3.6 NEW
-        return "还没有图片"
-    }
-
-    private var emptyHint: String {
-        // V4.36.x: 提示调整筛选条件
-        if isFilterActive { return "尝试减少筛选条件或调整侧边栏" }
-        if !searchText.trimmingCharacters(in: .whitespaces).isEmpty { return "试试其他关键词" }
-        // V5.8: 砍"收藏"空状态提示
-        if filterUnfiled { return "把图片移动到文件夹来整理" }
-        if folder != nil { return "导入图片后会自动放到此文件夹" }
-        if tag != nil { return "在图片详情中添加此标签" }
-        if filterDuplicates { return "重复图会自动出现在这里" }
-        if filterInTrash { return "删除的图片会出现在这里，\(TrashRetentionDays.defaultValue.rawValue) 天后自动永久清除" }  // V3.6 NEW
-        return "拖入图片，或点击“导入图片”开始添加"
-    }
-
-    private var emptyShowImport: Bool {
-        let trimmed = searchText.trimmingCharacters(in: .whitespaces)
-        return trimmed.isEmpty && !filterUnfiled
-            && folder == nil && tag == nil && !filterDuplicates
-            && !filterInTrash  // V3.6 NEW: 回收站空状态不显示导入按钮
-        // V5.8: 砍!filterFavorites——dead
     }
 
     // ─── 根据视图模式切换 ───
     // V3.6.39: 加 .transition(.opacity) + .animation 让模式切换平滑
     // V5.23: 加 top fade gradient (macOS Photos 风格)
-    //   - ScrollView 顶部 24pt 透明→窗口色渐变
-    //   - 让 grid 与 toolbar 视觉过渡柔和，不"硬接"
-    //   - 镜像 Photos.app 顶部 fade 行为
     @ViewBuilder
     private var contentView: some View {
         switch viewMode {
         case .grid:
             photoGrid
                 // V5.25: 平滑密度切换动画——spring animation 在 thumbnailSize 变化时
-                //   之前切密度时 cell 突然跳变（用户反馈"硬切"）
-                //   镜像 macOS Photos density slider 拖动时实时 resize 行为
-                //   spring response 0.3 + damping 0.8：快速但不"弹"
-                //   value: thumbnailSize 触发——选 layoutMode 不触发
+                //   spring response 0.3 + damping 0.8: 快速但不"弹"
                 .animation(.spring(response: 0.3, dampingFraction: 0.8), value: thumbnailSize)
                 .overlay(alignment: .top) {
                     // V5.23: top fade gradient——24pt 高度
-                    //   LinearGradient(colors: .clear → bg) 渐变到背景色
-                    //   .allowsHitTesting(false) 不挡 cell 点击
                     LinearGradient(
                         colors: [Color.clear, Color(nsColor: .windowBackgroundColor)],
                         startPoint: .top,
@@ -396,29 +239,23 @@ struct PhotoGridView: View {
 
     // ─── 图片网格 ───
     // V5.16: masonry 重构——Photos.app "Aspect Ratio" 视图风格
-    //   - 行内 cell 高度统一 = rowHeight（thumbnailSize）
-    //   - cell 宽度 = rowHeight × photo.aspectRatio（变宽）
+    //   - 行内 cell 高度统一 = rowHeight (thumbnailSize)
+    //   - cell 宽度 = rowHeight × photo.aspectRatio (变宽)
     //   - 行 reflow: MasonryMath.groupIntoRows 算好每行 cell 列表
-    //   - LazyVStack of MasonryRow（每行 HStack 固定高）
-    //   - 列宽固定 (cellSize) 公式全删——masonry 模式不需要
-    //   - 缩略图大小 (thumbnailSize) 语义从"列宽"改"行高"——Settings 不动
+    //   - LazyVStack of MasonryRow (每行 HStack 固定高)
+    // V5.29: 接入 GridLayout.computeRows (model 层纯函数)
     @ViewBuilder
     private var photoGrid: some View {
         GeometryReader { geo in
             // V5.16: 减左右 padding (24pt) 拿真可用宽
             let availableWidth = geo.size.width - 2 * Spacing.md
             let rowHeight: CGFloat = thumbnailSize  // 缩略图大小 = 行高
-            // V5.19: rowSpacing 8pt → 16pt, cellSpacing 12pt → 20pt (Photos Days 风格留白)
-            //   之前太挤——照片像"贴"在一起；Photos.app 行间更舒展
-            //   上下 16pt + 左右 20pt 让视觉重量更平衡
+            // V5.19: rowSpacing 8pt → 16pt, cellSpacing 12pt → 20pt
             // V5.27: 20pt → 8pt, 16pt → 8pt——macOS Photos Library 节奏
-            //   20pt 是 iOS Photos Days 风格（手指点触，照片之间要可分辨）
-            //   macOS Photos Library 用 4-8pt 细密 grid（鼠标点，不需要大间距）
-            //   8pt 是 macOS 节奏折衷（Photos.app 实际 4-6pt 更紧，但 8pt 仍接近）
-            let rowSpacing: CGFloat = Spacing.sm     // V5.27: 16pt → 8pt
-            let cellSpacing: CGFloat = 8            // V5.27: 20pt → 8pt
+            let rowSpacing: CGFloat = Spacing.sm     // 8pt
+            let cellSpacing: CGFloat = 8
 
-            // V4.37.1: 条件分支——isDateBased 时按日期分组，否则平铺
+            // V4.37.1: 条件分支——isDateBased 时按日期分组, 否则平铺
             Group {
                 if sortOption.isDateBased {
                     masonryDateGroupedLayout(
@@ -440,11 +277,7 @@ struct PhotoGridView: View {
     }
 
     // V5.16: masonry 日期分组布局
-    //   段头 "今天" / "昨天" / "本周" / "本月" / "X 月" / "X 年"
-    //   LazyVStack + 多组 MasonryRow（每个 group 一行集合）
-    // V5.23: 加 sticky date header——用 Section + pinnedViews: [.sectionHeaders]
-    //   滚动时 date header 吸顶，换 group 时换文字（macOS Photos 风格）
-    //   LazyVStack pinnedViews 只对 Section header 起作用——必须改用 Section 包装
+    // V5.23: sticky date header——用 Section + pinnedViews: [.sectionHeaders]
     @ViewBuilder
     private func masonryDateGroupedLayout(
         availableWidth: CGFloat,
@@ -464,10 +297,8 @@ struct PhotoGridView: View {
                             rowHeight: rowHeight,
                             rowSpacing: rowSpacing,
                             cellSpacing: cellSpacing,
-                            // V5.18: 日期分组视图显示拍摄日期 caption（Photos Days 风格）
+                            // V5.18: 日期分组视图显示拍摄日期 caption
                             // V5.25: 改为 layoutMode != .square——.square (Library 视图) 无 caption
-                            //   镜像 macOS Photos: Library 视图无 caption，Days 视图有 caption
-                            //   之前 .square + caption = caption 视觉冗余（cell 已是 1:1 信息已够）
                             showDateCaption: layoutMode != .square
                         )
                     } header: {
@@ -480,7 +311,7 @@ struct PhotoGridView: View {
         }
     }
 
-    // V5.16: masonry 平铺布局（filename/size/custom 排序时用）
+    // V5.16: masonry 平铺布局 (filename/size/custom 排序时用)
     @ViewBuilder
     private func masonryFlatLayout(
         availableWidth: CGFloat,
@@ -496,7 +327,7 @@ struct PhotoGridView: View {
                     rowHeight: rowHeight,
                     rowSpacing: rowSpacing,
                     cellSpacing: cellSpacing,
-                    // V5.18: 平铺视图无日期 header 也无 caption（保持 V5.16 行为）
+                    // V5.18: 平铺视图无日期 header 也无 caption
                     showDateCaption: false
                 )
             }
@@ -505,18 +336,9 @@ struct PhotoGridView: View {
         }
     }
 
-    // V5.16: 装箱 + 渲染多行 masonry——平铺/分组布局共用
-    // V5.17: layoutMode 决定 (uniformWidth, stretchLastRow) 组合
-    //   - .square:         uniformWidth=rowHeight, stretchLastRow=false
-    //   - .masonry:        uniformWidth=nil,        stretchLastRow=false
-    //   - .masonryStretch: uniformWidth=nil,        stretchLastRow=true
-    // V5.18: showDateCaption 决定 cell 下方是否显示日期 caption（Photos Days/Months 风格）
-    // V5.27: 砍 computeLayoutParams helper + SquareLayout.cellSize
-    //   - V5.21 加的 "动态算 cell 宽填满 availableWidth" 是 Flickr 末行拉满逻辑
-    //   - macOS Photos.app Library 实际是"末行不满时空格 = 窗口色"——不拉满
-    //   - 改回固定 cellSize = rowHeight（thumbnailSize），末行不满时空格透窗口色
-    //   - 直接用 params.uniformWidth（.square = rowHeight），不再二次计算
-
+    // V5.29: masonryRowsView 接入 GridLayout (纯函数) + PhotoGridLayoutView (渲染)
+    //   - 之前: 80 行 (内嵌 groupIntoRows + LazyVStack + MasonryRowView 调用)
+    //   - 现在: 20 行 (GridLayout + PhotoGridLayoutView)
     @ViewBuilder
     private func masonryRowsView(
         photos: [Photo],
@@ -524,87 +346,36 @@ struct PhotoGridView: View {
         rowHeight: CGFloat,
         rowSpacing: CGFloat,
         cellSpacing: CGFloat,
-        // V5.18: date caption 开关——masonryDateGroupedLayout 传 true，masonryFlatLayout 传 false
+        // V5.18: date caption 开关
         showDateCaption: Bool
     ) -> some View {
-        let items = photos.map { photo in
-            MasonryMath.Item(
-                id: photo.id,
-                width: rowHeight * aspectRatio(of: photo),
-                aspectRatio: aspectRatio(of: photo)
-            )
-        }
-        // V5.17: ThumbnailLayoutMode.masonryParams 把 3 选项映射到 MasonryMath 双参数
-        //   enum 转换逻辑收敛在 enum 本体，PhotoGridView 直接拿结果调 MasonryMath
-        // V5.27: 直接用 params.uniformWidth——.square = rowHeight（固定 cell 边长）
-        let params = layoutMode.masonryParams(rowHeight: rowHeight)
-        let rows = MasonryMath.groupIntoRows(
-            items: items,
+        let layout = GridLayout(
             availableWidth: availableWidth,
-            rowHeight: rowHeight,                         // V5.27: 固定 = thumbnailSize（不被拉宽）
-            spacing: cellSpacing,
-            uniformWidth: params.uniformWidth,            // V5.27: .square = rowHeight
-            stretchLastRow: params.stretchLastRow         // V5.27: .square = false（末行不拉满）
-        )
-
-        LazyVStack(alignment: .leading, spacing: rowSpacing) {
-            ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
-                MasonryRowView(
-                    itemIds: row.items.map(\.id),
-                    itemWidths: row.items.map(\.width),
-                    photos: photos,
-                    rowHeight: rowHeight,
-                    cellSpacing: cellSpacing,
-                    selection: selection,
-                    folders: folders,
-                    allTags: allTags,
-                    retentionDays: retentionDays,
-                    deletePhoto: deletePhoto,
-                    handleTap: handleTap,
-                    onDoubleTap: onDoubleTap,
-                    // V5.18: 日期 caption 开关（true=date grouped 视图, false=平铺）
-                    showDateCaption: showDateCaption
-                )
-            }
-        }
-    }
-
-    // V5.16: 单张照片宽高比（aspectRatio 为 0 或缺省时 fallback 1.0）
-    private func aspectRatio(of photo: Photo) -> CGFloat {
-        if photo.width > 0 && photo.height > 0 {
-            return CGFloat(photo.width) / CGFloat(photo.height)
-        }
-        return 1.0
-    }
-
-    // V4.37.1: 抽出单 cell 渲染——masonryRowsView 共用
-    // V5.16: 改签名 cellSize → cellWidth + rowHeight
-    @ViewBuilder
-    private func photoCell(_ photo: Photo, cellWidth: CGFloat, rowHeight: CGFloat) -> some View {
-        PhotoThumbnailView(
-            photo: photo,
-            isInMultiSelect: selection.contains(photo.id),
-            isActive: selection.singleSelectedID == photo.id,
-            folders: folders,
-            allTags: allTags,
-            cellWidth: cellWidth,
             rowHeight: rowHeight,
-            retentionDays: retentionDays,
-            onDelete: { deletePhoto(photo) },
-            onTap: { handleTap(photo) },
-            onDoubleTap: { onDoubleTap(photo) }
+            cellSpacing: cellSpacing,
+            layoutMode: layoutMode
         )
-        .transition(.asymmetric(
-            insertion: .scale(scale: 0.8).combined(with: .opacity),
-            removal: .scale(scale: 0.6).combined(with: .opacity)
-        ))
+        let rows = layout.computeRows(from: photos)
+        ScrollView {
+            PhotoGridLayoutView(
+                rows: rows,
+                rowSpacing: rowSpacing,
+                cellSpacing: cellSpacing,
+                showDateCaption: showDateCaption,
+                photos: photos,
+                selection: selection,
+                folders: folders,
+                allTags: allTags,
+                retentionDays: retentionDays,
+                onDelete: deletePhoto,
+                onTap: handleTap,
+                onDoubleTap: onDoubleTap
+            )
+            .padding()
+        }
     }
 
-    // 当前单选 ID（用于蓝色边框）
-    // 当前单选 ID（用于蓝色边框）
-    // V3.6.52: 改用 selection 上的派生属性（删除原 local 重复实现）
-
-    // ─── 处理点击（V3.6.30：抽成 MultiSelectMath.handleTap 纯函数 thin wrapper；V3.6.52：glue 收成 1 行）───
+    // ─── 处理点击 (V3.6.30: 抽成 MultiSelectMath.handleTap 纯函数 thin wrapper) ───
     private func handleTap(_ photo: Photo) {
         let modifiers = NSEvent.modifierFlags
         let modifier: ClickModifier = {
@@ -612,7 +383,7 @@ struct PhotoGridView: View {
             if modifiers.contains(.shift) { return .shift }
             return .plain
         }()
-        // V3.6.52: 直接传当前 selection，不再手工 destructure 3 个字段
+        // V3.6.52: 直接传当前 selection, 不再手工 destructure 3 个字段
         let photoIDs = photos.map { $0.id }
         let outcome = MultiSelectMath.handleTap(
             state: selection,
@@ -620,12 +391,10 @@ struct PhotoGridView: View {
             modifier: modifier,
             photoIDs: photoIDs
         )
-        // V3.6.52: applyTapOutcome 收成 1 行——seam 已包含 X2 行为
-        // （.command / .shift 都设 selectedPhotoID = nil），消费者无需覆盖
         applyTapOutcome(outcome)
     }
 
-    // ─── 应用 TapOutcome 到 @State（V3.6.52：从 7 行收成 4 行）───
+    // ─── 应用 TapOutcome 到 @State (V3.6.52: 从 7 行收成 4 行) ───
     private func applyTapOutcome(_ outcome: TapOutcome) {
         switch outcome {
         case .singleSelect(let s), .toggleMultiSelect(let s), .rangeSelect(let s):
@@ -633,31 +402,15 @@ struct PhotoGridView: View {
         }
     }
 
-    // ─── 删除（V3.6：走 RecycleBinService.recycle，移到回收站；V3.6.52：selection.removing 替手写）───
+    // ─── 删除 (V3.6: 走 RecycleBinService.recycle, 移到回收站) ───
     private func deletePhoto(_ photo: Photo) {
         RecycleBinService(storage: .shared, modelContext: modelContext).recycle(photo)
         selection = selection.removing(photo.id)
     }
 
-
-    // MARK: - 拖拽重排数学（V3.5.D P3：纯函数，便于单测）
+    // MARK: - 拖拽重排数学 (V3.5.D P3: 纯函数, 便于单测)
 
     /// 计算拖拽重排的最终 source 集合和校正后的 destination。
-    ///
-    /// 行为：
-    /// - 如果 `source` 恰好 1 项且被选中，**且还有其他选中项**，则展开为整组选中一起拖
-    /// - 如果 `source` 恰好 1 项且被选中，**但没有其他选中项**（只有自己），则保持单张
-    /// - 其他情况保持 `source` 不变
-    ///
-    /// destination 校正：SwiftUI 给的是原数组的下标，移除 source 之后下标会左移。
-    /// `adjustedDest = destination - (sources 中 < destination 的数量)`，最后 clamp 到 `[0, photoCount - allSources.count]`
-    ///
-    /// - Parameters:
-    ///   - photoCount: 网格里总图片数
-    ///   - source: SwiftUI 传入的拖拽 source 索引集合
-    ///   - destination: SwiftUI 传入的目标位置（基于原数组坐标系）
-    ///   - isPhotoSelectedAt: 给定索引的图片是否被选中（用于多选展开判断）
-    /// - Returns: `(allSources, adjustedDest)`
     static func computeDragReorder(
         photoCount: Int,
         source: IndexSet,
@@ -678,7 +431,7 @@ struct PhotoGridView: View {
             allSources = source
         }
 
-        // Step 2: 校正 destination（左移 sources 中 < dest 的项数）
+        // Step 2: 校正 destination (左移 sources 中 < dest 的项数)
         let sourcesBeforeDest = allSources.filter { $0 < destination }.count
         var adjustedDest = destination - sourcesBeforeDest
 
@@ -690,149 +443,32 @@ struct PhotoGridView: View {
     }
 }
 
-// V4.39.0: PhotoThumbnailView + CellContextMenuModifier 拆出到独立文件
-//   PhotoGridView 1180 → 607 行（拆分第 1 步：按 struct 拆文件）
-//   - PhotoThumbnailView.swift（单 cell 完整渲染，~466 行）
-//   - CellContextMenuModifier.swift（cell 右键菜单，~102 行）
-//   与 V4.10.0 ContentView 拆分模式延续——单文件 1000+ 行易踩 type-check timeout 坑
-
 #Preview {
     PhotoGridView(
         selection: .constant(SelectionState()),
         folder: nil,
         tag: nil,
         searchText: "",
-        // V5.8: 砍 filterFavorites
         filterUnfiled: false,
         filterDuplicates: false,
         filterRecent7Days: false,
         filterLargeFiles: false,
         filterInTrash: false,
-        // V4.36.x: 工具栏筛选 4 维（Preview 用空值）
         selectedFolderIDs: [],
         selectedTagIDs: [],
         selectedShapes: [],
         filterMinRating: 0,
-        retentionDays: 30,  // V3.6.6
+        retentionDays: 30,
         thumbnailSize: 170,
-        layoutMode: .masonryStretch,  // V5.17 默认
+        layoutMode: .masonryStretch,
         sortOption: .importedAtDesc,
         onVisiblePhotosChange: { _ in },
         onImport: {},
         onBatchDelete: {},
         onClearMultiSelect: {},
         onDoubleTap: { _ in },
-        onClearFilters: {},  // V4.9.0
+        onClearFilters: {},
         onExportComplete: { _ in }
     )
     .frame(width: 600, height: 400)
 }
-
-// MARK: - V5.16: MasonryRowView
-
-/// V5.16: masonry 单行渲染——HStack + 固定行高 + 变 cell 宽
-///   - 行内 cell 高度统一 = rowHeight（行底部齐）
-///   - cell 宽度 = itemWidths[i]（MasonryMath 算好的具体值）
-///   - 跨 cell 共享 selection/folders/tags 状态
-/// V5.18: 加 showDateCaption——cell 下方显示拍摄日期（Photos Days/Months 风格）
-///   - 仅 masonryDateGroupedLayout 传入 true
-///   - rowHeight < 100pt 时自动隐藏（caption 16pt + image 太挤）
-///   - caption 用 inline DateFormatter——"5月12日" / "2024年5月12日"
-private struct MasonryRowView: View {
-    let itemIds: [UUID]
-    let itemWidths: [CGFloat]
-    let photos: [Photo]
-    let rowHeight: CGFloat
-    let cellSpacing: CGFloat
-    let selection: SelectionState
-    let folders: [Folder]
-    let allTags: [Tag]
-    let retentionDays: Int
-    let deletePhoto: (Photo) -> Void
-    let handleTap: (Photo) -> Void
-    let onDoubleTap: (Photo) -> Void
-    // V5.18: 日期 caption 开关——masonryDateGroupedLayout 传 true，masonryFlatLayout 传 false
-    let showDateCaption: Bool
-
-    /// V5.21: caption 预留高度从 16 → 20pt（caption2 11pt → callout 14pt 字号变化）
-    ///   - V5.18 设 16pt 是配 caption2 (11pt) 的 ~13pt line height
-    ///   - V5.21 改 callout (14pt) 后实际 line height ~18pt + 2pt VStack spacing = 20pt
-    ///   - 16pt 留 slot 会把 callout 14pt 文字 clip 掉底
-    ///   - 镜像 V5.21 字号调整必同步调预留高度的契约
-    private static let captionReservedHeight: CGFloat = 20
-
-    /// V5.18: 最小 rowHeight 才显示 caption——rowHeight 太小时 caption 20pt 会挤压 image
-    private static let minRowHeightForCaption: CGFloat = 100
-
-    var body: some View {
-        HStack(alignment: .top, spacing: cellSpacing) {
-            ForEach(Array(itemIds.enumerated()), id: \.element) { index, itemId in
-                if let photo = photos.first(where: { $0.id == itemId }) {
-                    cellContent(photo: photo, width: itemWidths[index])
-                }
-            }
-        }
-        .frame(height: rowHeight, alignment: .top)
-    }
-
-    @ViewBuilder
-    private func cellContent(photo: Photo, width: CGFloat) -> some View {
-        // V5.18: caption 模式下 cell 是 VStack(image + caption)，image 高度让出 caption
-        let captionEnabled = showDateCaption && rowHeight >= Self.minRowHeightForCaption
-        if captionEnabled {
-            let imageHeight = rowHeight - Self.captionReservedHeight
-            VStack(spacing: 2) {
-                photoImage(photo: photo, width: width, height: imageHeight)
-                Text(dateCaptionText(for: photo))
-                    // V5.21: caption (12pt) → callout (14pt) — V5.19 反馈"12pt 仍看不到"
-                    //   14pt callout 在 240pt 大 cell 上更明显，但仍不抢主图
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-        } else {
-            photoImage(photo: photo, width: width, height: rowHeight)
-        }
-    }
-
-    /// V5.18: 单 cell 渲染——抽出来让 caption 模式/普通模式共用
-    @ViewBuilder
-    private func photoImage(photo: Photo, width: CGFloat, height: CGFloat) -> some View {
-        PhotoThumbnailView(
-            photo: photo,
-            isInMultiSelect: selection.contains(photo.id),
-            isActive: selection.singleSelectedID == photo.id,
-            folders: folders,
-            allTags: allTags,
-            cellWidth: width,
-            rowHeight: height,
-            retentionDays: retentionDays,
-            onDelete: { deletePhoto(photo) },
-            onTap: { handleTap(photo) },
-            onDoubleTap: { onDoubleTap(photo) }
-        )
-        .transition(.asymmetric(
-            insertion: .scale(scale: 0.8).combined(with: .opacity),
-            removal: .scale(scale: 0.6).combined(with: .opacity)
-        ))
-    }
-
-    /// V5.18: caption 文本——同年内 "M月d日"（5月12日），跨年 "yyyy年M月d日"
-    ///   Photos.app Days 视图 cell 下方格式——同月重复不冗余（header 已说"5月"）
-    ///   跨年带年份——避免和 header "2024 年" 重复阅读歧义
-    private func dateCaptionText(for photo: Photo) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "zh_CN")
-        let calendar = Calendar.current
-        let photoYear = calendar.component(.year, from: photo.importedAt)
-        let currentYear = calendar.component(.year, from: Date())
-        if photoYear == currentYear {
-            formatter.dateFormat = "M月d日"
-        } else {
-            formatter.dateFormat = "yyyy年M月d日"
-        }
-        return formatter.string(from: photo.importedAt)
-    }
-}
-
