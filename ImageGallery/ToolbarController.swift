@@ -43,6 +43,11 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
     var onQuickLook: (() -> Void)?   // V4.37.1 NEW: ⌘Y Quick Look（ContentView 接 quickLookController）
     var onPrev: (() -> Void)?        // V4.37.2 NEW: ⌘[ 上一张（ContentView 接 goPrev）
     var onNext: (() -> Void)?        // V4.37.2 NEW: ⌘] 下一张（ContentView 接 goNext）
+    // V5.24 NEW: 布局模式 + 密度 toolbar 桥接
+    //   之前只在 ViewOptionsPopover (popover) 里——V5.24 集成到 NSToolbar 直操作
+    //   镜像 macOS Photos: toolbar 有 density slider + view mode segment
+    var onLayoutModeChange: ((ThumbnailLayoutMode) -> Void)?
+    var onDensityChange: ((CGFloat) -> Void)?
     // V4.9.1: 删 onShowViewOptions closure——改用 viewOptionsContentProvider + NSPopover
 
     // MARK: - Search field 桥接
@@ -130,6 +135,8 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
         case filter          // V4.36.x NEW: 工具栏筛选按钮
         case viewOptions
         case quickLook       // V4.37.1 NEW: ⌘Y Quick Look（macOS Finder/Photos 标准）
+        case layoutMode      // V5.24 NEW: 3-icon NSSegmentedControl (方格/按比例/按比例满行)
+        case density         // V5.24 NEW: NSSlider 连续密度 (70-240pt, Photos 风格)
 
         var nsIdentifier: NSToolbarItem.Identifier {
             NSToolbarItem.Identifier(rawValue: rawValue)
@@ -139,10 +146,11 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
     // MARK: - NSToolbarDelegate
 
     /// 默认 item 顺序——决定 toolbar 的视觉布局
-    /// sidebar | search | flex | quickLook | export | delete | import | filter | viewOptions
+    /// sidebar | search | flex | quickLook | export | delete | import | filter | viewOptions | layoutMode | density
     /// V4.36.x: 在 importItem 之后、viewOptions 之前插入 filter（import→filter→viewOptions 形成设置组）
     /// V4.37.1: 在 favorite 之后插入 quickLook（"看"的语义紧邻 favorite/"标记"语义）
     /// V5.7: 砍 favorite 项——侧栏/工具栏都不再放收藏入口（走右键菜单评分 / 筛选 popover）
+    /// V5.24: viewOptions 之后插入 layoutMode + density (3-icon segment + slider 形成布局组)
     func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
         [
             Identifier.sidebarToggle.nsIdentifier,
@@ -153,7 +161,10 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
             Identifier.delete.nsIdentifier,
             Identifier.importItem.nsIdentifier,
             Identifier.filter.nsIdentifier,
-            Identifier.viewOptions.nsIdentifier
+            Identifier.viewOptions.nsIdentifier,
+            // V5.24 NEW: 布局模式 + 密度 toolbar 集成（macOS Photos 风格）
+            Identifier.layoutMode.nsIdentifier,
+            Identifier.density.nsIdentifier
         ]
     }
 
@@ -229,6 +240,15 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
             item = makeSearchItem(id: id)
         case .flexibleSpace:
             item = nil  // flexible space 由 NSToolbar 系统处理
+        case .layoutMode:
+            // V5.24: 3-icon NSSegmentedControl——方格/按比例/按比例满行
+            //   镜像 macOS Photos 视图模式 segment
+            //   状态由 ContentView 推（@AppStorage layoutMode）
+            item = makeLayoutModeItem(id: id)
+        case .density:
+            // V5.24: NSSlider 连续密度调节 (70-240pt)——macOS Photos 风格
+            //   替代 popover 4 档按钮——更细粒度控制
+            item = makeDensityItem(id: id)
         }
 
         if let item = item {
@@ -258,11 +278,19 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
 
     /// 全部状态更新（ContentView 在 .onChange 调用）
     /// V5.7: 砍 favoriteEnabled 赋值——工具栏 ❤ 已移除
-    func updateAllStates(hasSelection: Bool, hasMultipleSelection: Bool) {
+    /// V5.24: 加 layoutMode + density 状态同步——ContentView @AppStorage 变化时调
+    func updateAllStates(hasSelection: Bool, hasMultipleSelection: Bool, layoutMode: ThumbnailLayoutMode? = nil, density: CGFloat? = nil) {
         exportEnabled = hasSelection
         deleteEnabled = hasSelection
         // V4.37.1: Quick Look 仅在单张选中时可用（多张 / 0 张 都灰显）
         quickLookEnabled = hasSelection && !hasMultipleSelection
+        // V5.24: 布局模式 + 密度 toolbar 状态同步
+        if let mode = layoutMode {
+            (itemCache[Identifier.layoutMode.nsIdentifier]?.view as? NSSegmentedControl)?.selectedSegment = mode.rawValue
+        }
+        if let d = density {
+            (itemCache[Identifier.density.nsIdentifier]?.view as? NSSlider)?.doubleValue = Double(d)
+        }
     }
 
     // MARK: - Item 工厂
@@ -438,6 +466,69 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
 
         self.searchField = searchField
         return searchItem
+    }
+
+    /// V5.24 NEW: 3-icon NSSegmentedControl (布局模式 toolbar 集成)
+    ///   - .square / .masonry / .masonryStretch 三档
+    ///   - selectedSegment = mode.rawValue 直接同步 @AppStorage
+    ///   - segment 风格 matches macOS Photos view mode segment
+    ///   - 状态由 ContentView 推 (updateAllStates)
+    private func makeLayoutModeItem(id: Identifier) -> NSToolbarItem {
+        let item = NSToolbarItem(itemIdentifier: id.nsIdentifier)
+        item.label = ""
+        item.paletteLabel = "布局模式"
+        item.toolTip = "布局模式"
+
+        let segment = NSSegmentedControl(
+            images: ThumbnailLayoutMode.allCases.map { mode in
+                NSImage(systemSymbolName: mode.icon, accessibilityDescription: mode.displayName) ?? NSImage()
+            },
+            trackingMode: .selectOne,
+            target: self,
+            action: #selector(handleLayoutModeChanged(_:))
+        )
+        // 初始 selectedSegment = defaultValue (0 = .square)
+        segment.selectedSegment = ThumbnailLayoutMode.defaultValue.rawValue
+        segment.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        item.view = segment
+
+        return item
+    }
+
+    /// V5.24 NEW: NSSlider 连续密度调节 (70-240pt)
+    ///   - 替代 popover 4 档按钮——更细粒度
+    ///   - continuous 模式：拖动时实时回调 (非 release 才回调)
+    ///   - minValue=70 (.compact), maxValue=240 (.large)
+    ///   - 状态由 ContentView 推 (updateAllStates)
+    private func makeDensityItem(id: Identifier) -> NSToolbarItem {
+        let item = NSToolbarItem(itemIdentifier: id.nsIdentifier)
+        item.label = ""
+        item.paletteLabel = "缩略图大小"
+        item.toolTip = "缩略图大小"
+
+        let slider = NSSlider(
+            value: Double(ThumbnailDensity.medium.size),  // 初始值 (后续 updateAllStates 覆盖)
+            minValue: Double(ThumbnailDensity.compact.size),  // 70
+            maxValue: Double(ThumbnailDensity.large.size),   // 240
+            target: self,
+            action: #selector(handleDensityChanged(_:))
+        )
+        slider.isContinuous = true  // V5.24: 拖动时实时回调
+        slider.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        item.view = slider
+
+        return item
+    }
+
+    /// V5.24: 布局模式 segment 变化回调
+    @objc private func handleLayoutModeChanged(_ sender: NSSegmentedControl) {
+        let mode = ThumbnailLayoutMode(rawValue: sender.selectedSegment) ?? .defaultValue
+        onLayoutModeChange?(mode)
+    }
+
+    /// V5.24: 密度 slider 变化回调
+    @objc private func handleDensityChanged(_ sender: NSSlider) {
+        onDensityChange?(CGFloat(sender.doubleValue))
     }
 
     // MARK: - 外部 API（SwiftUI @State → NSSearchField 同步）
