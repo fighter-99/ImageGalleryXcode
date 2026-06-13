@@ -123,15 +123,25 @@ struct PhotoThumbnailView: View {
         case multi      // isInMultiSelect 多选
 
         /// V5.17: 0 border 改 subtle tint
-        var borderWidth: CGFloat { 0 }
+        /// V5.26: 1.5pt border 回归——单选态 tint (0.10) + border 1.5pt = 2 锤视觉
+        ///   镜像 macOS Photos: 选中态有可见 1.5pt border (subtle 而明确)
+        ///   multi 态不显 border (靠 ✓ + tint 0.15 已够)——避免多选视觉过载
+        var borderWidth: CGFloat {
+            switch self {
+            case .none:   return 0
+            case .single: return 1.5
+            case .multi:  return 0   // multi 已有 ✓ + tint，不需 border
+            }
+        }
 
         var borderColor: Color { .clear }
 
         /// V5.17: cell-wide tint 强度——用 Color.accentColor.opacity 系统 accent 自适应
+        /// V5.26: single tint 0.10 → 0.08 (border 补 1 锤后减 1 锤 tint 维持 2 锤总视觉)
         var tintOpacity: Double {
             switch self {
             case .none:   return 0
-            case .single: return 0.10  // single 选中——subtle accent
+            case .single: return 0.08  // V5.26: 0.10→0.08——border 补 1 锤后总视觉平衡
             case .multi:  return 0.15  // multi 选中——强化（多个 cell 同时高亮）
             }
         }
@@ -178,12 +188,23 @@ struct PhotoThumbnailView: View {
     ///   V4.4.0 教训：之前 16% accent overlay 蒙层被砍"浅框"——降到 0.10 + cell 背景 fill 而非 overlay
     ///   V4.4.1 教训：.strokeBorder 而非 .stroke——本 commit 直接不用 border
     ///   视觉锤收敛：tint（1 锤）+ ✓ 角标（多选时 1 锤）= 1-2 锤
+    /// V5.26: 加 1.5pt accent border 单选态——更明确的选中视觉
+    ///   之前仅 tint (0.10 opacity) + ✓ (多选)——单选视觉过 subtle
+    ///   1.5pt border 0.6 opacity + tint 0.10 = 2 锤 (单选) / 1 锤 (multi tint 0.15 取代 0.10)
+    ///   V4.62.0 教训"3 重视觉锤 = 累赘"——本次 2 锤仍守
+    ///   互斥 hover border (cellHoverOverlay)——1 锤不超 3 锤
     @ViewBuilder
     private var cellSelectionOverlay: some View {
         let state = selectionState
         ZStack {
             RoundedRectangle(cornerRadius: Radius.thumb)
                 .fill(Color.accentColor.opacity(state.tintOpacity))
+            // V5.26: 1.5pt accent border——选中态更明确
+            //   之前 V5.17 砍 3pt 粗边框只留 tint，单选态 0.10 opacity 太 subtle
+            //   1.5pt border 比 3pt 细 (V5.17 教训) 但比 1pt 可见 (macOS Photos 标准)
+            RoundedRectangle(cornerRadius: Radius.thumb)
+                .strokeBorder(Color.accentColor.opacity(0.6), lineWidth: state.borderWidth)
+                .transition(.opacity)
             if state.showsCheckmark {
                 // 角标 ✓ 保留——V3.6.51 selection state machine 设计
                 // 单选不显 ✓（subtle），多选显 ✓（更明确）
