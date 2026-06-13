@@ -125,25 +125,20 @@ struct PhotoThumbnailView: View {
         case multi      // isInMultiSelect 多选
 
         /// V5.17: 0 border 改 subtle tint
-        /// V5.26: 1.5pt border 回归——单选态 tint (0.10) + border 1.5pt = 2 锤视觉
-        ///   镜像 macOS Photos: 选中态有可见 1.5pt border (subtle 而明确)
-        ///   multi 态不显 border (靠 ✓ + tint 0.15 已够)——避免多选视觉过载
-        var borderWidth: CGFloat {
-            switch self {
-            case .none:   return 0
-            case .single: return 1.5
-            case .multi:  return 0   // multi 已有 ✓ + tint，不需 border
-            }
-        }
-
-        var borderColor: Color { .clear }
+        /// V5.26: 1.5pt border 回归——单选态 tint + border = 2 锤视觉
+        /// V5.27: 砍 border——macOS Photos Library 选中无 border
+        ///   - 只留 tint 蒙层（single 0.10, multi 0.15）——Photos 真版
+        ///   - 砍 border 后 tintOpacity.single 0.08 → 0.10（V5.26 因 border 减 tint 维持 2 锤）
+        ///   - borderWidth / borderColor 属性整段删（dead code）
+        var borderWidth: CGFloat { 0 }  // V5.27: dead code (V5.26 加的 1.5pt border 已砍)
+        var borderColor: Color { .clear }  // V5.27: dead code
 
         /// V5.17: cell-wide tint 强度——用 Color.accentColor.opacity 系统 accent 自适应
-        /// V5.26: single tint 0.10 → 0.08 (border 补 1 锤后减 1 锤 tint 维持 2 锤总视觉)
+        /// V5.27: single tint 0.08 → 0.10（V5.26 因 border 减 tint 维持 2 锤；border 砍了恢复 V5.17 值）
         var tintOpacity: Double {
             switch self {
             case .none:   return 0
-            case .single: return 0.08  // V5.26: 0.10→0.08——border 补 1 锤后总视觉平衡
+            case .single: return 0.10  // V5.27: V5.26 0.08 → 0.10 (border 砍了, 恢复 V5.17)
             case .multi:  return 0.15  // multi 选中——强化（多个 cell 同时高亮）
             }
         }
@@ -201,12 +196,9 @@ struct PhotoThumbnailView: View {
         ZStack {
             RoundedRectangle(cornerRadius: Radius.thumb)
                 .fill(Color.accentColor.opacity(state.tintOpacity))
-            // V5.26: 1.5pt accent border——选中态更明确
-            //   之前 V5.17 砍 3pt 粗边框只留 tint，单选态 0.10 opacity 太 subtle
-            //   1.5pt border 比 3pt 细 (V5.17 教训) 但比 1pt 可见 (macOS Photos 标准)
-            RoundedRectangle(cornerRadius: Radius.thumb)
-                .strokeBorder(Color.accentColor.opacity(0.6), lineWidth: state.borderWidth)
-                .transition(.opacity)
+            // V5.27: 砍 1.5pt accent border——macOS Photos Library 选中无 border
+            //   V5.26 加的 1.5pt border + tint 0.08 = 2 锤视觉被识别为 iOS Photos 痕迹
+            //   Photos.app 真版：选中态仅 tint 蒙层（0.10 single / 0.15 multi）+ ✓ 角标
             if state.showsCheckmark {
                 // 角标 ✓ 保留——V3.6.51 selection state machine 设计
                 // 单选不显 ✓（subtle），多选显 ✓（更明确）
@@ -229,19 +221,12 @@ struct PhotoThumbnailView: View {
         return 1.0
     }
 
-    /// V5.23: Hover 视觉反馈——subtle 1pt accent border + 1.005 scale
-    ///   - V5.17 砍 hover scale 后 cell 鼠标划过无反应（用户反馈"死"感）
-    ///   - V4.4.2 / V4.4.3 教训：不要 shadow（会成"浅框"幽灵），不要 scale > 1.02（视觉锤堆叠）
-    ///   - accent border 50% opacity（subtle 而可见）+ 1.005 scale（极轻微 lift 感）
-    ///   - 选中态不显示 hover border（cellSelectionOverlay 已显 选中态）—— 1 锤不超 3 锤
-    @ViewBuilder
-    private var cellHoverOverlay: some View {
-        if isHovered && !isActive && !isInMultiSelect {
-            RoundedRectangle(cornerRadius: Radius.thumb)
-                .strokeBorder(Color.accentColor.opacity(0.5), lineWidth: 1)
-                .transition(.opacity)
-        }
-    }
+    /// V5.23: Hover 视觉反馈——subtle 1.005 scale
+    /// V5.27: 砍 hover border——macOS Photos Library hover 无 border
+    ///   - 仅留 1.005 scale（V5.23-2 加的）作为 hover 唯一视觉锤
+    ///   - V4.62.0 教训"3 重视觉锤 = 累赘"：单选 1 锤（tint）/ hover 1 锤（scale）/ multi 2 锤（tint + ✓）
+    ///   - Photos.app 真版：hover 也有轻微反馈但无 border——这里保留 scale 妥协
+    // V5.27: cellHoverOverlay 整段删——hover border 不再需要
 
     var body: some View {
         // V3.6.34: capture @Model 属性到 local（避免 payload 闭包在 background thread 访问）
@@ -405,13 +390,8 @@ struct PhotoThumbnailView: View {
         //   状态切换时所有视觉元素（边框 + ✓）一起淡入淡出，无'先后'错觉
         //   V3.6.51 也彻底删除 selectionOverlayMulti 染色（16% accent 太显眼被读成'浅框'）
         .overlay(cellSelectionOverlay)
-        // V5.23: hover overlay——1pt accent border 50% opacity
-        //   与 cellSelectionOverlay 共用 .transition 动画时序保持一致
-        .overlay(cellHoverOverlay)
+        // V5.27: 删 .overlay(cellHoverOverlay)——hover border 砍了，cellHoverOverlay 整段删
         // V5.17: 砍 hover scale 1.01 / 选中 1.015（V4.62.0 教训"3 重视觉锤 = 累赘"）
-        //   之前 isActive 1.015 / hover 1.01 / ✓ 角标——3 锤叠加
-        //   Photos.app / Finder 无 hover scale——只 accent tint + ✓ 角标
-        //   currentScale 保留属性（1.0 兜底）以防误加回
         //   之前 isActive 1.015 / hover 1.01 / ✓ 角标——3 锤叠加
         //   Photos.app / Finder 无 hover scale——只 accent tint + ✓ 角标
         //   currentScale 保留属性（1.0 兜底）以防误加回
