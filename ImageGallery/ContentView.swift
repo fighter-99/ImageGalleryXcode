@@ -129,7 +129,10 @@ struct ContentView: View {
 
     // 栏显隐状态（ContentView 唯一持有，ImageGalleryApp 通过 UserDefaults 同步）
     @AppStorage("showSidebar") private var showSidebar = true
-    @AppStorage("showDetail") private var showDetail = true
+    // V5.22: 默认 showDetail = false——grid 窗口右侧 30% 留给图片而不是空 detail panel
+    //   老用户 @AppStorage 有 stored showDetail=true 不受影响（仅新装/重置生效）
+    //   选照片时仍可在 onChange 触发自动 show（V5.22 后续 sprint 加）——目前只改默认
+    @AppStorage("showDetail") private var showDetail = false
 
     // V4.13.0: 撤回 V3.5.18 旧 @State showSettings——⌘, 现在走 Settings scene
     //   独立 Preferences 窗口（macOS 标准），不再需要 ContentView sheet 状态
