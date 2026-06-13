@@ -356,6 +356,12 @@ struct PhotoGridView: View {
         switch viewMode {
         case .grid:
             photoGrid
+                // V5.25: 平滑密度切换动画——spring animation 在 thumbnailSize 变化时
+                //   之前切密度时 cell 突然跳变（用户反馈"硬切"）
+                //   镜像 macOS Photos density slider 拖动时实时 resize 行为
+                //   spring response 0.3 + damping 0.8：快速但不"弹"
+                //   value: thumbnailSize 触发——选 layoutMode 不触发
+                .animation(.spring(response: 0.3, dampingFraction: 0.8), value: thumbnailSize)
                 .overlay(alignment: .top) {
                     // V5.23: top fade gradient——24pt 高度
                     //   LinearGradient(colors: .clear → bg) 渐变到背景色
@@ -455,7 +461,10 @@ struct PhotoGridView: View {
                             rowSpacing: rowSpacing,
                             cellSpacing: cellSpacing,
                             // V5.18: 日期分组视图显示拍摄日期 caption（Photos Days 风格）
-                            showDateCaption: true
+                            // V5.25: 改为 layoutMode != .square——.square (Library 视图) 无 caption
+                            //   镜像 macOS Photos: Library 视图无 caption，Days 视图有 caption
+                            //   之前 .square + caption = caption 视觉冗余（cell 已是 1:1 信息已够）
+                            showDateCaption: layoutMode != .square
                         )
                     } header: {
                         DateSectionHeader(label: group.label, count: group.photos.count)
