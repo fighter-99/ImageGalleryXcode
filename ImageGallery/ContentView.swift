@@ -193,7 +193,7 @@ struct ContentView: View {
     @State private var undoManager = ImageGalleryUndoManager()
 
     // 启动记忆
-    @AppStorage("thumbnailSize") private var storedThumbnailSize: Double = 200  // V5.16: 170→200 行高
+    @AppStorage("thumbnailSize") private var storedThumbnailSize: Double = 240  // V5.20: 200→240 (Photos Library 容器更大，+20% 视觉权重)
     @AppStorage("sidebarSelection") private var storedSidebarKey: String = "all"
     @AppStorage("sortOption") private var storedSortOption: String = SortOption.importedAtDesc.rawValue
     // V5.17: 缩略图布局模式（3 选项 .square / .masonry / .masonryStretch）
