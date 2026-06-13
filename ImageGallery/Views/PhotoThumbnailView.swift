@@ -252,11 +252,14 @@ struct PhotoThumbnailView: View {
             .frame(maxWidth: .infinity)
             // V3.6.26: 异步加载缩略图（缓存命中立即返回；未命中后台线程解码）
             // V4.4.0: 加载失败时 set loadFailed=true（loadImageAsync 返回 nil 视为失败）
+            // V5.17: 600→1200 retina 优化（HiDPI 屏 200pt cell 锐化）
+            //   1200px 源 = 3x 下采样仍锐（Photos.app 内部 1000-2000px 缓存）
+            //   内存 1200²×4 = 5.76MB/cell；NSCache 400MB (V5.17 ↑) + LRU 自动驱逐
             .task(id: photo.id) {
                 loadFailed = false
                 let img = await ImageLoader.loadImageAsync(
                     at: photo.fileURL,
-                    maxPixelSize: 600
+                    maxPixelSize: 1200
                 )
                 if img == nil {
                     loadFailed = true

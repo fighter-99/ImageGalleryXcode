@@ -3,7 +3,7 @@
 //  ImageGallery
 //
 //  缩略图内存缓存。避免重复解码。
-//  缓存策略：NSCache + 内存限制（200MB）+ 自动淘汰。
+//  缓存策略：NSCache + 内存限制（400MB）+ 自动淘汰。
 //
 
 import Foundation
@@ -15,10 +15,9 @@ final class ThumbnailCache {
     private let cache = NSCache<NSString, NSImage>()
 
     private init() {
-        // 限制总内存：200MB
-        // 平均每张缩略图 200x200x4 bytes ≈ 160KB
-        // 200MB 大约能缓存 1300 张
-        cache.totalCostLimit = 200 * 1024 * 1024
+        // V5.17: 200→400MB——600→1200px 后单图 ~5.76MB (1200²×4)
+        //   200MB 仅能容纳 ~35 张；400MB 容纳 ~70 张（与 macOS Finder/Photos 类似）
+        cache.totalCostLimit = 400 * 1024 * 1024
     }
 
     // MARK: - 公共方法
