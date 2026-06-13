@@ -432,7 +432,9 @@ struct PhotoGridView: View {
                             availableWidth: availableWidth,
                             rowHeight: rowHeight,
                             rowSpacing: rowSpacing,
-                            cellSpacing: cellSpacing
+                            cellSpacing: cellSpacing,
+                            // V5.18: 日期分组视图显示拍摄日期 caption（Photos Days 风格）
+                            showDateCaption: true
                         )
                     }
                 }
@@ -457,7 +459,9 @@ struct PhotoGridView: View {
                     availableWidth: availableWidth,
                     rowHeight: rowHeight,
                     rowSpacing: rowSpacing,
-                    cellSpacing: cellSpacing
+                    cellSpacing: cellSpacing,
+                    // V5.18: 平铺视图无日期 header 也无 caption（保持 V5.16 行为）
+                    showDateCaption: false
                 )
             }
             .padding()
@@ -470,13 +474,16 @@ struct PhotoGridView: View {
     //   - .square:         uniformWidth=rowHeight, stretchLastRow=false
     //   - .masonry:        uniformWidth=nil,        stretchLastRow=false
     //   - .masonryStretch: uniformWidth=nil,        stretchLastRow=true
+    // V5.18: showDateCaption 决定 cell 下方是否显示日期 caption（Photos Days/Months 风格）
     @ViewBuilder
     private func masonryRowsView(
         photos: [Photo],
         availableWidth: CGFloat,
         rowHeight: CGFloat,
         rowSpacing: CGFloat,
-        cellSpacing: CGFloat
+        cellSpacing: CGFloat,
+        // V5.18: date caption 开关——masonryDateGroupedLayout 传 true，masonryFlatLayout 传 false
+        showDateCaption: Bool
     ) -> some View {
         let items = photos.map { photo in
             MasonryMath.Item(
@@ -511,7 +518,9 @@ struct PhotoGridView: View {
                     retentionDays: retentionDays,
                     deletePhoto: deletePhoto,
                     handleTap: handleTap,
-                    onDoubleTap: onDoubleTap
+                    onDoubleTap: onDoubleTap,
+                    // V5.18: 日期 caption 开关（true=date grouped 视图, false=平铺）
+                    showDateCaption: showDateCaption
                 )
             }
         }
@@ -682,6 +691,10 @@ struct PhotoGridView: View {
 ///   - 行内 cell 高度统一 = rowHeight（行底部齐）
 ///   - cell 宽度 = itemWidths[i]（MasonryMath 算好的具体值）
 ///   - 跨 cell 共享 selection/folders/tags 状态
+/// V5.18: 加 showDateCaption——cell 下方显示拍摄日期（Photos Days/Months 风格）
+///   - 仅 masonryDateGroupedLayout 传入 true
+///   - rowHeight < 100pt 时自动隐藏（caption 16pt + image 太挤）
+///   - caption 用 inline DateFormatter——"5月12日" / "2024年5月12日"
 private struct MasonryRowView: View {
     let itemIds: [UUID]
     let itemWidths: [CGFloat]
@@ -695,6 +708,14 @@ private struct MasonryRowView: View {
     let deletePhoto: (Photo) -> Void
     let handleTap: (Photo) -> Void
     let onDoubleTap: (Photo) -> Void
+    // V5.18: 日期 caption 开关——masonryDateGroupedLayout 传 true，masonryFlatLayout 传 false
+    let showDateCaption: Bool
+
+    /// V5.18: caption 预留高度（caption2 11pt + 上下 padding）——image 让出
+    private static let captionReservedHeight: CGFloat = 16
+
+    /// V5.18: 最小 rowHeight 才显示 caption——rowHeight 太小时 caption 16pt 会挤压 image
+    private static let minRowHeightForCaption: CGFloat = 100
 
     var body: some View {
         HStack(alignment: .top, spacing: cellSpacing) {
@@ -709,6 +730,26 @@ private struct MasonryRowView: View {
 
     @ViewBuilder
     private func cellContent(photo: Photo, width: CGFloat) -> some View {
+        // V5.18: caption 模式下 cell 是 VStack(image + caption)，image 高度让出 caption
+        let captionEnabled = showDateCaption && rowHeight >= Self.minRowHeightForCaption
+        if captionEnabled {
+            let imageHeight = rowHeight - Self.captionReservedHeight
+            VStack(spacing: 2) {
+                photoImage(photo: photo, width: width, height: imageHeight)
+                Text(dateCaptionText(for: photo))
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        } else {
+            photoImage(photo: photo, width: width, height: rowHeight)
+        }
+    }
+
+    /// V5.18: 单 cell 渲染——抽出来让 caption 模式/普通模式共用
+    @ViewBuilder
+    private func photoImage(photo: Photo, width: CGFloat, height: CGFloat) -> some View {
         PhotoThumbnailView(
             photo: photo,
             isInMultiSelect: selection.contains(photo.id),
@@ -716,7 +757,7 @@ private struct MasonryRowView: View {
             folders: folders,
             allTags: allTags,
             cellWidth: width,
-            rowHeight: rowHeight,
+            rowHeight: height,
             retentionDays: retentionDays,
             onDelete: { deletePhoto(photo) },
             onTap: { handleTap(photo) },
@@ -727,4 +768,22 @@ private struct MasonryRowView: View {
             removal: .scale(scale: 0.6).combined(with: .opacity)
         ))
     }
+
+    /// V5.18: caption 文本——同年内 "M月d日"（5月12日），跨年 "yyyy年M月d日"
+    ///   Photos.app Days 视图 cell 下方格式——同月重复不冗余（header 已说"5月"）
+    ///   跨年带年份——避免和 header "2024 年" 重复阅读歧义
+    private func dateCaptionText(for photo: Photo) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "zh_CN")
+        let calendar = Calendar.current
+        let photoYear = calendar.component(.year, from: photo.importedAt)
+        let currentYear = calendar.component(.year, from: Date())
+        if photoYear == currentYear {
+            formatter.dateFormat = "M月d日"
+        } else {
+            formatter.dateFormat = "yyyy年M月d日"
+        }
+        return formatter.string(from: photo.importedAt)
+    }
 }
+
