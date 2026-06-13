@@ -198,7 +198,9 @@ struct PhotoGridView: View {
 
     // ─── 根据视图模式切换 ───
     // V3.6.39: 加 .transition(.opacity) + .animation 让模式切换平滑
-    // V5.23: 加 top fade gradient (macOS Photos 风格)
+    // V5.28: 删 V5.23 top fade gradient (误判为 Photos 风格)
+    //   - 之前我以为 Photos.app Library 顶部有 fade, 实际无
+    //   - Photos 实际: grid 顶 cell 与 toolbar 硬接
     @ViewBuilder
     private var contentView: some View {
         switch viewMode {
@@ -207,16 +209,6 @@ struct PhotoGridView: View {
                 // V5.25: 平滑密度切换动画——spring animation 在 thumbnailSize 变化时
                 //   spring response 0.3 + damping 0.8: 快速但不"弹"
                 .animation(.spring(response: 0.3, dampingFraction: 0.8), value: thumbnailSize)
-                .overlay(alignment: .top) {
-                    // V5.23: top fade gradient——24pt 高度
-                    LinearGradient(
-                        colors: [Color.clear, Color(nsColor: .windowBackgroundColor)],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                    .frame(height: 24)
-                    .allowsHitTesting(false)
-                }
                 .transition(.opacity)
         case .list:
             PhotoListView(

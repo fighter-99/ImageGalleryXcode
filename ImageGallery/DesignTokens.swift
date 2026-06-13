@@ -41,7 +41,10 @@ enum Radius {
     ///   - 6pt 偏大，让 cell "卡片" 感强 (iOS Photos 风格)
     ///   - 3pt 更 "原生"，不抢图
     ///   - 一处改全局一致：cell image clip / loading shimmer / failure placeholder / selection overlay
-    static let thumb: CGFloat = 3
+    /// V5.28: 3pt → 0pt——严格直角 (Photos.app Library 实际无圆角)
+    ///   - macOS Photos.app Library cell 是 0 圆角 (严格直角)
+    ///   - V5.26 1.5pt border + V5.27 3pt 圆角都是 Photos 痕迹
+    static let thumb: CGFloat = 0
 }
 
 // MARK: - 表面色（V3.1 NEW：Photos.app 风格语义化）
