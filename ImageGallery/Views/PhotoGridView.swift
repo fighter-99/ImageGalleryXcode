@@ -347,11 +347,27 @@ struct PhotoGridView: View {
 
     // ─── 根据视图模式切换 ───
     // V3.6.39: 加 .transition(.opacity) + .animation 让模式切换平滑
+    // V5.23: 加 top fade gradient (macOS Photos 风格)
+    //   - ScrollView 顶部 24pt 透明→窗口色渐变
+    //   - 让 grid 与 toolbar 视觉过渡柔和，不"硬接"
+    //   - 镜像 Photos.app 顶部 fade 行为
     @ViewBuilder
     private var contentView: some View {
         switch viewMode {
         case .grid:
             photoGrid
+                .overlay(alignment: .top) {
+                    // V5.23: top fade gradient——24pt 高度
+                    //   LinearGradient(colors: .clear → bg) 渐变到背景色
+                    //   .allowsHitTesting(false) 不挡 cell 点击
+                    LinearGradient(
+                        colors: [Color.clear, Color(nsColor: .windowBackgroundColor)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .frame(height: 24)
+                    .allowsHitTesting(false)
+                }
                 .transition(.opacity)
         case .list:
             PhotoListView(
@@ -416,6 +432,9 @@ struct PhotoGridView: View {
     // V5.16: masonry 日期分组布局
     //   段头 "今天" / "昨天" / "本周" / "本月" / "X 月" / "X 年"
     //   LazyVStack + 多组 MasonryRow（每个 group 一行集合）
+    // V5.23: 加 sticky date header——用 Section + pinnedViews: [.sectionHeaders]
+    //   滚动时 date header 吸顶，换 group 时换文字（macOS Photos 风格）
+    //   LazyVStack pinnedViews 只对 Section header 起作用——必须改用 Section 包装
     @ViewBuilder
     private func masonryDateGroupedLayout(
         availableWidth: CGFloat,
@@ -426,10 +445,9 @@ struct PhotoGridView: View {
         let groups = PhotoStats.groupByDate(photos)
 
         ScrollView {
-            LazyVStack(alignment: .leading, spacing: Spacing.xl) {
+            LazyVStack(alignment: .leading, spacing: Spacing.xl, pinnedViews: [.sectionHeaders]) {
                 ForEach(groups) { group in
-                    VStack(alignment: .leading, spacing: Spacing.md) {
-                        DateSectionHeader(label: group.label, count: group.photos.count)
+                    Section {
                         masonryRowsView(
                             photos: group.photos,
                             availableWidth: availableWidth,
@@ -439,6 +457,8 @@ struct PhotoGridView: View {
                             // V5.18: 日期分组视图显示拍摄日期 caption（Photos Days 风格）
                             showDateCaption: true
                         )
+                    } header: {
+                        DateSectionHeader(label: group.label, count: group.photos.count)
                     }
                 }
             }
