@@ -478,6 +478,28 @@ struct PhotoGridView: View {
     //   - .masonry:        uniformWidth=nil,        stretchLastRow=false
     //   - .masonryStretch: uniformWidth=nil,        stretchLastRow=true
     // V5.18: showDateCaption 决定 cell 下方是否显示日期 caption（Photos Days/Months 风格）
+    // V5.21: 普通 helper（@ViewBuilder 内不能用 if/else for CGFloat 赋值）
+    /// V5.21: .square 模式动态算 cell 宽填满 availableWidth，其他模式用原 rowHeight
+    /// - Returns: (actualRowHeight, actualUniformWidth) 传给 MasonryMath.groupIntoRows
+    private func computeLayoutParams(
+        layoutMode: ThumbnailLayoutMode,
+        availableWidth: CGFloat,
+        rowHeight: CGFloat,
+        cellSpacing: CGFloat,
+        defaultUniformWidth: CGFloat?
+    ) -> (CGFloat, CGFloat?) {
+        if layoutMode == .square {
+            let cellSize = SquareLayout.cellSize(
+                availableWidth: availableWidth,
+                rowHeight: rowHeight,
+                cellSpacing: cellSpacing
+            )
+            return (cellSize, cellSize)  // 保持方形 (cellWidth = cellHeight)
+        } else {
+            return (rowHeight, defaultUniformWidth)
+        }
+    }
+
     @ViewBuilder
     private func masonryRowsView(
         photos: [Photo],
@@ -498,12 +520,23 @@ struct PhotoGridView: View {
         // V5.17: ThumbnailLayoutMode.masonryParams 把 3 选项映射到 MasonryMath 双参数
         //   enum 转换逻辑收敛在 enum 本体，PhotoGridView 直接拿结果调 MasonryMath
         let params = layoutMode.masonryParams(rowHeight: rowHeight)
+        // V5.21: .square 模式 cell 宽动态算填满 availableWidth——解决 ragged right edge
+        //   之前 cell 宽 = rowHeight 固定（240pt）→ 1100pt 可用宽只放 4 cell，剩 80pt 空
+        //   现在 SquareLayout.cellSize 算 n 个 cell 刚好填满，rowHeight 也跟着改保持方形
+        // 用普通函数（@ViewBuilder 内不能用 if/else for non-View 赋值）
+        let (actualRowHeight, actualUniformWidth) = computeLayoutParams(
+            layoutMode: layoutMode,
+            availableWidth: availableWidth,
+            rowHeight: rowHeight,
+            cellSpacing: cellSpacing,
+            defaultUniformWidth: params.uniformWidth
+        )
         let rows = MasonryMath.groupIntoRows(
             items: items,
             availableWidth: availableWidth,
-            rowHeight: rowHeight,
+            rowHeight: actualRowHeight,
             spacing: cellSpacing,
-            uniformWidth: params.uniformWidth,
+            uniformWidth: actualUniformWidth,
             stretchLastRow: params.stretchLastRow
         )
 
@@ -740,8 +773,9 @@ private struct MasonryRowView: View {
             VStack(spacing: 2) {
                 photoImage(photo: photo, width: width, height: imageHeight)
                 Text(dateCaptionText(for: photo))
-                    // V5.19: caption2 (11pt) → caption (12pt) — V5.18 反馈"caption 几乎看不到"
-                    .font(.caption)
+                    // V5.21: caption (12pt) → callout (14pt) — V5.19 反馈"12pt 仍看不到"
+                    //   14pt callout 在 240pt 大 cell 上更明显，但仍不抢主图
+                    .font(.callout)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                     .frame(maxWidth: .infinity, alignment: .leading)
