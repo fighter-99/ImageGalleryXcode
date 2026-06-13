@@ -557,6 +557,16 @@ struct ContentView: View {
                 titlebarAccessory?.setActive(newValue)
                 titlebarAccessory?.setTooltip(titlebarAccessoryTooltip(isActive: newValue))
             }
+            // V5.23: 选照片自动 showDetail / deselect 自动 hide
+            //   V5.22 默认 showDetail=false——无选中时 grid 100% 占窗口
+            //   但选 1 张时希望自动展开 detail 看 metadata
+            //   手动 toggle (⌘Ctrl+D / titlebar 按钮) 仍优先——onChange 只在自动路径触发
+            //   V5.23 镜像 Mac Photos 行为：选即显，取消即隐
+            .onChange(of: selection.hasSelection) { _, hasSelection in
+                withAnimation(Animations.medium) {
+                    showDetail = hasSelection
+                }
+            }
     }
 
     // V4.0.0: 抽出 importDuplicateCheck 状态到 binding（让 type-check 过得去）
