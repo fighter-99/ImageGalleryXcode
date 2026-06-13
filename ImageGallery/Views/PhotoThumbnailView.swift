@@ -250,20 +250,23 @@ struct PhotoThumbnailView: View {
                 Spacer(minLength: 0)
                 Group {
                     if let nsImage = loadedImage {
-                        // V4.23.0: 完整 Photos 风格——image 加 .clipShape 圆角
-                        //   之前 cell .cornerRadius 是无意义修饰（image 自身无圆角）
-                        //   现在圆角仅给 image clip，cell 自身完全透明
+                        // V5.28: 智能居中裁剪——image 用 .fill 填满 cell, 居中裁切
+                        //   - V4.23.0 用 .fit (letterbox 透窗口色) 改 .fill (裁切)
+                        //   - portrait 3:4 上下顶 cell, 左右裁掉 (image 中心 = cell 中心)
+                        //   - landscape 16:9 左右顶 cell, 上下裁掉
+                        //   - 镜像 macOS Photos.app Library 实际行为
+                        //   - "智能主体识别" 留 V5.29+ (Vision framework saliency)
                         Image(nsImage: nsImage)
                             .resizable()
-                            .aspectRatio(aspectRatio, contentMode: .fit)
+                            .aspectRatio(aspectRatio, contentMode: .fill)  // V5.28: .fit → .fill
                             .clipShape(RoundedRectangle(cornerRadius: Radius.thumb))
                             .saturation(photo.isInTrash ? 0.05 : 1)
                             .opacity(photo.isInTrash ? (colorScheme == .dark ? 0.65 : 0.55) : 1)
                     } else if loadFailed {
-                        // V4.4.0: 加载失败——明确指示 + 灰底
+                        // V5.28: 失败占位也用 .fill (裁切) 保持一致
                         RoundedRectangle(cornerRadius: Radius.thumb)
                             .fill(.quaternary)
-                            .aspectRatio(aspectRatio, contentMode: .fit)
+                            .aspectRatio(aspectRatio, contentMode: .fill)  // V5.28: .fit → .fill
                             .overlay {
                                 VStack(spacing: 4) {
                                     Image(systemName: "exclamationmark.triangle")
@@ -274,11 +277,10 @@ struct PhotoThumbnailView: View {
                                 .foregroundStyle(.secondary)
                             }
                     } else {
-                        // V4.4.0: 加载中——shimmer 骨架替静态 photo icon
-                        //   滚动到新位置时不再"灰图标闪烁"
+                        // V5.28: 加载中 shimmer 也用 .fill
                         RoundedRectangle(cornerRadius: Radius.thumb)
                             .fill(.quaternary)
-                            .aspectRatio(aspectRatio, contentMode: .fit)
+                            .aspectRatio(aspectRatio, contentMode: .fill)  // V5.28: .fit → .fill
                             .shimmer()
                     }
                 }
