@@ -11,15 +11,29 @@ import CryptoKit
 import SwiftData
 
 // 导入进度信息
+// V5.15: 加 inserted + failureCount 字段——UI 显示"X/Y · N 失败"更准确
+//   inserted: 成功导入数（不含 unsupported format skip）
+//   failureCount: 失败数（importSingleImage 返回 Error 的）
 struct ImportProgress: Equatable {
     var current: Int = 0
     var total: Int = 0
+    var inserted: Int = 0
+    var failureCount: Int = 0
     var isImporting: Bool = false
 
     var fraction: Double {
         total > 0 ? Double(current) / Double(total) : 0
     }
 
+    /// V5.15: 状态条显示用——"导入中 8/15 · 1 失败"
+    var displayText: String {
+        guard total > 0 else { return "导入中..." }
+        var s = "导入中 \(inserted)/\(total)"
+        if failureCount > 0 { s += " · \(failureCount) 失败" }
+        return s
+    }
+
+    /// V5.15 之前用的 percentText——保留向后兼容
     var percentText: String {
         guard total > 0 else { return "准备中..." }
         let percent = Int(fraction * 100)
@@ -31,8 +45,10 @@ struct ImageImporter {
     let modelContext: ModelContext
     /// 导入时自动归入的目标文件夹（nil = 不归类）
     let folder: Folder?
-    /// 进度回调：(current, total)
-    var onProgress: ((Int, Int) -> Void)? = nil
+    /// V5.15: 进度回调签名 (current, total, inserted, failureCount)
+    ///   current/total 跟踪文件索引（incl. unsupported skip）
+    ///   inserted/failureCount 跟踪结果数——UI 显示更准
+    var onProgress: ((Int, Int, Int, Int) -> Void)? = nil
 
     private let supportedExtensions: Set<String> = [
         "jpg", "jpeg", "png", "heic", "heif", "tiff", "tif", "gif", "bmp", "webp"
@@ -191,7 +207,7 @@ struct ImageImporter {
         }
 
         let total = allFiles.count
-        onProgress?(0, total)
+        onProgress?(0, total, 0, 0)
 
         // 2. 逐个导入——V5.13: 收集 failures 给调用方
         var inserted = 0
@@ -202,7 +218,8 @@ struct ImageImporter {
             } else {
                 inserted += 1
             }
-            onProgress?(index + 1, total)
+            // V5.15: 传 4 参数 (current, total, inserted, failureCount)
+            onProgress?(index + 1, total, inserted, failures.count)
         }
 
         // V4.36.x: 记录到最近导入——File > Open Recent 菜单显示

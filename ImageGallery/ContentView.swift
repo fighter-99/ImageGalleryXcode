@@ -1012,7 +1012,9 @@ struct ContentView: View {
             totalCount: allPhotos.count,
             totalSize: totalSizeFormatted,
             // V3.6.52: 用 selection.selectedIDs.count 替直接字段
-            selectedCount: selection.selectedIDs.count
+            selectedCount: selection.selectedIDs.count,
+            // V5.15: 导入进度——StatusBar 右侧显示"导入中 X/Y · N 失败"
+            importProgress: importProgress
         )
     }
 
@@ -1167,12 +1169,17 @@ struct ContentView: View {
 
         importProgress = ImportProgress(current: 0, total: 0, isImporting: true)
 
+        // V5.15: 4 参数 onProgress (current, total, inserted, failureCount)
         let importer = ImageImporter(
             modelContext: modelContext,
             folder: currentFolder
-        ) { current, total in
+        ) { current, total, inserted, failureCount in
             Task { @MainActor in
-                importProgress = ImportProgress(current: current, total: total, isImporting: true)
+                importProgress = ImportProgress(
+                    current: current, total: total,
+                    inserted: inserted, failureCount: failureCount,
+                    isImporting: true
+                )
                 if current >= total && total > 0 {
                     try? await Task.sleep(nanoseconds: 1_500_000_000)
                     if let p = importProgress, p.current >= p.total {
@@ -1235,11 +1242,17 @@ struct ContentView: View {
 
     /// V3.6.24: 实际跑导入（dialog 确认后调用，或无重复时直接调）
     /// V5.13: 接 ImportResult——成功 1 个 success toast + 失败 N 个 error toasts
+    /// V5.15: 进度用 inserted/failureCount 显示；混合结果合并 1 个 summary toast
     private func importPhotos(urls: [URL]) {
         importProgress = ImportProgress(current: 0, total: 0, isImporting: true)
-        let importer = ImageImporter(modelContext: modelContext, folder: currentFolder) { current, total in
+        // V5.15: 4 参数 onProgress (current, total, inserted, failureCount)
+        let importer = ImageImporter(modelContext: modelContext, folder: currentFolder) { current, total, inserted, failureCount in
             Task { @MainActor in
-                importProgress = ImportProgress(current: current, total: total, isImporting: true)
+                importProgress = ImportProgress(
+                    current: current, total: total,
+                    inserted: inserted, failureCount: failureCount,
+                    isImporting: true
+                )
                 if current >= total && total > 0 {
                     try? await Task.sleep(nanoseconds: 1_500_000_000)
                     if let p = importProgress, p.current >= p.total {
@@ -1249,12 +1262,16 @@ struct ContentView: View {
             }
         }
         let result = importer.importURLs(urls)
-        // 成功 summary toast
-        if result.inserted > 0 {
+        // V5.15: 合并 1 个 summary toast（避免 N 个 per-failure 堆叠）
+        if result.inserted > 0 && result.hasFailures {
+            // 部分成功 + 部分失败
+            enqueueToast("已导入 \(result.inserted) 张，\(result.failureCount) 张失败", type: .info)
+        } else if result.inserted > 0 {
+            // 全成功
             enqueueToast("已导入 \(result.inserted) 张图片", type: .success)
         }
-        // 失败 error toast（每个失败 1 个）—— 错误用 .long 让用户看清
-        for (url, _) in result.failures {
+        // 纯失败时仍 per-file 报（让用户知道哪些文件）
+        for (url, _) in result.failures where result.inserted == 0 {
             enqueueToast("导入失败：\(url.lastPathComponent)", type: .error, duration: .long)
         }
     }

@@ -18,6 +18,8 @@ struct StatusBar: View {
     let totalCount: Int
     let totalSize: String
     let selectedCount: Int
+    // V5.15: 导入进度——nil 表示未在导入
+    let importProgress: ImportProgress?
 
     var body: some View {
         HStack(spacing: Spacing.sm) {
@@ -42,6 +44,19 @@ struct StatusBar: View {
             }
 
             Spacer(minLength: 0)
+
+            // V5.15: 导入进度——右侧显示"导入中 8/15 · 1 失败"
+            //   比原"current/total"更准确（含 inserted/failureCount）
+            if let progress = importProgress, progress.isImporting {
+                separator
+                HStack(spacing: 4) {
+                    Image(systemName: "arrow.down.circle")
+                        .font(.caption2)
+                        .foregroundStyle(Color.accentColor)
+                    Text(progress.displayText)
+                        .foregroundStyle(Color.accentColor)
+                }
+            }
         }
         .font(Typography.captionMono)
         .foregroundStyle(.secondary)
