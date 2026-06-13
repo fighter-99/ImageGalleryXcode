@@ -420,12 +420,15 @@ struct ContentView: View {
     var body: some View {
         mainLayout
             // V4.10.0: 6 个 chrome modifier 打包（title/subtitle/colorScheme/WindowAccessor/NSToolbar sync）
+            // V5.24: 加 layoutMode + thumbnailSize 参数——传给 windowChromeAndToolbar 推 NSToolbar segment/slider
             .windowChromeAndToolbar(
                 title: currentViewTitle,
                 subtitle: currentViewSubtitle,
                 colorScheme: appearanceMode.colorScheme,
                 selection: selection,
                 searchText: searchText,
+                layoutMode: layoutMode,
+                thumbnailSize: thumbnailSize,
                 configureWindow: { configureNSToolbar(window: $0) }
             )
             // V4.10.0: app lifecycle hooks（.onAppear + 6 个 .onChange 打包）
@@ -632,6 +635,18 @@ struct ContentView: View {
         }
         controller.onNext = { [self] in
             goNext()
+        }
+        // V5.24 NEW: 布局模式 + 密度 toolbar 集成桥接
+        //   用户点 NSToolbar segment/slider → ToolbarController 回调
+        //   → 这里写回 @AppStorage（layoutMode + thumbnailSize）
+        //   SwiftUI 监听 .onChange → 重算 grid layout
+        controller.onLayoutModeChange = { [self] mode in
+            layoutMode = mode
+        }
+        controller.onDensityChange = { [self] density in
+            thumbnailSize = density
+            // 同步 storedThumbnailSize 以便重启后恢复（V4.15.0 ⌘0 行为一致）
+            storedThumbnailSize = Double(density)
         }
         // V4.9.1: View Options 改用 NSPopover + NSHostingController
         //   之前 V4.8.0 NSToolbar 迁移时丢了 .popover modifier——只 toggle showViewOptions 无效
@@ -1687,11 +1702,42 @@ extension View {
 //
 extension View {
     /// V4.8.0: 选中状态变化 → 同步到 NSToolbar 5 actions 的 enabled
-    func syncNSToolbarSelectionState(selection: SelectionState) -> some View {
+    /// V5.24: 加 layoutMode + density 同步——ContentView 状态变化时推 toolbar
+    func syncNSToolbarSelectionState(
+        selection: SelectionState,
+        layoutMode: ThumbnailLayoutMode? = nil,
+        density: CGFloat? = nil
+    ) -> some View {
         onChange(of: selection.hasSelection) { _, hasSelection in
             ToolbarController.shared.updateAllStates(
                 hasSelection: hasSelection,
-                hasMultipleSelection: selection.isMultiSelect
+                hasMultipleSelection: selection.isMultiSelect,
+                layoutMode: layoutMode,
+                density: density
+            )
+        }
+    }
+
+    /// V5.24 NEW: 布局模式变化 → 同步到 NSToolbar segment selectedSegment
+    func syncNSToolbarLayoutMode(_ mode: ThumbnailLayoutMode) -> some View {
+        onChange(of: mode) { _, newMode in
+            ToolbarController.shared.updateAllStates(
+                hasSelection: false,  // 不会冲突 (SelectionState onChange 也会调)
+                hasMultipleSelection: false,
+                layoutMode: newMode,
+                density: nil
+            )
+        }
+    }
+
+    /// V5.24 NEW: 密度变化 → 同步到 NSToolbar slider value
+    func syncNSToolbarDensity(_ density: CGFloat) -> some View {
+        onChange(of: density) { _, newDensity in
+            ToolbarController.shared.updateAllStates(
+                hasSelection: false,
+                hasMultipleSelection: false,
+                layoutMode: nil,
+                density: newDensity
             )
         }
     }
@@ -1940,6 +1986,10 @@ extension View {
         colorScheme: ColorScheme?,
         selection: SelectionState,
         searchText: String,
+        // V5.24: 加 layoutMode + thumbnailSize 参数——windowChromeAndToolbar 自身不持有
+        //   状态，需 caller 传入以同步到 NSToolbar segment/slider
+        layoutMode: ThumbnailLayoutMode,
+        thumbnailSize: CGFloat,
         configureWindow: @escaping (NSWindow) -> Void
     ) -> some View {
         self
@@ -1959,8 +2009,15 @@ extension View {
                 configureWindow(window)
             })
             // V4.8.0: 选中状态变化 → 更新 NSToolbar buttons enabled
-            .syncNSToolbarSelectionState(selection: selection)
+            .syncNSToolbarSelectionState(
+                selection: selection,
+                layoutMode: layoutMode,
+                density: thumbnailSize
+            )
             // V4.8.1: SwiftUI @State searchText 变化 → 同步到 NSSearchField
             .syncNSToolbarSearchField(text: searchText)
+            // V5.24: 布局模式 + 密度变化 → 同步到 NSToolbar segment/slider
+            .syncNSToolbarLayoutMode(layoutMode)
+            .syncNSToolbarDensity(thumbnailSize)
     }
 }
