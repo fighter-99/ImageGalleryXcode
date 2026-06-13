@@ -115,9 +115,7 @@ struct PhotoThumbnailView: View {
     /// V5.19: 内 cell 2pt padding——Photos.app "framed photo" 风格
     /// V5.20: 2pt → 4pt padding——用户反馈"图片没被抱着"，4pt 留白更明显
     /// V5.27: 4pt → 0pt——macOS Photos.app Library 实际无 inner padding
-    ///   - image 直接贴 cell 边缘（无 "framed photo" 感）
-    ///   - letterbox 透窗口色（cell 背景 = clear）= image "浮"在窗口上
-    ///   - iOS Photos "抱着图" 痕迹全清
+    /// V5.28: 0pt 保持——letterbox 透窗口色 + aspect-fill 裁切
     static let innerCellPadding: CGFloat = 0
     enum CellSelectionState {
         case none       // 默认
@@ -126,20 +124,27 @@ struct PhotoThumbnailView: View {
 
         /// V5.17: 0 border 改 subtle tint
         /// V5.26: 1.5pt border 回归——单选态 tint + border = 2 锤视觉
-        /// V5.27: 砍 border——macOS Photos Library 选中无 border
-        ///   - 只留 tint 蒙层（single 0.10, multi 0.15）——Photos 真版
-        ///   - 砍 border 后 tintOpacity.single 0.08 → 0.10（V5.26 因 border 减 tint 维持 2 锤）
-        ///   - borderWidth / borderColor 属性整段删（dead code）
-        var borderWidth: CGFloat { 0 }  // V5.27: dead code (V5.26 加的 1.5pt border 已砍)
-        var borderColor: Color { .clear }  // V5.27: dead code
+        /// V5.27: 砍 border——误判为 macOS Photos Library 选中无 border
+        ///   - 之前我以为 Photos 选中无 border, 实际选中态有蓝色边框
+        ///   - V5.28: 加回 border, 单选/multi 都显示 (multi 还多 ✓ 角标)
+        ///   - 单选/multi 1 锤 (border) / multi 2 锤 (border + ✓)
+        /// V5.28: 砍 tint (0.10/0.15)——只 border + (multi 加 ✓), 极简
+        var borderWidth: CGFloat {
+            switch self {
+            case .none:   return 0
+            case .single: return 3   // V5.28: 蓝色边框——单选 1 锤
+            case .multi:  return 3   // V5.28: 多选也 1 锤 (border), 加 ✓ 角标变 2 锤
+            }
+        }
 
-        /// V5.17: cell-wide tint 强度——用 Color.accentColor.opacity 系统 accent 自适应
-        /// V5.27: single tint 0.08 → 0.10（V5.26 因 border 减 tint 维持 2 锤；border 砍了恢复 V5.17 值）
+        /// V5.28: 砍 tint (V5.17 0.10, V5.27 0.10)——只 border, 无 tint
+        ///   - Photos.app 真版: 选中态仅 border, 无 tint 蒙层
+        ///   - 1 锤总视觉 (border 或 border+✓)
         var tintOpacity: Double {
             switch self {
             case .none:   return 0
-            case .single: return 0.10  // V5.27: V5.26 0.08 → 0.10 (border 砍了, 恢复 V5.17)
-            case .multi:  return 0.15  // multi 选中——强化（多个 cell 同时高亮）
+            case .single: return 0    // V5.28: 砍 tint, 只留 border
+            case .multi:  return 0    // V5.28: 砍 tint, 只留 border + ✓
             }
         }
 
@@ -155,28 +160,19 @@ struct PhotoThumbnailView: View {
     }
 
     /// V4.4.3: 选中态时 hover shadow 让位（避免选中后 shadow 形成「浅框」）
-    ///   hover shadow（Elevation.strong, radius 12pt）只在 hover-未选中时显示
-    ///   选中态已用 accent 边框指示，无需 shadow 再"喊一遍"
-    private var shadowShowsHover: Bool {
-        isHovered && !isActive && !isInMultiSelect
-    }
-
-    /// V3.6.35: 当前缩放比例（按压 scale 撤销，hover > 选中 > 默认）
+    /// V4.4.3: V5.28 删 hover shadow——"无悬停动效" (Photos 真版)
+    //   之前 shadowShowsHover + Elevation.strong 都是 iOS Photos 痕迹
+    //   macOS Photos.app Library cell hover 无任何视觉反馈
+    // V3.6.35: 当前缩放比例（按压 scale 撤销，hover > 选中 > 默认）
     /// V3.6.47: scale priority 修——选中 1.025 > hover 1.02
-    ///   之前选中 1.015 < hover 1.02，点击 cell 反而变小（反 UX）
     /// V4.4.0: Reduced Motion 时所有 scale 强制 1.0（accessibility）
     /// V5.17: 砍 hover scale 1.01 / 选中 1.015（V4.62.0 教训"3 重视觉锤 = 累赘"）
-    ///   之前 isActive 1.015 / hover 1.01 / ✓ 角标——3 锤叠加
-    /// V5.23: hover scale 回归——V5.17 砍后 cell 鼠标划过无反应（用户反馈"死"感）
-    ///   极轻微 1.005（不到 1% 缩放）— 配合 hover accent border 1 锤仍不超
-    ///   选中态不 hover scale（cellSelectionOverlay 已显选中态）—— 互斥
-    private var currentScale: CGFloat {
-        if reduceMotion { return 1.0 }            // V4.4.0: accessibility
-        if isHovered && !isActive && !isInMultiSelect {
-            return 1.005                            // V5.23: 极轻微 lift 感
-        }
-        return 1.0
-    }
+    /// V5.23: hover scale 1.005 回归（V5.17 砍后 cell 鼠标划过无反应）
+    /// V5.28: 砍 hover scale + hover border——"无悬停动效" (Photos 真版)
+    ///   - macOS Photos.app Library hover 完全无视觉反馈
+    ///   - 选 1 张图 = 仅 border, hover 任何 cell = 无任何变化
+    ///   - 删除 currentScale 属性 + .scaleEffect + .animation(.springGentle, value: isHovered)
+    // V5.28: currentScale 整段删——hover 无视觉反馈
 
     /// V3.6.51: cell 选中视觉的单一 overlay（之前散在 3 个 overlay modifier）
     /// V5.17: 砍 3pt 粗边框（state.borderWidth 0）改 cell-wide tint
@@ -194,11 +190,15 @@ struct PhotoThumbnailView: View {
     private var cellSelectionOverlay: some View {
         let state = selectionState
         ZStack {
+            // V5.28: 砍 tint, 加 3pt accent border——"仅显示蓝色边框" (Photos 真版)
+            //   - 之前 V5.27 砍 border 是误判, 实际 Photos 选中态有边框
+            //   - tint 0 → 只 border, 极简
             RoundedRectangle(cornerRadius: Radius.thumb)
-                .fill(Color.accentColor.opacity(state.tintOpacity))
-            // V5.27: 砍 1.5pt accent border——macOS Photos Library 选中无 border
-            //   V5.26 加的 1.5pt border + tint 0.08 = 2 锤视觉被识别为 iOS Photos 痕迹
-            //   Photos.app 真版：选中态仅 tint 蒙层（0.10 single / 0.15 multi）+ ✓ 角标
+                .strokeBorder(Color.accentColor.opacity(0.9), lineWidth: state.borderWidth)
+                .background(
+                    RoundedRectangle(cornerRadius: Radius.thumb)
+                        .fill(Color.accentColor.opacity(state.tintOpacity))  // V5.28: 始终 0
+                )
             if state.showsCheckmark {
                 // 角标 ✓ 保留——V3.6.51 selection state machine 设计
                 // 单选不显 ✓（subtle），多选显 ✓（更明确）
@@ -355,9 +355,6 @@ struct PhotoThumbnailView: View {
                     .transition(.scale.combined(with: .opacity))
             }
         }
-        // V3.6.45: 选中（isInMultiSelect）用 standard（0.2s easeInOut）——springGentle 0.35s 太慢
-        //   多选点击是高频操作，spring 反弹感在选择场景下反而像'卡顿'
-        .animation(Animations.standard, value: isInMultiSelect)
         .frame(maxWidth: .infinity)
         // V5.19: 内 cell 2pt padding——Photos.app "framed photo" 风格
         //   之前 image 完全 fill cell——视觉紧贴边界
@@ -402,23 +399,17 @@ struct PhotoThumbnailView: View {
         //   但 shadow 在 cell 四周扩散 2pt，在浅色 grid 间距上呈现为"一圈淡色光晕"
         //   = 用户感知的「浅框」（每个 cell 都有，无论选中与否）
         //
-        // V4.4.3: hover shadow 与选中态互斥——「选中后的浅框」真凶
-        //   用户点击 cell = 必然 hover → 选中后 isHovered=true → Elevation.strong
-        //   shadow（12pt radius + 0.20 opacity）在 accent 边框周围扩散 12pt
-        //   = 用户感知的「选中后出现的浅框」
-        //   设计原则：选中已用 accent 边框明确指示，shadow 是 hover 反馈，
-        //   选中时让 shadow 让位（!isActive && !isInMultiSelect 才显示）
-        .shadow(
-            color: shadowShowsHover ? Elevation.strong.color : .clear,
-            radius: shadowShowsHover ? Elevation.strong.radius : 0,
-            x: 0,
-            y: shadowShowsHover ? Elevation.strong.y : 0
-        )
-        // V3.6.51: 单一 .animation 驱动所有选中状态过渡（之前 3 个独立 modifier）
+        // V4.4.3: 删 V5.28 hover shadow——用户 spec "无悬停动效" (Photos 真版)
+        //   - V3.1 引入 resting shadow + V4.4.3 hover shadow 都是 iOS Photos 痕迹
+        //   - 镜像 macOS Photos.app: cell hover 无 shadow 反馈
+        //   - 选中态仅 border 视觉锤——不需要 shadow 配合
+        // V3.6.51: 单一 .animation 驱动所有选中状态过渡
         .animation(Animations.standard, value: selectionState)
-        .animation(Animations.springGentle, value: isHovered)
+        // V5.28: 删 .animation(.springGentle, value: isHovered)——hover 无动效
         .animation(Animations.springGentle, value: isFocused)
-        // hover 检测（仅用于缩放动画）
+        // V5.28: hover 检测保留 (isHovered state), 但不驱动任何视觉
+        //   - 未来若要加 hover 反馈 (e.g. 状态栏), 此 hook 仍在
+        //   - 当前: 选中 1 锤 (border), hover 0 锤, multi 2 锤 (border + ✓)
         .onHover { hovering in
             isHovered = hovering
         }
@@ -439,11 +430,9 @@ struct PhotoThumbnailView: View {
         .focused($isFocused)
         .focusable(true)
         .focusEffectDisabled(true)  // V4.4.6: 禁用系统 focus ring
-        // V5.23: 极轻微 hover scale——V5.17 砍后 cell 鼠标划过无反应
-        //   scaleEffect 在所有 .focusable/.help 之前——影响的是整个 cell
-        //   V4.62.0 教训：scale 不超 1.02（视觉锤堆叠）——本次 1.005 极轻微
-        .scaleEffect(currentScale)
-        .animation(Animations.springGentle, value: isHovered)
+        // V5.28: 删 .scaleEffect(currentScale) + .animation(value: isHovered)
+        //   - 之前 V5.23 加 1.005 scale + V5.23-2 加 1pt border = hover 2 锤
+        //   - V5.28: hover 0 锤——"无悬停动效" (Photos 真版)
         // V3.6.10: hover tooltip（文件名 + 尺寸 + 文件大小）
         .help(tooltipText)
         // 拖拽：支持内部文件夹移动 + 拖到 Finder 导出原图
