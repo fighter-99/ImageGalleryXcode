@@ -113,10 +113,10 @@ struct PhotoThumbnailView: View {
     ///   V4.4.1 教训：.strokeBorder 而非 .stroke——本 commit 直接不用 border
     ///   收敛视觉锤：border=0（砍）+ tint 0.10/0.15（1 锤）+ ✓ 角标（多选时 1 锤）= 1-2 锤
     /// V5.19: 内 cell 2pt padding——Photos.app "framed photo" 风格
-    ///   之前 image 完全 fill cell——视觉紧贴边界
-    ///   2pt padding 让 image 周围有 2pt 窗口背景呼吸感（cellSpacing 20pt 之外）
-    ///   镜像 iOS Photos.app / Finder thumbnail 视觉——像被"框"住的图
-    static let innerCellPadding: CGFloat = 2
+    /// V5.20: 2pt → 4pt padding——用户反馈"图片没被抱着"，4pt 留白更明显
+    ///   配合 V5.20 .square 默认 + 240pt 大 cell，"图框"感更清晰
+    ///   镜像 iOS Photos.app / Finder thumbnail 视觉
+    static let innerCellPadding: CGFloat = 4
     enum CellSelectionState {
         case none       // 默认
         case single     // isActive 单选
