@@ -194,4 +194,64 @@ struct MasonryMathTests {
         #expect(id3Row?.items.count == 1)
         #expect(id3Row?.items.first?.id == id3)
     }
+
+    // MARK: - V5.16.1: uniformWidth 模式（Photos.app "图库" 风格）
+
+    @Test func uniformWidthIgnoresAspectRatio() {
+        // uniformWidth=200 → 所有 cell 200pt 宽（无视 aspect）
+        // 5 张不同 aspect @ availableWidth=800 → 800/(200+12)≈3.77 → 3 per row
+        // 第 1 行：3 张 (3×200+2×12=624 ≤ 800)
+        // 第 2 行：2 张
+        let items = [
+            MasonryMath.Item(id: UUID(), width: 0, aspectRatio: 4.0/3.0),  // 4:3
+            MasonryMath.Item(id: UUID(), width: 0, aspectRatio: 1.0),        // 1:1
+            MasonryMath.Item(id: UUID(), width: 0, aspectRatio: 2.0/3.0),  // 2:3
+            MasonryMath.Item(id: UUID(), width: 0, aspectRatio: 16.0/9.0), // 16:9
+            MasonryMath.Item(id: UUID(), width: 0, aspectRatio: 0.75),      // 3:4
+        ]
+        let rows = MasonryMath.groupIntoRows(
+            items: items,
+            availableWidth: 800,
+            rowHeight: 200,
+            spacing: 12,
+            uniformWidth: 200
+        )
+        #expect(rows.count == 2)
+        #expect(rows[0].items.count == 3)
+        #expect(rows[1].items.count == 2)
+        // 验证每行渲染宽 ≤ 800（uniformWidth 模式 cell 宽固定 200）
+        for row in rows {
+            let n = CGFloat(row.items.count)
+            let rendered = n * 200 + (n - 1) * 12
+            #expect(rendered <= 800)
+        }
+    }
+
+    @Test func uniformWidthNilDefaultsToAspectMode() {
+        // 不传 uniformWidth → 走原 V5.16 masonry 算法
+        let items = [MasonryMath.Item(id: UUID(), width: 200, aspectRatio: 1.0)]
+        let rows = MasonryMath.groupIntoRows(
+            items: items, availableWidth: 800, rowHeight: 200, spacing: 12
+        )
+        // masonry 行为：1 张 1 行
+        #expect(rows.count == 1)
+        // 验证 Item.width 仍 = 200（aspect 模式按 rowHeight × aspectRatio 算）
+        #expect(rows[0].items.first?.width == 200)
+    }
+
+    @Test func uniformWidthWithThreeSquares() {
+        // 3 张方形 @ 200pt 宽 + 8pt spacing → 200×3+8×2=616 ≤ 800 → 1 行
+        let items = (0..<3).map { _ in
+            MasonryMath.Item(id: UUID(), width: 0, aspectRatio: 1.0)
+        }
+        let rows = MasonryMath.groupIntoRows(
+            items: items,
+            availableWidth: 800,
+            rowHeight: 200,
+            spacing: 8,
+            uniformWidth: 200
+        )
+        #expect(rows.count == 1)
+        #expect(rows[0].items.count == 3)
+    }
 }

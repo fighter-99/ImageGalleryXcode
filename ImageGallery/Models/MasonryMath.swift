@@ -48,13 +48,16 @@ enum MasonryMath {
     ///   - availableWidth: 单行可用宽（容器宽 - 边距）
     ///   - rowHeight: 每行固定高
     ///   - spacing: cell 间距
+    ///   - uniformWidth: V5.16.1——非 nil 时所有 cell 用此宽（Photos.app "图库" uniform square 模式）
+    ///     nil 时走 masonry 模式（V5.16 默认），cell 宽 = rowHeight × item.aspectRatio
     /// - Returns: 行数组——每行 cell 总宽（含 spacing）≤ availableWidth
     ///   最后一行不满不补齐（Photos.app 行为）
     static func groupIntoRows(
         items: [Item],
         availableWidth: CGFloat,
         rowHeight: CGFloat,
-        spacing: CGFloat
+        spacing: CGFloat,
+        uniformWidth: CGFloat? = nil
     ) -> [Row] {
         guard availableWidth > 0, rowHeight > 0 else { return [] }
 
@@ -63,7 +66,10 @@ enum MasonryMath {
         var currentWidth: CGFloat = 0  // 当前行已用宽（含 spacing）
 
         for item in items {
-            let cellWidth = rowHeight * item.aspectRatio
+            // V5.16.1: uniformWidth 模式 vs masonry 模式
+            //   uniformWidth=200 → 所有 cell 200pt 宽（方形 cell）—— image letterbox
+            //   uniformWidth=nil → cell 宽 = rowHeight × aspectRatio（masonry）
+            let cellWidth = uniformWidth ?? (rowHeight * item.aspectRatio)
             let projectedWidth: CGFloat
             if current.isEmpty {
                 projectedWidth = cellWidth

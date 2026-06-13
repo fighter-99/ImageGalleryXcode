@@ -482,7 +482,13 @@ struct PhotoGridView: View {
             items: items,
             availableWidth: availableWidth,
             rowHeight: rowHeight,
-            spacing: cellSpacing
+            spacing: cellSpacing,
+            // V5.16.1: 传 uniformWidth = rowHeight —— Photos.app "图库" 模式
+            //   所有 cell 等宽 = 行高 → 单元格正方形 200x200pt
+            //   image .aspectRatio(.fit) 在方形 cell 内 letterbox
+            //   列齐（cell 起点/终点都对齐）
+            //   未来加 toggle 可改回 nil 走 masonry 模式（保留双模式）
+            uniformWidth: rowHeight
         )
 
         LazyVStack(alignment: .leading, spacing: rowSpacing) {
