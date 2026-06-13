@@ -50,14 +50,18 @@ enum MasonryMath {
     ///   - spacing: cell 间距
     ///   - uniformWidth: V5.16.1——非 nil 时所有 cell 用此宽（Photos.app "图库" uniform square 模式）
     ///     nil 时走 masonry 模式（V5.16 默认），cell 宽 = rowHeight × item.aspectRatio
+    ///   - stretchLastRow: V5.16.2——true 时末行不满则把多余宽均分到末行每个 cell
+    ///     (Flickr / 500px 风格：消除"空右缘"但不破坏行高)
+    ///     默认 false（V5.16 行为）——保持 Photos.app "末尾不满"传统
     /// - Returns: 行数组——每行 cell 总宽（含 spacing）≤ availableWidth
-    ///   最后一行不满不补齐（Photos.app 行为）
+    ///   stretchLastRow=true 时末行总宽 = availableWidth（精确填满）
     static func groupIntoRows(
         items: [Item],
         availableWidth: CGFloat,
         rowHeight: CGFloat,
         spacing: CGFloat,
-        uniformWidth: CGFloat? = nil
+        uniformWidth: CGFloat? = nil,
+        stretchLastRow: Bool = false
     ) -> [Row] {
         guard availableWidth > 0, rowHeight > 0 else { return [] }
 
@@ -88,6 +92,25 @@ enum MasonryMath {
             }
         }
         if !current.isEmpty { rows.append(Row(items: current)) }
+
+        // V5.16.2: 末行拉宽——把多余宽均分到末行每个 cell
+        if stretchLastRow, !rows.isEmpty, let lastRow = rows.last, lastRow.items.count > 0 {
+            let lastRowWidth = lastRow.renderedWidth(spacing: spacing)
+            let extra = availableWidth - lastRowWidth
+            if extra > 0 {
+                // extra 含 spacing：每 cell += extra/count + 每 cell 之间补 spacing/count
+                //   简单做法：perCellExtra = extra / count（cell 数决定）—— 末行整行宽恰 = availableWidth
+                let perCellExtra = extra / CGFloat(lastRow.items.count)
+                let stretchedItems = lastRow.items.map { item in
+                    Item(
+                        id: item.id,
+                        width: item.width + perCellExtra,
+                        aspectRatio: item.aspectRatio
+                    )
+                }
+                rows[rows.count - 1] = Row(items: stretchedItems)
+            }
+        }
 
         return rows
     }

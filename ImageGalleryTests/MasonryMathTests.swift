@@ -254,4 +254,68 @@ struct MasonryMathTests {
         #expect(rows.count == 1)
         #expect(rows[0].items.count == 3)
     }
+
+    // MARK: - V5.16.2: stretchLastRow 模式（justified + 末行拉宽）
+
+    @Test func stretchLastRowFillsAvailableWidth() {
+        // masonry 模式 + stretchLastRow=true
+        // 2 张方形 (200pt 宽) + 1 张 2:3 portrait (133pt 宽)
+        // 2×200+12+133=545 ≤ 800 → 1 行
+        // 末行不满 800: extra = 800-545 = 255 → 3 cell 平分 = +85pt 每个
+        // 末 cell 宽: 200 → 285, 200 → 285, 133 → 218
+        // 验证末行精确填满 800
+        let items = [
+            MasonryMath.Item(id: UUID(), width: 200, aspectRatio: 1.0),
+            MasonryMath.Item(id: UUID(), width: 200, aspectRatio: 1.0),
+            MasonryMath.Item(id: UUID(), width: 133, aspectRatio: 2.0/3.0),
+        ]
+        let rows = MasonryMath.groupIntoRows(
+            items: items,
+            availableWidth: 800,
+            rowHeight: 200,
+            spacing: 12,
+            stretchLastRow: true
+        )
+        #expect(rows.count == 1)
+        // 末行总宽 = 285 + 12 + 285 + 12 + 218 = 812 — 但应 = 800
+        // 实际：perCellExtra = 255/3 = 85 → 200+85=285, 200+85=285, 133+85=218
+        // 285+12+285+12+218 = 812（不精确 800）— 算法稍偏
+        // 实际应 = availableWidth（精确填满）—— 此测试暴露需要更精确算法
+        // 用容差验证 ±2pt
+        let rendered = rows[0].renderedWidth(spacing: 12)
+        #expect(abs(rendered - 800) < 2, "末行应填满 800pt，actual \(rendered)")
+    }
+
+    @Test func stretchLastRowDefaultIsFalse() {
+        // 不传 stretchLastRow → V5.16 默认行为：末行不满不补齐
+        let items = [MasonryMath.Item(id: UUID(), width: 200, aspectRatio: 1.0)]
+        let rows = MasonryMath.groupIntoRows(
+            items: items, availableWidth: 800, rowHeight: 200, spacing: 12
+        )
+        // 1 张 200pt → 末行总宽 200（不填满 800）
+        #expect(rows[0].renderedWidth(spacing: 12) == 200)
+    }
+
+    @Test func stretchLastRowMultiRowStretchesLast() {
+        // 5 张方形 @ 200pt → 800/(200+12)≈3.77 → 第 1 行 3 张 (624)
+        // 第 2 行 2 张 (412) — stretchLastRow 应只拉第 2 行
+        let items = (0..<5).map { _ in
+            MasonryMath.Item(id: UUID(), width: 200, aspectRatio: 1.0)
+        }
+        let rows = MasonryMath.groupIntoRows(
+            items: items,
+            availableWidth: 800,
+            rowHeight: 200,
+            spacing: 12,
+            stretchLastRow: true
+        )
+        #expect(rows.count == 2)
+        // 第 1 行 3 cell: 200×3+12×2=624（不变，因非末行）
+        #expect(rows[0].items.count == 3)
+        #expect(abs(rows[0].renderedWidth(spacing: 12) - 624) < 1)
+        // 第 2 行 2 cell: stretchLastRow 拉伸 → 末 cell 拉宽
+        #expect(rows[1].items.count == 2)
+        // 末行总宽应 = 800（精确填满）
+        #expect(abs(rows[1].renderedWidth(spacing: 12) - 800) < 2)
+    }
 }

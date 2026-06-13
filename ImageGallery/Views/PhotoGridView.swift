@@ -483,12 +483,11 @@ struct PhotoGridView: View {
             availableWidth: availableWidth,
             rowHeight: rowHeight,
             spacing: cellSpacing,
-            // V5.16.1: 传 uniformWidth = rowHeight —— Photos.app "图库" 模式
-            //   所有 cell 等宽 = 行高 → 单元格正方形 200x200pt
-            //   image .aspectRatio(.fit) 在方形 cell 内 letterbox
-            //   列齐（cell 起点/终点都对齐）
-            //   未来加 toggle 可改回 nil 走 masonry 模式（保留双模式）
-            uniformWidth: rowHeight
+            // V5.16.2: 改回 masonry 模式（不传 uniformWidth）+ stretchLastRow
+            //   cell 宽 = rowHeight × photoAspect → portrait 0% letterbox
+            //   末行不满则把多余宽均分到末行每个 cell → 消除"空右缘"
+            //   保留 MasonryMath 双模式（uniformWidth + stretchLastRow 可组合或独立用）
+            stretchLastRow: true
         )
 
         LazyVStack(alignment: .leading, spacing: rowSpacing) {
