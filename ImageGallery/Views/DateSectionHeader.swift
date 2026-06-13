@@ -33,12 +33,15 @@ struct DateSectionHeader: View {
         HStack(alignment: .firstTextBaseline, spacing: Spacing.sm) {
             Text(label)
                 // V5.18: title3 semibold → system 24pt bold（对齐 Photos.app "Today" 视觉权重）
-                .font(.system(size: 24, weight: .bold))
+                // V5.27: 24pt bold → 15pt medium——macOS Photos Library 节奏
+                //   24pt bold 是 iOS Photos 节奏（大块头切碎 grid 连续滚动流）
+                //   macOS Photos Library 段头用 13-15pt medium，'连续滚动' 视觉
+                .font(.system(size: 15, weight: .medium))
                 .foregroundStyle(.primary)
             Spacer()
             // V5.21: count "637 张图片" 颜色 secondary → primary + 字重 medium
             //   之前 secondary 在深背景上偏淡，截图 29 几乎看不清
-            //   仍 callout 字号（比 label 24pt 小）——不抢 label 视觉权重
+            //   仍 callout 字号（比 label 15pt 小）——不抢 label 视觉权重
             Text("\(count) 张")
                 .font(.callout.weight(.medium))
                 .foregroundStyle(.primary)
