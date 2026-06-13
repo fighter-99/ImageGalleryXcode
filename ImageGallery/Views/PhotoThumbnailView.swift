@@ -114,9 +114,11 @@ struct PhotoThumbnailView: View {
     ///   收敛视觉锤：border=0（砍）+ tint 0.10/0.15（1 锤）+ ✓ 角标（多选时 1 锤）= 1-2 锤
     /// V5.19: 内 cell 2pt padding——Photos.app "framed photo" 风格
     /// V5.20: 2pt → 4pt padding——用户反馈"图片没被抱着"，4pt 留白更明显
-    ///   配合 V5.20 .square 默认 + 240pt 大 cell，"图框"感更清晰
-    ///   镜像 iOS Photos.app / Finder thumbnail 视觉
-    static let innerCellPadding: CGFloat = 4
+    /// V5.27: 4pt → 0pt——macOS Photos.app Library 实际无 inner padding
+    ///   - image 直接贴 cell 边缘（无 "framed photo" 感）
+    ///   - letterbox 透窗口色（cell 背景 = clear）= image "浮"在窗口上
+    ///   - iOS Photos "抱着图" 痕迹全清
+    static let innerCellPadding: CGFloat = 0
     enum CellSelectionState {
         case none       // 默认
         case single     // isActive 单选
@@ -298,15 +300,14 @@ struct PhotoThumbnailView: View {
                 Spacer(minLength: 0)
             }
             .frame(maxWidth: .infinity)
-            // V5.21: 加 subtle card 背景 (反转 V4.23.0 "cell 完全透明" 决定)
-            //   V4.23.0 决定时无 .square 默认——masonry 模式 image 完全 fill cell 看不见 letterbox
-            //   V5.20 改 .square 默认后 portrait 3:4 照片在 240² cell 内有 ~40pt 横向 letterbox
-            //   V5.21 V4.23.0 反转：加 4% 白色 tint 浅框——letterbox 区有"卡片"感
-            //   配合 V5.20 innerCellPadding 4pt：image + card 双重呼吸感
-            //   masonry 模式 image 完全覆盖 card，视觉无变化（兼容老用户）
+            // V5.27: cell 背景透明——实现 macOS Photos Library "letterbox 透窗口色" 视觉
+            //   - 之前 V5.21 加 4% 白色 tint 是 iOS Photos "poloroid" 痕迹
+            //   - macOS Photos.app 实际：cell 与窗口同背景，letterbox 区就是窗口色
+            //   - V4.4.5 教训：cell 背景不能比窗口背景浅一档（"浅框"幽灵）——clear 最安全
+            //   - letterbox 透窗口色 + image 居中 = "漂浮的图片" 视觉 = Photos Library 真版
             .background(
                 RoundedRectangle(cornerRadius: Radius.thumb)
-                    .fill(Color.white.opacity(0.04))
+                    .fill(Color.clear)  // V5.27: V5.21 加的 0.04 white tint → clear
             )
             // V3.6.26: 异步加载缩略图（缓存命中立即返回；未命中后台线程解码）
             // V4.4.0: 加载失败时 set loadFailed=true（loadImageAsync 返回 nil 视为失败）

@@ -507,27 +507,11 @@ struct PhotoGridView: View {
     //   - .masonry:        uniformWidth=nil,        stretchLastRow=false
     //   - .masonryStretch: uniformWidth=nil,        stretchLastRow=true
     // V5.18: showDateCaption 决定 cell 下方是否显示日期 caption（Photos Days/Months 风格）
-    // V5.21: 普通 helper（@ViewBuilder 内不能用 if/else for CGFloat 赋值）
-    /// V5.21: .square 模式动态算 cell 宽填满 availableWidth，其他模式用原 rowHeight
-    /// - Returns: (actualRowHeight, actualUniformWidth) 传给 MasonryMath.groupIntoRows
-    private func computeLayoutParams(
-        layoutMode: ThumbnailLayoutMode,
-        availableWidth: CGFloat,
-        rowHeight: CGFloat,
-        cellSpacing: CGFloat,
-        defaultUniformWidth: CGFloat?
-    ) -> (CGFloat, CGFloat?) {
-        if layoutMode == .square {
-            let cellSize = SquareLayout.cellSize(
-                availableWidth: availableWidth,
-                rowHeight: rowHeight,
-                cellSpacing: cellSpacing
-            )
-            return (cellSize, cellSize)  // 保持方形 (cellWidth = cellHeight)
-        } else {
-            return (rowHeight, defaultUniformWidth)
-        }
-    }
+    // V5.27: 砍 computeLayoutParams helper + SquareLayout.cellSize
+    //   - V5.21 加的 "动态算 cell 宽填满 availableWidth" 是 Flickr 末行拉满逻辑
+    //   - macOS Photos.app Library 实际是"末行不满时空格 = 窗口色"——不拉满
+    //   - 改回固定 cellSize = rowHeight（thumbnailSize），末行不满时空格透窗口色
+    //   - 直接用 params.uniformWidth（.square = rowHeight），不再二次计算
 
     @ViewBuilder
     private func masonryRowsView(
@@ -548,25 +532,15 @@ struct PhotoGridView: View {
         }
         // V5.17: ThumbnailLayoutMode.masonryParams 把 3 选项映射到 MasonryMath 双参数
         //   enum 转换逻辑收敛在 enum 本体，PhotoGridView 直接拿结果调 MasonryMath
+        // V5.27: 直接用 params.uniformWidth——.square = rowHeight（固定 cell 边长）
         let params = layoutMode.masonryParams(rowHeight: rowHeight)
-        // V5.21: .square 模式 cell 宽动态算填满 availableWidth——解决 ragged right edge
-        //   之前 cell 宽 = rowHeight 固定（240pt）→ 1100pt 可用宽只放 4 cell，剩 80pt 空
-        //   现在 SquareLayout.cellSize 算 n 个 cell 刚好填满，rowHeight 也跟着改保持方形
-        // 用普通函数（@ViewBuilder 内不能用 if/else for non-View 赋值）
-        let (actualRowHeight, actualUniformWidth) = computeLayoutParams(
-            layoutMode: layoutMode,
-            availableWidth: availableWidth,
-            rowHeight: rowHeight,
-            cellSpacing: cellSpacing,
-            defaultUniformWidth: params.uniformWidth
-        )
         let rows = MasonryMath.groupIntoRows(
             items: items,
             availableWidth: availableWidth,
-            rowHeight: actualRowHeight,
+            rowHeight: rowHeight,                         // V5.27: 固定 = thumbnailSize（不被拉宽）
             spacing: cellSpacing,
-            uniformWidth: actualUniformWidth,
-            stretchLastRow: params.stretchLastRow
+            uniformWidth: params.uniformWidth,            // V5.27: .square = rowHeight
+            stretchLastRow: params.stretchLastRow         // V5.27: .square = false（末行不拉满）
         )
 
         LazyVStack(alignment: .leading, spacing: rowSpacing) {
