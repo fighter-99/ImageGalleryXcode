@@ -478,7 +478,10 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
         }
 
         let popover = NSPopover()
-        popover.behavior = .transient  // 点外部自动关闭
+        // V5.15: .applicationDefined 强制 always-below（弃用 NSPopover flip 保护）
+        //   折衷：click-outside 不再自动关（需 toggle 按钮或 closeAll 显式关）
+        //   ToolbarController.popoverDidClose (line ~397) 仍处理 view options 关事件
+        popover.behavior = .applicationDefined
         popover.delegate = self  // V5.9: 监听 popoverDidClose 同步按钮状态
         popover.contentViewController = contentProvider()
         // V5.13.1: 临时诊断 popover 位置——记录 anchor 在 window 坐标

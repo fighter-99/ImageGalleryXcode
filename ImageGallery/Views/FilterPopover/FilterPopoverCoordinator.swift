@@ -94,7 +94,11 @@ final class FilterPopoverCoordinator {
         }
 
         let popover = NSPopover()
-        popover.behavior = .transient
+        // V5.15: .applicationDefined 强制 always-below（弃用 NSPopover flip 保护）
+        //   .transient 模式下窗口靠下时 NSPopover 自动翻到上方——见 V5.13.1 调查
+        //   .applicationDefined 模式按 preferredEdge 严格定位，弃用 flip
+        //   折衷：click-outside 不再自动关（需 toggle 按钮或 closeAll 显式关）
+        popover.behavior = .applicationDefined
         popover.contentViewController = topVC
         popover.show(relativeTo: anchor.bounds, of: anchor, preferredEdge: .minY)
         topPopover = popover
@@ -130,7 +134,8 @@ final class FilterPopoverCoordinator {
         }
 
         let popover = NSPopover()
-        popover.behavior = .transient
+        // V5.15: .applicationDefined（见 showTop 注释）——V5.9.4 dead code 但保持一致
+        popover.behavior = .applicationDefined
         popover.contentViewController = topVC
         // V5.9.4: positioningView + rect 路径——避开 view-based anchor 的两个坑
         popover.show(relativeTo: rect, of: positioningView, preferredEdge: .minY)
@@ -163,7 +168,8 @@ final class FilterPopoverCoordinator {
         }
 
         let popover = NSPopover()
-        popover.behavior = .transient
+        // V5.15: .applicationDefined（见 showTop 注释）
+        popover.behavior = .applicationDefined
         popover.contentViewController = childVC
         popover.show(relativeTo: anchor.bounds, of: anchor, preferredEdge: .minY)
         childPopover = popover
