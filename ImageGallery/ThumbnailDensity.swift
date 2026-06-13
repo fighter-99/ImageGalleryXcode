@@ -6,10 +6,16 @@
 //  3 档离散值，替代原来的连续 Slider。
 //  底层仍是 CGFloat（保持 PhotoGridView 接口不变）。
 //
+//  V5.18: 4 档加 .compact 70pt（Photos.app "Months" 视图风格）
+//    - 用户在 1 屏想看更多图时切到 .compact
+//    - 4x3 12-cell 网格图标暗示密度更高
+//    - 4 档比 3 档视觉更多选择但仍能塞进 1 个 popover 段
+//
 
 import Foundation
 
 enum ThumbnailDensity: String, CaseIterable, Identifiable {
+    case compact  // V5.18: 70pt——4x3 网格密度
     case small
     case medium
     case large
@@ -18,32 +24,39 @@ enum ThumbnailDensity: String, CaseIterable, Identifiable {
 
     /// 对应的实际缩略图大小（pt）
     /// V5.16: medium 170→200（行高 200pt 视觉更宽裕，缩略图原值即 200pt）
+    /// V5.18: 加 .compact 70pt（Months 视图风格，1 屏看更多图）
     var size: CGFloat {
         switch self {
-        case .small:  return 110
-        case .medium: return 200
-        case .large:  return 240
+        case .compact: return 70
+        case .small:   return 110
+        case .medium:  return 200
+        case .large:   return 240
         }
     }
 
     /// 中文标签
     var label: String {
         switch self {
-        case .small:  return "小"
-        case .medium: return "中"
-        case .large:  return "大"
+        case .compact: return "极小"
+        case .small:   return "小"
+        case .medium:  return "中"
+        case .large:   return "大"
         }
     }
 
     /// 图标：用点阵密度暗示
-    /// - 小：3×3 = 9 个点（密集 = 单格小）
-    /// - 中：2×2 = 4 个点
-    /// - 大：1×1 = 单个大方块
+    /// - 极小 (70pt):  4×3 = 12 个点（密集 = 单格最小）
+    /// - 小   (110pt): 3×3 = 9 个点
+    /// - 中   (200pt): 2×2 = 4 个点
+    /// - 大   (240pt): 1×1 = 单个大方块
+    /// V5.18: .compact 加 .fill 后缀——实心方块视觉密度比 outline 强
+    ///   4x3.fill vs 3x3 区分更明显，避免"差不多大小"
     var icon: String {
         switch self {
-        case .small:  return "square.grid.3x3"
-        case .medium: return "square.grid.2x2"
-        case .large:  return "square"
+        case .compact: return "square.grid.4x3.fill"
+        case .small:   return "square.grid.3x3"
+        case .medium:  return "square.grid.2x2"
+        case .large:   return "square"
         }
     }
 
