@@ -68,7 +68,7 @@ struct ContentView: View {
     }
 
     // 排序方式（Eagle 化工具栏新增）
-    @State private var sortOption: SortOption = .importedAtDesc
+    @State private var sortOption: SortOption = .filenameAsc  // V5.31: importedAtDesc → filenameAsc (无 date header 默认)
 
     // V4.36.6: visiblePhotos 从 @State 改为 computed property
     //   旧 @State + onVisiblePhotosChange 模式只服务于 grid view——切到 list/timeline 不更新
@@ -204,7 +204,12 @@ struct ContentView: View {
     //   - 老用户 @AppStorage 已有 storedThumbnailSize 不受影响 (仅新装/重置生效)
     @AppStorage("thumbnailSize") private var storedThumbnailSize: Double = 200  // V5.30: 240→200 (Photos 真版密度)
     @AppStorage("sidebarSelection") private var storedSidebarKey: String = "all"
-    @AppStorage("sortOption") private var storedSortOption: String = SortOption.importedAtDesc.rawValue
+    // V5.31: 默认 sort 改 filenameAsc——Photos.app Library 视图无 date header
+    //   - 之前 importedAtDesc → isDateBased=true → DateSectionHeader 显示
+    //   - Photos 真版: Library 连续流, 无 date section
+    //   - 改 filenameAsc: 字母序, isDateBased=false → masonryFlatLayout (无 header)
+    //   - 老用户 @AppStorage 已有 storedSortOption 不受影响 (仅新装/重置生效)
+    @AppStorage("sortOption") private var storedSortOption: String = SortOption.filenameAsc.rawValue  // V5.31: importedAtDesc → filenameAsc
     // V5.17: 缩略图布局模式（3 选项 .square / .masonry / .masonryStretch）
     //   镜像 AppearanceMode Int-backed pattern
     //   @AppStorage 持久化 + computed 读写 + 透传给 ViewOptionsPopover/PhotoGridPane
@@ -449,7 +454,7 @@ struct ContentView: View {
                 onAppear: {
                     thumbnailSize = CGFloat(storedThumbnailSize)
                     sidebarSelection = restoreSelection(storedSidebarKey)
-                    sortOption = SortOption(rawValue: storedSortOption) ?? .importedAtDesc
+                    sortOption = SortOption(rawValue: storedSortOption) ?? .filenameAsc  // V5.31
                     // V3.6 NEW: 启动时清理过期回收站项（只跑一次）
                     if !hasPurgedExpiredTrash {
                         hasPurgedExpiredTrash = true
@@ -462,7 +467,7 @@ struct ContentView: View {
                     Photo.migrateFavoriteToRating(in: allPhotos, context: modelContext)
                 },
                 onStoredThumbnailChange: { thumbnailSize = CGFloat($0) },
-                onStoredSortChange: { sortOption = SortOption(rawValue: $0) ?? .importedAtDesc },
+                onStoredSortChange: { sortOption = SortOption(rawValue: $0) ?? .filenameAsc },  // V5.31
                 onThumbnailChange: { storedThumbnailSize = Double($0) },
                 onSidebarSelectionChange: { new in
                     storedSidebarKey = serializeSelection(new)
