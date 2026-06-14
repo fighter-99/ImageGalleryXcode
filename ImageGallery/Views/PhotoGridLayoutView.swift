@@ -32,7 +32,14 @@ struct PhotoGridLayoutView: View {
     let onDoubleTap: (Photo) -> Void
 
     var body: some View {
-        LazyVStack(alignment: .leading, spacing: rowSpacing) {
+        // V5.37: LazyVStack spacing 0 + 每行 .padding(.vertical, rowSpacing/2)
+        //   - 之前 LazyVStack(spacing: rowSpacing) 应该工作, 但 User 反馈'行与行之间没有间距'
+        //   - 改成显式 padding 双保险: 视觉上保证行之间有间距
+        //   - rowSpacing/2 + rowSpacing/2 = rowSpacing (对称)
+        //   - row 视觉 frame 不变, 内容上下缩 rowSpacing/2
+        //   - 实际: row content 之间间距 = row 1 下 padding + row 2 上 padding = rowSpacing
+        //   - 这是 V5.37 关键改动: 不再依赖 LazyVStack spacing (可能不生效)
+        LazyVStack(alignment: .leading, spacing: 0) {
             ForEach(rows) { row in
                 PhotoRowView(
                     row: row,
@@ -47,6 +54,7 @@ struct PhotoGridLayoutView: View {
                     onTap: onTap,
                     onDoubleTap: onDoubleTap
                 )
+                .padding(.vertical, rowSpacing / 2)
             }
         }
     }
