@@ -90,12 +90,13 @@ struct SidebarView: View {
     var body: some View {
         // V4.1.0f: 侧栏完全"无 UI"——hide 按钮搬回主工具栏
         //   视觉上侧栏直接从 section header 开始（更紧凑）
-        //   整个 sidebarContent 用 .regularMaterial 背景（V4.1.0d 改）
-        // V4.21.0: 撤回 V4.18.0 .glassEffect(.regular) 升级——macOS 26 单 view glassEffect
-        //   仍在 sidebar 边界外产生 outline 痕迹（用户截图反馈 V4.20.0 union 撤回后仍未消失）
-        //   回滚到 V4.17.0 .background(.regularMaterial)——视觉已确认无副作用
+        // V5.31: .regularMaterial → .bar——更 subtle, 镜像 macOS Photos 风格
+        //   - .regularMaterial: 明显雾化, light 模式偏灰白 (V4.1.0d 加)
+        //   - .bar: macOS 标准 sidebar 材质, 微妙 vibrancy, light 模式近透明
+        //   - Photos.app sidebar 是 .bar 类似质感 (系统 thin material)
+        // V4.21.0 撤回历史: 试过 .glassEffect(.regular) 有 outline 痕迹, 不再试
         sidebarContent
-            .background(.regularMaterial)
+            .background(.bar)
     }
 
     /// V4.1.0f 移除：sidebarTopBar 整个组件删除（hide 按钮回到主工具栏）
