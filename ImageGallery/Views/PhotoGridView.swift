@@ -270,7 +270,7 @@ struct PhotoGridView: View {
     }
 
     // ─── 图片网格 ───
-    // V5.16: masonry 重构——Photos.app "Aspect Ratio" 视图风格
+    // V5.16 + V5.41: masonry 重构——macOS Photos.app "Days/Library" 真版 (justified row 布局)
     //   - 行内 cell 高度统一 = rowHeight (thumbnailSize)
     //   - cell 宽度 = rowHeight × photo.aspectRatio (变宽)
     //   - 行 reflow: MasonryMath.groupIntoRows 算好每行 cell 列表
@@ -348,7 +348,8 @@ struct PhotoGridView: View {
                             rowSpacing: rowSpacing,
                             cellSpacing: cellSpacing,
                             // V5.18: 日期分组视图显示拍摄日期 caption
-                            // V5.25: 改为 layoutMode != .square——.square (Library 视图) 无 caption
+                            // V5.25: 改为 layoutMode != .square——.square (iOS Photos Library 风格) 无 caption
+                            // V5.41 修正: .square 是 iOS Photos.app Library 风格, 不是 macOS Photos 真版
                             showDateCaption: layoutMode != .square,
                             // V5.39.7: 透传排序 + 重排回调 (拖拽重排依赖)
                             sortOption: sortOption,

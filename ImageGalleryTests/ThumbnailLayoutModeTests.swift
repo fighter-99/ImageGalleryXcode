@@ -2,12 +2,12 @@
 //  ThumbnailLayoutModeTests.swift
 //  ImageGalleryTests
 //
-//  V5.17 → V5.39.5: ThumbnailLayoutMode 单元测试
+//  V5.17 → V5.41: ThumbnailLayoutMode 单元测试
 //  验证：
 //  - 2 个 case 完整（保护 Toolbar 布局模式菜单 / masonryRowsView 调度表）
 //  - rawValue 稳定（@AppStorage("thumbnailLayoutMode") 持久化契约）
 //  - displayName / icon 非空
-//  - defaultValue = .square（V5.20 改回 Photos Library 真版——统一方形 grid）
+//  - defaultValue = .square（V5.20 改 iOS Photos.app Library 风格——V5.41 修正认知）
 //  - masonryParams(rowHeight:) 返 CGFloat? (V5.39.5 简化——只返 uniformWidth, 不再返 stretchLastRow)
 //  - id 唯一（ForEach Identifiable 依赖）
 //
@@ -85,9 +85,10 @@ struct ThumbnailLayoutModeTests {
     // MARK: - 默认值
 
     @Test func defaultValueIsSquare() {
-        // V5.20: 默认改 .square（Photos.app Library 视图——统一方形 grid，无 ragged right edge）
+        // V5.20: 默认改 .square（iOS Photos.app Library 视图——统一方形 grid，无 ragged right edge）
+        // V5.41 修正：macOS Photos.app Library 实际是 Justified Row（= .masonry），不是 .square
         // V5.19 默认 .masonry 被反馈"右边缘空缺 + 不对齐"
-        // 截图 27 vs 截图 28 对比：Photos Library 是统一方形——column 完美对齐
+        // 截图 27 vs 截图 28 对比：iOS Photos Library 是统一方形——column 完美对齐
         // 老用户 @AppStorage 有 storedLayoutModeRaw 不受影响（仅新装/重置生效）
         #expect(ThumbnailLayoutMode.defaultValue == .square)
     }

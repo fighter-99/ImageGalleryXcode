@@ -2,13 +2,17 @@
 //  MasonryMath.swift
 //  ImageGallery
 //
-//  V5.16 → V5.39: 主网格 row 装箱算法——Photos.app "Square" 模式
+//  V5.16 → V5.41: 主网格 row 装箱算法
 //    - 行内 cell 高度统一（rowHeight）
-//    - cell 宽度 = rowHeight × photoAspectRatio (masonry 模式)
-//    - cell 宽度 = rowHeight (uniform square 模式, V5.16.1)
+//    - cell 宽度 = rowHeight × photoAspectRatio (.masonry 模式, macOS Photos.app 真版)
+//    - cell 宽度 = rowHeight (.square 模式, V5.16.1, iOS Photos.app Library 风格)
 //    - 行 reflow：cell 累加宽度超 availableWidth 时开新行
-//    - 最后一行不满不补齐（Photos.app 行为）
-//    - stretchLastRow=true 时末行均分多余宽 (V5.16.2)
+//    - 最后一行不满不补齐（Photos 通用行为）
+//    - stretchLastRow=true 时末行均分多余宽 (V5.16.2, Flickr 风格)
+//
+//  ⚠️ V5.41 认知修正: 见 ThumbnailLayoutMode.swift header
+//    - .square 模式 = iOS Photos.app Library (1:1 方格), 不是 macOS Photos 真版
+//    - .masonry 模式 = macOS Photos.app Library/Days (justified row)
 //
 //  V5.39 砍除 V5.36 packJustifiedRows + JustifiedRow struct——
 //    V5.36 算法搬至 JustifiedRowLayout.swift (user spec 形式, targetRowHeight × scaleFactor)
@@ -54,11 +58,11 @@ enum MasonryMath {
     ///   - availableWidth: 单行可用宽（容器宽 - 边距）
     ///   - rowHeight: 每行固定高
     ///   - spacing: cell 间距
-    ///   - uniformWidth: V5.16.1——非 nil 时所有 cell 用此宽（Photos.app "图库" uniform square 模式）
+    ///   - uniformWidth: V5.16.1——非 nil 时所有 cell 用此宽（iOS Photos.app Library 风格 uniform square 模式）
     ///     nil 时走 masonry 模式（V5.16 默认），cell 宽 = rowHeight × item.aspectRatio
     ///   - stretchLastRow: V5.16.2——true 时末行不满则把多余宽均分到末行每个 cell
     ///     (Flickr / 500px 风格：消除"空右缘"但不破坏行高)
-    ///     默认 false（V5.16 行为）——保持 Photos.app "末尾不满"传统
+    ///     默认 false（V5.16 行为）——保持 Photos 通用"末尾不满"传统
     /// - Returns: 行数组——每行 cell 总宽（含 spacing）≤ availableWidth
     ///   stretchLastRow=true 时末行总宽 = availableWidth（精确填满）
     static func groupIntoRows(

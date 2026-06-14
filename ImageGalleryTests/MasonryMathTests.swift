@@ -198,7 +198,8 @@ struct MasonryMathTests {
         #expect(id3Row?.items.first?.id == id3)
     }
 
-    // MARK: - V5.16.1: uniformWidth 模式（Photos.app "图库" 风格）
+    // MARK: - V5.16.1: uniformWidth 模式（iOS Photos.app Library 风格）
+    // V5.41 修正：这是 iOS Photos.app 风格，不是 macOS Photos 真版
 
     @Test func uniformWidthIgnoresAspectRatio() {
         // uniformWidth=200 → 所有 cell 200pt 宽（无视 aspect）
