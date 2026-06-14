@@ -48,33 +48,80 @@ struct GridLayout: Equatable {
 
     /// 纯函数: 输入 items, 输出 rows
     /// V5.29-3: 测试入口——不依赖 SwiftData, 可独立单测
+    /// V5.36: 按 layoutMode 分发到不同算法
+    ///   - .square: V5.35 算法 (cellSize 动态算填满宽, 所有 cell 1:1)
+    ///   - .masonry / .masonryStretch: V5.36 算法 (per-row height 算, 整行精确填满)
     func computeRows(from items: [PhotoGridItem]) -> [GridRow] {
+        switch layoutMode {
+        case .square:
+            return computeUniformSquareRows(items: items)
+        case .masonry, .masonryStretch:
+            return computeJustifiedMasonryRows(items: items)
+        }
+    }
+
+    // MARK: - .square 模式 (V5.35 算法)
+
+    /// V5.35: .square 模式——cellSize 动态算填满 availableWidth
+    ///   - 所有 cell cellSize × cellSize (1:1 方形)
+    ///   - greedy line break (累计超 availableWidth 时换行)
+    ///   - 末行不满时留空 = 窗口色 (Photos 不拉满)
+    private func computeUniformSquareRows(items: [PhotoGridItem]) -> [GridRow] {
+        let cellSize = SquareLayout.cellSize(
+            availableWidth: availableWidth,
+            rowHeight: rowHeight,
+            cellSpacing: cellSpacing
+        )
         let masonryItems = items.map { item in
             MasonryMath.Item(
                 id: item.id,
-                width: rowHeight * item.aspectRatio,
+                width: cellSize,
                 aspectRatio: item.aspectRatio
             )
         }
-        let params = layoutMode.masonryParams(rowHeight: rowHeight)
         let masonryRows = MasonryMath.groupIntoRows(
             items: masonryItems,
             availableWidth: availableWidth,
-            rowHeight: rowHeight,
+            rowHeight: cellSize,
             spacing: cellSpacing,
-            uniformWidth: params.uniformWidth,
-            stretchLastRow: params.stretchLastRow
+            uniformWidth: cellSize,
+            stretchLastRow: false  // 末行不满时留空, 不拉满
         )
-        // 把 MasonryMath.Row.items 的最终 width 写回 PhotoGridItem.width (含末行拉伸)
         return masonryRows.map { row in
             let gridItems: [PhotoGridItem] = row.items.map { mItem in
-                PhotoGridItem(
-                    id: mItem.id,
-                    aspectRatio: mItem.aspectRatio,
-                    width: mItem.width
-                )
+                PhotoGridItem(id: mItem.id, aspectRatio: mItem.aspectRatio, width: mItem.width)
             }
-            return GridRow(items: gridItems, rowHeight: rowHeight)
+            return GridRow(items: gridItems, rowHeight: cellSize)
+        }
+    }
+
+    // MARK: - .masonry / .masonryStretch 模式 (V5.36 算法)
+
+    /// V5.36: Photos.app Library 真版 Justified Row Layout
+    ///   - per-row 算 rowHeight
+    ///   - 整行 width 严格 = availableWidth
+    ///   - 跨 row rowHeight 可不同 (取决于该 row 内的 photos aspect 分布)
+    ///   - .masonry 与 .masonryStretch 在新算法下等价 (没有"末行拉满"需要)
+    private func computeJustifiedMasonryRows(items: [PhotoGridItem]) -> [GridRow] {
+        let masonryItems = items.map { item in
+            MasonryMath.Item(
+                id: item.id,
+                width: 0,  // V5.36: per-row 算 width (依赖 rowHeight)
+                aspectRatio: item.aspectRatio
+            )
+        }
+        let justifiedRows = MasonryMath.packJustifiedRows(
+            items: masonryItems,
+            availableWidth: availableWidth,
+            spacing: cellSpacing
+        )
+        return justifiedRows.map { row in
+            // 每 row 的 cell width = 该 row 的 rowHeight × cell.aspectRatio
+            let gridItems: [PhotoGridItem] = row.items.map { mItem in
+                let width = row.rowHeight * mItem.aspectRatio
+                return PhotoGridItem(id: mItem.id, aspectRatio: mItem.aspectRatio, width: width)
+            }
+            return GridRow(items: gridItems, rowHeight: row.rowHeight)
         }
     }
 
