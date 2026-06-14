@@ -188,7 +188,7 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
                 id: id,
                 image: "sidebar.leading",
                 // V4.14.0: 本地化——之前 V4.8.0 硬编码英文，hover tooltip + Customize Toolbar 面板显示英文
-                label: "切换侧边栏",
+                label: Copy.toolbarToggleSidebar,
                 action: #selector(handleToggleSidebar)
             )
         // V5.7: 砍 .favorite case——工具栏 ❤ 收藏按钮移除
@@ -198,28 +198,28 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
             item = makeSimpleItem(
                 id: id,
                 image: "eye",
-                label: "快速查看",
+                label: Copy.quickLook,
                 action: #selector(handleShowQuickLook)
             )
         case .export:
             item = makeSimpleItem(
                 id: id,
                 image: "square.and.arrow.up",
-                label: "导出",
+                label: Copy.toolbarExport,
                 action: #selector(handleBatchExport)
             )
         case .delete:
             item = makeSimpleItem(
                 id: id,
                 image: "trash",
-                label: "删除",
+                label: Copy.delete,
                 action: #selector(handleDelete)
             )
         case .importItem:
             item = makeSimpleItem(
                 id: id,
                 image: "square.and.arrow.down",
-                label: "导入",
+                label: Copy.toolbarImport,
                 action: #selector(handleImport)
             )
         case .filter:  // V4.36.x NEW + V4.54.0 状态感知升级
@@ -239,7 +239,7 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
             item = makeMenuItem(
                 id: id,
                 defaultImage: layoutMode.icon,
-                label: "布局模式",
+                label: Copy.layoutMode,
                 action: #selector(handleMenuButtonClicked(_:))
             )
         case .densityMenu:  // V5.39.3 NEW: 4 档密度 下拉菜单 (替代 V5.31 NSSegmentedControl)
@@ -248,7 +248,7 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
             item = makeMenuItem(
                 id: id,
                 defaultImage: currentDensity.iconName,
-                label: "缩略图大小",
+                label: Copy.thumbnailSize,
                 action: #selector(handleMenuButtonClicked(_:))
             )
         case .sortMenu:  // V5.39.3 NEW: 排序 下拉菜单
@@ -259,7 +259,7 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
             item = makeMenuItem(
                 id: id,
                 defaultImage: sortOption.toolbarIcon,
-                label: "排序",
+                label: Copy.sort,
                 action: #selector(handleMenuButtonClicked(_:))
             )
         }
@@ -372,8 +372,8 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
     private func makeFilterItem(id: Identifier) -> NSToolbarItem {
         let item = NSToolbarItem(itemIdentifier: id.nsIdentifier)
         item.label = ""  // V4.8.3: 空 label + displayMode = .iconOnly 双重保险隐藏文字
-        item.paletteLabel = "筛选"  // Customize Toolbar 面板显示
-        item.toolTip = "筛选"  // 初值；filterActiveCount > 0 时被 updateFilterBadge 覆盖
+        item.paletteLabel = Copy.filter  // Customize Toolbar 面板显示
+        item.toolTip = Copy.filter  // 初值；filterActiveCount > 0 时被 updateFilterBadge 覆盖
         item.target = self
         item.action = #selector(handleShowFilter)
         // V5.9.7: 不设 item.isBordered——让 button bezel 处理背景
@@ -381,7 +381,7 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
         let button = NSButton()
         // V5.9.7: .recessed → .circular——圆形 pill 背景，跟其他按钮一致
         button.bezelStyle = .circular
-        button.toolTip = "筛选"
+        button.toolTip = Copy.filter
         button.target = self
         button.action = #selector(handleShowFilter)
         button.isBordered = true
@@ -441,7 +441,7 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
         let symbol = filterIsActive
             ? "line.3.horizontal.decrease.circle.fill"
             : "line.3.horizontal.decrease"
-        btn.image = NSImage(systemSymbolName: symbol, accessibilityDescription: "筛选")
+        btn.image = NSImage(systemSymbolName: symbol, accessibilityDescription: Copy.filter)
         // V4.54.0: 激活时 tint 强调色（Photos.app 同款——toggle 按钮 active 时显色）
         // nil = 系统默认（保持与其他 5 actions 不主动 tint 一致）
         btn.contentTintColor = filterIsActive ? .controlAccentColor : nil
@@ -458,7 +458,7 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
               let btn = item.view as? NSButton else { return }
         btn.image = NSImage(
             systemSymbolName: currentDensity.iconName,
-            accessibilityDescription: "缩略图大小"
+            accessibilityDescription: Copy.thumbnailSize
         )
     }
 
@@ -615,7 +615,7 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
     private func updateLayoutModeButtonImage() {
         guard let item = itemCache[Identifier.layoutModeMenu.nsIdentifier],
               let button = item.view as? NSButton else { return }
-        button.image = NSImage(systemSymbolName: layoutMode.icon, accessibilityDescription: "布局模式")
+        button.image = NSImage(systemSymbolName: layoutMode.icon, accessibilityDescription: Copy.layoutMode)
     }
 
     /// V5.39.3: 同步排序按钮 image——跟着 sortOption 切
@@ -623,7 +623,7 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
     private func updateSortButtonImage() {
         guard let item = itemCache[Identifier.sortMenu.nsIdentifier],
               let button = item.view as? NSButton else { return }
-        button.image = NSImage(systemSymbolName: sortOption.toolbarIcon, accessibilityDescription: "排序")
+        button.image = NSImage(systemSymbolName: sortOption.toolbarIcon, accessibilityDescription: Copy.sort)
     }
 
     // MARK: - V5.39.3: 3 个 NSMenu 按钮的 state (menu item 勾选用)
@@ -676,11 +676,11 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
         let searchItem = NSSearchToolbarItem(itemIdentifier: id.nsIdentifier)
         searchItem.label = ""  // V4.8.3: 不显示 "Search" 文字
         // V4.14.0: 本地化——之前 V4.8.x 硬编码英文，Customize Toolbar 面板 + hover tooltip 显示英文
-        searchItem.paletteLabel = "搜索"
-        searchItem.toolTip = "搜索照片、标签、笔记"
+        searchItem.paletteLabel = Copy.search
+        searchItem.toolTip = Copy.searchHint
 
         let searchField = searchItem.searchField
-        searchField.placeholderString = "搜索照片、标签…"
+        searchField.placeholderString = Copy.searchPlaceholder
         searchField.sendsSearchStringImmediately = true
         searchField.sendsWholeSearchString = false
         searchField.target = self
@@ -712,8 +712,8 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
     private func makeLayoutModeItem(id: Identifier) -> NSToolbarItem {
         let item = NSToolbarItem(itemIdentifier: id.nsIdentifier)
         item.label = ""
-        item.paletteLabel = "布局模式"
-        item.toolTip = "布局模式"
+        item.paletteLabel = Copy.layoutMode
+        item.toolTip = Copy.layoutMode
 
         let segment = NSSegmentedControl(
             images: ThumbnailLayoutMode.allCases.map { mode in
@@ -740,8 +740,8 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
     private func makeDensityItem(id: Identifier) -> NSToolbarItem {
         let item = NSToolbarItem(itemIdentifier: id.nsIdentifier)
         item.label = ""
-        item.paletteLabel = "缩略图大小"
-        item.toolTip = "缩略图大小"
+        item.paletteLabel = Copy.thumbnailSize
+        item.toolTip = Copy.thumbnailSize
 
         // V5.31: 4 段离散按钮 (Photos 真版)
         //   - 段 0: compact 70pt (square.grid.4x3.fill)
@@ -854,7 +854,7 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
     ///   V4.8.3: displayMode = .iconOnly 不显示 title，故用 tooltip 显示 "筛选 (N)"
     private func updateFilterBadge() {
         guard let item = itemCache[Identifier.filter.nsIdentifier] else { return }
-        item.toolTip = filterActiveCount > 0 ? "筛选 (\(filterActiveCount))" : "筛选"
+        item.toolTip = filterActiveCount > 0 ? Copy.filterWithCount(filterActiveCount) : Copy.filter
         updateFilterButtonImage()  // V4.54.0: 同步 icon + tint
     }
 }

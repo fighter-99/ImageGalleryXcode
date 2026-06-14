@@ -159,4 +159,20 @@ enum Copy {
     /// Edit 菜单 Undo/Redo (有 action 描述时——"撤销 <desc>")
     static func undoWithAction(_ action: String) -> String { "撤销 \(action)" }
     static func redoWithAction(_ action: String) -> String { "重做 \(action)" }
+
+    // MARK: - 工具栏 (V5.50-7 扩展)
+    /// NSToolbar accessibility label + tooltip (与 Copy.quickLook / Copy.delete 共用)
+    static let toolbarToggleSidebar = "切换侧边栏"
+    static let toolbarExport = "导出"
+    static let toolbarImport = "导入"
+    static let layoutMode = "布局模式"
+    static let thumbnailSize = "缩略图大小"
+    static let sort = "排序"
+    static let filter = "筛选"
+    /// NSToolbar 搜索 (NSSearchToolbarItem)
+    static let search = "搜索"
+    static let searchHint = "搜索照片、标签、笔记"
+    static let searchPlaceholder = "搜索照片、标签…"
+    /// 筛选 badge——"筛选 (3)" 表示激活 3 个筛选条件
+    static func filterWithCount(_ count: Int) -> String { "筛选 (\(count))" }
 }
