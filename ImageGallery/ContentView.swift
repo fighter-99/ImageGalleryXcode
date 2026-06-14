@@ -700,6 +700,26 @@ struct ContentView: View {
         window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = true
 
+        // V5.48-2: macOS Photos.app 风格磨砂玻璃 titlebar 背景
+        //   NSVisualEffectView (.titlebar material + .behindWindow blending)
+        //   加到 window.contentView 顶部 (toolbar 下, 内容上)
+        //   z-order: 工具栏 (AppKit chrome, 最上) > visualEffect (contentView 子视图) > SwiftUI content
+        //   内容滚动时, visualEffect 区域显示半透模糊的内容
+        //   Photos.app 风格——titlebar 区域半透显示滚动内容
+        if let contentView = window.contentView {
+            let visualEffect = TitlebarFrostedGlass()
+            // NSWindow 用 bottom-left 原点——y = contentView.bounds.height - height 是顶部
+            visualEffect.frame = NSRect(
+                x: 0,
+                y: contentView.bounds.height - TitlebarFrostedGlass.height,
+                width: contentView.bounds.width,
+                height: TitlebarFrostedGlass.height
+            )
+            // 宽度跟窗口 (水平 resize), 顶部不动 (minYMargin 保持顶部位置)
+            visualEffect.autoresizingMask = [.width, .minYMargin]
+            contentView.addSubview(visualEffect)
+        }
+
         // V4.37.4: titlebar 右上角小按钮（Photos.app ⓘ 风格 + 状态感知）
         //   V4.37.3 基础上加 setActive / setTooltip——保持与 V4.36.x Filter 按钮 didSet 模式统一
         //   - 双 symbol: info.circle (inactive) ↔ info.circle.fill (active)
