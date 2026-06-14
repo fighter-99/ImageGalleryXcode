@@ -34,9 +34,9 @@ struct DateSectionHeader: View {
             Text(label)
                 // V5.18: title3 semibold → system 24pt bold（对齐 Photos.app "Today" 视觉权重）
                 // V5.27: 24pt bold → 15pt medium——macOS Photos Library 节奏
-                //   24pt bold 是 iOS Photos 节奏（大块头切碎 grid 连续滚动流）
-                //   macOS Photos Library 段头用 13-15pt medium，'连续滚动' 视觉
-                .font(.system(size: 15, weight: .medium))
+                // V5.31: 15pt medium → 13pt regular——更 subtle (Photos Days 视图段头实际 ~13pt)
+                //   24pt 切碎 grid, 15pt 仍偏'重', 13pt regular 是 Photos 真版
+                .font(.system(size: 13, weight: .regular))
                 .foregroundStyle(.primary)
             Spacer()
             // V5.21: count "637 张图片" 颜色 secondary → primary + 字重 medium

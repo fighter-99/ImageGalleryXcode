@@ -137,8 +137,8 @@ struct PhotoThumbnailView: View {
         var borderWidth: CGFloat {
             switch self {
             case .none:   return 0
-            case .single: return 3   // V5.28: 蓝色边框——单选 1 锤
-            case .multi:  return 3   // V5.28: 多选也 1 锤 (border), 加 ✓ 角标变 2 锤
+            case .single: return 2   // V5.31: 3 → 2 (subtle, Photos 真版细线)
+            case .multi:  return 2   // V5.31: 多选也 2pt (subtle, 加 ✓ 角标变 2 锤)
             }
         }
 
@@ -273,7 +273,7 @@ struct PhotoThumbnailView: View {
                             .opacity(photo.isInTrash ? (colorScheme == .dark ? 0.65 : 0.55) : 1)
                             // V5.30: image 加载完淡入——镜像 Photos.app Library cell 行为
                             .transition(.opacity)
-                            .animation(.easeOut(duration: 0.2), value: loadedImage != nil)
+                            .animation(.easeOut(duration: 0.1), value: loadedImage != nil)  // V5.31: 0.2→0.1 (快滚动不'波')
                     } else if loadFailed {
                         // V5.28: 失败占位也用 .fill (裁切) 保持一致
                         RoundedRectangle(cornerRadius: Radius.thumb)
