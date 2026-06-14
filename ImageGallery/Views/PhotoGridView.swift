@@ -85,6 +85,12 @@ struct PhotoGridView: View {
     // ─── 综合筛选 ───
     // V3.6.5: 从 computed property 改为 @State 缓存 + filterSignature 失效
     @State private var photos: [Photo] = []
+    // V5.32: 缓存 groupByDate 结果——之前 masonryDateGroupedLayout 每次 body render 都重算
+    //   O(n log n) 复杂度 (iterate + bucket + sort groups + sort photos in groups)
+    //   1000 张图 × 每次 render 滚动 = 1000+ 次重算, 浪费
+    //   改: recomputePhotos() 同步算好, masonryDateGroupedLayout 直接读 cachedDateGroups
+    //   仅 sort 是 .importedAt* 时 (masonryDateGroupedLayout 路径) 实际用——非 date sort 不读
+    @State private var cachedDateGroups: [DateGroup] = []
 
     /// 全部 filter inputs 的 hash 签名
     /// 任何一个变化都触发 recomputePhotos (避免 N 个 onChange)
@@ -129,6 +135,9 @@ struct PhotoGridView: View {
             selectedShapes: selectedShapes,
             minRating: filterMinRating
         )
+        // V5.32: 同步缓存 date groups——避免 body 每 render 重算 O(n log n)
+        //   masonryDateGroupedLayout 直接读 cachedDateGroups
+        cachedDateGroups = PhotoStats.groupByDate(photos)
     }
 
     // 多选模式
@@ -281,7 +290,7 @@ struct PhotoGridView: View {
         rowSpacing: CGFloat,
         cellSpacing: CGFloat
     ) -> some View {
-        let groups = PhotoStats.groupByDate(photos)
+        let groups = cachedDateGroups  // V5.32: 缓存, 不再每 render 重算 O(n log n)
 
         ScrollView {
             LazyVStack(alignment: .leading, spacing: Spacing.xl, pinnedViews: [.sectionHeaders]) {
