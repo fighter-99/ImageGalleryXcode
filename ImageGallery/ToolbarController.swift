@@ -48,7 +48,9 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
     //   镜像 macOS Photos: toolbar 有 density slider + view mode segment
     var onLayoutModeChange: ((ThumbnailLayoutMode) -> Void)?
     var onDensityChange: ((CGFloat) -> Void)?
-    // V4.9.1: 删 onShowViewOptions closure——改用 viewOptionsContentProvider + NSPopover
+    // V5.39.3 NEW: 排序 toolbar 桥接——之前藏在 ViewOptionsPopover 里
+    //   提到独立 toolbar 按钮后直接闭包回调
+    var onSortOptionChange: ((SortOption) -> Void)?
 
     // MARK: - Search field 桥接
 
@@ -60,16 +62,12 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
     /// NSSearchField → SwiftUI @State 同步（用户输入时）
     var onSearchTextChanged: ((String) -> Void)?
 
-    // MARK: - View options popover 桥接（V4.9.1 NEW）
-
-    /// V4.9.1: ContentView 提供 popover 内容（NSHostingController 包 SwiftUI ViewOptionsPopover）
-    /// 之前 V4.8.0 迁移 NSToolbar 时丢了 .popover modifier——action 只 toggle 状态无 popover 显示
-    /// 现在用 NSPopover + NSHostingController 动态显示
-    var viewOptionsContentProvider: (() -> NSViewController)?
-
-    /// V4.9.1: View Options popover 强引用（避免被释放）
-    /// transient 行为下点击外部自动关闭
-    private var viewOptionsPopover: NSPopover?
+    // MARK: - V5.39.3: 删 View options popover 桥接
+    //   布局模式 + 排序都搬到独立 toolbar 按钮, ViewOptionsPopover 空壳, 整段删
+    //   - viewOptionsContentProvider 删
+    //   - viewOptionsPopover 删
+    //   - handleShowViewOptions 删
+    //   - popoverDidClose 中对 viewOptionsPopover 的处理删
 
     // MARK: - Filter popover 桥接（V4.36.x + V4.89.0 重构）——FilterPopoverCoordinator 接管
 
@@ -133,12 +131,17 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
         case delete
         case importItem      // 避开 `import` 关键字
         case filter          // V4.36.x NEW: 工具栏筛选按钮
-        case viewOptions
+        // V5.39.3: 砍 viewOptions case——布局模式 + 排序都搬到独立 toolbar 按钮
+        //   popover 只剩空壳, 直接删
+        // V5.39.3 NEW: 布局模式 toolbar 按钮 (方格 / 按比例 下拉菜单)
+        case layoutModeMenu
+        // V5.39.3 NEW: 缩略图大小 toolbar 按钮 (4 档下拉菜单)——替代 V5.31 NSSegmentedControl
+        case densityMenu
+        // V5.39.3 NEW: 排序 toolbar 按钮 (导入时间/文件名/文件大小/自定义 下拉菜单)
+        case sortMenu
         case quickLook       // V4.37.1 NEW: ⌘Y Quick Look（macOS Finder/Photos 标准）
-        // V5.33: 砍 case layoutMode——3 模式 toolbar 控件已删 (e7695d7)
-        //   - Toolbar 简化: 只留 density (4 段), 与 macOS Photos toolbar 接近
-        //   - 模式仍可切: 走 ViewOptionsPopover 段 3 (.square / .masonry / .masonryStretch)
-        case density         // V5.24 NEW: NSSlider 连续密度 (70-240pt, Photos 风格)
+        // V5.39.3: 砍 case density (V5.24 连续 slider) + case layoutMode (V5.24 3-icon segment)
+        //   全部走 NSMenu 下拉 (densityMenu + layoutModeMenu)
 
         var nsIdentifier: NSToolbarItem.Identifier {
             NSToolbarItem.Identifier(rawValue: rawValue)
@@ -148,11 +151,11 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
     // MARK: - NSToolbarDelegate
 
     /// 默认 item 顺序——决定 toolbar 的视觉布局
-    /// sidebar | search | flex | quickLook | export | delete | import | filter | viewOptions | layoutMode | density
-    /// V4.36.x: 在 importItem 之后、viewOptions 之前插入 filter（import→filter→viewOptions 形成设置组）
+    /// sidebar | search | flex | quickLook | export | delete | import | filter | layoutMode | density | sort
+    /// V4.36.x: 在 importItem 之后插入 filter（import→filter 形成操作组）
     /// V4.37.1: 在 favorite 之后插入 quickLook（"看"的语义紧邻 favorite/"标记"语义）
     /// V5.7: 砍 favorite 项——侧栏/工具栏都不再放收藏入口（走右键菜单评分 / 筛选 popover）
-    /// V5.24: viewOptions 之后插入 layoutMode + density (3-icon segment + slider 形成布局组)
+    /// V5.39.3: filter 之后插入 3 个 NSMenu 下拉按钮 (布局模式/缩略图大小/排序)——viewOptions 砍
     func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
         [
             Identifier.sidebarToggle.nsIdentifier,
@@ -163,14 +166,9 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
             Identifier.delete.nsIdentifier,
             Identifier.importItem.nsIdentifier,
             Identifier.filter.nsIdentifier,
-            Identifier.viewOptions.nsIdentifier,
-            // V5.33: 砍 Identifier.layoutMode——3 模式 toolbar 冗余
-            //   - macOS Photos.toolbar 只有 1 个 view 模式 (justified)
-            //   - 我们 3 模式 (.square / .masonry / .masonryStretch) 都是 Photos 真版的衍生
-            //   - 默认 .masonry (V5.33-1), .square / .masonryStretch 仍可切
-            //   - 切路径移到 ViewOptionsPopover 段 (与 Photos 的 More 菜单一致)
-            //   - 保留 enum + masonryParams, 仅 toolbar 控件删
-            Identifier.density.nsIdentifier
+            Identifier.layoutModeMenu.nsIdentifier,  // V5.39.3: 从 viewOptions 提到 toolbar
+            Identifier.densityMenu.nsIdentifier,     // V5.39.3: NSSegmentedControl → NSMenu
+            Identifier.sortMenu.nsIdentifier         // V5.39.3: 从 viewOptions 提到 toolbar
         ]
     }
 
@@ -230,29 +228,32 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
             // V4.54.0: filter 按钮需要状态感知（仿 V4.37.4 titlebar accessory）——单独构造
             //   原因：双 SF Symbol + tint accent 需要保留 button 引用以便 setActive 时更新
             item = makeFilterItem(id: id)
-        case .viewOptions:
-            // V5.9.2: 改 makeButtonItem 走自定义 NSButton 路径
-            //   之前 makeSimpleItem 创建默认 NSToolbarItem——item.view = nil
-            //   handleShowViewOptions 的 guard let anchorView = item.view 失败
-            //   popover 永远不打开——这是 V5.9.1 之后用户反馈的根因
-            item = makeButtonItem(
-                id: id,
-                image: "rectangle.3.offgrid",
-                label: "视图选项",
-                action: #selector(handleShowViewOptions)
-            )
         case .search:
             // V4.8.1: 用 NSSearchToolbarItem 替代 NSHostingView 包 SwiftUI ToolbarSearchField
             item = makeSearchItem(id: id)
         case .flexibleSpace:
             item = nil  // flexible space 由 NSToolbar 系统处理
-        // V5.33: 砍 .layoutMode case——3 模式 toolbar 控件删
-        //   - 模式仍通过 ViewOptionsPopover 段可切 (.square / .masonry / .masonryStretch)
-        //   - Toolbar 简化: 只留 density (4 段), 与 macOS Photos toolbar 接近
-        case .density:
-            // V5.24: NSSlider 连续密度调节 (70-240pt)——macOS Photos 风格
-            //   替代 popover 4 档按钮——更细粒度控制
-            item = makeDensityItem(id: id)
+        case .layoutModeMenu:  // V5.39.3 NEW: 方格/按比例 下拉菜单
+            item = makeMenuItem(
+                id: id,
+                defaultImage: ThumbnailLayoutMode.defaultValue.icon,
+                label: "布局模式",
+                action: #selector(handleMenuButtonClicked(_:))
+            )
+        case .densityMenu:  // V5.39.3 NEW: 4 档密度 下拉菜单 (替代 V5.31 NSSegmentedControl)
+            item = makeMenuItem(
+                id: id,
+                defaultImage: ThumbnailDensity.medium.iconName,
+                label: "缩略图大小",
+                action: #selector(handleMenuButtonClicked(_:))
+            )
+        case .sortMenu:  // V5.39.3 NEW: 排序 下拉菜单
+            item = makeMenuItem(
+                id: id,
+                defaultImage: SortOption.filenameAsc.toolbarIcon,
+                label: "排序",
+                action: #selector(handleMenuButtonClicked(_:))
+            )
         }
 
         if let item = item {
@@ -284,17 +285,36 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
     /// V5.7: 砍 favoriteEnabled 赋值——工具栏 ❤ 已移除
     /// V5.24: 加 density 状态同步——ContentView @AppStorage 变化时调
     /// V5.33: 砍 layoutMode 参数——3 模式 toolbar 控件已删 (e7695d7)
-    func updateAllStates(hasSelection: Bool, hasMultipleSelection: Bool, density: CGFloat? = nil) {
+    /// V5.39.3: 重构——layoutMode / thumbnailSize / sortOption 3 个 NSMenu 按钮都需 state
+    ///   ContentView 状态变化时全推, toolbar 同步更新 button image + menu checkbox
+    func updateAllStates(
+        hasSelection: Bool,
+        hasMultipleSelection: Bool,
+        density: CGFloat? = nil,
+        layoutMode: ThumbnailLayoutMode? = nil,
+        sortOption: SortOption? = nil
+    ) {
         exportEnabled = hasSelection
         deleteEnabled = hasSelection
         // V4.37.1: Quick Look 仅在单张选中时可用（多张 / 0 张 都灰显）
         quickLookEnabled = hasSelection && !hasMultipleSelection
-        // V5.31: density 改 NSSegmentedControl 4 段——按 size 找最近 match
+
+        // V5.39.3: density 改 NSMenu 按钮——存 state 给 buildDensityMenu 勾选用
+        //   image 不需要跟 state 切 (iconName 都一样, 只勾选变化)
         if let d = density {
-            let densities = ThumbnailDensity.allCases
-            // 找 size 最接近的 density 段
-            let segmentIndex = densities.enumerated().min(by: { abs(CGFloat($0.element.size) - d) < abs(CGFloat($1.element.size) - d) })?.offset ?? 0
-            (itemCache[Identifier.density.nsIdentifier]?.view as? NSSegmentedControl)?.selectedSegment = segmentIndex
+            self.thumbnailSize = d
+        }
+
+        // V5.39.3: 布局模式 NSMenu 按钮——存 state + 切 button image (跟 layoutMode 走)
+        if let m = layoutMode {
+            self.layoutMode = m
+            updateLayoutModeButtonImage()
+        }
+
+        // V5.39.3: 排序 NSMenu 按钮——存 state + 切 button image (跟 sortOption 走)
+        if let s = sortOption {
+            self.sortOption = s
+            updateSortButtonImage()
         }
     }
 
@@ -416,7 +436,183 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
         btn.contentTintColor = filterIsActive ? .controlAccentColor : nil
     }
 
-    // MARK: - V5.9.7: 删除 setItemPressed + popoverDidClose（不再需要）
+    // MARK: - V5.39.3: NSMenu 工具栏按钮 (布局模式 / 缩略图大小 / 排序)
+
+    /// V5.39.3 NEW: 工具栏 NSMenu 按钮工厂
+    ///   - 1 个 NSButton + .circular bezel (与其他 toolbar 按钮一致)
+    ///   - 点击后通过 handleMenuButtonClicked 弹 NSMenu
+    ///   - defaultImage: 初值；实际 icon 由 updateLayoutModeButtonImage / updateDensityButtonImage / updateSortButtonImage 跟状态切
+    ///   - 替代 V5.31 NSSegmentedControl (density) + V5.33 砍掉的 layoutMode segment + ViewOptionsPopover 内的 sort 段
+    private func makeMenuItem(id: Identifier, defaultImage: String, label: String, action: Selector) -> NSToolbarItem {
+        let item = NSToolbarItem(itemIdentifier: id.nsIdentifier)
+        item.label = ""
+        item.paletteLabel = label
+        item.toolTip = label
+
+        let button = NSButton()
+        button.bezelStyle = .circular
+        button.toolTip = label
+        button.target = self
+        button.action = action
+        button.isBordered = true
+        button.image = NSImage(systemSymbolName: defaultImage, accessibilityDescription: label)
+        button.imagePosition = .imageOnly
+        button.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        item.view = button
+
+        return item
+    }
+
+    /// V5.39.3 NEW: 3 个 NSMenu 按钮的统一 action handler
+    ///   - 找到被点击的 button 对应的 Identifier
+    ///   - 按 Identifier 构造对应 NSMenu
+    ///   - 在 button 底部弹 NSMenu（NSMenu.popUp positioning at: in:）
+    ///   - 用户点 menu item → 触发对应 closure (onLayoutModeChange / onDensityChange / onSortOptionChange)
+    private let menuSelectors: [Selector] = [
+        #selector(handleMenuItemSelected(_:))
+    ]
+
+    @objc private func handleMenuButtonClicked(_ sender: NSButton) {
+        // 找到 sender button 对应的 toolbar item → Identifier
+        guard let id = identifierForButton(sender) else { return }
+        let menu: NSMenu?
+        switch id {
+        case .layoutModeMenu:
+            menu = buildLayoutModeMenu()
+        case .densityMenu:
+            menu = buildDensityMenu()
+        case .sortMenu:
+            menu = buildSortMenu()
+        default:
+            menu = nil
+        }
+        guard let menu = menu else { return }
+        // V5.39.4: 菜单定位——
+        //   - x: 0 (左对齐按钮左边缘)——macOS Photos 风格, 菜单左边缘与按钮左边缘齐平
+        //     (原 at: midX 居中对齐——菜单中心在按钮中心, 但菜单常比按钮宽, 视觉偏右)
+        //   - y: bounds.minY - 2 (按钮底部下方 2pt 视觉间隙)——
+        //     原 at: minY 紧贴按钮 0pt 间隙, 看起来"挤"在按钮上
+        //     2pt 间隙给"按钮浮起"感, 跟 macOS Photos toolbar 菜单节奏一致
+        //   NSButton 默认非 flipped——y 向上为正, minY 在按钮底部, minY-2 是底部下方
+        let location = NSPoint(x: 0, y: sender.bounds.minY - 2)
+        menu.popUp(positioning: nil, at: location, in: sender)
+    }
+
+    /// V5.39.3: 找到 NSButton 对应的 Identifier——遍历 itemCache 比 view ===
+    private func identifierForButton(_ button: NSButton) -> Identifier? {
+        for id in [Identifier.layoutModeMenu, .densityMenu, .sortMenu] {
+            if let item = itemCache[id.nsIdentifier], item.view === button {
+                return id
+            }
+        }
+        return nil
+    }
+
+    // MARK: - 3 个 menu builder (V5.39.3 NEW)
+
+    /// V5.39.3 NEW: 布局模式菜单——方格 / 按比例
+    /// V5.39.5: 删 .masonryStretch (按比例（满行）)——只剩 2 选项
+    private func buildLayoutModeMenu() -> NSMenu {
+        let menu = NSMenu()
+        for mode in ThumbnailLayoutMode.allCases {
+            let item = NSMenuItem(
+                title: mode.displayName,
+                action: #selector(handleMenuItemSelected(_:)),
+                keyEquivalent: ""
+            )
+            item.target = self
+            item.representedObject = mode
+            item.image = NSImage(systemSymbolName: mode.icon, accessibilityDescription: mode.displayName)
+            if mode == layoutMode {
+                item.state = .on
+            }
+            menu.addItem(item)
+        }
+        return menu
+    }
+
+    /// V5.39.3 NEW: 缩略图大小菜单——4 档
+    private func buildDensityMenu() -> NSMenu {
+        let menu = NSMenu()
+        for density in ThumbnailDensity.allCases {
+            let item = NSMenuItem(
+                title: density.label,
+                action: #selector(handleMenuItemSelected(_:)),
+                keyEquivalent: ""
+            )
+            item.target = self
+            item.representedObject = CGFloat(density.size)
+            item.image = NSImage(systemSymbolName: density.iconName, accessibilityDescription: density.label)
+            if CGFloat(density.size) == thumbnailSize {
+                item.state = .on
+            }
+            menu.addItem(item)
+        }
+        return menu
+    }
+
+    /// V5.39.3 NEW: 排序菜单——7 种排序 (导入时间/文件名/文件大小/自定义 × 方向)
+    private func buildSortMenu() -> NSMenu {
+        let menu = NSMenu()
+        for option in SortOption.allCases {
+            let item = NSMenuItem(
+                title: option.label,
+                action: #selector(handleMenuItemSelected(_:)),
+                keyEquivalent: ""
+            )
+            item.target = self
+            item.representedObject = option
+            item.image = NSImage(systemSymbolName: option.toolbarIcon, accessibilityDescription: option.label)
+            if option == sortOption {
+                item.state = .on
+            }
+            menu.addItem(item)
+        }
+        return menu
+    }
+
+    /// V5.39.3 NEW: menu item 选中回调——按 representedObject 类型分派
+    @objc private func handleMenuItemSelected(_ sender: NSMenuItem) {
+        if let mode = sender.representedObject as? ThumbnailLayoutMode {
+            onLayoutModeChange?(mode)
+        } else if let size = sender.representedObject as? CGFloat {
+            onDensityChange?(size)
+        } else if let option = sender.representedObject as? SortOption {
+            onSortOptionChange?(option)
+        }
+    }
+
+    // MARK: - 3 个 menu 按钮的 image 更新 (V5.39.3 NEW)
+
+    /// V5.39.3: 同步布局模式按钮 image——跟着 layoutMode 切
+    ///   ContentView 在 .onChange(of: layoutMode) 调 updateAllStates 推
+    private func updateLayoutModeButtonImage() {
+        guard let item = itemCache[Identifier.layoutModeMenu.nsIdentifier],
+              let button = item.view as? NSButton else { return }
+        button.image = NSImage(systemSymbolName: layoutMode.icon, accessibilityDescription: "布局模式")
+    }
+
+    /// V5.39.3: 同步排序按钮 image——跟着 sortOption 切
+    ///   ContentView 在 .onChange(of: sortOption) 调 updateAllStates 推
+    private func updateSortButtonImage() {
+        guard let item = itemCache[Identifier.sortMenu.nsIdentifier],
+              let button = item.view as? NSButton else { return }
+        button.image = NSImage(systemSymbolName: sortOption.toolbarIcon, accessibilityDescription: "排序")
+    }
+
+    // MARK: - V5.39.3: 3 个 NSMenu 按钮的 state (menu item 勾选用)
+
+    /// V5.39.3: 当前布局模式——buildLayoutModeMenu 勾选用
+    ///   ContentView 在 .onChange(of: layoutMode) 调 updateAllStates 推
+    private var layoutMode: ThumbnailLayoutMode = .defaultValue
+
+    /// V5.39.3: 当前缩略图大小——buildDensityMenu 勾选用
+    ///   ContentView 在 .onChange(of: thumbnailSize) 调 updateAllStates 推
+    private var thumbnailSize: CGFloat = 200
+
+    /// V5.39.3: 当前排序——buildSortMenu 勾选用
+    ///   ContentView 在 .onChange(of: sortOption) 调 updateAllStates 推
+    private var sortOption: SortOption = .filenameAsc
 
     // V5.9.7: 砍 setItemPressed 整个方法 + 所有调用点
     //   用户反馈: "可以不产生icon的变化，只有点击的反馈就行了"
@@ -424,17 +620,13 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
     //   → 按钮背景完全消失（其他 5 个按钮都有圆形 pill 背景）
     //   现在：不主动改 item 任何状态——NSToolbarItem + NSButton 自己处理 hover/press 反馈
 
-    /// V5.9: popover 关闭时（用户点外部 / 主动 close）——只清理强引用，不改 UI
-    ///   - popover 是 view options：viewOptionsPopover = nil
-    ///   - popover 是 filter top（coordinator 内部的 topPopover）：由 coordinator 内部管
+    // V5.39.3: 删 popoverDidClose 中 viewOptionsPopover 引用 (line 434-435)
+    //   viewOptions popover 已删, filter popover 由 coordinator 内部管
+    //   现在 popoverDidClose 已无任何 NSPopover 需要清理——整个方法可砍
+    //   但保留 delegate conformance 以防未来 NSPopover 引入
     func popoverDidClose(_ notification: Notification) {
-        guard let popover = notification.object as? NSPopover else { return }
-        // 区分是哪个 popover 关闭
-        if popover === viewOptionsPopover {
-            viewOptionsPopover = nil
-        }
-        // filter popover 由 FilterPopoverCoordinator.closeAll() 关闭，coordinator 不在这里重置
-        //   ——协调员内部已 nil out topPopover + childPopover
+        // V5.39.3: 空实现——所有 popover 关闭由各自 controller 内部处理
+        //   保留方法以维持 NSPopoverDelegate conformance
     }
 
     private func makeSearchItem(id: Identifier) -> NSToolbarItem {
@@ -567,45 +759,8 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
     @objc private func handleShowQuickLook() { onQuickLook?() }   // V4.37.1 NEW
     @objc private func handleNavigatePrev() { onPrev?() }          // V4.37.2 NEW
     @objc private func handleNavigateNext() { onNext?() }          // V4.37.2 NEW
-    @objc private func handleShowViewOptions() {
-        // V4.9.1: 不用 onShowViewOptions closure——直接用 NSPopover 显示 ViewOptionsPopover
-        //   行为：再次点击按钮 → 关闭 popover（toggle）
-        //   点外部 → 自动关闭（.transient）
-        if let popover = viewOptionsPopover, popover.isShown {
-            popover.close()
-            viewOptionsPopover = nil
-            // V5.9.7: 不调 setItemPressed——让 NSToolbarItem + NSButton 自己处理 hover/press 反馈
-            return
-        }
-
-        guard let contentProvider = viewOptionsContentProvider,
-              let item = itemCache[Identifier.viewOptions.nsIdentifier],
-              let anchorView = item.view else {
-            return
-        }
-
-        let popover = NSPopover()
-        // V5.15: .applicationDefined 强制 always-below（弃用 NSPopover flip 保护）
-        //   折衷：click-outside 不再自动关（需 toggle 按钮或 closeAll 显式关）
-        //   ToolbarController.popoverDidClose (line ~397) 仍处理 view options 关事件
-        popover.behavior = .applicationDefined
-        popover.delegate = self  // V5.9: 监听 popoverDidClose 同步按钮状态
-        popover.contentViewController = contentProvider()
-        // V5.13.1: 临时诊断 popover 位置——记录 anchor 在 window 坐标
-        let anchorInWindow = anchorView.convert(anchorView.bounds, to: nil)
-        Logger.popoverDebug.info("ViewOptions anchor in window: \(anchorInWindow.origin.x, privacy: .public),\(anchorInWindow.origin.y, privacy: .public) size \(anchorInWindow.size.width, privacy: .public)x\(anchorInWindow.size.height, privacy: .public)")
-        // V5.9.5: 回退到 V5.8 的最简模式——anchorView.bounds + of: anchorView
-        //   V5.9.3 / V5.9.4 各种复杂修法（async/screen coords/0.1s 延迟）都没修好
-        //   V5.8 这个最简代码 filter 一直能用——先回退确认基础
-        popover.show(relativeTo: anchorView.bounds, of: anchorView, preferredEdge: .minY)
-        // V5.13.1: 诊断 popover 显示位置
-        if let popoverWindow = popover.contentViewController?.view.window {
-            let popoverFrame = popoverWindow.frame
-            Logger.popoverDebug.info("ViewOptions popover frame: x=\(popoverFrame.origin.x, privacy: .public) y=\(popoverFrame.origin.y, privacy: .public) w=\(popoverFrame.size.width, privacy: .public) h=\(popoverFrame.size.height, privacy: .public)")
-        }
-        self.viewOptionsPopover = popover
-        // V5.9.7: 不调 setItemPressed——NSToolbarItem + NSButton 自己处理 pressed 态
-    }
+    // V5.39.3: 删 handleShowViewOptions——布局模式 + 排序都搬到独立 toolbar 按钮
+    //   走 NSMenu (handleMenuButtonClicked) + handleMenuItemSelected, 不再需要 NSPopover
     @objc private func handleSearchAction() {
         // Enter 键触发——已通过 textDidChangeNotification 实时同步
         // 这里留作 future: 触发"提交搜索"（可能高亮首个结果等）
@@ -621,7 +776,6 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
         if let coordinator = filterPopoverCoordinator, coordinator.isTopShown {
             coordinator.closeAll()
             filterPopoverCoordinator = nil
-            // V5.9.7: 不调 setItemPressed
             return
         }
 
@@ -632,25 +786,27 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
 
         // V4.90.0: 创建 coordinator + 调 showTop
         //   ContentView 注入 factory + onStateChange closure
-        let coordinator = filterCoordinatorFactory?({ [weak self] newState in
+        guard let coordinator = filterCoordinatorFactory?({ [weak self] newState in
             // V4.90.0: 写回 ContentView filterState——coordinator 不直接管 ContentView state
             //   实际由 ContentView .onChange 推——coordinator 只管 popover lifecycle
             _ = newState
             _ = self
-        })
-        // V5.13.1: 临时诊断 popover 位置——记录 anchor 在 window 坐标
-        let anchorInWindow = anchorView.convert(anchorView.bounds, to: nil)
-        Logger.popoverDebug.info("Filter anchor in window: \(anchorInWindow.origin.x, privacy: .public),\(anchorInWindow.origin.y, privacy: .public) size \(anchorInWindow.size.width, privacy: .public)x\(anchorInWindow.size.height, privacy: .public)")
-        // V5.9.5: 回退到 V5.8 的最简模式——coordinator?.showTop(anchoredTo: anchorView)
-        //   V5.9.3 / V5.9.4 各种修法没修好；先回退确认基础
-        coordinator?.showTop(anchoredTo: anchorView)
+        }) else { return }
+
+        // V5.39.2: 用 coordinator.showTopAtRect + contentView positioningView
+        //   V5.9.4 引入此 helper (V5.9.4 注释: "刚创建的 NSButton 还没进 window, anchor 无效")
+        //   V5.9.5 回退到 V5.8 anchoredTo 路径, 在 macOS 26+ 上 popover 不显示 (用户反馈)
+        //   现统一回 showTopAtRect——contentView 永远在 window, 1x1 rect 在按钮底部中心
+        let positioningView = anchorView.window?.contentView ?? anchorView
+        let buttonInContent = anchorView.convert(anchorView.bounds, to: positioningView)
+        let rectAtButtonBottom = NSRect(
+            x: buttonInContent.midX,
+            y: buttonInContent.minY,
+            width: 1,
+            height: 1
+        )
+        coordinator.showTopAtRect(rectAtButtonBottom, positioningView: positioningView)
         filterPopoverCoordinator = coordinator
-        // V5.13.1: 诊断 popover 显示位置
-        if let coord = filterPopoverCoordinator, let popoverWindow = coord.topPopover?.contentViewController?.view.window {
-            let popoverFrame = popoverWindow.frame
-            Logger.popoverDebug.info("Filter popover frame: x=\(popoverFrame.origin.x, privacy: .public) y=\(popoverFrame.origin.y, privacy: .public) w=\(popoverFrame.size.width, privacy: .public) h=\(popoverFrame.size.height, privacy: .public)")
-        }
-        // V5.9.7: 不调 setItemPressed
     }
 
     /// V4.36.x + V4.54.0: 同步激活筛选数 + active 视觉锤到 filter item

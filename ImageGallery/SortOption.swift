@@ -58,6 +58,25 @@ enum SortOption: String, CaseIterable, Identifiable {
         }
     }
 
+    /// V5.39.3: 工具栏按钮 SF Symbol——按字段类型 + 方向合成
+    ///   排序菜单按钮的 image 跟着当前 sortOption 走 (ContentView 推)
+    ///   - importedAt*: clock 暗示时间
+    ///   - filename*: textformat
+    ///   - fileSize*: externaldrive
+    ///   - custom: line.3.horizontal
+    ///   desc 加 .fill, asc 不加 (跟 Photos 工具栏 sort 按钮一致)
+    var toolbarIcon: String {
+        switch self {
+        case .importedAtDesc:  return "clock.fill"
+        case .importedAtAsc:   return "clock"
+        case .filenameDesc:    return "textformat"
+        case .filenameAsc:     return "textformat"
+        case .fileSizeDesc:    return "externaldrive.fill"
+        case .fileSizeAsc:     return "externaldrive"
+        case .customOrder:     return "line.3.horizontal"
+        }
+    }
+
     /// 切换方向（同字段的 asc ↔ desc），用于 ⌘⇧S 快捷键
     var toggledDirection: SortOption {
         switch self {
