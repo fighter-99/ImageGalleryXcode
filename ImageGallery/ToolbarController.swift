@@ -518,7 +518,7 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
         //   - 段 3: large 240pt (square)
         let segment = NSSegmentedControl(
             images: ThumbnailDensity.allCases.map { mode in
-                NSImage(systemSymbolName: mode.iconName, accessibilityDescription: mode.displayName) ?? NSImage()
+                NSImage(systemSymbolName: mode.iconName, accessibilityDescription: mode.label) ?? NSImage()
             },
             trackingMode: .selectOne,
             target: self,
