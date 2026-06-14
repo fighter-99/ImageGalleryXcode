@@ -155,11 +155,8 @@ struct ContentView: View {
     //   onAppear 调 PhotoStorage.verifyStorage()——失败时填错误消息，detail panel 显示错误态
     @State private var storageErrorMessage: String? = nil
 
-    // V4.12.0: 空格键 QuickLook——macOS Finder/Photos 标准
-    //   controller 通过 .background(QuickLookBridge) 接管 QLPreviewPanel
-    //   currentVisibleURLs 跟随 visiblePhotos 变化（每次访问重算）
-    //   @State 而非 @StateObject：controller 内部状态不需 SwiftUI 监听
-    @State private var quickLookController = QuickLookPreviewController()
+    // V4.12.0 删: QuickLookPreviewController (@State) 整段——V5.42 走 ImmersivePhotoView, 不再需要
+    // V5.42 替代: showQuickLook() 调 enterImmersiveFromSelection() 走系统 ImmersivePhotoView
 
     // V4.37.4: titlebar 右上角小按钮引用——@State 持 NSObject 引用
     //   onChange(of: showDetail) 时调 setActive / setTooltip 同步状态
@@ -170,10 +167,9 @@ struct ContentView: View {
     //   macOS 26 glassEffectUnion 在 sidebar 边界外产生 outline 痕迹（用户截图反馈）
     //   回滚到 V4.18.0 单 view glassEffect 状态（仅 SidebarView/DetailView 4 处 .glassEffect）
 
-    /// V4.12.0: 当前 visiblePhotos 对应的 URL 列表（空格键 QuickLook 翻页用）
-    private var currentVisibleURLs: [URL] {
-        visiblePhotos.map { $0.fileURL }
-    }
+    /// V4.12.0 删: currentVisibleURLs (URL 列表)——V5.42 不再走 QLPreviewPanel
+    ///   showQuickLook 直接调 enterImmersiveFromSelection, 不需要 URL 列表
+    ///   保留 visiblePhotos + fileURL 在 Photo 数据模型, 这里不再展开
 
     // 当前选中的强调色（从 accentColorID 解析）
     private var accentColor: AccentColor {
@@ -506,9 +502,7 @@ struct ContentView: View {
                 //   Photos.app 用 Return/Enter 进入全屏图片查看
                 onReturn: enterImmersiveFromSelection
             )
-            // V4.12.0: QLPreviewBridge 注入 view tree——SwiftUI 不显示（透明 NSView）
-            //   但参与 firstResponder 链，让 QLPreviewPanel 接管时能找到接管 view
-            .background(QuickLookBridge(controller: quickLookController))
+            // V4.12.0 删: .background(QuickLookBridge(...))——V5.42 不再走 QLPreviewPanel
             // 快捷键：⌘+1-6 切换侧边栏
             .contentKeyboardShortcuts(
                 sidebarSelection: $sidebarSelection,
