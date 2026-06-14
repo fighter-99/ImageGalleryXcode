@@ -288,8 +288,12 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
         if let mode = layoutMode {
             (itemCache[Identifier.layoutMode.nsIdentifier]?.view as? NSSegmentedControl)?.selectedSegment = mode.rawValue
         }
+        // V5.31: density 改 NSSegmentedControl 4 段——按 size 找最近 match
         if let d = density {
-            (itemCache[Identifier.density.nsIdentifier]?.view as? NSSlider)?.doubleValue = Double(d)
+            let densities = ThumbnailDensity.allCases
+            // 找 size 最接近的 density 段
+            let segmentIndex = densities.enumerated().min(by: { abs(CGFloat($0.element.size) - d) < abs(CGFloat($1.element.size) - d) })?.offset ?? 0
+            (itemCache[Identifier.density.nsIdentifier]?.view as? NSSegmentedControl)?.selectedSegment = segmentIndex
         }
     }
 
@@ -495,10 +499,11 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
         return item
     }
 
-    /// V5.24 NEW: NSSlider 连续密度调节 (70-240pt)
-    ///   - 替代 popover 4 档按钮——更细粒度
-    ///   - continuous 模式：拖动时实时回调 (非 release 才回调)
-    ///   - minValue=70 (.compact), maxValue=240 (.large)
+    /// V5.31 NEW: NSSegmentedControl 离散密度 4 档——替代 V5.24 NSSlider
+    ///   - 镜像 macOS Photos.app: 密度是离散 3-4 档按钮, 不是连续 slider
+    ///   - 4 段对应 ThumbnailDensity.allCases: compact(70) / small(110) / medium(200) / large(240)
+    ///   - 用 SF Symbol 图标表示密度 (4x3 / 3x2 / 2x2 / 1x1 网格)
+    ///   - selectedSegment → ThumbnailDensity.allCases 索引 → onDensityChange(size)
     ///   - 状态由 ContentView 推 (updateAllStates)
     private func makeDensityItem(id: Identifier) -> NSToolbarItem {
         let item = NSToolbarItem(itemIdentifier: id.nsIdentifier)
@@ -506,16 +511,23 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
         item.paletteLabel = "缩略图大小"
         item.toolTip = "缩略图大小"
 
-        let slider = NSSlider(
-            value: Double(ThumbnailDensity.medium.size),  // 初始值 (后续 updateAllStates 覆盖)
-            minValue: Double(ThumbnailDensity.compact.size),  // 70
-            maxValue: Double(ThumbnailDensity.large.size),   // 240
+        // V5.31: 4 段离散按钮 (Photos 真版)
+        //   - 段 0: compact 70pt (square.grid.4x3.fill)
+        //   - 段 1: small 110pt (square.grid.3x2.fill)
+        //   - 段 2: medium 200pt (square.grid.2x2.fill) [V5.30 默认]
+        //   - 段 3: large 240pt (square)
+        let segment = NSSegmentedControl(
+            images: ThumbnailDensity.allCases.map { mode in
+                NSImage(systemSymbolName: mode.iconName, accessibilityDescription: mode.displayName) ?? NSImage()
+            },
+            trackingMode: .selectOne,
             target: self,
-            action: #selector(handleDensityChanged(_:))
+            action: #selector(handleDensitySegmentChanged(_:))
         )
-        slider.isContinuous = true  // V5.24: 拖动时实时回调
-        slider.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        item.view = slider
+        // 初始 selectedSegment = medium.index (V5.30 默认)
+        segment.selectedSegment = ThumbnailDensity.allCases.firstIndex(of: .medium) ?? 0
+        segment.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        item.view = segment
 
         return item
     }
@@ -526,9 +538,12 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
         onLayoutModeChange?(mode)
     }
 
-    /// V5.24: 密度 slider 变化回调
-    @objc private func handleDensityChanged(_ sender: NSSlider) {
-        onDensityChange?(CGFloat(sender.doubleValue))
+    /// V5.31: 密度 segment 变化回调——4 段映射到 ThumbnailDensity.size
+    @objc private func handleDensitySegmentChanged(_ sender: NSSegmentedControl) {
+        let densities = ThumbnailDensity.allCases
+        guard sender.selectedSegment >= 0, sender.selectedSegment < densities.count else { return }
+        let density = densities[sender.selectedSegment]
+        onDensityChange?(CGFloat(density.size))
     }
 
     // MARK: - 外部 API（SwiftUI @State → NSSearchField 同步）

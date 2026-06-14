@@ -60,6 +60,19 @@ enum ThumbnailDensity: String, CaseIterable, Identifiable {
         }
     }
 
+    /// V5.31 NEW: toolbar segment 图标 (4 段离散按钮)——区别于 popover icon
+    ///   - 4 段全部 .fill 实心 (popover 是 mix, 区分场景)
+    ///   - 4 段宽度差异明显: 4x3 / 3x2 / 2x2 / 1x1 (递增)
+    ///   - 单元数递减暗示 cell 变大
+    var iconName: String {
+        switch self {
+        case .compact: return "square.grid.4x3.fill"   // 12 cells visible
+        case .small:   return "square.grid.3x2.fill"   // 6 cells
+        case .medium:  return "square.grid.2x2.fill"   // 4 cells
+        case .large:   return "square.fill"            // 1 cell
+        }
+    }
+
     /// 把任意 CGFloat 吸附到最近的档位
     static func nearest(to size: CGFloat) -> ThumbnailDensity {
         allCases.min(by: { abs($0.size - size) < abs($1.size - size) }) ?? .medium
