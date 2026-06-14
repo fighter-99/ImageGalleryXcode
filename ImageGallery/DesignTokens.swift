@@ -127,6 +127,9 @@ enum Elevation {
 // 设计原则：
 // - 标题用 .rounded（SF Pro Rounded），更友好亲切
 // - 数字用 .monospacedDigit()，宽度稳定不抖
+// - V5.45: 按"场景"扩展 token（不按"权重"）——保证每个视觉场景都有专用 token
+//   之前 7 个 token 太通用, 实际场景里 11+ 处写死 .system(size: ...) 散落
+//   增 6 个场景化 token 后, 13 个 token 全覆盖 codebase 所有字号
 
 enum Typography {
     /// 二级标题（多选计数等，比 title 略大）
@@ -143,6 +146,35 @@ enum Typography {
     static let captionMono = Font.system(size: 11).monospacedDigit()
     /// 空状态大图标（详情面板 Empty/MultiSelect 的大号 SF Symbol）
     static let emptyStateIcon = Font.system(size: 60, weight: .light)
+
+    // V5.45: 按场景扩展 6 个新 token——之前散落写死 11 处 .system(size: ...) 统一收纳
+
+    /// V5.45 NEW: 整页空态 icon——比 emptyStateIcon 大 1.33x
+    ///   - MainSplitView 整 sidebar 空 / ImmersivePhotoView 沉浸式空
+    ///   - 区别于 emptyStateIcon (60pt) 卡片内空态——80pt 视觉上"整页都没东西"
+    static let emptyStateIconLarge = Font.system(size: 80, weight: .light)
+
+    /// V5.45 NEW: 沉浸式大数字 (ImmersivePhotoView "1 / 5" 计数)
+    ///   - 等宽数字——翻页时不抖
+    ///   - 44pt 是 Photos.app QuickLook 风格的大数字
+    static let immersiveCount = Font.system(size: 44).monospacedDigit()
+
+    /// V5.45 NEW: 年份大标题 (ViewMode 时间线年份分隔)
+    ///   - Photos.app "Years" 视图风格——年份是最大视觉锤
+    ///   - .rounded + bold——既醒目又亲切
+    static let yearTitle = Font.system(size: 34, weight: .bold, design: .rounded)
+
+    /// V5.45 NEW: 详情面板小标签 (DetailView "标签"/"删除" 等字段标题)
+    ///   - 比 caption (11pt) 大 1pt + bold——视觉层级清晰
+    static let detailLabel = Font.system(size: 12, weight: .bold)
+
+    /// V5.45 NEW: 日期 caption (cell 下方拍摄日期, masonry 模式)
+    ///   - 同 body 13pt 但 weight: regular——cell 内信息"次要"层级
+    static let dateCaption = Font.system(size: 13, weight: .regular)
+
+    /// V5.45 NEW: 详情面板计数 (DetailView "1 / 5" 切换计数)
+    ///   - 同 title2 (22pt) 但 weight: medium——大但比 title 略轻
+    static let detailCount = Font.system(size: 22, weight: .medium)
 }
 
 // MARK: - 旧 Palette 兼容层（V3.1 保留，Phase 2+ 逐步替换）

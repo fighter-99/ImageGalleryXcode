@@ -36,7 +36,7 @@ struct DateSectionHeader: View {
                 // V5.27: 24pt bold → 15pt medium——macOS Photos Library 节奏
                 // V5.31: 15pt medium → 13pt regular——更 subtle (Photos Days 视图段头实际 ~13pt)
                 //   24pt 切碎 grid, 15pt 仍偏'重', 13pt regular 是 Photos 真版
-                .font(.system(size: 13, weight: .regular))
+                .font(Typography.dateCaption)
                 .foregroundStyle(.primary)
             Spacer()
             // V5.21: count "637 张图片" 颜色 secondary → primary + 字重 medium

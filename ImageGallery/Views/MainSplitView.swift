@@ -114,7 +114,7 @@ struct MainSplitView<Sidebar: View, Center: View, Detail: View>: View {
                         .opacity(0.95)
                     VStack(spacing: 12) {
                         Image(systemName: "square.and.arrow.down.fill")
-                            .font(.system(size: 80))
+                            .font(Typography.emptyStateIconLarge)
                             .symbolRenderingMode(.hierarchical)
                             .foregroundStyle(.tint)
                         Text("松开导入")

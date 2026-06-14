@@ -156,7 +156,7 @@ struct EmptyDetailPlaceholder: View {
     var body: some View {
         VStack(spacing: 12) {
             Image(systemName: "photo")
-                .font(.system(size: 60))
+                .font(Typography.emptyStateIcon)
                 .foregroundStyle(.tertiary)
             Text("选择一张图片")
                 .foregroundStyle(.secondary)

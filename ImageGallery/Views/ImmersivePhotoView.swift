@@ -54,7 +54,7 @@ struct ImmersivePhotoView: View {
                     // 加载中 + 加载失败都用同一 fallback（避免加 Shimmer 复杂度）
                     VStack(spacing: 16) {
                         Image(systemName: "photo")
-                            .font(.system(size: 80))
+                            .font(Typography.emptyStateIconLarge)
                             .foregroundStyle(.secondary)
                         Text(photo.filename)
                             .foregroundStyle(.white)
@@ -172,7 +172,7 @@ struct ImmersivePhotoView: View {
                 goPrev()
             } label: {
                 Image(systemName: "chevron.left.circle.fill")
-                    .font(.system(size: 44))
+                    .font(Typography.immersiveCount)
                     .foregroundStyle(.white.opacity(0.85))
             }
             .buttonStyle(.plain)
@@ -201,7 +201,7 @@ struct ImmersivePhotoView: View {
                 goNext()
             } label: {
                 Image(systemName: "chevron.right.circle.fill")
-                    .font(.system(size: 44))
+                    .font(Typography.immersiveCount)
                     .foregroundStyle(.white.opacity(0.85))
             }
             .buttonStyle(.plain)

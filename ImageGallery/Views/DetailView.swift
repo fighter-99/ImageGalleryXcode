@@ -203,7 +203,7 @@ struct DetailView: View {
                     .fill(Palette.cellFilled)
                     .overlay {
                         Image(systemName: "exclamationmark.triangle")
-                            .font(.system(size: 60))
+                            .font(Typography.emptyStateIcon)
                             .foregroundStyle(.tertiary)
                     }
             } else {
@@ -292,7 +292,7 @@ struct DetailView: View {
     ) -> some View {
         Button(action: action) {
             Image(systemName: systemName)
-                .font(.system(size: 12, weight: .bold))
+                .font(Typography.detailLabel)
                 .foregroundStyle(.white)
                 .frame(width: 26, height: 26)
                 // V4.21.0: 撤回 .glassEffect——macOS 26 单 view 视觉副作用
@@ -603,7 +603,7 @@ private struct RatingStarsView: View {
                     onSet(RatingStarsMath.nextRating(after: n, current: rating))
                 } label: {
                     Image(systemName: n <= displayedRating ? "star.fill" : "star")
-                        .font(.system(size: 22, weight: .medium))
+                        .font(Typography.detailCount)
                         .foregroundStyle(n <= displayedRating ? Color.yellow : Color.secondary.opacity(0.5))
                 }
                 .buttonStyle(.plain)

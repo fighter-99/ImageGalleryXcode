@@ -280,7 +280,7 @@ struct TimelineYearSection: View {
             // 年 header（大号 rounded 字体，Photos.app 风格）
             HStack(alignment: .firstTextBaseline, spacing: Spacing.sm) {
                 Text("\(year)")
-                    .font(.system(size: 34, weight: .bold, design: .rounded))
+                    .font(Typography.yearTitle)
                 Text("\(totalCount) 张")
                     .font(.callout)
                     .foregroundStyle(.secondary)

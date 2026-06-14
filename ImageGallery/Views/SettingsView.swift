@@ -268,7 +268,7 @@ struct AccentSwatch: View {
                         .frame(width: 32, height: 32)
                     if isSelected {
                         Image(systemName: "checkmark")
-                            .font(.system(size: 14, weight: .bold))
+                            .font(Typography.headline)
                             .foregroundStyle(.white)
                     }
                 }

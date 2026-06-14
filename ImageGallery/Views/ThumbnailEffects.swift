@@ -134,7 +134,7 @@ extension View {
             ZStack {
                 CheckerboardBackground()
                 Image(systemName: "photo.fill")
-                    .font(.system(size: 60))
+                    .font(Typography.emptyStateIcon)
                     .foregroundStyle(.tint.opacity(0.5))
             }
             .frame(width: 150, height: 150)
