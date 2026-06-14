@@ -29,23 +29,23 @@ enum SortOption: String, CaseIterable, Identifiable {
     /// 菜单中显示的标签（含方向箭头）
     var label: String {
         switch self {
-        case .importedAtDesc:  return "导入时间 ↓"
-        case .importedAtAsc:   return "导入时间 ↑"
-        case .filenameAsc:     return "文件名 A → Z"
-        case .filenameDesc:    return "文件名 Z → A"
-        case .fileSizeDesc:    return "文件大小 ↓"
-        case .fileSizeAsc:     return "文件大小 ↑"
-        case .customOrder:     return "自定义顺序"
+        case .importedAtDesc:  return Copy.sortImportedDesc
+        case .importedAtAsc:   return Copy.sortImportedAsc
+        case .filenameAsc:     return Copy.sortFilenameAsc
+        case .filenameDesc:    return Copy.sortFilenameDesc
+        case .fileSizeDesc:    return Copy.sortFileSizeDesc
+        case .fileSizeAsc:     return Copy.sortFileSizeAsc
+        case .customOrder:     return Copy.sortCustomOrder
         }
     }
 
     /// 工具栏按钮上显示的简短标签
     var shortLabel: String {
         switch self {
-        case .importedAtDesc, .importedAtAsc: return "导入时间"
-        case .filenameAsc, .filenameDesc:     return "文件名"
-        case .fileSizeDesc, .fileSizeAsc:     return "文件大小"
-        case .customOrder:                    return "自定义"
+        case .importedAtDesc, .importedAtAsc: return Copy.sortCategoryImportTime
+        case .filenameAsc, .filenameDesc:     return Copy.sortCategoryFilename
+        case .fileSizeDesc, .fileSizeAsc:     return Copy.sortCategoryFileSize
+        case .customOrder:                    return Copy.sortCategoryCustom
         }
     }
 

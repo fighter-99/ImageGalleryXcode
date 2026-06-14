@@ -130,4 +130,19 @@ enum Copy {
 
     // MARK: - 输入框 (V5.50-4 扩展)
     static let tagNamePlaceholder = "标签名称"
+
+    // MARK: - 排序 (V5.50-5 扩展)
+    /// 7 个 label (含方向箭头) —— SortOption.label
+    static let sortImportedDesc = "导入时间 ↓"
+    static let sortImportedAsc = "导入时间 ↑"
+    static let sortFilenameAsc = "文件名 A → Z"
+    static let sortFilenameDesc = "文件名 Z → A"
+    static let sortFileSizeDesc = "文件大小 ↓"
+    static let sortFileSizeAsc = "文件大小 ↑"
+    static let sortCustomOrder = "自定义顺序"
+    /// 4 个 shortLabel (工具栏按钮短名) —— SortOption.shortLabel
+    static let sortCategoryImportTime = "导入时间"
+    static let sortCategoryFilename = "文件名"
+    static let sortCategoryFileSize = "文件大小"
+    static let sortCategoryCustom = "自定义"
 }
