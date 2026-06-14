@@ -2,11 +2,17 @@
 //  MasonryMath.swift
 //  ImageGallery
 //
-//  V5.16: 主网格 row 装箱算法——Photos.app "Aspect Ratio" 视图风格
+//  V5.16 → V5.39: 主网格 row 装箱算法——Photos.app "Square" 模式
 //    - 行内 cell 高度统一（rowHeight）
-//    - cell 宽度 = rowHeight × photoAspectRatio
+//    - cell 宽度 = rowHeight × photoAspectRatio (masonry 模式)
+//    - cell 宽度 = rowHeight (uniform square 模式, V5.16.1)
 //    - 行 reflow：cell 累加宽度超 availableWidth 时开新行
 //    - 最后一行不满不补齐（Photos.app 行为）
+//    - stretchLastRow=true 时末行均分多余宽 (V5.16.2)
+//
+//  V5.39 砍除 V5.36 packJustifiedRows + JustifiedRow struct——
+//    V5.36 算法搬至 JustifiedRowLayout.swift (user spec 形式, targetRowHeight × scaleFactor)
+//    MasonryMath 只保留 .square 模式需要的 groupIntoRows + Item/Row
 //
 //  Why 独立 enum（不放 PhotoGridView 内部 static func）：
 //    V5.14 教训——@MainActor struct 内 helper 方法（private/static）触发现有
@@ -112,97 +118,6 @@ enum MasonryMath {
             }
         }
 
-        return rows
-    }
-
-    // MARK: - V5.36: Justified Row Layout (Photos.app Library 真版)
-
-    /// V5.36: JustifiedRow——per-row height, aspect-preserving
-    ///   - row 内 cell 高度严格相等 (= rowHeight)
-    ///   - row 内 cell 宽度 = rowHeight × aspectRatio
-    ///   - 整行 width 严格 = availableWidth (Photos 行为)
-    ///   - rowHeight 跨 row 不固定, 由该 row 内的 photos 决定
-    struct JustifiedRow: Equatable {
-        let items: [Item]
-        let rowHeight: CGFloat
-        let spacing: CGFloat
-
-        init(items: [Item], availableWidth: CGFloat, spacing: CGFloat) {
-            self.items = items
-            self.spacing = spacing
-            let n = items.count
-            let spacingTotal = CGFloat(max(n - 1, 0)) * spacing
-            // rowHeight 公式: n×spacing + sumOfAspects × rowHeight = availableWidth
-            // → rowHeight = (availableWidth - n×spacing) / sumOfAspects
-            // 验证: 整行 width = spacingTotal + sumOfAspects × rowHeight
-            //                 = (n-1)×spacing + sumOfAspects × (availableWidth - (n-1)×spacing) / sumOfAspects
-            //                 = (n-1)×spacing + availableWidth - (n-1)×spacing
-            //                 = availableWidth ✓
-            let aspectSum = items.reduce(0.0) { $0 + $1.aspectRatio }
-            self.rowHeight = aspectSum > 0
-                ? (availableWidth - spacingTotal) / aspectSum
-                : 0
-        }
-    }
-
-    /// V5.36: Photos.app Library 真版算法——greedy pack + per-row height
-    ///   - 输入: photos (按 sortOption 排好) + availableWidth + spacing
-    ///   - 输出: [JustifiedRow], 每个 row 严格填满 availableWidth
-    ///   - 区别 V5.16 groupIntoRows: 那个固定 rowHeight, 末行不满;
-    ///     新的 per-row 算 rowHeight, 每个 row 都填满
-    ///   - 镜像 macOS Photos.app Library, Google Photos, Flickr justified grid
-    ///
-    /// 算法 (greedy + justified):
-    /// 1. 当前行累计 aspect sum
-    /// 2. 加下个 item: 若 (nGaps × spacing + newAspectSum) ≤ availableWidth, 加进去
-    /// 3. 否则 finalize 当前行: rowHeight = (availableWidth - nGaps × spacing) / aspectSum
-    /// 4. 开新行
-    ///
-    /// 例子 (3 张 16:9 + 1 张 4:3, availableWidth=1000, spacing=4):
-    /// - Item 1 (16:9=1.78): current=[1], aspectSum=1.78, 总宽 at h=1 = 1.78 ≤ 1000 ✓
-    /// - Item 2 (16:9=1.78): nGaps=1, 新总宽 = 1×4 + (1.78+1.78) = 7.56 ≤ 1000 ✓
-    ///   current=[1,2], aspectSum=3.56
-    /// - Item 3 (16:9=1.78): nGaps=2, 新总宽 = 2×4 + (3.56+1.78) = 9.12 ≤ 1000 ✓
-    ///   current=[1,2,3], aspectSum=5.34
-    /// - Item 4 (4:3=1.33): nGaps=3, 新总宽 = 3×4 + (5.34+1.33) = 12.67 ≤ 1000 ✓
-    ///   current=[1,2,3,4], aspectSum=6.67
-    /// - Finalize: rowHeight = (1000 - 3×4) / 6.67 = 988/6.67 ≈ 148.13pt
-    ///   Cell widths: 148.13×1.78 = 263.6, 263.6, 263.6, 148.13×1.33 = 197.0
-    ///   验证: 3×4 + 263.6 + 263.6 + 263.6 + 197.0 = 999.8 ≈ 1000 ✓
-    static func packJustifiedRows(
-        items: [Item],
-        availableWidth: CGFloat,
-        spacing: CGFloat
-    ) -> [JustifiedRow] {
-        guard availableWidth > 0, !items.isEmpty else { return [] }
-
-        var rows: [JustifiedRow] = []
-        var current: [Item] = []
-        var currentAspectSum: CGFloat = 0
-
-        for item in items {
-            if current.isEmpty {
-                current.append(item)
-                currentAspectSum = item.aspectRatio
-            } else {
-                // n current items, n-1 gaps, 加 1 item 后 = n+1 items, n gaps
-                let nGaps = current.count
-                let newAspectSum = currentAspectSum + item.aspectRatio
-                // Width at h=1: nGaps × spacing + newAspectSum (sum of aspects at h=1)
-                let totalWidthAtH1 = CGFloat(nGaps) * spacing + newAspectSum
-                if totalWidthAtH1 <= availableWidth {
-                    current.append(item)
-                    currentAspectSum = newAspectSum
-                } else {
-                    rows.append(JustifiedRow(items: current, availableWidth: availableWidth, spacing: spacing))
-                    current = [item]
-                    currentAspectSum = item.aspectRatio
-                }
-            }
-        }
-        if !current.isEmpty {
-            rows.append(JustifiedRow(items: current, availableWidth: availableWidth, spacing: spacing))
-        }
         return rows
     }
 }

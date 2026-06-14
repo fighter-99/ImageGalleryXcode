@@ -81,10 +81,23 @@ struct PhotoGridView: View {
     let isImporting: Bool = false
     // 必须在最末尾 (Swift init 顺序要求)
     let onExportComplete: (Int) -> Void
+    // V5.39.6 NEW: 拖入导入回调——从 Finder 拖文件 / 文件夹到 grid 直接导入
+    //   macOS 用户习惯从 Finder 拖文件到 app (跟 Photos.app 行为一致)
+    //   onImport 走 NSOpenPanel; onDropImport 走 NSItemProvider (拖拽), 互不冲突
+    //   必须放在 exportComplete 之后, onReorder 之前——SwiftUI call site 顺序约束
+    let onDropImport: ([URL]) -> Void
+    // V5.39.7 NEW: 重排回调 (customOrder 拖拽重排后调, 触发 recomputePhotos 重算 grid)
+    let onReorder: () -> Void
 
     // ─── 综合筛选 ───
     // V3.6.5: 从 computed property 改为 @State 缓存 + filterSignature 失效
     @State private var photos: [Photo] = []
+    // V5.39.7: 重排刷新 trigger——拖拽重排后增 UUID, .onChange 触发 recomputePhotos
+    //   @Model 对象的 sortOrder 字段已变, 但 @State photos 是引用快照
+    //   需 trigger 变更触发 .onChange → recomputePhotos 重 fetch + 重排
+    //   此 trigger 必须是 PhotoGridView 内部 @State, 因为 caller (ContentView)
+    //   无法直接调 recomputePhotos (private); @State 在同 struct 闭包内可直接改
+    @State private var reorderRefreshTrigger = UUID()
     // V5.32: 缓存 groupByDate 结果——之前 masonryDateGroupedLayout 每次 body render 都重算
     //   O(n log n) 复杂度 (iterate + bucket + sort groups + sort photos in groups)
     //   1000 张图 × 每次 render 滚动 = 1000+ 次重算, 浪费
@@ -189,6 +202,24 @@ struct PhotoGridView: View {
             recomputePhotos()
             onVisiblePhotosChange(photos)
         }
+        // V5.39.7: 拖拽重排后触发重算
+        //   masonryRowsView 内部 onReorder 闭包会增 reorderRefreshTrigger
+        //   → 此 .onChange 触发 → recomputePhotos 重 fetch + 重排 (新 sortOrder 生效)
+        .onChange(of: reorderRefreshTrigger) { _, _ in
+            recomputePhotos()
+            onVisiblePhotosChange(photos)
+        }
+        // V5.39.6: 拖入导入——从 Finder 拖文件 / 文件夹到 grid 任何位置直接导入
+        //   .dropDestination 是 SwiftUI 14+ 新 API, 替代 .onDrop(of:)
+        //   - URL.self: 只接收 file URL (图片文件 / 包含图片的文件夹)
+        //   - action: 闭包收到 [URL] (Finder 拖的多选 / 文件夹递归) + 落点坐标
+        //   - 返回 true 表示接受 drop (false = 拒绝, 系统会显示禁止图标)
+        //   - onDropImport 是 ContentView 注入的回调, 走 ImageImporter.importURLs
+        //   - 整个 body VStack 都接受 drop (空态时也能拖入导入)——符合 Photos.app UX
+        .dropDestination(for: URL.self) { urls, _ in
+            onDropImport(urls)
+            return true
+        }
     }
 
     private var navigationTitle: String {
@@ -245,30 +276,38 @@ struct PhotoGridView: View {
     //   - 行 reflow: MasonryMath.groupIntoRows 算好每行 cell 列表
     //   - LazyVStack of MasonryRow (每行 HStack 固定高)
     // V5.29: 接入 GridLayout.computeRows (model 层纯函数)
+    // V5.39.2: grid 左右侧栏间距——避免 thumbnails 贴 sidebar/status bar
+    //   之前 V5.28 edge-to-edge (无 padding)——cell 直接顶到侧栏边缘
+    //   用户反馈"缩略图和左右侧栏距离太近, 视觉压迫"
+    //   16pt 横向 padding: cell 距侧栏 16pt 留白, 视觉舒适
+    //   同步从 availableWidth 减 2×16pt, cell 实际宽度按 padded area 算
+    private let gridHorizontalPadding: CGFloat = 16
+
     @ViewBuilder
     private var photoGrid: some View {
         GeometryReader { geo in
-            // V5.28: edge-to-edge——grid 占满整个 content area
-            //   - V5.16 减 2 * Spacing.md (24pt) 算 availableWidth
-            //   - V5.28 改用全宽——无外 padding
-            //   - 镜像 macOS Photos.app Library (cell 顶到 toolbar, 底到 status bar)
-            let availableWidth = geo.size.width
+            // V5.39.2: 减 2 × gridHorizontalPadding——cell 算的 availableWidth 是 padded area
+            //   配合下面 masonryFlatLayout / masonryDateGroupedLayout 的 .padding(.horizontal, ...)
+            //   让 cell 视觉上落在缩进后的容器内, 不溢出
+            let availableWidth = geo.size.width - 2 * gridHorizontalPadding
             let rowHeight: CGFloat = thumbnailSize  // 缩略图大小 = 行高
             // V5.19: rowSpacing 8pt → 16pt, cellSpacing 12pt → 20pt
             // V5.27: 20pt → 8pt, 16pt → 8pt——macOS Photos Library 节奏
             // V5.28: 8pt → 4pt——更紧凑的 Photos.app 实际 (2-3pt 太紧, 4pt 折衷)
             // V5.37: 4pt → 8pt——User 反馈'行与行之间没有间距'
-            //   6pt 还是太紧 (User 反馈), 8pt 明显可见
-            //   Photos 真版 ~3-4pt 是分隔线感, 我们 8pt 是略宽但视觉更稳
-            //   cellSpacing 同步 4 → 8 (行列间距一致)
-            let rowSpacing: CGFloat = 8              // V5.37: 4 → 8 (User 反馈行没间距)
-            let cellSpacing: CGFloat = 8             // V5.37: 4 → 8 (User 反馈没间距)
+            // V5.39.1: 8pt → Spacing.md (12pt) + 去掉内层 ScrollView, 行间隙终于可见
+            //   之前 cell letterbox 透明 (V5.27) + 内层 ScrollView 吞掉 LazyVStack spacing,
+            //   即使 8pt 也是看不出来. 12pt 更明显 + cell 加 4% primary tint
+            //   (从 V5.21 0.04 white tint 沿用, 略浅) 让 cell 边缘可见 → row gap 视觉清晰
+            let rowSpacing: CGFloat = Spacing.md    // V5.39.1: 8 → 12 (Spacing.md)
+            let cellSpacing: CGFloat = 8            // V5.37: 4 → 8 保持
 
             // V4.37.1: 条件分支——isDateBased 时按日期分组, 否则平铺
             Group {
                 if sortOption.isDateBased {
                     masonryDateGroupedLayout(
                         availableWidth: availableWidth,
+                        gridHorizontalPadding: gridHorizontalPadding,
                         rowHeight: rowHeight,
                         rowSpacing: rowSpacing,
                         cellSpacing: cellSpacing
@@ -276,6 +315,7 @@ struct PhotoGridView: View {
                 } else {
                     masonryFlatLayout(
                         availableWidth: availableWidth,
+                        gridHorizontalPadding: gridHorizontalPadding,
                         rowHeight: rowHeight,
                         rowSpacing: rowSpacing,
                         cellSpacing: cellSpacing
@@ -290,6 +330,7 @@ struct PhotoGridView: View {
     @ViewBuilder
     private func masonryDateGroupedLayout(
         availableWidth: CGFloat,
+        gridHorizontalPadding: CGFloat,
         rowHeight: CGFloat,
         rowSpacing: CGFloat,
         cellSpacing: CGFloat
@@ -308,14 +349,19 @@ struct PhotoGridView: View {
                             cellSpacing: cellSpacing,
                             // V5.18: 日期分组视图显示拍摄日期 caption
                             // V5.25: 改为 layoutMode != .square——.square (Library 视图) 无 caption
-                            showDateCaption: layoutMode != .square
+                            showDateCaption: layoutMode != .square,
+                            // V5.39.7: 透传排序 + 重排回调 (拖拽重排依赖)
+                            sortOption: sortOption,
+                            onReorder: onReorder
                         )
                     } header: {
                         DateSectionHeader(label: group.label, count: group.photos.count)
                     }
                 }
             }
-            // V5.28: 删 .padding()——edge-to-edge
+            // V5.39.2: grid 左右缩进——整组缩进 (包括 DateSectionHeader)
+            //   与 cell 容器一致缩进, 视觉上 date header 和 cell 对齐
+            .padding(.horizontal, gridHorizontalPadding)
             .animation(Animations.medium, value: photos.count)
         }
     }
@@ -324,6 +370,7 @@ struct PhotoGridView: View {
     @ViewBuilder
     private func masonryFlatLayout(
         availableWidth: CGFloat,
+        gridHorizontalPadding: CGFloat,
         rowHeight: CGFloat,
         rowSpacing: CGFloat,
         cellSpacing: CGFloat
@@ -337,10 +384,14 @@ struct PhotoGridView: View {
                     rowSpacing: rowSpacing,
                     cellSpacing: cellSpacing,
                     // V5.18: 平铺视图无日期 header 也无 caption
-                    showDateCaption: false
+                    showDateCaption: false,
+                    // V5.39.7: 透传排序 + 重排回调
+                    sortOption: sortOption,
+                    onReorder: onReorder
                 )
             }
-            // V5.28: 删 .padding()——edge-to-edge
+            // V5.39.2: grid 左右缩进 16pt
+            .padding(.horizontal, gridHorizontalPadding)
             .animation(Animations.medium, value: photos.count)
         }
     }
@@ -360,13 +411,17 @@ struct PhotoGridView: View {
         rowSpacing: CGFloat,
         cellSpacing: CGFloat,
         // V5.18: date caption 开关
-        showDateCaption: Bool
+        showDateCaption: Bool,
+        // V5.39.7: 透传排序模式 (决定 .dropDestination 是否启用) + 重排回调
+        //   @escaping 必加——closure 跨 View body 调用, Swift 要求显式标
+        sortOption: SortOption,
+        onReorder: @escaping () -> Void
     ) -> some View {
         // V5.35: .square 模式 cell 动态计算填满宽
         //   三元表达式避免 @ViewBuilder 内的 if/else 限制
         let actualRowHeight: CGFloat = (layoutMode == .square)
             ? SquareLayout.cellSize(availableWidth: availableWidth, rowHeight: rowHeight, cellSpacing: cellSpacing)
-            : rowHeight  // .masonry / .masonryStretch: 固定 rowHeight (aspect-based 宽度)
+            : rowHeight  // .masonry: 固定 rowHeight (aspect-based 宽度)
         let layout = GridLayout(
             availableWidth: availableWidth,
             rowHeight: actualRowHeight,  // V5.35: 动态算的 cellSize
@@ -374,23 +429,33 @@ struct PhotoGridView: View {
             layoutMode: layoutMode
         )
         let rows = layout.computeRows(from: photos)
-        ScrollView {
-            PhotoGridLayoutView(
-                rows: rows,
-                rowSpacing: rowSpacing,
-                cellSpacing: cellSpacing,
-                showDateCaption: showDateCaption,
-                photos: photos,
-                selection: selection,
-                folders: folders,
-                allTags: allTags,
-                retentionDays: retentionDays,
-                onDelete: deletePhoto,
-                onTap: handleTap,
-                onDoubleTap: onDoubleTap
-            )
-            // V5.28: 删 .padding()——edge-to-edge
+        // V5.39.1: 去掉内层 ScrollView——之前 masonryRowsView 包了 ScrollView { PhotoGridLayoutView },
+        //   与外层 masonryFlatLayout 的 ScrollView 嵌套, 导致 LazyVStack spacing 被吞 (row 间无视觉间距)
+        //   改为直接返回 PhotoGridLayoutView, 由外层 ScrollView 统一滚动
+        // V5.39.7: 内部 onReorder 闭包——增 reorderRefreshTrigger 触发 .onChange → recomputePhotos
+        //   @State 在同 struct 闭包内可直接修改 (SwiftUI 关键洞察)
+        //   caller (ContentView) 的 onReorder 透传到这里被忽略——此内部闭包才是真正的 trigger
+        let internalReorder: () -> Void = {
+            self.reorderRefreshTrigger = UUID()
         }
+        PhotoGridLayoutView(
+            rows: rows,
+            rowSpacing: rowSpacing,
+            cellSpacing: cellSpacing,
+            showDateCaption: showDateCaption,
+            photos: photos,
+            // V5.39.7: 透传到 PhotoGridLayoutView → PhotoRowView → PhotoThumbnailView
+            //   在 photos 之后, selection 之前——SwiftUI call site 顺序约束
+            sortOption: sortOption,
+            onReorder: internalReorder,
+            selection: selection,
+            folders: folders,
+            allTags: allTags,
+            retentionDays: retentionDays,
+            onDelete: deletePhoto,
+            onTap: handleTap,
+            onDoubleTap: onDoubleTap
+        )
     }
 
     // ─── 处理点击 (V3.6.30: 抽成 MultiSelectMath.handleTap 纯函数 thin wrapper) ───
@@ -478,7 +543,7 @@ struct PhotoGridView: View {
         filterMinRating: 0,
         retentionDays: 30,
         thumbnailSize: 170,
-        layoutMode: .masonryStretch,
+        layoutMode: .masonry,
         sortOption: .importedAtDesc,
         onVisiblePhotosChange: { _ in },
         onImport: {},
@@ -486,7 +551,9 @@ struct PhotoGridView: View {
         onClearMultiSelect: {},
         onDoubleTap: { _ in },
         onClearFilters: {},
-        onExportComplete: { _ in }
+        onExportComplete: { _ in },
+        onDropImport: { _ in },
+        onReorder: {}
     )
     .frame(width: 600, height: 400)
 }

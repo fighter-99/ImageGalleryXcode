@@ -47,6 +47,11 @@ struct PhotoGridPane: View {
     // V4.9.0: 清空所有 filter（用于"无搜索结果"等空状态次 CTA）
     let onClearFilters: () -> Void
     let onExportComplete: (Int) -> Void
+    // V5.39.6: 透传到 PhotoGridView, 让 Finder 拖入文件触发 ImageImporter
+    //   必须放在 exportComplete 之后——SwiftUI call site 顺序约束
+    let onDropImport: ([URL]) -> Void
+    // V5.39.7: 透传重排回调 (customOrder 拖拽重排后触发, 调 ContentView recomputePhotos)
+    let onReorder: () -> Void
 
     var body: some View {
         PhotoGridView(
@@ -76,7 +81,9 @@ struct PhotoGridPane: View {
             onClearMultiSelect: onClearMultiSelect,
             onDoubleTap: onDoubleTap,
             onClearFilters: onClearFilters,  // V4.9.0
-            onExportComplete: onExportComplete
+            onExportComplete: onExportComplete,
+            onDropImport: onDropImport,      // V5.39.6 透传
+            onReorder: onReorder              // V5.39.7 透传
         )
     }
 }

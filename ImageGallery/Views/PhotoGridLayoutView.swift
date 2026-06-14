@@ -23,6 +23,10 @@ struct PhotoGridLayoutView: View {
     // V5.18: 日期 caption 开关——date grouped 传 true, 平铺传 false
     let showDateCaption: Bool
     let photos: [Photo]
+    // V5.39.7: 透传排序 + 重排回调 (customOrder 拖拽重排依赖)
+    //   必须放在 photos 之后, selection 之前——SwiftUI call site 顺序约束
+    let sortOption: SortOption
+    let onReorder: () -> Void
     let selection: SelectionState
     let folders: [Folder]
     let allTags: [Tag]
@@ -32,20 +36,22 @@ struct PhotoGridLayoutView: View {
     let onDoubleTap: (Photo) -> Void
 
     var body: some View {
-        // V5.37: LazyVStack spacing 0 + 每行 .padding(.vertical, rowSpacing/2)
-        //   - 之前 LazyVStack(spacing: rowSpacing) 应该工作, 但 User 反馈'行与行之间没有间距'
-        //   - 改成显式 padding 双保险: 视觉上保证行之间有间距
-        //   - rowSpacing/2 + rowSpacing/2 = rowSpacing (对称)
-        //   - row 视觉 frame 不变, 内容上下缩 rowSpacing/2
-        //   - 实际: row content 之间间距 = row 1 下 padding + row 2 上 padding = rowSpacing
-        //   - 这是 V5.37 关键改动: 不再依赖 LazyVStack spacing (可能不生效)
-        LazyVStack(alignment: .leading, spacing: 0) {
+        // V5.39.1: 改用 LazyVStack(spacing: rowSpacing) 直接设行间距
+        //   - V5.37 用 .padding(.vertical, rowSpacing/2) 兜底, 但 cell letterbox 透明 (V5.27)
+        //     → 行间隙也透明 → 视觉上看不到
+        //   - V5.39.1 改用 LazyVStack spacing 直接设, 走 SwiftUI 原生 LazyVStack 行间隙渲染
+        //   - cell 内容 (image + cornerRadius) 自带视觉边界, rowSpacing 8pt 足够可见
+        LazyVStack(alignment: .leading, spacing: rowSpacing) {
             ForEach(rows) { row in
                 PhotoRowView(
                     row: row,
                     cellSpacing: cellSpacing,
                     showDateCaption: showDateCaption,
                     photos: photos,
+                    // V5.39.7: 透传排序 + 重排回调 (customOrder 拖拽重排依赖)
+                    //   在 photos 之后, selection 之前——SwiftUI call site 顺序约束
+                    sortOption: sortOption,
+                    onReorder: onReorder,
                     selection: selection,
                     folders: folders,
                     allTags: allTags,
@@ -54,7 +60,6 @@ struct PhotoGridLayoutView: View {
                     onTap: onTap,
                     onDoubleTap: onDoubleTap
                 )
-                .padding(.vertical, rowSpacing / 2)
             }
         }
     }

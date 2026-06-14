@@ -432,6 +432,7 @@ struct ContentView: View {
         mainLayout
             // V4.10.0: 6 个 chrome modifier 打包（title/subtitle/colorScheme/WindowAccessor/NSToolbar sync）
             // V5.24: 加 layoutMode + thumbnailSize 参数——传给 windowChromeAndToolbar 推 NSToolbar segment/slider
+            // V5.39.3: 加 sortOption 参数——推 NSToolbar sortMenu 按钮 (image 跟 sortOption 走)
             .windowChromeAndToolbar(
                 title: currentViewTitle,
                 subtitle: currentViewSubtitle,
@@ -440,6 +441,7 @@ struct ContentView: View {
                 searchText: searchText,
                 layoutMode: layoutMode,
                 thumbnailSize: thumbnailSize,
+                sortOption: sortOption,
                 configureWindow: { configureNSToolbar(window: $0) }
             )
             // V4.10.0: app lifecycle hooks（.onAppear + 6 个 .onChange 打包）
@@ -659,29 +661,13 @@ struct ContentView: View {
             // 同步 storedThumbnailSize 以便重启后恢复（V4.15.0 ⌘0 行为一致）
             storedThumbnailSize = Double(density)
         }
-        // V4.9.1: View Options 改用 NSPopover + NSHostingController
-        //   之前 V4.8.0 NSToolbar 迁移时丢了 .popover modifier——只 toggle showViewOptions 无效
-        //   现在 ToolbarController.handleShowViewOptions 内部直接 NSPopover.show
-        //   contentProvider 提供 NSHostingController(rootView: ViewOptionsPopover(...))
-        //   viewMode 是 @AppStorage 的 computed property——用 Binding(get:set:) 构造 binding
-        controller.viewOptionsContentProvider = { [self] in
-            // V4.77.0: 改用 ViewOptionsPopoverHostController (NSVisualEffectView 包裹)
-            //   与 FilterPopoverViewController 完全一致的 transl 行为
-            //   之前 V4.9.1 .background(.clear) 让 NSPopover 自动 transl——与 FilterPopover transl 行为不一致（用户反馈）
-            // V5.17: 加 thumbnailLayoutMode binding 传 3 模式布局切换
-            ViewOptionsPopoverHostController(swiftUIView: ViewOptionsPopover(
-                viewMode: Binding(
-                    get: { self.viewMode },
-                    set: { self.viewMode = $0 }
-                ),
-                thumbnailSize: $thumbnailSize,
-                // V5.17: thumbnailLayoutMode 在 sortOption 之前（ViewOptionsPopover init 顺序）
-                thumbnailLayoutMode: Binding(
-                    get: { self.layoutMode },
-                    set: { self.layoutMode = $0 }
-                ),
-                sortOption: $sortOption
-            ))
+        // V5.39.3: 删 controller.viewOptionsContentProvider 整块——视图选项 popover 砍
+        //   布局模式 + 排序都搬到独立 toolbar 按钮 (NSMenu), 走 handleMenuButtonClicked + handleMenuItemSelected
+        //   ViewOptionsPopover + ViewOptionsPopoverHostController 整组文件也删
+        // V5.39.3 NEW: 排序 toolbar 桥接——onSortOptionChange 闭包回写 sortOption
+        controller.onSortOptionChange = { [self] newSort in
+            // 与 layoutMode 同步: 写回 @State, .onChange 触发排序重算 + @AppStorage 持久化
+            sortOption = newSort
         }
         // V4.36.x: Filter popover provider——纯 AppKit FilterPopoverViewController
         //   弃用 SwiftUI FilterPopover + NSHostingController（intrinsic size 协商不可控）
@@ -972,7 +958,15 @@ struct ContentView: View {
                 onClearFilters: { resetFilters() },
                 onExportComplete: { count in
                     showToast("已导出 \(count) 张图片", type: .success)
-                }
+                },
+                // V5.39.6: 拖入导入——从 Finder 拖文件/文件夹到 grid 直接导入
+                //   走 ImageImporter.importURLs (同 NSOpenPanel 路径), 含 progress 跟踪 + toast 反馈
+                //   filter 文件/文件夹筛选交给 ImageImporter.collectFiles 内部处理
+                onDropImport: handleDropImport,
+                // V5.39.7: 重排回调——no-op (PhotoGridView 内部 @State trigger 已处理刷新)
+                //   透传 onReorder 闭包到 cell → 调时增 reorderRefreshTrigger → .onChange → recomputePhotos
+                //   ContentView 不需要做事, 闭包仅用于保持 chain 类型一致
+                onReorder: {}
             )
         case .list:
             PhotoListPane(
@@ -1248,6 +1242,16 @@ struct ContentView: View {
         }
         // V3.6.24: 导入前重复检测（fileHash 重复弹 dialog 让用户选跳过/副本）
         runImportWithDuplicateCheck(urls: panel.urls)
+    }
+
+    // ─── 拖入导入 (V5.39.6 NEW) ───
+    /// Finder 拖文件 / 文件夹到 grid 任何位置直接导入
+    ///   - 走 ImageImporter 内部 collectFiles 递归展开文件夹
+    ///   - 走 runImportWithDuplicateCheck 同 NSOpenPanel 路径 (fileHash 重复检测 + 进度反馈)
+    ///   - 空 urls 直接 return (用户拖了非图片文件)
+    private func handleDropImport(_ urls: [URL]) {
+        guard !urls.isEmpty else { return }
+        runImportWithDuplicateCheck(urls: urls)
     }
 
     /// V3.6.24: 扫现有 photo + 算新 url fileHash，弹 dialog 让用户选
@@ -1729,20 +1733,39 @@ extension View {
         }
     }
 
-    // V5.33: 删 syncNSToolbarLayoutMode——3 模式 toolbar 控件已删
-    //   之前 .onChange(of: layoutMode) 推 segment, 现在 toolbar 无 segment 不需同步
-    //   layoutMode 仍可改 (ViewOptionsPopover), 但只影响 masonryRowsView 内部, 无 toolbar UI
+    // V5.39.3: 砍 syncNSToolbarLayoutMode (V5.33 之前的)——layoutMode 改走 syncNSToolbarAllStates
+    //   在 syncNSToolbarAllStates 里一次性推 layoutMode + density + sortOption
 
-    /// V5.24 NEW: 密度变化 → 同步到 NSToolbar slider value
-    func syncNSToolbarDensity(_ density: CGFloat) -> some View {
-        onChange(of: density) { _, newDensity in
-            // V5.33: 删 layoutMode: nil 参数
-            ToolbarController.shared.updateAllStates(
-                hasSelection: false,
-                hasMultipleSelection: false,
-                density: newDensity
-            )
-        }
+    /// V5.39.3 NEW: 统一推 3 个 NSMenu 按钮 state——layoutMode + density + sortOption
+    ///   替代 V5.24 syncNSToolbarDensity + V5.33 砍掉的 syncNSToolbarLayoutMode
+    ///   ContentView .onChange(of: layoutMode/density/sortOption) 全调这个
+    func syncNSToolbarAllStates(
+        layoutMode: ThumbnailLayoutMode,
+        density: CGFloat,
+        sortOption: SortOption
+    ) -> some View {
+        self
+            .onChange(of: layoutMode) { _, newMode in
+                ToolbarController.shared.updateAllStates(
+                    hasSelection: false,
+                    hasMultipleSelection: false,
+                    layoutMode: newMode
+                )
+            }
+            .onChange(of: density) { _, newDensity in
+                ToolbarController.shared.updateAllStates(
+                    hasSelection: false,
+                    hasMultipleSelection: false,
+                    density: newDensity
+                )
+            }
+            .onChange(of: sortOption) { _, newSort in
+                ToolbarController.shared.updateAllStates(
+                    hasSelection: false,
+                    hasMultipleSelection: false,
+                    sortOption: newSort
+                )
+            }
     }
 
     /// V4.8.1: SwiftUI @State searchText 变化 → 同步到 NSSearchField
@@ -1991,8 +2014,10 @@ extension View {
         searchText: String,
         // V5.24: 加 layoutMode + thumbnailSize 参数——windowChromeAndToolbar 自身不持有
         //   状态，需 caller 传入以同步到 NSToolbar segment/slider
+        // V5.39.3: 加 sortOption 参数——推 NSToolbar sortMenu 按钮 (image 跟 sortOption 走)
         layoutMode: ThumbnailLayoutMode,
         thumbnailSize: CGFloat,
+        sortOption: SortOption,
         configureWindow: @escaping (NSWindow) -> Void
     ) -> some View {
         self
@@ -2019,9 +2044,13 @@ extension View {
             )
             // V4.8.1: SwiftUI @State searchText 变化 → 同步到 NSSearchField
             .syncNSToolbarSearchField(text: searchText)
-            // V5.33: 删 .syncNSToolbarLayoutMode(layoutMode)——3 模式 toolbar 控件已删
-            //   layoutMode 仍可改 (ViewOptionsPopover), 但只影响 masonryRowsView 内部, 无 toolbar UI
-            // V5.24: 密度变化 → 同步到 NSToolbar segment/slider
-            .syncNSToolbarDensity(thumbnailSize)
+            // V5.39.3: 3 个 NSMenu 按钮状态同步——layoutMode + density + sortOption
+            //   替代 V5.24 syncNSToolbarDensity + V5.33 砍掉的 syncNSToolbarLayoutMode
+            //   1 个 modifier 推 3 个 onChange, 简化 body 链
+            .syncNSToolbarAllStates(
+                layoutMode: layoutMode,
+                density: thumbnailSize,
+                sortOption: sortOption
+            )
     }
 }

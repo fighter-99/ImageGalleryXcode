@@ -2,17 +2,18 @@
 //  ThumbnailLayoutModeTests.swift
 //  ImageGalleryTests
 //
-//  V5.17: ThumbnailLayoutMode 单元测试
+//  V5.17 → V5.39.5: ThumbnailLayoutMode 单元测试
 //  验证：
-//  - 3 个 case 完整（保护 ViewOptionsPopover / masonryRowsView 调度表）
+//  - 2 个 case 完整（保护 Toolbar 布局模式菜单 / masonryRowsView 调度表）
 //  - rawValue 稳定（@AppStorage("thumbnailLayoutMode") 持久化契约）
 //  - displayName / icon 非空
-//  - defaultValue = .masonry（V5.19 默认——Photos Days 风格末行不满不补齐）
-//  - masonryParams(rowHeight:) 映射到 MasonryMath 3 模式
-//    · .square:         uniformWidth = rowHeight, stretchLastRow = false
-//    · .masonry:        uniformWidth = nil,        stretchLastRow = false
-//    · .masonryStretch: uniformWidth = nil,        stretchLastRow = true
+//  - defaultValue = .square（V5.20 改回 Photos Library 真版——统一方形 grid）
+//  - masonryParams(rowHeight:) 返 CGFloat? (V5.39.5 简化——只返 uniformWidth, 不再返 stretchLastRow)
 //  - id 唯一（ForEach Identifiable 依赖）
+//
+//  V5.39.5: 删 .masonryStretch case + 删对应测试
+//  - allCasesCount: 3 → 2
+//  - rawValue 范围: 0, 1 (2 已被删, 老用户 rawValue=2 ?? .square 平滑回退)
 //
 //  镜像 AppearanceModeTests pattern
 //
@@ -25,9 +26,10 @@ struct ThumbnailLayoutModeTests {
 
     // MARK: - 完整性
 
-    @Test func allCasesCountIsThree() {
-        // 防止以后误删 case 而忘更新 ViewOptionsPopover 段 + masonryParams switch
-        #expect(ThumbnailLayoutMode.allCases.count == 3)
+    @Test func allCasesCountIsTwo() {
+        // V5.39.5: 3 → 2 (.masonryStretch 删)
+        // 防止以后误删/加 case 而忘更新 Toolbar 布局模式菜单 + masonryParams switch
+        #expect(ThumbnailLayoutMode.allCases.count == 2)
     }
 
     @Test func idsAreUnique() {
@@ -41,9 +43,9 @@ struct ThumbnailLayoutModeTests {
     @Test func rawValuesAreStable() {
         // @AppStorage("thumbnailLayoutMode") 用 rawValue 持久化
         // rawValue 改了就破坏老用户偏好——必须锁死
+        // V5.39.5: .masonryStretch rawValue=2 删, 老用户 storedLayoutModeRaw=2 ?? .square
         #expect(ThumbnailLayoutMode.square.rawValue == 0)
         #expect(ThumbnailLayoutMode.masonry.rawValue == 1)
-        #expect(ThumbnailLayoutMode.masonryStretch.rawValue == 2)
     }
 
     @Test func rawValueRoundTrip() {
@@ -69,13 +71,13 @@ struct ThumbnailLayoutModeTests {
     }
 
     @Test func displayNamesAreUnique() {
-        // popover 段内显示——重复会让用户困惑（"两个一样的选项？"）
+        // 工具栏菜单内显示——重复会让用户困惑（"两个一样的选项？"）
         let names = ThumbnailLayoutMode.allCases.map(\.displayName)
         #expect(Set(names).count == names.count, "displayName 必须唯一")
     }
 
     @Test func iconsAreUnique() {
-        // 3 个 icon segment 视觉区分——重复 icon 视觉混淆
+        // 工具栏按钮 + 菜单都用同一 icon——重复会视觉混淆
         let icons = ThumbnailLayoutMode.allCases.map(\.icon)
         #expect(Set(icons).count == icons.count, "icon 必须唯一")
     }
@@ -92,45 +94,28 @@ struct ThumbnailLayoutModeTests {
 
     // MARK: - masonryParams 映射（关键：决定 PhotoGridView 调 MasonryMath 的参数）
 
-    @Test func squareMapsToUniformWidthWithNoStretch() {
-        // .square: 所有 cell 用 rowHeight 宽（方形），不拉伸末行
-        //   拉伸会让方格变形（变矩形）
-        let params = ThumbnailLayoutMode.square.masonryParams(rowHeight: 200)
-        #expect(params.uniformWidth == 200)
-        #expect(params.stretchLastRow == false)
+    @Test func squareMapsToUniformWidth() {
+        // V5.39.5: masonryParams 简化, 只返 uniformWidth (CGFloat?)
+        //   stretchLastRow 字段已删——所有模式末行都保持 targetRowHeight
+        //   .square: 返 rowHeight (方形 cell, MasonryMath 用)
+        //   .masonry: 返 nil (JustifiedRowLayout 不读此字段, 仍返以保持 API 兼容)
+        let uniformWidth = ThumbnailLayoutMode.square.masonryParams(rowHeight: 200)
+        #expect(uniformWidth == 200)
     }
 
-    @Test func masonryMapsToAspectModeNoStretch() {
+    @Test func masonryMapsToNilUniformWidth() {
         // .masonry: cell 宽 = rowHeight × aspectRatio（按比例），末行不满保留
         //   Photos.app "Days" 行为——末行右缘空着不补
-        let params = ThumbnailLayoutMode.masonry.masonryParams(rowHeight: 200)
-        #expect(params.uniformWidth == nil)
-        #expect(params.stretchLastRow == false)
-    }
-
-    @Test func masonryStretchMapsToAspectModeWithStretch() {
-        // .masonryStretch: cell 宽按比例，末行均分多余宽
-        //   Flickr/500px 风格——消除"空右缘"但不破坏行高
-        let params = ThumbnailLayoutMode.masonryStretch.masonryParams(rowHeight: 200)
-        #expect(params.uniformWidth == nil)
-        #expect(params.stretchLastRow == true)
+        let uniformWidth = ThumbnailLayoutMode.masonry.masonryParams(rowHeight: 200)
+        #expect(uniformWidth == nil)
     }
 
     @Test func squareUniformWidthScalesWithRowHeight() {
         // uniformWidth 必须 = rowHeight（不同密度下保持方形）
         // 用户切到 120pt 密度 → 方格也是 120×120
         for rowHeight: CGFloat in [80, 120, 170, 200, 280] {
-            let params = ThumbnailLayoutMode.square.masonryParams(rowHeight: rowHeight)
-            #expect(params.uniformWidth == rowHeight, "rowHeight \(rowHeight) → uniformWidth \(rowHeight)")
+            let uniformWidth = ThumbnailLayoutMode.square.masonryParams(rowHeight: rowHeight)
+            #expect(uniformWidth == rowHeight, "rowHeight \(rowHeight) → uniformWidth \(rowHeight)")
         }
-    }
-
-    @Test func masonryAndMasonryStretchOnlyDifferInStretchFlag() {
-        // .masonry vs .masonryStretch 唯一区别就是 stretchLastRow
-        // —— 验证 enum 区分意图一致（不是误把不同 case 写一样了）
-        let a = ThumbnailLayoutMode.masonry.masonryParams(rowHeight: 200)
-        let b = ThumbnailLayoutMode.masonryStretch.masonryParams(rowHeight: 200)
-        #expect(a.uniformWidth == b.uniformWidth)
-        #expect(a.stretchLastRow != b.stretchLastRow)
     }
 }

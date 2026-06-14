@@ -28,6 +28,11 @@ struct PhotoRowView: View {
     // V5.18: 日期 caption 开关——date grouped 传 true, 平铺传 false
     let showDateCaption: Bool
     let photos: [Photo]
+    // V5.39.7: 排序模式 (透传到 PhotoThumbnailView, 决定是否启用 .dropDestination)
+    //   必须放在 photos 之后, selection 之前——SwiftUI call site 顺序约束
+    let sortOption: SortOption
+    // V5.39.7: 重排回调 (PhotoThumbnailView reorder drop 后调, 触发 ContentView recomputePhotos)
+    let onReorder: () -> Void
     let selection: SelectionState
     let folders: [Folder]
     let allTags: [Tag]
@@ -51,6 +56,9 @@ struct PhotoRowView: View {
             }
         }
         .frame(height: row.rowHeight, alignment: .top)
+        // V5.39.1: HStack 加 .clipped()——即使 cell 内部 .clipped() 修了, HStack 这一层
+        //   也兜底——cell 内容溢出 + HStack frame 不 clip 双重保险
+        .clipped()
     }
 
     @ViewBuilder
@@ -75,6 +83,7 @@ struct PhotoRowView: View {
     }
 
     /// V5.18: 单 cell 渲染——抽出来让 caption 模式/普通模式共用
+    /// V5.39.7: 透传 sortOption + onReorder 到 PhotoThumbnailView (拖拽重排依赖)
     @ViewBuilder
     private func photoImage(photo: Photo, width: CGFloat, height: CGFloat) -> some View {
         PhotoThumbnailView(
@@ -86,6 +95,9 @@ struct PhotoRowView: View {
             cellWidth: width,
             rowHeight: height,
             retentionDays: retentionDays,
+            // V5.39.7: 透传排序模式 + 重排回调 (拖拽重排依赖)
+            sortOption: sortOption,
+            onReorder: onReorder,
             onDelete: { onDelete(photo) },
             onTap: { onTap(photo) },
             onDoubleTap: { onDoubleTap(photo) }

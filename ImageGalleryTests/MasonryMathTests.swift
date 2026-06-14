@@ -2,7 +2,10 @@
 //  MasonryMathTests.swift
 //  ImageGalleryTests
 //
-//  V5.16: MasonryMath.groupIntoRows 测试（pure function）
+//  V5.16 → V5.39: MasonryMath.groupIntoRows 测试（pure function）
+//  V5.39 砍除 packJustifiedRows 测试——
+//  packJustifiedRows 已删 (V5.36 → 搬至 JustifiedRowLayout.swift, 用 packRows 测试)
+//
 //  镜像 DragReorderMathTests.swift pattern（无 @MainActor，pure function test）
 //  避 V5.14 helper-method bug
 //

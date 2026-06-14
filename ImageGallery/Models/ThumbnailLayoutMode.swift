@@ -2,16 +2,21 @@
 //  ThumbnailLayoutMode.swift
 //  ImageGallery
 //
-//  V5.17: 缩略图布局模式——3 选项对应 MasonryMath 3 模式
-//  - .square: uniform square cells（V5.16.1，Photos.app "图库"）
-//  - .masonry: justified masonry（V5.16，Photos.app "Days"）—— 末行不满
-//  - .masonryStretch: masonry + 末行拉宽（V5.16.2，Flickr 风格）—— 默认
+//  V5.17 → V5.39.5: 缩略图布局模式——2 选项
+//  - .square: uniform square cells（V5.16.1，Photos.app "图库"）—— MasonryMath.groupIntoRows
+//  - .masonry: justified masonry（V5.39，targetRowHeight × scaleFactor）—— 末行保持 targetRowHeight
 //
 //  镜像 AppearanceMode.swift pattern（Int-backed enum + displayName + icon
 //    + 派生计算属性 + defaultValue）
 //
-//  masonryParams(rowHeight:) 映射到 MasonryMath 的 (uniformWidth, stretchLastRow)
-//    —— 把 enum 转换逻辑收敛在 enum 本体，PhotoGridView 直接拿结果调 MasonryMath
+//  V5.39.5: 删 .masonryStretch case——用户反馈"满行"模式视觉上不如"按比例"自然
+//    - .masonry 末行保持 targetRowHeight (左对齐) 是 Photos.app "Days" 视图风格
+//    - .masonryStretch 末行拉伸填满是 Flickr/500px 风格
+//    - 留 2 选项 (.square / .masonry), 与 macOS Photos Library/Days 二元切换一致
+//    - masonryParams 简化——不再需要 stretchLastRow (现在所有模式 stretchLastRow=false)
+//    - rawValue 变化: .square=0 / .masonry=1 (之前 .masonryStretch=2 已删)
+//    - 老用户 storedLayoutModeRaw=2 (曾选 masonryStretch) → ThumbnailLayoutMode(rawValue: 2) = nil
+//      → ContentView 走 ?? .defaultValue (.square) 平滑回退
 //
 
 import Foundation
@@ -20,7 +25,6 @@ import CoreGraphics
 enum ThumbnailLayoutMode: Int, CaseIterable, Identifiable {
     case square = 0
     case masonry = 1
-    case masonryStretch = 2
 
     var id: Int { rawValue }
 
@@ -30,48 +34,35 @@ enum ThumbnailLayoutMode: Int, CaseIterable, Identifiable {
     ///   - portrait 3:4 中心裁切: 保留主体居中, 上下被裁
     ///   - landscape 16:9 中心裁切: 保留主体居中, 左右被裁
     ///   - 1:1 square 显示完整
-    ///   - 这正是用户的最初 spec "采用严格的等宽正方形网格布局"
-    /// V5.33 误判 Photos 是 justified aspect-preserving (实际是 Pinterest/Flickr 风格)
-    ///   - V5.33-1 改 .masonry + .fit 是错的, V5.34 改回 .square + .fill
-    ///   - V5.33-2 (砍 toolbar) 仍保留: Photos toolbar 真只有 1 view mode
-    ///   - V5.33-3 (preview) 仍保留: 段 3 仍 3 mode (.square / .masonry / .masonryStretch)
-    /// 老用户 @AppStorage 有 storedLayoutModeRaw 不受影响 (仅新装/重置生效)
+    /// V5.39.5 仍保留 .square 默认——和 macOS Photos.app Library 视图一致
     static let defaultValue: ThumbnailLayoutMode = .square
 
     var displayName: String {
         switch self {
-        case .square:         return "方格"
-        case .masonry:        return "按比例"
-        case .masonryStretch: return "按比例（满行）"
+        case .square:  return "方格"
+        case .masonry: return "按比例"
         }
     }
 
     var icon: String {
         switch self {
-        case .square:         return "square.grid.2x2"
-        case .masonry:        return "rectangle.split.3x1"
-        case .masonryStretch: return "rectangle.split.3x1.fill"
+        case .square:  return "square.grid.2x2"
+        case .masonry: return "rectangle.split.3x1"
         }
     }
 
-    /// V5.17: 映射到 MasonryMath.groupIntoRows 的两个关键参数
-    /// - .square:         uniformWidth = rowHeight（方形 cell）, stretchLastRow = false
-    ///   —— 方格本来已填满（或不满也无所谓），拉伸只会让方格变形
-    /// - .masonry:        uniformWidth = nil（按 aspect）, stretchLastRow = false
-    ///   —— Photos.app "Days" 行为，末行不满保留
-    /// - .masonryStretch: uniformWidth = nil（按 aspect）, stretchLastRow = true
-    ///   —— Flickr/500px 风格，末行均分多余宽
+    /// V5.39.5 简化: masonryParams 只剩 uniformWidth
+    ///   - .square:  uniformWidth = rowHeight (方形 cell, MasonryMath 用)
+    ///   - .masonry: uniformWidth = nil (JustifiedRowLayout 不读此字段, 仍返以保持 API 兼容)
     ///
-    /// - Parameter rowHeight: 行高（= thumbnailSize，与 MasonryMath 一致）
-    /// - Returns: (uniformWidth, stretchLastRow) 二元组
-    func masonryParams(rowHeight: CGFloat) -> (uniformWidth: CGFloat?, stretchLastRow: Bool) {
+    /// stretchLastRow 字段已删——所有模式末行都保持 targetRowHeight (左对齐, Photos Days 风格)
+    ///
+    /// - Parameter rowHeight: 行高 (= thumbnailSize)
+    /// - Returns: uniformWidth (nil = 走 aspect-based 宽度, non-nil = 固定宽度)
+    func masonryParams(rowHeight: CGFloat) -> CGFloat? {
         switch self {
-        case .square:
-            return (uniformWidth: rowHeight, stretchLastRow: false)
-        case .masonry:
-            return (uniformWidth: nil, stretchLastRow: false)
-        case .masonryStretch:
-            return (uniformWidth: nil, stretchLastRow: true)
+        case .square:  return rowHeight
+        case .masonry: return nil
         }
     }
 }

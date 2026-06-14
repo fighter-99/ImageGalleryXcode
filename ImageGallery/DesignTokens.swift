@@ -44,7 +44,14 @@ enum Radius {
     /// V5.28: 3pt → 0pt——严格直角 (Photos.app Library 实际无圆角)
     ///   - macOS Photos.app Library cell 是 0 圆角 (严格直角)
     ///   - V5.26 1.5pt border + V5.27 3pt 圆角都是 Photos 痕迹
-    static let thumb: CGFloat = 0
+    /// V5.39.1: 0pt → 8pt——selection 框正方形 bug 修复 + 统一 square/masonry 圆角
+    ///   - 0pt 让 cell/image clip/selection 全部退化为直角正方形
+    ///   - 用户反馈"选中图片的框是正方形的, 不是选中整个缩略图"
+    ///   - 4pt 圆角在 200pt cell 上太微妙 (2%), 6pt 仍读作"接近正方形"
+    ///   - 8pt 圆角: square 模式 1:1 cell 也明显带圆角 (4%), masonry 模式 cell 形状变化时
+    ///     圆角视觉一致, 不再有"square 无圆角 / masonry 有圆角"的割裂感
+    ///   - 8pt 仍在 macOS Photos / Finder 缩略图圆角范围 (4-8pt) 内
+    static let thumb: CGFloat = 8
 }
 
 // MARK: - 表面色（V3.1 NEW：Photos.app 风格语义化）
