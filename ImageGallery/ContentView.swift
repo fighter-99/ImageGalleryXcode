@@ -1185,13 +1185,13 @@ struct ContentView: View {
 
     // V4.37.1: 触发 Quick Look——复用于 ⌘Y 菜单 / toolbar 按钮 / 空格键
     //   抽出 onSpace 闭包逻辑（避免 3 处重复 currentVisibleURLs + firstIndex 计算）
-    //   currentVisibleURLs 让 QLPreviewPanel 支持 ←→ 在整个 visiblePhotos 内翻页（Photos.app 行为）
+    // V5.42: 改走 enterImmersiveFromSelection()——跟双击 / ⌘↩ Return 同路径
+    //   - 修 'No items selected' bug（QLPreviewPanel 路径 URL 不可达）
+    //   - 4 个入口 (⌘Y / 工具栏 / 空格 / 双击) 行为完全一致
+    //   - 镜像 Photos.app 行为：Spacebar 选中照片进沉浸式
+    // V5.42: 旧 QLPreviewPanel 实现删除（QuickLookPreviewController.swift + QuickLookBridge）
     private func showQuickLook() {
-        guard let photo = singleSelectedPhoto,
-              let idx = visiblePhotos.firstIndex(where: { $0.id == photo.id }) else {
-            return
-        }
-        quickLookController.show(urls: currentVisibleURLs, currentIndex: idx)
+        enterImmersiveFromSelection()
     }
 
     // V4.37.4: titlebar accessory tooltip——反映当前 showDetail 状态
