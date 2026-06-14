@@ -40,7 +40,7 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
     var onBatchExport: (() -> Void)?
     var onDelete: (() -> Void)?
     var onImport: (() -> Void)?
-    var onQuickLook: (() -> Void)?   // V4.37.1 NEW: ⌘Y Quick Look（ContentView 接 quickLookController）
+    var onQuickLook: (() -> Void)?   // V4.37.1 NEW: ⌘Y Quick Look → ContentView.showQuickLook() → V5.42 改走 enterImmersiveFromSelection()
     var onPrev: (() -> Void)?        // V4.37.2 NEW: ⌘[ 上一张（ContentView 接 goPrev）
     var onNext: (() -> Void)?        // V4.37.2 NEW: ⌘] 下一张（ContentView 接 goNext）
     // V5.24 NEW: 布局模式 + 密度 toolbar 桥接
