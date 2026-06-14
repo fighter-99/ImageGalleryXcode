@@ -260,13 +260,20 @@ struct PhotoThumbnailView: View {
                         //   - portrait 3:4 上下顶 cell, 左右裁掉 (image 中心 = cell 中心)
                         //   - landscape 16:9 左右顶 cell, 上下裁掉
                         //   - 镜像 macOS Photos.app Library 实际行为
-                        //   - "智能主体识别" 留 V5.29+ (Vision framework saliency)
+                        //   - "智能主体识别" 留 V5.31+ (Vision framework saliency)
+                        // V5.30: 加 .transition(.opacity) + .animation——image 加载完淡入
+                        //   - 之前 loadedImage 写入时 image 突现 (无过渡)
+                        //   - Photos.app Library cell 有 ~0.2s fade-in (加载完 → 渐显)
+                        //   - 0.2s easeOut, 不抢主视觉, 但感知更柔和
                         Image(nsImage: nsImage)
                             .resizable()
                             .aspectRatio(aspectRatio, contentMode: .fill)  // V5.28: .fit → .fill
                             .clipShape(RoundedRectangle(cornerRadius: Radius.thumb))
                             .saturation(photo.isInTrash ? 0.05 : 1)
                             .opacity(photo.isInTrash ? (colorScheme == .dark ? 0.65 : 0.55) : 1)
+                            // V5.30: image 加载完淡入——镜像 Photos.app Library cell 行为
+                            .transition(.opacity)
+                            .animation(.easeOut(duration: 0.2), value: loadedImage != nil)
                     } else if loadFailed {
                         // V5.28: 失败占位也用 .fill (裁切) 保持一致
                         RoundedRectangle(cornerRadius: Radius.thumb)
