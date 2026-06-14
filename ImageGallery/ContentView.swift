@@ -196,7 +196,13 @@ struct ContentView: View {
     @State private var undoManager = ImageGalleryUndoManager()
 
     // 启动记忆
-    @AppStorage("thumbnailSize") private var storedThumbnailSize: Double = 240  // V5.20: 200→240 (Photos Library 容器更大，+20% 视觉权重)
+    // V5.30: 240pt → 200pt 默认
+    //   - V5.20 设 240pt 是"Photos Library 容器更大"——但实际是单图视觉权重而非 grid 密度
+    //   - macOS Photos.app Library 默认 cell 边长 ~180-200pt, 更密集
+    //   - 240pt 太稀 (3-4 cell/row), 200pt 是 Photos 真版 (4-5 cell/row, 1188pt 窗口)
+    //   - 4 cell 档仍可切: compact 70 / small 110 / medium 200 / large 240
+    //   - 老用户 @AppStorage 已有 storedThumbnailSize 不受影响 (仅新装/重置生效)
+    @AppStorage("thumbnailSize") private var storedThumbnailSize: Double = 200  // V5.30: 240→200 (Photos 真版密度)
     @AppStorage("sidebarSelection") private var storedSidebarKey: String = "all"
     @AppStorage("sortOption") private var storedSortOption: String = SortOption.importedAtDesc.rawValue
     // V5.17: 缩略图布局模式（3 选项 .square / .masonry / .masonryStretch）
