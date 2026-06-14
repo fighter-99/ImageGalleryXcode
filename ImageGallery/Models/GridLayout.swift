@@ -2,7 +2,7 @@
 //  GridLayout.swift
 //  ImageGallery
 //
-//  V5.29 → V5.39: 纯 layout 算法——输入 + 布局参数 → [GridRow]
+//  V5.29 → V5.47: 纯 layout 算法——输入 + 布局参数 → [GridRow]
 //    镜像 macOS Photos.app "NSCollectionViewLayout 算 frame" 模式
 //    - 算法与 view 渲染完全分离
 //    - 纯函数, 可独立测试
@@ -12,12 +12,13 @@
 //    V5.14 教训——@MainActor struct 内 helper 方法触 test bundle 失败
 //    pure value type + 无 @MainActor + 测试用普通 struct——避开 V5.14 bug
 //
-//  V5.39 重构：
-//    - .square 模式: 用 MasonryMath.groupIntoRows (V5.16, 不变)
-//    - .masonry / .masonryStretch 模式: 用 JustifiedRowLayout.packRows (V5.39, 替代 V5.36)
-//      · V5.36 MasonryMath.packJustifiedRows 已删 (targetRowHeight × scaleFactor 形式见 JustifiedRowLayout)
-//      · .masonry: stretchLastRow=false (末行保持 targetRowHeight, Photos 真版)
-//      · .masonryStretch: stretchLastRow=true (末行 scale 填满, Flickr 风格)
+//  V5.39 重构 + V5.47 简化：
+//    - V5.39: .square 走 MasonryMath.groupIntoRows, .masonry 走 JustifiedRowLayout.packRows
+//    - V5.47: 删 .masonry case + computeJustifiedMasonryRows 整段 (dead code)
+//      · 用户决定不再保留 justified row 选项
+//      · 现在所有模式都走 .square 路径 (1:1 方格 + dynamic cellSize)
+//      · .square vs .squareFit 差异在 PhotoThumbnailView 渲染分支 + cell card
+//    - JustifiedRowLayout.swift 模型保留 (V5.39 era 算法沉淀)——但 GridLayout dispatcher 不再调
 //
 //  复用 MasonryMath.groupIntoRows 低阶原语 (V5.16 已有)
 //  复用 ThumbnailLayoutMode.masonryParams 模式映射 (V5.17 已有)
@@ -58,17 +59,14 @@ struct GridLayout: Equatable {
     /// V5.36 → V5.39 → V5.39.5: 按 layoutMode 分发到不同算法
     ///   - .square:    V5.35 算法 (cellSize 动态算填满宽, 所有 cell 1:1, .fill 渲染)
     ///   - .squareFit: V5.35 算法 (1:1 cell 同 .square, 但 .fit letterbox 渲染——V5.46 路由同 .square)
-    ///   - .masonry:   V5.39 算法 (targetRowHeight × scaleFactor, 末行不拉伸, .fill 渲染)
     /// V5.39.5: 删 .masonryStretch case——用户删"按比例（满行）"模式
-    ///   现在所有非方格模式都走 V5.39 算法 + 末行不拉伸 (Photos Days 风格)
-    /// V5.46: 加 .squareFit 路由——layout 算法跟 .square 一样 (1:1 方格)，
-    ///   差异在 PhotoThumbnailView 渲染分支 (.fill vs .fit)——layout 层不关心
+    /// V5.47: 删 .masonry case + computeJustifiedMasonryRows 整段——用户决定不再保留 justified row
+    ///   现在所有模式都走 V5.35 算法 (1:1 方格 + dynamic cellSize 填满)
+    ///   .square vs .squareFit 差异在 PhotoThumbnailView 渲染分支 (.fill vs .fit) + cell card (.square 有, .squareFit 无)
     func computeRows(from items: [PhotoGridItem]) -> [GridRow] {
         switch layoutMode {
         case .square, .squareFit:
             return computeUniformSquareRows(items: items)
-        case .masonry:
-            return computeJustifiedMasonryRows(items: items, stretchLastRow: false)
         }
     }
 
@@ -107,41 +105,9 @@ struct GridLayout: Equatable {
         }
     }
 
-    // MARK: - .masonry / .masonryStretch 模式 (V5.39 算法)
-
-    /// V5.39: Photos.app Library 风格 Justified Row Layout
-    ///   - targetRowHeight 作 input, scaleFactor 算 actualRowHeight
-    ///   - user spec 5 步算法 (详见 JustifiedRowLayout.swift header)
-    ///   - V5.39: 末行行为由 stretchLastRow 控制
-    ///     · false: 末行保持 targetRowHeight 左对齐 (Photos 真版)
-    ///     · true:  末行 scale 填满 (Flickr/500px 风格)
-    ///   - 跨 row actualRowHeight 接近 targetRowHeight (微调以尽量贴满)
-    private func computeJustifiedMasonryRows(
-        items: [PhotoGridItem],
-        stretchLastRow: Bool
-    ) -> [GridRow] {
-        let masonryItems = items.map { item in
-            MasonryMath.Item(
-                id: item.id,
-                width: 0,  // V5.39: per-row 算 width (依赖 actualRowHeight)
-                aspectRatio: item.aspectRatio
-            )
-        }
-        let justifiedRows = JustifiedRowLayout.packRows(
-            items: masonryItems,
-            targetRowHeight: rowHeight,
-            availableWidth: availableWidth,
-            spacing: cellSpacing,
-            stretchLastRow: stretchLastRow
-        )
-        return justifiedRows.map { jRow in
-            // 每 row 的 cell width = jRow.actualRowHeight × cell.aspectRatio (已算好)
-            let gridItems: [PhotoGridItem] = jRow.items.map { mItem in
-                PhotoGridItem(id: mItem.id, aspectRatio: mItem.aspectRatio, width: mItem.width)
-            }
-            return GridRow(items: gridItems, rowHeight: jRow.actualRowHeight)
-        }
-    }
+    // V5.47: 删 .masonry / .masonryStretch 模式 + computeJustifiedMasonryRows 整段——dead code
+    //   JustifiedRowLayout.swift 保留 (V5.39 era 算法沉淀, 注释 + 测试还在)
+    //   任何 .masonry 引用都走 .square 路径 (1:1 方格)
 
     /// V5.16: 单张照片宽高比 (aspectRatio 为 0 或缺省时 fallback 1.0)
     static func aspectRatio(of photo: Photo) -> CGFloat {

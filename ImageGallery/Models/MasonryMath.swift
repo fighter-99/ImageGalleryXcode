@@ -2,21 +2,24 @@
 //  MasonryMath.swift
 //  ImageGallery
 //
-//  V5.16 → V5.41: 主网格 row 装箱算法
+//  V5.16 → V5.47: 主网格 row 装箱算法
 //    - 行内 cell 高度统一（rowHeight）
-//    - cell 宽度 = rowHeight × photoAspectRatio (.masonry 模式, macOS Photos.app 真版)
+//    - cell 宽度 = rowHeight × photoAspectRatio (.masonry 模式——V5.47 已删, dead code)
 //    - cell 宽度 = rowHeight (.square 模式, V5.16.1, iOS Photos.app Library 风格)
+//    - cell 宽度 = rowHeight (.squareFit 模式, V5.46, 1:1 + .fit letterbox)
 //    - 行 reflow：cell 累加宽度超 availableWidth 时开新行
 //    - 最后一行不满不补齐（Photos 通用行为）
-//    - stretchLastRow=true 时末行均分多余宽 (V5.16.2, Flickr 风格)
+//    - stretchLastRow=true 时末行均分多余宽 (V5.16.2, Flickr 风格——V5.47 无 caller)
 //
-//  ⚠️ V5.41 认知修正: 见 ThumbnailLayoutMode.swift header
+//  ⚠️ V5.41 + V5.47 认知修正: 见 ThumbnailLayoutMode.swift header
 //    - .square 模式 = iOS Photos.app Library (1:1 方格), 不是 macOS Photos 真版
-//    - .masonry 模式 = macOS Photos.app Library/Days (justified row)
+//    - .squareFit 模式 (V5.46) = macOS Photos.app 按比例 真版 (1:1 + .fit letterbox)
+//    - .masonry 模式 (V5.39) = Justified Row——V5.47 砍
 //
 //  V5.39 砍除 V5.36 packJustifiedRows + JustifiedRow struct——
 //    V5.36 算法搬至 JustifiedRowLayout.swift (user spec 形式, targetRowHeight × scaleFactor)
-//    MasonryMath 只保留 .square 模式需要的 groupIntoRows + Item/Row
+//  V5.47: stretchLastRow 参数已无 caller——保留 groupIntoRows API 兼容
+//    MasonryMath 只保留 .square / .squareFit 模式需要的 groupIntoRows + Item/Row
 //
 //  Why 独立 enum（不放 PhotoGridView 内部 static func）：
 //    V5.14 教训——@MainActor struct 内 helper 方法（private/static）触发现有

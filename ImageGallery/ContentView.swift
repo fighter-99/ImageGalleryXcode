@@ -206,7 +206,7 @@ struct ContentView: View {
     //   - 改 filenameAsc: 字母序, isDateBased=false → masonryFlatLayout (无 header)
     //   - 老用户 @AppStorage 已有 storedSortOption 不受影响 (仅新装/重置生效)
     @AppStorage("sortOption") private var storedSortOption: String = SortOption.filenameAsc.rawValue  // V5.31: importedAtDesc → filenameAsc
-    // V5.17: 缩略图布局模式（3 选项 .square / .masonry / .masonryStretch）
+    // V5.17: 缩略图布局模式 (2 选项 .square / .squareFit, V5.47 砍 .masonry)
     //   镜像 AppearanceMode Int-backed pattern
     //   @AppStorage 持久化 + computed 读写 + 透传给 ViewOptionsPopover/PhotoGridPane
     //   nonmutating set 必备——否则 closure 内 [self] capture 后 setter 改 self 编译失败

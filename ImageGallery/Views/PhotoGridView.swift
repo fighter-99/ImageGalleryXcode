@@ -546,7 +546,7 @@ struct PhotoGridView: View {
         filterMinRating: 0,
         retentionDays: 30,
         thumbnailSize: 170,
-        layoutMode: .masonry,
+        layoutMode: .square,
         sortOption: .importedAtDesc,
         onVisiblePhotosChange: { _ in },
         onImport: {},

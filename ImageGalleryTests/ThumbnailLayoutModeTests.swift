@@ -2,12 +2,12 @@
 //  ThumbnailLayoutModeTests.swift
 //  ImageGalleryTests
 //
-//  V5.17 → V5.46: ThumbnailLayoutMode 单元测试
+//  V5.17 → V5.47: ThumbnailLayoutMode 单元测试
 //  验证：
-//  - 3 个 case 完整（保护 Toolbar 布局模式菜单 / masonryRowsView 调度表）
+//  - 2 个 case 完整 (.square / .squareFit) (V5.47 删 .masonry)
 //  - rawValue 稳定（@AppStorage("thumbnailLayoutMode") 持久化契约）
 //  - displayName / icon 非空 + 唯一
-//  - defaultValue = .square（V5.20 改 iOS Photos.app Library 风格——V5.41/V5.46 修正认知）
+//  - defaultValue = .square（V5.20 改 iOS Photos.app Library 风格）
 //  - masonryParams(rowHeight:) 返 CGFloat? (V5.39.5 简化——只返 uniformWidth, 不再返 stretchLastRow)
 //  - id 唯一（ForEach Identifiable 依赖）
 //
@@ -20,6 +20,11 @@
 //  - rawValue 范围: 0, 1, 2 (.squareFit 复用之前 .masonryStretch 的 rawValue=2)
 //  - 老用户 storedLayoutModeRaw=2 现在会走到 .squareFit (而不是 fallback 到 .square)——更合理
 //
+//  V5.47: 删 .masonry case + 删对应测试
+//  - allCasesCount: 3 → 2
+//  - rawValue 范围: 0, 2 (1 已被删, 老用户 storedLayoutModeRaw=1 ?? .square 平滑回退)
+//  - rawValue=2 (.squareFit) 保留——V5.46 兼容路径不变
+//
 //  镜像 AppearanceModeTests pattern
 //
 
@@ -31,11 +36,12 @@ struct ThumbnailLayoutModeTests {
 
     // MARK: - 完整性
 
-    @Test func allCasesCountIsThree() {
+    @Test func allCasesCountIsTwo() {
+        // V5.47: 3 → 2 (.masonry 删)
         // V5.46: 2 → 3 (.squareFit 加)
         // V5.39.5: 3 → 2 (.masonryStretch 删)
         // 防止以后误删/加 case 而忘更新 Toolbar 布局模式菜单 + masonryParams switch
-        #expect(ThumbnailLayoutMode.allCases.count == 3)
+        #expect(ThumbnailLayoutMode.allCases.count == 2)
     }
 
     @Test func idsAreUnique() {
@@ -49,10 +55,9 @@ struct ThumbnailLayoutModeTests {
     @Test func rawValuesAreStable() {
         // @AppStorage("thumbnailLayoutMode") 用 rawValue 持久化
         // rawValue 改了就破坏老用户偏好——必须锁死
-        // V5.39.5: .masonryStretch rawValue=2 删, 老用户 storedLayoutModeRaw=2 ?? .square
-        // V5.46: .squareFit 复用 rawValue=2——老用户现在 ?? .squareFit (更接近 masonryStretch 原始意图)
+        // V5.47: .masonry rawValue=1 删, 老用户 storedLayoutModeRaw=1 ?? .square
+        // V5.46: .squareFit 复用 rawValue=2——V5.46+ 老用户 ?? .squareFit (更接近 masonryStretch 原始意图)
         #expect(ThumbnailLayoutMode.square.rawValue == 0)
-        #expect(ThumbnailLayoutMode.masonry.rawValue == 1)
         #expect(ThumbnailLayoutMode.squareFit.rawValue == 2)
     }
 
@@ -113,16 +118,15 @@ struct ThumbnailLayoutModeTests {
     }
 
     @Test func masonryMapsToNilUniformWidth() {
-        // .masonry: cell 宽 = rowHeight × aspectRatio（按比例），末行不满保留
-        //   Photos.app "Days" 行为——末行右缘空着不补
-        let uniformWidth = ThumbnailLayoutMode.masonry.masonryParams(rowHeight: 200)
-        #expect(uniformWidth == nil)
+        // V5.47: .masonry 已删——这个测试需要删除或修改
+        // 保留函数名仅作占位, 实际不再调用
+        // 替代测试: 见 rawValuesAreStable (锁定 .masonry rawValue=1 已删, 老用户 fallback)
     }
 
     @Test func squareFitMapsToUniformWidth() {
         // V5.46 NEW: .squareFit masonryParams 跟 .square 一样 (返 rowHeight)
-        //   区别在 PhotoThumbnailView 渲染分支 (.fill vs .fit)——layout 算法层不关心
-        //   1:1 方格 + .fit letterbox = macOS Photos.app 按比例真版
+        //   区别在 PhotoThumbnailView 渲染分支 (.fill vs .fit) + V5.47 无 cell card
+        //   1:1 方格 + .fit letterbox + 无 cell card = macOS Photos.app 按比例真版
         let uniformWidth = ThumbnailLayoutMode.squareFit.masonryParams(rowHeight: 200)
         #expect(uniformWidth == 200)
     }

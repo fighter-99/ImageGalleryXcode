@@ -39,9 +39,9 @@ struct PhotoThumbnailView: View {
     // V3.6.6: 保留时长（用于显示 trash 视图下的剩余天数 badge）
     let retentionDays: Int
     // V5.46 NEW: 布局模式——决定图片渲染方式 (.fill 裁切 vs .fit letterbox)
-    //   .square:    .fill 裁切 (1:1 方格中心裁切)
-    //   .masonry:   .fill 裁切 (justified row 中心裁切)
-    //   .squareFit: .fit letterbox (1:1 方格, image 顶满长边, 短边 letterbox)——macOS Photos 真版
+    //   .square:    .fill 裁切 (1:1 方格中心裁切, 有 cell card 背景)
+    //   .squareFit: .fit letterbox (1:1 方格, image 顶满长边, 短边 letterbox, 无 cell card)
+    //   V5.47: 删 .masonry (justified row)——layoutMode 简化 2 档 (.square / .squareFit)
     //   必须放在 retentionDays 之后, callbacks 之前——SwiftUI call site 顺序约束
     let layoutMode: ThumbnailLayoutMode
     // V5.39.7: 排序模式 (customOrder 才启用 .dropDestination 重排, 其他模式只 drag 不 drop)

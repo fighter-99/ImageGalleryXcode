@@ -701,7 +701,7 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
     }
 
     /// V5.24 NEW: 3-icon NSSegmentedControl (布局模式 toolbar 集成)
-    ///   - .square / .masonry / .masonryStretch 三档
+    ///   - .square / .squareFit 两档 (V5.47 砍 .masonry)
     ///   - selectedSegment = mode.rawValue 直接同步 @AppStorage
     ///   - segment 风格 matches macOS Photos view mode segment
     ///   - 状态由 ContentView 推 (updateAllStates)
