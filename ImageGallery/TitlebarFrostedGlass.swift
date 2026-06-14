@@ -6,17 +6,21 @@
 //  Photos/Finder/Safari/Notes 等系统 app 都有统一半透 titlebar+toolbar 区域
 //
 //  macOS API: NSVisualEffectView (AppKit 原生)
-//    - material = .bar → 工具栏/标题栏专用磨砂玻璃
+//    - material = .titlebar → 工具栏/标题栏专用磨砂玻璃
 //    - blendingMode = .behindWindow → 内容滚动时半透显示
 //    - state = .followsWindowActiveState → 失焦时变暗（macOS 标准行为）
 //
-//  与 V4.37.3 TitlebarAccessoryController 关系：
-//    - TitlebarAccessoryController: titlebar 区域内的 ⓘ 按钮（layoutAttribute = .trailing）
-//    - TitlebarFrostedGlass: titlebar+toolbar 整条背景（插入 window.contentView 顶部）
-//    两者 z-order: visualEffect 在底，按钮系统渲染在最上面
+//  V5.48-3: 用 NSTitlebarAccessoryViewController 接入（不用 window.contentView）
+//    - 之前 V5.48-2 错把 visualEffect 加到 window.contentView
+//    - contentView 是工具栏**下方**的内容区, 永远只能是"工具栏下方的 strip"
+//    - 用户要求"工具栏**本身**有磨砂玻璃"——必须把 visualEffect 加到 titlebar 区域
+//    - NSTitlebarAccessoryViewController.layoutAttribute = .top 把 view 放在 unified titlebar+toolbar 区域上方
+//    - toolbar items 渲染在 accessory view 上面——视觉"工具栏有磨砂玻璃"
 //
-//  V5.48 之前: window.titlebarAppearsTransparent = true → 系统默认浅灰/深灰纯色填充
-//  V5.48 之后: 显式 .bar material → Photos.app 风格磨砂玻璃
+//  与 V4.37.3 TitlebarAccessoryController 关系：
+//    - TitlebarAccessoryController: layoutAttribute = .trailing (右上角 ⓘ 按钮)
+//    - TitlebarFrostedGlassController: layoutAttribute = .top (整条磨砂玻璃背景)
+//    两者都加在 titlebar 区域, z-order 互不干扰
 //
 
 import AppKit
@@ -26,38 +30,75 @@ import AppKit
 ///
 /// 实现要点:
 ///   - NSVisualEffectView (AppKit 原生, macOS 10.10+)
-///   - material = .bar (工具栏/标题栏专用 material, 比 .regular 浅)
+///   - material = .titlebar (工具栏/标题栏专用 material)
 ///   - blendingMode = .behindWindow (窗口内容透过来, 形成磨砂效果)
 ///   - state = .followsWindowActiveState (失焦时自动变暗)
-///   - autoresizingMask = [.width] (宽度跟窗口, 高度固定 52pt)
+///   - 全宽 + 固定 52pt 高 (unified titlebar+toolbar 合并高度)
 @MainActor
 final class TitlebarFrostedGlass: NSVisualEffectView {
     /// V5.48: unified titlebar+toolbar 合并高度 = titlebar 28pt + toolbar 24pt ≈ 52pt
-    /// 实测 macOS Sonoma 上 .unified style 是 52pt, 后续 macOS 版本可能变
-    /// 保守写 52——Toolbar 高度可调
     static let height: CGFloat = 52
 
     init() {
         super.init(frame: NSRect(x: 0, y: 0, width: 100, height: TitlebarFrostedGlass.height))
-        // V5.48: .titlebar material——Photos 工具栏/标题栏风格
-        //   NSVisualEffectView.Material 没有 .bar (SwiftUI 14+ Material 才有)
+        // V5.48: .titlebar material——Photos 工具栏风格
+        //   NSVisualEffectView.Material 没有 .bar (SwiftUI 14+ 才有)
         //   .titlebar 是 NSVisualEffectView 专为 titlebar/toolbar 设计的材质
-        //   .underWindowBackground 比 .titlebar 更深——不适合工具栏
-        //   .popover 比 .titlebar 更浅——会"飘"起来
         material = .titlebar
-        // V5.48: 内容滚动时半透显示——content 画在 visualEffect 上面
+        // V5.48: 内容滚动时半透显示
         blendingMode = .behindWindow
         // V5.48: 跟随窗口激活状态——失焦时变暗（macOS 标准行为）
-        //   .active 强制亮（少用, 仅特殊场景）
-        //   .inactive 强制暗（少用）
-        //   .followsWindowActiveState 推荐（用户期望行为）
         state = .followsWindowActiveState
-        // V5.48: 宽度跟窗口, 高度由本 view 自身 frame 决定
-        autoresizingMask = [.width]
     }
 
     required init?(coder: NSCoder) {
         // V5.48: programmatic-only——给空默认值满足 Swift two-phase init
         super.init(coder: coder)
+    }
+}
+
+/// V5.48-3 NEW: NSTitlebarAccessoryViewController 包装
+///   - layoutAttribute = .top → accessory view 放在 unified titlebar+toolbar 区域顶部
+///   - view 容纳 TitlebarFrostedGlass (NSVisualEffectView)
+///   - 全宽 (用 widthAnchor 拉到窗口宽)
+///   - 高度 = 52pt (unified titlebar+toolbar 合并高度)
+///
+/// 与 V4.37.3 TitlebarAccessoryController 关系:
+///   - V4.37.3: layoutAttribute = .trailing (右上角 ⓘ 按钮, 小尺寸)
+///   - V5.48-3: layoutAttribute = .top (整条磨砂玻璃背景, 大尺寸)
+///   两者都是 titlebar accessory, 系统分别渲染, 互不干扰
+@MainActor
+final class TitlebarFrostedGlassController: NSTitlebarAccessoryViewController {
+    init() {
+        super.init(nibName: nil, bundle: nil)
+        let visualEffect = TitlebarFrostedGlass()
+        // V5.48-3: accessory view 容纳 visualEffect
+        //   visualEffect 全宽 + 52pt 高 (unified titlebar+toolbar 合并高度)
+        view = visualEffect
+        // V5.48-3: layoutAttribute = .top → 把 accessory 放在 titlebar 区域顶部
+        //   在 .unified 风格下, "顶部" = 整个 unified titlebar+toolbar 区域上方
+        //   toolbar items 渲染在 accessory 上面——视觉"工具栏有磨砂玻璃"
+        layoutAttribute = .top
+    }
+
+    required init?(coder: NSCoder) {
+        // V5.48-3: programmatic-only——给空默认值满足 Swift two-phase init
+        super.init(coder: coder)
+    }
+
+    /// V5.48-3: view 装入后设约束——visualEffect 填满 accessory view
+    ///   NSTitlebarAccessoryViewController 的 view 尺寸由系统根据 layoutAttribute 决定
+    ///   这里用 anchor 拉 visualEffect 到 view 边界
+    override func loadView() {
+        super.loadView()
+        guard let visualEffect = view as? TitlebarFrostedGlass else { return }
+        // 全宽 + 全高——让 visualEffect 跟 accessory view 边界一致
+        visualEffect.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            visualEffect.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            visualEffect.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            visualEffect.topAnchor.constraint(equalTo: view.topAnchor),
+            visualEffect.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
     }
 }
