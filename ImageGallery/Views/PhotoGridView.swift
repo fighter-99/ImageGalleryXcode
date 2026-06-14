@@ -257,8 +257,11 @@ struct PhotoGridView: View {
             // V5.19: rowSpacing 8pt → 16pt, cellSpacing 12pt → 20pt
             // V5.27: 20pt → 8pt, 16pt → 8pt——macOS Photos Library 节奏
             // V5.28: 8pt → 4pt——更紧凑的 Photos.app 实际 (2-3pt 太紧, 4pt 折衷)
-            let rowSpacing: CGFloat = 4              // V5.28: 8pt → 4pt
-            let cellSpacing: CGFloat = 4             // V5.28: 8pt → 4pt
+            // V5.37: 4pt → 6pt——User 反馈'图片直接没有间距', 4pt 视觉上太紧
+            //   Photos 真版 ~3-4pt 是分隔线感, 6pt 更明显的间距感
+            //   rowSpacing 同步 4 → 6 (行列间距一致)
+            let rowSpacing: CGFloat = 6              // V5.37: 4 → 6 (User 反馈没间距)
+            let cellSpacing: CGFloat = 6             // V5.37: 4 → 6 (User 反馈没间距)
 
             // V4.37.1: 条件分支——isDateBased 时按日期分组, 否则平铺
             Group {
