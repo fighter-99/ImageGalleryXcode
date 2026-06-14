@@ -30,7 +30,7 @@ struct CellContextMenuModifier: ViewModifier {
                     photo.folder = nil
                     modelContext.saveWithLog()
                 } label: {
-                    Label("移出文件夹", systemImage: "tray")
+                    Label(Copy.removeFromFolder, systemImage: "tray")
                 }
                 if !folders.isEmpty {
                     Divider()
@@ -48,7 +48,7 @@ struct CellContextMenuModifier: ViewModifier {
                     }
                 }
             } label: {
-                Label("移动到文件夹", systemImage: "folder")
+                Label(Copy.moveToFolder, systemImage: "folder")
             }
 
             Menu {
@@ -64,7 +64,7 @@ struct CellContextMenuModifier: ViewModifier {
                     }
                 }
             } label: {
-                Label("管理标签", systemImage: "tag")
+                Label(Copy.manageTags, systemImage: "tag")
             }
 
             Divider()
@@ -84,14 +84,14 @@ struct CellContextMenuModifier: ViewModifier {
                     pasteboard.writeObjects([photo.fileURL as NSURL])
                 }
             } label: {
-                Label("复制", systemImage: "doc.on.doc")
+                Label(Copy.copyAction, systemImage: "doc.on.doc")
             }
 
             Button {
                 // V4.16.0: 在 Finder 中显示（NSWorkspace 桥接 macOS Finder）
                 NSWorkspace.shared.activateFileViewerSelecting([photo.fileURL])
             } label: {
-                Label("在 Finder 中显示", systemImage: "folder")
+                Label(Copy.revealInFinder, systemImage: "folder")
             }
 
             Divider()
@@ -107,9 +107,9 @@ struct CellContextMenuModifier: ViewModifier {
                         modelContext.saveWithLog()
                     } label: {
                         if photo.rating == n {
-                            Label("\(n) 星", systemImage: "star.fill")
+                            Label(Copy.ratingStars(n), systemImage: "star.fill")
                         } else {
-                            Label("\(n) 星", systemImage: n == 5 ? "star.fill" : "star")
+                            Label(Copy.ratingStars(n), systemImage: n == 5 ? "star.fill" : "star")
                         }
                     }
                 }
@@ -119,13 +119,13 @@ struct CellContextMenuModifier: ViewModifier {
                     modelContext.saveWithLog()
                 } label: {
                     if photo.rating == 0 {
-                        Label("清除评分", systemImage: "checkmark")
+                        Label(Copy.clearRating, systemImage: "checkmark")
                     } else {
                         Text(Copy.clearRating)
                     }
                 }
             } label: {
-                Label("评分", systemImage: photo.rating > 0 ? "star.fill" : "star")
+                Label(Copy.ratingCategory, systemImage: photo.rating > 0 ? "star.fill" : "star")
             }
 
             Divider()
@@ -133,7 +133,7 @@ struct CellContextMenuModifier: ViewModifier {
             Button(role: .destructive) {
                 showingDeleteConfirm = true
             } label: {
-                Label("删除", systemImage: "trash")
+                Label(Copy.delete, systemImage: "trash")
             }
         }
     }

@@ -147,7 +147,7 @@ struct DetailView: View {
                 pasteboard.clearContents()
                 pasteboard.writeObjects([photo.fileURL as NSURL])
             } label: {
-                Label("复制", systemImage: "doc.on.doc")
+                Label(Copy.copyAction, systemImage: "doc.on.doc")
             }
         }
     }

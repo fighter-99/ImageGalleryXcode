@@ -191,7 +191,7 @@ struct SidebarView: View {
                                 Button(role: .destructive) {
                                     deleteTag(tag)
                                 } label: {
-                                    Label("删除标签", systemImage: "trash")
+                                    Label(Copy.deleteTag, systemImage: "trash")
                                 }
                             }
                         }
@@ -503,7 +503,7 @@ struct SidebarView: View {
             Button(role: .destructive) {
                 deleteFolder(folder)
             } label: {
-                Label("删除文件夹", systemImage: "trash")
+                Label(Copy.deleteFolder, systemImage: "trash")
             }
         }
     }

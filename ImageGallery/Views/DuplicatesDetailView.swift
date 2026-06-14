@@ -47,7 +47,7 @@ struct DuplicatesDetailView: View {
                 Button {
                     onKeepNewestPerGroup()
                 } label: {
-                    Label("保留每组最新", systemImage: "checkmark.circle")
+                    Label(Copy.keepNewestPerGroup, systemImage: "checkmark.circle")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)

@@ -175,4 +175,27 @@ enum Copy {
     static let searchPlaceholder = "搜索照片、标签…"
     /// 筛选 badge——"筛选 (3)" 表示激活 3 个筛选条件
     static func filterWithCount(_ count: Int) -> String { "筛选 (\(count))" }
+
+    // MARK: - 上下文菜单 / 详情面板 (V5.50-8 扩展)
+    /// 移动 / 文件夹 / 标签
+    static let removeFromFolder = "移出文件夹"
+    static let moveToFolder = "移动到文件夹"
+    static let manageTags = "管理标签"
+    static let addTagAction = "加标签"
+    static let deleteTag = "删除标签"
+    static let deleteFolder = "删除文件夹"
+    /// 通用 action label
+    static let copyAction = "复制"
+    static let revealInFinder = "在 Finder 中显示"
+    /// 评分——分组标题
+    static let ratingCategory = "评分"
+    /// 评分——"N 星" 标签
+    static func ratingStars(_ n: Int) -> String { "\(n) 星" }
+    /// 多选 / 回收站 / 重复图
+    static let cancelMultiSelect = "取消多选 (Esc)"
+    static let restoreSelected = "恢复选中"
+    static let permanentlyDeleteSelected = "永久删除选中"
+    /// "清空回收站"——区别于 Copy.empty = "清空" (按钮短名)
+    static let emptyRecycleBinAction = "清空回收站"
+    static let keepNewestPerGroup = "保留每组最新"
 }

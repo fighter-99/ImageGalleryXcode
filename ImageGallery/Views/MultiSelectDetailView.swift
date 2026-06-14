@@ -62,7 +62,7 @@ struct MultiSelectDetailView: View {
                         Button {
                             onMove(nil)
                         } label: {
-                            Label("移出文件夹", systemImage: "tray")
+                            Label(Copy.removeFromFolder, systemImage: "tray")
                         }
                         Divider()
                         ForEach(folders) { folder in
@@ -74,7 +74,7 @@ struct MultiSelectDetailView: View {
                         }
                     } label: {
                         HStack {
-                            Label("移动到文件夹", systemImage: "folder")
+                            Label(Copy.moveToFolder, systemImage: "folder")
                             Spacer()
                         }
                     }
@@ -94,7 +94,7 @@ struct MultiSelectDetailView: View {
                         }
                     } label: {
                         HStack {
-                            Label("加标签", systemImage: "tag")
+                            Label(Copy.addTagAction, systemImage: "tag")
                             Spacer()
                         }
                     }
@@ -110,18 +110,18 @@ struct MultiSelectDetailView: View {
                         Button {
                             onBatchSetRating(n)
                         } label: {
-                            Label("\(n) 星", systemImage: n == 5 ? "star.fill" : "star")
+                            Label(Copy.ratingStars(n), systemImage: n == 5 ? "star.fill" : "star")
                         }
                     }
                     Divider()
                     Button {
                         onBatchSetRating(0)
                     } label: {
-                        Label("清除评分", systemImage: "star.slash")
+                        Label(Copy.clearRating, systemImage: "star.slash")
                     }
                 } label: {
                     HStack {
-                        Label("评分", systemImage: "star")
+                        Label(Copy.ratingCategory, systemImage: "star")
                         Spacer()
                     }
                 }
@@ -135,7 +135,7 @@ struct MultiSelectDetailView: View {
                     onExport()
                 } label: {
                     HStack {
-                        Label("导出", systemImage: "square.and.arrow.up")
+                        Label(Copy.toolbarExport, systemImage: "square.and.arrow.up")
                         Spacer()
                     }
                 }
@@ -151,7 +151,7 @@ struct MultiSelectDetailView: View {
                     onDelete()
                 } label: {
                     HStack {
-                        Label("删除", systemImage: "trash")
+                        Label(Copy.delete, systemImage: "trash")
                         Spacer()
                     }
                 }
@@ -163,7 +163,7 @@ struct MultiSelectDetailView: View {
                     onClearSelection()
                 } label: {
                     HStack {
-                        Label("取消多选 (Esc)", systemImage: "xmark.circle")
+                        Label(Copy.cancelMultiSelect, systemImage: "xmark.circle")
                         Spacer()
                     }
                 }

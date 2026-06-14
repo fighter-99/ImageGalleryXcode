@@ -73,7 +73,7 @@ struct TrashDetailView: View {
                 Button {
                     onRestore()
                 } label: {
-                    Label("恢复选中", systemImage: "arrow.uturn.backward")
+                    Label(Copy.restoreSelected, systemImage: "arrow.uturn.backward")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
@@ -82,7 +82,7 @@ struct TrashDetailView: View {
                 Button(role: .destructive) {
                     onPermanentDelete()
                 } label: {
-                    Label("永久删除选中", systemImage: "trash.fill")
+                    Label(Copy.permanentlyDeleteSelected, systemImage: "trash.fill")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
@@ -97,7 +97,7 @@ struct TrashDetailView: View {
                 Button(role: .destructive) {
                     onEmptyTrash()
                 } label: {
-                    Label("清空回收站", systemImage: "trash.slash")
+                    Label(Copy.emptyRecycleBinAction, systemImage: "trash.slash")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderless)
