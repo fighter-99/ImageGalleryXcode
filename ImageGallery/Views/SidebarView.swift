@@ -247,7 +247,8 @@ struct SidebarView: View {
         .listStyle(.sidebar)
         .scrollContentBackground(.hidden)
         .listRowSeparator(.hidden)
-        .navigationTitle("图馆")
+        // V5.51: "图馆" → "图库" typo 修复 + 走 Term.library 字典
+        .navigationTitle(Term.library)
 
         .alert("新建文件夹", isPresented: $showingNewFolderAlert) {
             TextField("文件夹名称", text: $newName)

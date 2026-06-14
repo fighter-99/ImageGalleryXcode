@@ -71,7 +71,8 @@ struct ImageGalleryApp: App {
         //   根本解法：5 actions 改 .primaryAction placement（不再使用 .principal）
         //   .primaryAction 在 .unifiedCompact 下也不会被加 section 背景
         //   回归 V4.0.0.1 的 .unifiedCompact（blur 轻，符合"toolbar 是 backdrop"原意）
-        WindowGroup("我的图馆", id: "main") {
+        // V5.51: "图馆" → "图库" typo 修复 + 走 Term.library 字典
+        WindowGroup(Term.library, id: "main") {
             ContentView()
         }
         // V4.1.0 m: 默认 1280×800；contentMinSize 由 layout 决定

@@ -136,7 +136,8 @@ struct DetailView: View {
             Button("删除", role: .destructive) { deletePhoto() }
             Button("取消", role: .cancel) {}
         } message: {
-            Text("图片将从图馆中移除，文件也会被永久删除。")
+            // V5.51: "图馆" → "图库" typo 修复 + 走 Term.photo + Term.library 字典
+            Text("\(Term.photo)将从\(Term.library)中移除，文件也会被永久删除。")
         }
         // V4.16.0: 右击 detail panel 任意位置 → 复制（与 operationsCard 不重复）
         .contextMenu {
