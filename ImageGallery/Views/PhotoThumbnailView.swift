@@ -46,9 +46,14 @@ struct PhotoThumbnailView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme) private var colorScheme  // V3.6.14: 暗色适配 trash opacity
     // V4.4.0 NEW: Reduced Motion 适配——禁用 hover scale / 选中 scale 等动画
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    // V5.30: 删 @Environment(\.accessibilityReduceMotion) reduceMotion
+    //   - 之前 V4.4.0 加, 配合 currentScale (V5.28-4 已删)
+    //   - 唯一消费点 currentScale 删了, reduceMotion 也成 dead
     @State private var showingDeleteConfirm = false
-    @State private var isHovered = false
+    // V5.30: 删 isHovered state——V5.28-4 砍 hover scale/border/shadow 后, 状态无消费者
+    //   之前 V5.23-2 加 isHovered 驱动 1.005 scale + 1pt border
+    //   V5.28 "无悬停动效" 后, isHovered 仅被 .onHover 写, 无任何读
+    //   纯 dead state, 删——遵循 V4.62.0 代码收敛
     // V3.6.10: 键盘聚焦状态（SwiftUI 默认 focus ring，但 macOS 上系统不显示时手动加）
     @FocusState private var isFocused: Bool
     // V3.6.26: 异步缩略图加载状态（避免主线程阻塞）
@@ -405,14 +410,10 @@ struct PhotoThumbnailView: View {
         //   - 选中态仅 border 视觉锤——不需要 shadow 配合
         // V3.6.51: 单一 .animation 驱动所有选中状态过渡
         .animation(Animations.standard, value: selectionState)
-        // V5.28: 删 .animation(.springGentle, value: isHovered)——hover 无动效
         .animation(Animations.springGentle, value: isFocused)
-        // V5.28: hover 检测保留 (isHovered state), 但不驱动任何视觉
-        //   - 未来若要加 hover 反馈 (e.g. 状态栏), 此 hook 仍在
-        //   - 当前: 选中 1 锤 (border), hover 0 锤, multi 2 锤 (border + ✓)
-        .onHover { hovering in
-            isHovered = hovering
-        }
+        // V5.30: 删 .onHover 整段——isHovered state 已删, hook 失效
+        //   之前 V5.28-4 保留为"未来 hook", 但 dead code 违反 V4.62.0 收敛原则
+        //   若未来加 hover 反馈, 重新加回 .onHover + state 即可
         .contentShape(Rectangle())  // 让空白处也响应点击
         .onTapGesture {
             onTap()
