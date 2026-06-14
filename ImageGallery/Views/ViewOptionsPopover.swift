@@ -266,7 +266,7 @@ struct ViewOptionsPopover: View {
 #Preview("ViewOptionsPopover") {
     @Previewable @State var viewMode: ViewMode = .grid
     @Previewable @State var density: CGFloat = 170
-    @Previewable @State var layoutMode: ThumbnailLayoutMode = .masonryStretch  // V5.17
+    @Previewable @State var layoutMode: ThumbnailLayoutMode = .masonry  // V5.33: .masonryStretch → .masonry (跟默认)
     @Previewable @State var sort: SortOption = .importedAtDesc
     return ViewOptionsPopover(
         viewMode: $viewMode,
