@@ -255,19 +255,17 @@ struct PhotoThumbnailView: View {
                 Spacer(minLength: 0)
                 Group {
                     if let nsImage = loadedImage {
-                        // V5.33: .fill → .fit——默认 .masonry 模式下 cell 匹配 image aspect
-                        //   - .masonry: cell = (cellWidth=rowHeight×aspect, rowHeight) = image aspect
-                        //   - image .fit 完美 fit, 无 letterbox, 无裁切——Photos.app 真版行为
-                        //   - V5.28-1 改 .fill 是几何裁切——portrait 头脚被裁丑, V5.33 改回
-                        //   - .square 模式: cell 1:1, image aspect → letterbox (窗口色, 轻微)
-                        //   - "智能主体识别" 仍留 V5.35+ (Vision framework saliency)
+                        // V5.34: .fit → .fill——回 Photos.app Library 真版
+                        //   - Photos 实际是 1:1 等大 cell + image 中心裁切 (.fill)
+                        //   - 每行每列 cell 中心完美对齐
+                        //   - portrait 3:4 中心裁切: 主体居中, 上下被裁
+                        //   - landscape 16:9 中心裁切: 主体居中, 左右被裁
+                        //   - V5.33 误判 Photos 是 justified (实际是 Pinterest/Flickr 风格), 改回
+                        //   - "智能主体识别" 留 V5.35+ (Vision framework saliency)
                         // V5.30: 加 .transition(.opacity) + .animation——image 加载完淡入
-                        //   - 之前 loadedImage 写入时 image 突现 (无过渡)
-                        //   - Photos.app Library cell 有 ~0.2s fade-in (加载完 → 渐显)
-                        //   - 0.2s easeOut, 不抢主视觉, 但感知更柔和
                         Image(nsImage: nsImage)
                             .resizable()
-                            .aspectRatio(aspectRatio, contentMode: .fit)  // V5.33: .fill → .fit
+                            .aspectRatio(aspectRatio, contentMode: .fill)  // V5.34: 回 .fill (中心裁切)
                             .clipShape(RoundedRectangle(cornerRadius: Radius.thumb))
                             .saturation(photo.isInTrash ? 0.05 : 1)
                             .opacity(photo.isInTrash ? (colorScheme == .dark ? 0.65 : 0.55) : 1)
@@ -275,10 +273,10 @@ struct PhotoThumbnailView: View {
                             .transition(.opacity)
                             .animation(.easeOut(duration: 0.1), value: loadedImage != nil)  // V5.31: 0.2→0.1 (快滚动不'波')
                     } else if loadFailed {
-                        // V5.33: 失败占位也 .fit——保持一致
+                        // V5.34: 失败占位也 .fill——保持一致
                         RoundedRectangle(cornerRadius: Radius.thumb)
                             .fill(.quaternary)
-                            .aspectRatio(aspectRatio, contentMode: .fit)  // V5.33: .fill → .fill
+                            .aspectRatio(aspectRatio, contentMode: .fill)  // V5.34: 回 .fill
                             .overlay {
                                 VStack(spacing: 4) {
                                     Image(systemName: "exclamationmark.triangle")
@@ -289,10 +287,10 @@ struct PhotoThumbnailView: View {
                                 .foregroundStyle(.secondary)
                             }
                     } else {
-                        // V5.33: 加载中 shimmer 也 .fit
+                        // V5.34: 加载中 shimmer 也 .fill
                         RoundedRectangle(cornerRadius: Radius.thumb)
                             .fill(.quaternary)
-                            .aspectRatio(aspectRatio, contentMode: .fit)  // V5.33: .fill → .fit
+                            .aspectRatio(aspectRatio, contentMode: .fill)  // V5.34: 回 .fill
                             .shimmer()
                     }
                 }

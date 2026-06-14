@@ -24,19 +24,19 @@ enum ThumbnailLayoutMode: Int, CaseIterable, Identifiable {
 
     var id: Int { rawValue }
 
-    /// V5.33 默认：.masonry——严格对齐 macOS Photos Library 真版
-    ///   - V5.20 设 .square 是误判：当时看截图以为 Photos 用 1:1 方形 cell
-    ///   - V5.33 重新审视：Photos Library 实际是 justified grid，aspect-preserving
-    ///     - cell 高 = rowHeight，cell 宽 = rowHeight × photo.aspectRatio
-    ///     - portrait 3:4 显示为 3:4 矩形，不裁切
-    ///     - landscape 16:9 显示为 16:9 矩形，不裁切
-    ///   - V5.19 反馈"右边缘空缺"实际上是 .masonryStretch 没开的误会
-    ///     - .masonry (无 stretch) 末行留空 = 窗口色, 这才是 Photos 真版
-    ///   - V5.28-1 改 .fill 是几何裁切——portrait 头脚被裁，landscape 左右被裁，丑
-    ///   - V5.33 改回 .fit (masonry 模式下 cell = image aspect, 无 letterbox)
-    ///   - 老用户 @AppStorage 有 storedLayoutModeRaw 不受影响（仅新装/重置生效）
-    ///   - .square / .masonryStretch 仍保留——可手动切回（ViewOptionsPopover）
-    static let defaultValue: ThumbnailLayoutMode = .masonry
+    /// V5.34 默认：.square——回到 Photos.app Library 真版
+    ///   - Photos.app Library 实际是: 1:1 等大 cell + image 中心裁切
+    ///   - 每行每列 cell 中心完美对齐 (正方形 grid)
+    ///   - portrait 3:4 中心裁切: 保留主体居中, 上下被裁
+    ///   - landscape 16:9 中心裁切: 保留主体居中, 左右被裁
+    ///   - 1:1 square 显示完整
+    ///   - 这正是用户的最初 spec "采用严格的等宽正方形网格布局"
+    /// V5.33 误判 Photos 是 justified aspect-preserving (实际是 Pinterest/Flickr 风格)
+    ///   - V5.33-1 改 .masonry + .fit 是错的, V5.34 改回 .square + .fill
+    ///   - V5.33-2 (砍 toolbar) 仍保留: Photos toolbar 真只有 1 view mode
+    ///   - V5.33-3 (preview) 仍保留: 段 3 仍 3 mode (.square / .masonry / .masonryStretch)
+    /// 老用户 @AppStorage 有 storedLayoutModeRaw 不受影响 (仅新装/重置生效)
+    static let defaultValue: ThumbnailLayoutMode = .square
 
     var displayName: String {
         switch self {
