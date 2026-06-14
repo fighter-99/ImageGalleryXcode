@@ -23,6 +23,9 @@ struct PhotoGridLoadingState: View {
                     .modifier(Shimmer(duration: 1.2))
             }
         }
-        .padding(Spacing.md)
+        // V5.31: 删 .padding(Spacing.md)——edge-to-edge 与主 grid 一致
+        //   之前主 grid 删了 padding (V5.28-3), loading 还在 → 导入时 loading 切换到 photos
+        //   会有 12pt 跳变 (jumping)
+        //   现在 loading 和 grid 同样 edge-to-edge, 切换平滑
     }
 }
