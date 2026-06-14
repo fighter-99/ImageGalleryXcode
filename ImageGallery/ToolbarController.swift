@@ -241,9 +241,11 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
                 action: #selector(handleMenuButtonClicked(_:))
             )
         case .densityMenu:  // V5.39.3 NEW: 4 档密度 下拉菜单 (替代 V5.31 NSSegmentedControl)
+            // V5.43.1: defaultImage 跟 currentDensity 走——初次创建时用默认值 medium
+            //   后续 currentDensity.didSet → updateDensityButtonImage() 同步
             item = makeMenuItem(
                 id: id,
-                defaultImage: ThumbnailDensity.medium.iconName,
+                defaultImage: currentDensity.iconName,
                 label: "缩略图大小",
                 action: #selector(handleMenuButtonClicked(_:))
             )
@@ -300,9 +302,12 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
         quickLookEnabled = hasSelection && !hasMultipleSelection
 
         // V5.39.3: density 改 NSMenu 按钮——存 state 给 buildDensityMenu 勾选用
-        //   image 不需要跟 state 切 (iconName 都一样, 只勾选变化)
+        // V5.43.1: 同步 currentDensity——按钮 image 跟选中的档位变
+        //   (之前 image 写死 medium, 切到 compact/small/large 按钮自己不变)
+        //   先设 thumbnailSize (CGFloat) 给 buildDensityMenu 勾选, 再算 currentDensity 触发 didSet 更新 image
         if let d = density {
             self.thumbnailSize = d
+            self.currentDensity = ThumbnailDensity.nearest(to: d)
         }
 
         // V5.39.3: 布局模式 NSMenu 按钮——存 state + 切 button image (跟 layoutMode 走)
@@ -434,6 +439,21 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
         // V4.54.0: 激活时 tint 强调色（Photos.app 同款——toggle 按钮 active 时显色）
         // nil = 系统默认（保持与其他 5 actions 不主动 tint 一致）
         btn.contentTintColor = filterIsActive ? .controlAccentColor : nil
+    }
+
+    /// V5.43.1 NEW: 同步 density button image 跟 currentDensity——所有 currentDensity 变化走这里
+    ///   仿 V4.54.0 updateFilterButtonImage 模式 (didSet → updateImage)
+    ///   icon: 4x3.fill / 3x2.fill / 2x2.fill / square.fill (跟档位)
+    ///   tint: nil = 系统默认（不主动 tint，跟其他 5 actions 一致）
+    ///   V5.43.1 之前: 按钮 image 写死 medium——选 compact/small/large 按钮自己不变
+    ///   V5.43.1 之后: 按钮 image 跟选中的档位——视觉上"按钮自己就是状态指示"
+    private func updateDensityButtonImage() {
+        guard let item = itemCache[Identifier.densityMenu.nsIdentifier],
+              let btn = item.view as? NSButton else { return }
+        btn.image = NSImage(
+            systemSymbolName: currentDensity.iconName,
+            accessibilityDescription: "缩略图大小"
+        )
     }
 
     // MARK: - V5.39.3: NSMenu 工具栏按钮 (布局模式 / 缩略图大小 / 排序)
@@ -609,6 +629,19 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
     /// V5.39.3: 当前缩略图大小——buildDensityMenu 勾选用
     ///   ContentView 在 .onChange(of: thumbnailSize) 调 updateAllStates 推
     private var thumbnailSize: CGFloat = 200
+
+    /// V5.43.1 NEW: 当前缩略图密度 enum——按钮 image 跟随
+    ///   之前 V5.39.3 按钮 image 写死 medium (square.fill)——切到大或小按钮自己不变
+    ///   V5.43.1: 跟 ThumbnailDensity.iconName——4x3 / 3x2 / 2x2 / 1x1 反映当前档
+    ///   仿 V4.54.0 filterActiveCount 模式：computed property + didSet 自动同步 UI
+    var currentDensity: ThumbnailDensity = .medium {
+        didSet {
+            // 只在值实际变化时更新 UI（避免 didSet 循环）
+            if oldValue != currentDensity {
+                updateDensityButtonImage()
+            }
+        }
+    }
 
     /// V5.39.3: 当前排序——buildSortMenu 勾选用
     ///   ContentView 在 .onChange(of: sortOption) 调 updateAllStates 推
