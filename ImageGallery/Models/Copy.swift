@@ -145,4 +145,18 @@ enum Copy {
     static let sortCategoryFilename = "文件名"
     static let sortCategoryFileSize = "文件大小"
     static let sortCategoryCustom = "自定义"
+
+    // MARK: - View 菜单 / UndoRedo (V5.50-6 扩展)
+    /// File > Open Recent 子菜单标题
+    static let openRecent = "最近打开"
+    /// View 菜单 Toggle
+    static let showSidebar = "显示侧边栏"
+    static let showDetailPanel = "显示详情面板"
+    static let showInfoPanel = "显示信息面板"
+    /// Edit 菜单 Undo/Redo (无 action 描述时)
+    static let undo = "撤销"
+    static let redo = "重做"
+    /// Edit 菜单 Undo/Redo (有 action 描述时——"撤销 <desc>")
+    static func undoWithAction(_ action: String) -> String { "撤销 \(action)" }
+    static func redoWithAction(_ action: String) -> String { "重做 \(action)" }
 }

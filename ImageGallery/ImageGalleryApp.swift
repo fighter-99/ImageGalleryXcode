@@ -101,20 +101,20 @@ struct ImageGalleryApp: App {
             }
             CommandGroup(after: .newItem) {
                 // 标准的 "File > Open Recent" 位置
-                Menu("最近打开") {
+                Menu(Copy.openRecent) {
                     RecentPhotosMenu()
                 }
             }
             // macOS 原生 View 菜单（在 View 菜单里加 Toggle 项）
             CommandGroup(after: .sidebar) {
-                Toggle("显示侧边栏", isOn: showSidebarBinding)
+                Toggle(Copy.showSidebar, isOn: showSidebarBinding)
                     .keyboardShortcut("s", modifiers: [.command, .control])
-                Toggle("显示详情面板", isOn: showDetailBinding)
+                Toggle(Copy.showDetailPanel, isOn: showDetailBinding)
                     .keyboardShortcut("d", modifiers: [.command, .control])
                 // V4.37.0: macOS Photos 标准 ⌘I = Show Info Panel
                 //   与 ⌘Ctrl+D 同一动作（toggle 详情面板）——Photos.app ⌘I 行为
                 //   ⌘Ctrl+D 保留为项目传统快捷键不破坏现有用户习惯
-                Toggle("显示信息面板", isOn: showDetailBinding)
+                Toggle(Copy.showInfoPanel, isOn: showDetailBinding)
                     .keyboardShortcut("i", modifiers: .command)
                 // V4.37.1: ⌘Y 快速查看——macOS Finder/Photos 标准 Quick Look 入口
                 //   与 toolbar .quickLook 按钮 + 空格键共用 ContentView.showQuickLook()
@@ -307,13 +307,13 @@ struct UndoRedoMenuButtons: View {
 
     /// "撤销 <action>"——无 action 时仅 "撤销"
     private var undoLabel: String {
-        guard let desc = undoManager?.undoDescription, !desc.isEmpty else { return "撤销" }
-        return "撤销 \(desc)"
+        guard let desc = undoManager?.undoDescription, !desc.isEmpty else { return Copy.undo }
+        return Copy.undoWithAction(desc)
     }
 
     /// "重做 <action>"——无 action 时仅 "重做"
     private var redoLabel: String {
-        guard let desc = undoManager?.redoDescription, !desc.isEmpty else { return "重做" }
-        return "重做 \(desc)"
+        guard let desc = undoManager?.redoDescription, !desc.isEmpty else { return Copy.redo }
+        return Copy.redoWithAction(desc)
     }
 }
