@@ -38,6 +38,11 @@ struct PhotoThumbnailView: View {
     let rowHeight: CGFloat
     // V3.6.6: 保留时长（用于显示 trash 视图下的剩余天数 badge）
     let retentionDays: Int
+    // V5.39.7: 排序模式 (customOrder 才启用 .dropDestination 重排, 其他模式只 drag 不 drop)
+    //   必须放在 retentionDays 之后, callbacks 之前——SwiftUI call site 顺序约束
+    let sortOption: SortOption
+    // V5.39.7: 重排回调 (drop 命中后调, 触发 ContentView recomputePhotos 刷新 grid)
+    let onReorder: () -> Void
 
     let onDelete: () -> Void
     let onTap: () -> Void
@@ -94,6 +99,77 @@ struct PhotoThumbnailView: View {
             //   自动适配亮/暗模式——保留
             return BadgeColor(foreground: .primary,
                               background: Color(nsColor: .controlBackgroundColor).opacity(0.9))
+        }
+    }
+
+    // MARK: - V5.39.7: 拖拽重排 (customOrder 模式)
+
+    /// V5.39.7: 处理重排 drop——把 dragged photo 插入到 target photo 之前
+    ///   - 走 fractional index: newSortOrder = (prev.sortOrder + target.sortOrder) / 2
+    ///   - gap 太小时 (相邻 sortOrder 差 ≤ 1) 整列重新编号, 保证后续重排还能找到 gap
+    ///   - 写入 SwiftData modelContext 后调 onReorder 触发父视图 refresh
+    private func handleReorderDrop(draggedID: UUID) {
+        // V5.39.7: 在 modelContext 里查所有 photos (按 sortOrder 升序, customOrder 排序)
+        let descriptor = FetchDescriptor<Photo>(sortBy: [SortDescriptor(\Photo.sortOrder, order: .forward)])
+        guard let allPhotos = try? modelContext.fetch(descriptor) else { return }
+        guard let draggedIndex = allPhotos.firstIndex(where: { $0.id == draggedID }) else { return }
+        let draggedPhoto = allPhotos[draggedIndex]
+
+        // V5.39.7: 找 self.photo 在 list 里的位置 (self 是 drop target)
+        //   list 已经移除了 draggedPhoto 后, 重新计算 target index
+        //   因为 draggedPhoto 可能在 self 之前也可能在 self 之后
+        var listWithoutDragged = allPhotos
+        listWithoutDragged.remove(at: draggedIndex)
+        guard let targetIndex = listWithoutDragged.firstIndex(where: { $0.id == photo.id }) else { return }
+
+        // V5.39.7: 如果 draggedPhoto 原本就已在 self 之前, 拖到 self 上 noop
+        //   即 draggedIndex < targetIndex (在 listWithoutDragged 重算之前, draggedIndex 原始 index)
+        if draggedIndex < targetIndex {
+            return  // 没移动
+        }
+
+        // V5.39.7: 检查 gap 是否太小, 是的话整列重新编号
+        //   相邻 sortOrder 差 ≤ 1 时分数索引失效, 重排前先重新编号
+        if needsRenumbering(photos: listWithoutDragged) {
+            renumberSortOrders(photos: listWithoutDragged)
+        }
+
+        // V5.39.7: 重新查 (重编号后 sortOrder 全变了)
+        let descriptor2 = FetchDescriptor<Photo>(sortBy: [SortDescriptor(\Photo.sortOrder, order: .forward)])
+        guard let refreshed = try? modelContext.fetch(descriptor2),
+              let newTargetIndex = refreshed.firstIndex(where: { $0.id == photo.id }),
+              let newDragged = refreshed.first(where: { $0.id == draggedID }) else { return }
+
+        // V5.39.7: 计算 draggedPhoto 的新 sortOrder
+        //   - 插入到 list 头部: newSortOrder = refreshed[0].sortOrder - 1000
+        //   - 插入到其他位置: newSortOrder = (prev.sortOrder + target.sortOrder) / 2
+        if newTargetIndex == 0 {
+            newDragged.sortOrder = refreshed[0].sortOrder - 1000
+        } else {
+            let prev = refreshed[newTargetIndex - 1]
+            let target = refreshed[newTargetIndex]
+            newDragged.sortOrder = (prev.sortOrder + target.sortOrder) / 2
+        }
+
+        // V5.39.7: 持久化 + 触发父视图 refresh
+        try? modelContext.save()
+        onReorder()
+    }
+
+    /// V5.39.7: 检查相邻 sortOrder 差是否过小 (分数索引会失效)
+    private func needsRenumbering(photos: [Photo]) -> Bool {
+        for i in 1..<photos.count {
+            if photos[i].sortOrder - photos[i - 1].sortOrder <= 1 {
+                return true
+            }
+        }
+        return false
+    }
+
+    /// V5.39.7: 整列重新编号, 步长 1000, 给后续重排留 gap
+    private func renumberSortOrders(photos: [Photo]) {
+        for (i, p) in photos.enumerated() {
+            p.sortOrder = (i + 1) * 1000
         }
     }
 
@@ -297,14 +373,16 @@ struct PhotoThumbnailView: View {
                 Spacer(minLength: 0)
             }
             .frame(maxWidth: .infinity)
-            // V5.27: cell 背景透明——实现 macOS Photos Library "letterbox 透窗口色" 视觉
-            //   - 之前 V5.21 加 4% 白色 tint 是 iOS Photos "poloroid" 痕迹
-            //   - macOS Photos.app 实际：cell 与窗口同背景，letterbox 区就是窗口色
-            //   - V4.4.5 教训：cell 背景不能比窗口背景浅一档（"浅框"幽灵）——clear 最安全
-            //   - letterbox 透窗口色 + image 居中 = "漂浮的图片" 视觉 = Photos Library 真版
+            // V5.39.1: cell 背景恢复 Surface.elevated (V4.4 风格) ——
+            //   之前 V5.27 改 .clear 后 cell letterbox 透窗口色, 与 row gap 同色, 视觉上看不到间距
+            //   即使 LazyVStack spacing 12pt 也被透色背景"吞掉"
+            //   恢复 elevated 后: cell 边 = controlBackgroundColor, row gap = windowBackgroundColor
+            //   两者略不同 → cell 像"浮起"的 tile, row gap 视觉清晰
+            //   权衡: "poloroid" 痕迹 vs "行间无间距"——后者更影响可用性
+            //   letterbox 区 = 浅 controlBackgroundColor + image 居中
             .background(
                 RoundedRectangle(cornerRadius: Radius.thumb)
-                    .fill(Color.clear)  // V5.27: V5.21 加的 0.04 white tint → clear
+                    .fill(Surface.elevated)
             )
             // V3.6.26: 异步加载缩略图（缓存命中立即返回；未命中后台线程解码）
             // V4.4.0: 加载失败时 set loadFailed=true（loadImageAsync 返回 nil 视为失败）
@@ -382,7 +460,11 @@ struct PhotoThumbnailView: View {
         //   cellWidth = rowHeight × photo.aspectRatio → cell frame 大小
         //   行内所有 cell 高齐 rowHeight（行底部无 jagged）
         //   V5.19: image 在 cell 内缩 4pt (2pt × 2) —— padding 不影响 cell frame
+        // V5.39.1: 加 .clipped()——VStack 里 Spacer(minLength:0) 跟 maxWidth:.infinity
+        //   组合下可能撑出巨大尺寸, .frame(width:height:) 不默认 clip, 内容溢出
+        //   cell 边界会延伸到下一行, 视觉上"图片重叠". .clipped() 强制 cell 内容框在 cell frame 内
         .frame(width: cellWidth, height: rowHeight)
+        .clipped()
         // V4.4.5: cell 背景 controlBackgroundColor → windowBackgroundColor
         //   ↑ 终于找到「浅框」真正源头——cell 背景比窗口背景浅一档
         //   旧 Palette.cellBackground = Surface.elevated = controlBackgroundColor ≈ #2C2C2C
@@ -472,7 +554,10 @@ struct PhotoThumbnailView: View {
         // 这与 computeDragReorder 的"展开到整组"语义形成对比——
         // 本路径走 Finder 导出，单图语义与 Photos.app 一致：
         //   多选状态下拖任意一张 = 导出那一张（不是整组一起导出）
-        .draggable(capturedFileURL) {
+        // V5.39.7: 改 .draggable(PhotoDragItem)——同时支持 Finder 导出 (ProxyRepresentation \.fileURL) + in-app 重排
+        //   ProxyRepresentation 让 Finder drop target 拿 URL, in-app .dropDestination 拿 PhotoDragItem (含 photoID)
+        //   photoID 让 reorder drop handler 不用反查 modelContext, 一次查询就够
+        .draggable(PhotoDragItem(photoID: photo.id, fileURL: capturedFileURL)) {
             // 拖动预览：缩略图（用已加载的 capturedPreviewImage 避免重读盘 + @State 访问）
             // V3.6.42: 加 shadow + 边框 + 放大到 96 + 旋转 1°（"被拿起"感）
             // V4.4.0: Radius.md → Radius.thumb 与 cell 本体圆角统一
@@ -498,6 +583,20 @@ struct PhotoThumbnailView: View {
                 }
             }
             .rotationEffect(.degrees(1))  // 微旋转加强"被拿起"感
+        }
+        // V5.39.7: 拖入重排——dropDestination 常驻, 仅在 customOrder 模式接受 drop
+        //   .dropDestination(for: PhotoDragItem.self) 拿回完整 Transferable (含 photoID + fileURL)
+        //   dragged photo 插入到 self photo 之前, 走 fractional index + 重编号 fallback
+        //   drop handler 触发 modelContext.save() + onReorder() 刷新 grid
+        //   其他模式 (非 customOrder): guard 拒收, drop cursor 显示禁止图标, 不影响 UX
+        //   常驻 (不加 if 包裹) 是为了避开 @ViewBuilder 中条件性 modifier 的 type-check 陷阱
+        .dropDestination(for: PhotoDragItem.self) { items, _ in
+            guard sortOption == .customOrder else { return false }
+            guard let draggedItem = items.first else { return false }
+            // 拖到自己上 noop (排序没变)
+            guard draggedItem.photoID != photo.id else { return false }
+            handleReorderDrop(draggedID: draggedItem.photoID)
+            return true
         }
         // V3.6.37: 把 contextMenu + confirmationDialog 抽到独立 view
         //   原因：cell 主体 + 30+ modifier + 这两个复杂 modifier 让 Swift 编译器 type-check 超时
