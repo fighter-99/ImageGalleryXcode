@@ -162,8 +162,12 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
             Identifier.importItem.nsIdentifier,
             Identifier.filter.nsIdentifier,
             Identifier.viewOptions.nsIdentifier,
-            // V5.24 NEW: 布局模式 + 密度 toolbar 集成（macOS Photos 风格）
-            Identifier.layoutMode.nsIdentifier,
+            // V5.33: 砍 Identifier.layoutMode——3 模式 toolbar 冗余
+            //   - macOS Photos.toolbar 只有 1 个 view 模式 (justified)
+            //   - 我们 3 模式 (.square / .masonry / .masonryStretch) 都是 Photos 真版的衍生
+            //   - 默认 .masonry (V5.33-1), .square / .masonryStretch 仍可切
+            //   - 切路径移到 ViewOptionsPopover 段 (与 Photos 的 More 菜单一致)
+            //   - 保留 enum + masonryParams, 仅 toolbar 控件删
             Identifier.density.nsIdentifier
         ]
     }
@@ -240,11 +244,9 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
             item = makeSearchItem(id: id)
         case .flexibleSpace:
             item = nil  // flexible space 由 NSToolbar 系统处理
-        case .layoutMode:
-            // V5.24: 3-icon NSSegmentedControl——方格/按比例/按比例满行
-            //   镜像 macOS Photos 视图模式 segment
-            //   状态由 ContentView 推（@AppStorage layoutMode）
-            item = makeLayoutModeItem(id: id)
+        // V5.33: 砍 .layoutMode case——3 模式 toolbar 控件删
+        //   - 模式仍通过 ViewOptionsPopover 段可切 (.square / .masonry / .masonryStretch)
+        //   - Toolbar 简化: 只留 density (4 段), 与 macOS Photos toolbar 接近
         case .density:
             // V5.24: NSSlider 连续密度调节 (70-240pt)——macOS Photos 风格
             //   替代 popover 4 档按钮——更细粒度控制
