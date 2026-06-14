@@ -115,7 +115,10 @@ struct GridLayoutTests {
     // MARK: - .masonry mode: aspect-preserving, last row gaps
 
     @Test func masonryModeCellWidthBasedOnAspect() {
-        // 1:1 (200), 3:4 portrait (150), 4:3 landscape (266.67) at rowHeight 200
+        // V5.36: per-row height 算——3 items (1:1, 3:4, 4:3) 都在 1 row
+        // 整行 aspectSum = 1.0 + 0.75 + 1.333 = 3.083
+        // rowHeight = (1000 - 2×8) / 3.083 = 984/3.083 ≈ 319.18pt
+        // cell widths: 319.18 × aspect
         let items: [PhotoGridItem] = [
             makeItem(aspect: 1.0, seed: 1),
             makeItem(aspect: 0.75, seed: 2),  // 3:4 portrait
@@ -127,50 +130,79 @@ struct GridLayoutTests {
         let rows = layout.computeRows(from: items)
         // 3 个不同 aspect 都在第 1 row
         #expect(rows[0].items.count == 3)
-        // cell 宽 = rowHeight × aspect
-        #expect(rows[0].items[0].width == 200)   // 1:1
-        #expect(rows[0].items[1].width == 150)   // 3:4 portrait
-        #expect(rows[0].items[2].width == 266.6) // 4:3 landscape (近似)
+        // cell 宽 = 该 row 的 rowHeight × aspect (per-row 算的 rowHeight)
+        // V5.36: rowHeight 跨 row 不固定, 这里 3 items 一行, rowHeight ≈ 319.18
+        let expectedRowHeight: CGFloat = 984.0 / 3.083
+        let expected1: CGFloat = (expectedRowHeight * 1.0 * 100).rounded() / 100   // ≈ 319.18
+        let expected2: CGFloat = (expectedRowHeight * 0.75 * 100).rounded() / 100  // ≈ 239.39
+        let expected3: CGFloat = (expectedRowHeight * 1.333 * 100).rounded() / 100  // ≈ 425.54
+        #expect(abs(rows[0].items[0].width - expected1) < 0.5, "1:1 cell 宽 ≈ rowHeight")
+        #expect(abs(rows[0].items[1].width - expected2) < 0.5, "3:4 cell 宽 ≈ rowHeight × 0.75")
+        #expect(abs(rows[0].items[2].width - expected3) < 0.5, "4:3 cell 宽 ≈ rowHeight × 1.333")
+        // 黄金不变量: 整行 cell 累加宽 + 间距 = availableWidth
+        let totalWidth: CGFloat = rows[0].items.reduce(0) { $0 + $1.width } + CGFloat(rows[0].items.count - 1) * 8
+        #expect(abs(totalWidth - 1000) < 0.5, "整行 cell + spacing 累加 = availableWidth")
     }
 
-    @Test func masonryModeLastRowHasGaps() {
-        // 末行不满时空格 = 窗口色 (V5.27 行为, 不拉满)
-        let items = makeItems(count: 7, aspect: 0.75)  // 3:4 portrait
+    // V5.36 注释: 旧测试 "masonryModeLastRowHasGaps" 删除
+    //   - 旧算法 (V5.16 groupIntoRows 固定 rowHeight): 末行不满, 留空
+    //   - 新算法 (V5.36 packJustifiedRows per-row height): 每个 row 都填满, 末行也填满
+    //   - 新黄金不变量: 每个 row 严格 = availableWidth
+    @Test func masonryModeEveryRowFillsAvailableWidth() {
+        // V5.36 黄金不变量: 每个 row 整行宽 = availableWidth
+        let items = makeItems(count: 7, aspect: 0.75)  // 7 张 3:4 portrait
         let layout = GridLayout(
             availableWidth: 1000, rowHeight: 200, cellSpacing: 8, layoutMode: .masonry
         )
         let rows = layout.computeRows(from: items)
-        // 末 row 宽 < availableWidth
-        let lastRowWidth = rows.last!.renderedWidth(spacing: 8)
-        #expect(lastRowWidth < 1000, "masonry 末行不满, 留空")
+        // 每个 row 整行宽 (含 spacing) ≈ availableWidth
+        for row in rows {
+            let totalWidth = row.items.reduce(0) { $0 + $1.width } + CGFloat(row.items.count - 1) * 8
+            #expect(abs(totalWidth - 1000) < 0.5, "V5.36 黄金不变量: 每个 row 严格填满")
+        }
     }
 
-    // MARK: - .masonryStretch mode: last row stretched to fill
-
-    @Test func masonryStretchModeLastRowFillsAvailableWidth() {
-        // 黄金不变量: stretchLastRow=true 时末行总宽 = availableWidth
-        let items = makeItems(count: 7, aspect: 0.75)  // 3:4 portrait
+    @Test func masonryModePerRowHeightVariesByAspect() {
+        // V5.36: rowHeight 跨 row 不固定, 取决于该 row 内的 aspect 分布
+        // 4 张 1:1 + 1 张 16:9: 2 row (4+1=4 容不下 5, 5 容不下 4 张 1:1)
+        //   实际: row1 容 4 张 1:1, row2 容 1 张 16:9
+        //   row1 rowHeight = (1000 - 3×8) / 4 = 976/4 = 244
+        //   row2 rowHeight = (1000 - 0×8) / 1.778 = 562.43
+        let items: [PhotoGridItem] = [
+            makeItem(aspect: 1.0, seed: 1),
+            makeItem(aspect: 1.0, seed: 2),
+            makeItem(aspect: 1.0, seed: 3),
+            makeItem(aspect: 1.0, seed: 4),
+            makeItem(aspect: 1.778, seed: 5),  // 16:9
+        ]
         let layout = GridLayout(
-            availableWidth: 1000, rowHeight: 200, cellSpacing: 8, layoutMode: .masonryStretch
+            availableWidth: 1000, rowHeight: 200, cellSpacing: 8, layoutMode: .masonry
         )
         let rows = layout.computeRows(from: items)
-        // 末 row 宽 = availableWidth (精确)
-        let lastRowWidth = rows.last!.renderedWidth(spacing: 8)
-        #expect(lastRowWidth == 1000, "masonryStretch 末行精确填满")
+        #expect(rows.count == 2)
+        // row1: 4 张 1:1, rowHeight = 976/4 = 244
+        #expect(abs(rows[0].rowHeight - 244.0) < 0.5, "row1 height = 244 (1:1 x 4)")
+        // row2: 1 张 16:9, rowHeight = 1000/1.778 = 562.43
+        #expect(abs(rows[1].rowHeight - 562.43) < 1.0, "row2 height ≈ 562 (16:9 x 1)")
     }
 
-    @Test func masonryStretchModeFirstRowNotStretched() {
-        // 满 row 不拉伸, 只末 row 拉伸
+    // MARK: - .masonryStretch mode (V5.36: 等价 .masonry, 保留为用户多选项)
+
+    @Test func masonryStretchModeBehavesIdenticalToMasonry() {
+        // V5.36: .masonryStretch 与 .masonry 在新算法下等价 (没有'末行拉满'需要)
+        // 两者应输出相同结构
         let items = makeItems(count: 7, aspect: 0.75)
-        let layout = GridLayout(
+        let masonryRows = GridLayout(
+            availableWidth: 1000, rowHeight: 200, cellSpacing: 8, layoutMode: .masonry
+        ).computeRows(from: items)
+        let stretchRows = GridLayout(
             availableWidth: 1000, rowHeight: 200, cellSpacing: 8, layoutMode: .masonryStretch
-        )
-        let rows = layout.computeRows(from: items)
-        // 满 row 累计 cell 宽 = 各 cell 原宽 (rowHeight × aspect)
-        let firstRow = rows[0]
-        for item in firstRow.items {
-            // 满 row cell 宽 = rowHeight × aspect = 200 × 0.75 = 150
-            #expect(item.width == 150, "满 row cell 宽不被拉伸 (150)")
+        ).computeRows(from: items)
+        // 两者都应每个 row 严格填满, 且 item count / per-item 宽可能因 rowHeight 算不同
+        #expect(masonryRows.count == stretchRows.count, "V5.36: row 数相同")
+        for (m, s) in zip(masonryRows, stretchRows) {
+            #expect(m.items.count == s.items.count, "row 内 item 数相同")
+            #expect(abs(m.rowHeight - s.rowHeight) < 0.5, "rowHeight 相同 (V5.36 算法等价)")
         }
     }
 
