@@ -31,7 +31,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable, Hashable {
         switch self {
         case .general:    return "通用"
         case .appearance: return "外观"
-        case .library:    return "图库"
+        case .library:    return Term.library
         case .accent:     return "强调色"
         }
     }

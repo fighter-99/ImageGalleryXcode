@@ -52,7 +52,7 @@ struct SidebarRow: View {
 
                 // 计数——V4.6.0 用 SidebarStyle.countFont token
                 if let count = count {
-                    Text("\(count)")
+                    Text(Copy.sidebarCount(count))
                         .font(SidebarStyle.countFont)
                         .foregroundStyle(isSelected ? Color.secondary : Color.secondary.opacity(0.7))
                 }

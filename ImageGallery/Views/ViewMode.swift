@@ -279,7 +279,7 @@ struct TimelineYearSection: View {
         VStack(alignment: .leading, spacing: Spacing.lg) {
             // 年 header（大号 rounded 字体，Photos.app 风格）
             HStack(alignment: .firstTextBaseline, spacing: Spacing.sm) {
-                Text("\(year)")
+                Text(Copy.yearLabel(year))
                     .font(Typography.yearTitle)
                 Text(Copy.totalCount(totalCount))
                     .font(.callout)

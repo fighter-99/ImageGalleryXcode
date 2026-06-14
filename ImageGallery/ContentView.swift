@@ -333,7 +333,7 @@ struct ContentView: View {
         case .duplicates:           return "重复图"
         case .recent7Days:          return "最近 7 天"
         case .largeFiles:           return "大图（>5MB）"
-        case .recentlyDeleted:      return "回收站"
+        case .recentlyDeleted:      return Term.recycleBin
         case .folder(let f):        return f.name
         case .tag(let t):           return "#\(t.name)"
         }
@@ -1570,7 +1570,7 @@ struct ContentView: View {
             modelContext: modelContext,
             onError: { error in
                 enqueueToast(
-                    "回收站操作失败：\(error.localizedDescription)",
+                    Copy.recycleBinOperationFailed(error.localizedDescription),
                     type: .error,
                     duration: .long
                 )
@@ -1957,22 +1957,22 @@ extension View {
                 isPresented: showingBatchDelete,
                 titleVisibility: .visible
             ) {
-                Button("删除", role: .destructive, action: onConfirmBatchDelete)
-                Button("取消", role: .cancel) {}
+                Button(Copy.delete, role: .destructive, action: onConfirmBatchDelete)
+                Button(Copy.cancel, role: .cancel) {}
             } message: {
                 // V3.6 改：删除走回收站，N 天后才永久清除
-                Text("选中的图片会移到回收站，\(retentionDays) 天后自动永久清除。可在回收站中恢复。")
+                Text(Copy.deletePhotosConfirm(retentionDays: retentionDays))
             }
             // ⌘N 新建文件夹
-            .alert("新建文件夹", isPresented: showingNewFolder) {
-                TextField("文件夹名称", text: newFolderName)
-                Button("取消", role: .cancel) { newFolderName.wrappedValue = "" }
-                Button("创建") {
+            .alert(Copy.newFolder, isPresented: showingNewFolder) {
+                TextField(Copy.folderNamePlaceholder, text: newFolderName)
+                Button(Copy.cancel, role: .cancel) { newFolderName.wrappedValue = "" }
+                Button(Copy.create) {
                     onConfirmNewFolder()
                     newFolderName.wrappedValue = ""
                 }
             } message: {
-                Text("为新文件夹命名")
+                Text(Copy.newFolderPrompt)
             }
             // V3.6.6: 清空回收站二次确认
             .confirmationDialog(
@@ -1980,8 +1980,8 @@ extension View {
                 isPresented: showingEmptyTrash,
                 titleVisibility: .visible
             ) {
-                Button("清空", role: .destructive, action: onConfirmEmptyTrash)
-                Button("取消", role: .cancel) {}
+                Button(Copy.empty, role: .destructive, action: onConfirmEmptyTrash)
+                Button(Copy.cancel, role: .cancel) {}
             } message: {
                 Text(Copy.emptyRecycleBinConfirm)
             }
@@ -1991,11 +1991,11 @@ extension View {
                 isPresented: showingDuplicateCheck,
                 titleVisibility: .visible
             ) {
-                Button("全部跳过（保留现有）", action: onConfirmSkipDuplicates)
-                Button("全部导入（可能重复）", role: .destructive, action: onConfirmImportAllDuplicates)
-                Button("取消", role: .cancel, action: onCancelDuplicateImport)
+                Button(Copy.skipAll, action: onConfirmSkipDuplicates)
+                Button(Copy.importAll, role: .destructive, action: onConfirmImportAllDuplicates)
+                Button(Copy.cancel, role: .cancel, action: onCancelDuplicateImport)
             } message: {
-                Text("选\"跳过\"避免重复导入。")
+                Text(Copy.newFolderHint)
             }
     }
 }

@@ -42,7 +42,7 @@ struct DateSectionHeader: View {
             // V5.21: count "637 张图片" 颜色 secondary → primary + 字重 medium
             //   之前 secondary 在深背景上偏淡，截图 29 几乎看不清
             //   仍 callout 字号（比 label 15pt 小）——不抢 label 视觉权重
-            Text("\(count) 张")
+            Text(Copy.dateSectionCount(count))
                 .font(.callout.weight(.medium))
                 .foregroundStyle(.primary)
         }

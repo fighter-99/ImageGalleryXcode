@@ -25,15 +25,15 @@ struct DuplicatesDetailView: View {
                     .font(Typography.title)
                     .symbolRenderingMode(.hierarchical)
                     .foregroundStyle(.orange)
-                Text("发现 \(duplicateGroupCount) 组重复")
+                Text(Copy.duplicatesFoundGroups(duplicateGroupCount))
                     .font(Typography.title2)
                     .foregroundStyle(Surface.textPrimary)
                 if purgeableCount > 0 {
-                    Text("可清理 \(purgeableCount) 张 · \(formattedSize)")
+                    Text(Copy.duplicatesCleanable(purgeableCount, size: formattedSize))
                         .font(Typography.caption)
                         .foregroundStyle(Surface.textSecondary)
                 } else {
-                    Text("暂无重复图")
+                    Text(Copy.duplicatesNone)
                         .font(Typography.caption)
                         .foregroundStyle(Surface.textSecondary)
                 }
@@ -55,7 +55,7 @@ struct DuplicatesDetailView: View {
                 .buttonStyle(.pressable)
                 .disabled(purgeableCount == 0)
 
-                Text("每组保留导入时间最近的一张，其他移到回收站（\(TrashRetentionDays.defaultValue.rawValue) 天后自动永久清除）")
+                Text(Copy.duplicatesExplanation(retentionDays: TrashRetentionDays.defaultValue.rawValue))
                     .font(Typography.caption)
                     .foregroundStyle(Surface.textTertiary)
                     .multilineTextAlignment(.center)

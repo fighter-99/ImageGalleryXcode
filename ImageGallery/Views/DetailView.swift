@@ -129,11 +129,11 @@ struct DetailView: View {
             Text(Copy.renameHint)
         }
         .confirmationDialog(
-            "确定要删除这张图片吗？",
+            Copy.deleteConfirmTitle,
             isPresented: $showingDeleteConfirm,
             titleVisibility: .visible
         ) {
-            Button("删除", role: .destructive) { deletePhoto() }
+            Button(Copy.delete, role: .destructive) { deletePhoto() }
             Button(Copy.cancel, role: .cancel) {}
         } message: {
             // V5.51: "图馆" → "图库" typo 修复 + 走 Term.photo + Term.library 字典

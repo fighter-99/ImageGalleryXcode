@@ -130,19 +130,19 @@ struct ImageGalleryApp: App {
                 Button {
                     viewModeBinding.wrappedValue = .grid
                 } label: {
-                    Text("缩略图视图")
+                    Text(Copy.viewModeGridFull)
                 }
                 .keyboardShortcut("1", modifiers: .option)
                 Button {
                     viewModeBinding.wrappedValue = .list
                 } label: {
-                    Text("列表视图")
+                    Text(Copy.viewModeListFull)
                 }
                 .keyboardShortcut("2", modifiers: .option)
                 Button {
                     viewModeBinding.wrappedValue = .timeline
                 } label: {
-                    Text("时间线视图")
+                    Text(Copy.viewModeTimelineFull)
                 }
                 .keyboardShortcut("3", modifiers: .option)
             }
@@ -152,7 +152,7 @@ struct ImageGalleryApp: App {
             //   （applySettingsChrome extension 内 sheet 路径待 ContentView 清理）
             CommandGroup(after: .appInfo) {
                 SettingsLink {
-                    Text("设置…")
+                    Text(Copy.settingsMenu)
                 }
             }
             // V4.7.0 NEW: Undo/Redo Edit menu 集成
@@ -207,17 +207,17 @@ struct RecentPhotosMenu: View {
     var body: some View {
         Group {
             if store.urls.isEmpty {
-                Text("无最近文件")
+                Text(Copy.noRecentFiles)
             } else {
                 ForEach(Array(store.urls.enumerated()), id: \.element) { index, url in
                     Button {
                         store.revealInFinder(url)
                     } label: {
-                        Text("\(index + 1). \(url.lastPathComponent)")
+                        Text(Copy.recentFile(index: index + 1, filename: url.lastPathComponent))
                     }
                 }
                 Divider()
-                Button("清空菜单") {
+                Button(Copy.clearMenu) {
                     store.clear()
                 }
             }
@@ -230,7 +230,7 @@ struct RecentPhotosMenu: View {
 /// ContentView.showQuickLook 内部检查 singleSelectedPhoto——无选时是 no-op 不需要 disabled
 struct QuickLookMenuItem: View {
     var body: some View {
-        Button("快速查看") {
+        Button(Copy.quickLook) {
             ToolbarController.shared.onQuickLook?()
         }
         .keyboardShortcut("y", modifiers: .command)
@@ -242,11 +242,11 @@ struct QuickLookMenuItem: View {
 /// ContentView.goPrev/goNext 内部 canPrev/canNext 边界检查——无边界时是 no-op 不需要 disabled
 struct NavigateMenuItems: View {
     var body: some View {
-        Button("上一张") {
+        Button(Copy.previousPhoto) {
             ToolbarController.shared.onPrev?()
         }
         .keyboardShortcut("[", modifiers: .command)
-        Button("下一张") {
+        Button(Copy.nextPhoto) {
             ToolbarController.shared.onNext?()
         }
         .keyboardShortcut("]", modifiers: .command)

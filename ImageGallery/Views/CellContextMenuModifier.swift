@@ -121,7 +121,7 @@ struct CellContextMenuModifier: ViewModifier {
                     if photo.rating == 0 {
                         Label("清除评分", systemImage: "checkmark")
                     } else {
-                        Text("清除评分")
+                        Text(Copy.clearRating)
                     }
                 }
             } label: {

@@ -74,7 +74,7 @@ struct StatusBar: View {
 
     /// 中点分隔符
     private var separator: some View {
-        Text("·")
+        Text(Copy.statusSeparator)
             .foregroundStyle(.tertiary)
     }
 }

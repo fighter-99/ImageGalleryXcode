@@ -638,12 +638,12 @@ struct PhotoThumbnailView: View {
             isPresented: $showingDeleteConfirm,
             titleVisibility: .visible
         ) {
-            Button("删除", role: .destructive) {
+            Button(Copy.delete, role: .destructive) {
                 onDelete()
             }
-            Button("取消", role: .cancel) {}
+            Button(Copy.cancel, role: .cancel) {}
         } message: {
-            Text("图片将从图库中移除，文件也会被永久删除。")
+            Text(Copy.deletePhotoConfirm)
         }
     }
 

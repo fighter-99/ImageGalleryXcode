@@ -31,7 +31,7 @@ struct TrashDetailView: View {
         if count == 0 {
             EmptyStateView(
                 icon: "trash",
-                title: "回收站是空的",
+                title: Copy.emptyRecycleBin,
                 subtitle: "\(retentionDays) 天后删除的照片会自动永久清除",
                 iconColor: Surface.textTertiary,
                 primaryAction: EmptyStateView.Action(
@@ -60,7 +60,7 @@ struct TrashDetailView: View {
                 Text(totalSizeText)
                     .font(Typography.caption)
                     .foregroundStyle(Surface.textSecondary)
-                Text("\(retentionDays) 天后自动永久清除")
+                Text(Copy.autoDeleteAfterDays(retentionDays))
                     .font(Typography.caption)
                     .foregroundStyle(Surface.textSecondary)
             }

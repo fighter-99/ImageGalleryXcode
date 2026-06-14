@@ -250,16 +250,16 @@ struct SidebarView: View {
         // V5.51: "图馆" → "图库" typo 修复 + 走 Term.library 字典
         .navigationTitle(Term.library)
 
-        .alert("新建文件夹", isPresented: $showingNewFolderAlert) {
-            TextField("文件夹名称", text: $newName)
-            Button("取消", role: .cancel) {}
-            Button("创建") { createFolder() }
+        .alert(Copy.newFolder, isPresented: $showingNewFolderAlert) {
+            TextField(Copy.folderNamePlaceholder, text: $newName)
+            Button(Copy.cancel, role: .cancel) {}
+            Button(Copy.create) { createFolder() }
         }
 
-        .alert("新建标签", isPresented: $showingNewTagAlert) {
-            TextField("标签名称", text: $newName)
-            Button("取消", role: .cancel) {}
-            Button("创建") { createTag() }
+        .alert(Copy.newTag, isPresented: $showingNewTagAlert) {
+            TextField(Copy.tagNamePlaceholder, text: $newName)
+            Button(Copy.cancel, role: .cancel) {}
+            Button(Copy.create) { createTag() }
         }
     }
 

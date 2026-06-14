@@ -39,7 +39,7 @@ struct MultiSelectDetailView: View {
                     .font(Typography.title)
                     .symbolRenderingMode(.hierarchical)
                     .foregroundStyle(.tint)
-                Text("已选 \(count) 张")
+                Text(Copy.selectedCount(count))
                     .font(Typography.title2)
                     .foregroundStyle(Surface.textPrimary)
                 Text(ByteCountFormatter.string(fromByteCount: totalSize, countStyle: .file))
