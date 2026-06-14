@@ -344,6 +344,10 @@ struct PhotoGridView: View {
     // V5.29: masonryRowsView 接入 GridLayout (纯函数) + PhotoGridLayoutView (渲染)
     //   - 之前: 80 行 (内嵌 groupIntoRows + LazyVStack + MasonryRowView 调用)
     //   - 现在: 20 行 (GridLayout + PhotoGridLayoutView)
+    // V5.35: .square 模式 cell 大小动态算——填满 availableWidth
+    //   - 之前 (V5.34-1): 固定 cellSize = rowHeight (200pt), 大量右侧空白
+    //   - Photos.app Library 真版: cellSize = (availableWidth - (n-1)*spacing) / n, 严格填满
+    //   - .masonry / .masonryStretch 模式: 仍用原 rowHeight (aspect-based 宽度)
     @ViewBuilder
     private func masonryRowsView(
         photos: [Photo],
@@ -354,9 +358,14 @@ struct PhotoGridView: View {
         // V5.18: date caption 开关
         showDateCaption: Bool
     ) -> some View {
+        // V5.35: .square 模式 cell 动态计算填满宽
+        //   三元表达式避免 @ViewBuilder 内的 if/else 限制
+        let actualRowHeight: CGFloat = (layoutMode == .square)
+            ? SquareLayout.cellSize(availableWidth: availableWidth, rowHeight: rowHeight, cellSpacing: cellSpacing)
+            : rowHeight  // .masonry / .masonryStretch: 固定 rowHeight (aspect-based 宽度)
         let layout = GridLayout(
             availableWidth: availableWidth,
-            rowHeight: rowHeight,
+            rowHeight: actualRowHeight,  // V5.35: 动态算的 cellSize
             cellSpacing: cellSpacing,
             layoutMode: layoutMode
         )
