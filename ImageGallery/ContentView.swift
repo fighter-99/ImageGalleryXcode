@@ -706,18 +706,22 @@ struct ContentView: View {
         //   z-order: 工具栏 (AppKit chrome, 最上) > visualEffect (contentView 子视图) > SwiftUI content
         //   内容滚动时, visualEffect 区域显示半透模糊的内容
         //   Photos.app 风格——titlebar 区域半透显示滚动内容
+        // V5.48-2.1 HOTFIX: 必须用 Auto Layout anchors (topAnchor/leadingAnchor/trailingAnchor)
+        //   之前用 frame + y = bounds.height - 52 错把 visualEffect 放窗口底部
+        //   原因: SwiftUI 的 NSHostingView 默认 isFlipped = true (top-left 原点)
+        //   y = bounds.height - 52 在 flipped 坐标系里 = 距底部 52pt = 窗口底部
+        //   Auto Layout 的 anchor API 自动处理 flipped, topAnchor 永远指向真正"顶部"
         if let contentView = window.contentView {
             let visualEffect = TitlebarFrostedGlass()
-            // NSWindow 用 bottom-left 原点——y = contentView.bounds.height - height 是顶部
-            visualEffect.frame = NSRect(
-                x: 0,
-                y: contentView.bounds.height - TitlebarFrostedGlass.height,
-                width: contentView.bounds.width,
-                height: TitlebarFrostedGlass.height
-            )
-            // 宽度跟窗口 (水平 resize), 顶部不动 (minYMargin 保持顶部位置)
-            visualEffect.autoresizingMask = [.width, .minYMargin]
+            visualEffect.translatesAutoresizingMaskIntoConstraints = false
             contentView.addSubview(visualEffect)
+            NSLayoutConstraint.activate([
+                // topAnchor 在 NSHostingView (flipped) 里指向视觉顶部——窗口顶部
+                visualEffect.topAnchor.constraint(equalTo: contentView.topAnchor),
+                visualEffect.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+                visualEffect.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+                visualEffect.heightAnchor.constraint(equalToConstant: TitlebarFrostedGlass.height)
+            ])
         }
 
         // V4.37.4: titlebar 右上角小按钮（Photos.app ⓘ 风格 + 状态感知）
