@@ -252,9 +252,13 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
                 action: #selector(handleMenuButtonClicked(_:))
             )
         case .sortMenu:  // V5.39.3 NEW: 排序 下拉菜单
+            // V5.50-1: defaultImage 跟 sortOption 走——初次创建时用默认 .filenameAsc
+            //   后续 updateAllStates(sortOption:) 调 updateSortButtonImage() 同步
+            //   镜像 V5.43-1 densityMenu + V5.46-3 layoutModeMenu 模式
+            //   工具栏 3 个 NSMenu 按钮 UX 现在完全一致: 按钮自己 = 状态指示
             item = makeMenuItem(
                 id: id,
-                defaultImage: SortOption.filenameAsc.toolbarIcon,
+                defaultImage: sortOption.toolbarIcon,
                 label: "排序",
                 action: #selector(handleMenuButtonClicked(_:))
             )
