@@ -38,6 +38,12 @@ struct PhotoThumbnailView: View {
     let rowHeight: CGFloat
     // V3.6.6: 保留时长（用于显示 trash 视图下的剩余天数 badge）
     let retentionDays: Int
+    // V5.46 NEW: 布局模式——决定图片渲染方式 (.fill 裁切 vs .fit letterbox)
+    //   .square:    .fill 裁切 (1:1 方格中心裁切)
+    //   .masonry:   .fill 裁切 (justified row 中心裁切)
+    //   .squareFit: .fit letterbox (1:1 方格, image 顶满长边, 短边 letterbox)——macOS Photos 真版
+    //   必须放在 retentionDays 之后, callbacks 之前——SwiftUI call site 顺序约束
+    let layoutMode: ThumbnailLayoutMode
     // V5.39.7: 排序模式 (customOrder 才启用 .dropDestination 重排, 其他模式只 drag 不 drop)
     //   必须放在 retentionDays 之后, callbacks 之前——SwiftUI call site 顺序约束
     let sortOption: SortOption
@@ -338,10 +344,15 @@ struct PhotoThumbnailView: View {
                         //   - landscape 16:9 中心裁切: 主体居中, 左右被裁
                         //   - V5.33 误判 Photos 是 justified (实际是 Pinterest/Flickr 风格), 改回
                         //   - "智能主体识别" 留 V5.35+ (Vision framework saliency)
+                        // V5.46: .squareFit 走 .fit——macOS Photos.app 按比例真版
+                        //   - 1:1 方格, image 顶满长边 (横屏顶满宽, 竖屏顶满高)
+                        //   - 短边 letterbox (cell 背景色透出来)
+                        //   - 永远不裁切——产品图/截图/文档场景信息完整
                         // V5.30: 加 .transition(.opacity) + .animation——image 加载完淡入
+                        let contentMode: ContentMode = layoutMode == .squareFit ? .fit : .fill
                         Image(nsImage: nsImage)
                             .resizable()
-                            .aspectRatio(aspectRatio, contentMode: .fill)  // V5.34: 回 .fill (中心裁切)
+                            .aspectRatio(aspectRatio, contentMode: contentMode)  // V5.46: .squareFit → .fit (letterbox)
                             .clipShape(RoundedRectangle(cornerRadius: Radius.thumb))
                             .saturation(photo.isInTrash ? 0.05 : 1)
                             .opacity(photo.isInTrash ? (colorScheme == .dark ? 0.65 : 0.55) : 1)

@@ -449,6 +449,8 @@ struct PhotoGridView: View {
             //   在 photos 之后, selection 之前——SwiftUI call site 顺序约束
             sortOption: sortOption,
             onReorder: internalReorder,
+            // V5.46: 透传布局模式 (决定 .fill vs .fit letterbox)
+            layoutMode: layoutMode,
             selection: selection,
             folders: folders,
             allTags: allTags,

@@ -33,6 +33,9 @@ struct PhotoRowView: View {
     let sortOption: SortOption
     // V5.39.7: 重排回调 (PhotoThumbnailView reorder drop 后调, 触发 ContentView recomputePhotos)
     let onReorder: () -> Void
+    // V5.46: 布局模式透传 (决定 cell 内 image .fill vs .fit letterbox)
+    //   .squareFit 走 .fit letterbox——macOS Photos.app 按比例真版
+    let layoutMode: ThumbnailLayoutMode
     let selection: SelectionState
     let folders: [Folder]
     let allTags: [Tag]
@@ -84,6 +87,7 @@ struct PhotoRowView: View {
 
     /// V5.18: 单 cell 渲染——抽出来让 caption 模式/普通模式共用
     /// V5.39.7: 透传 sortOption + onReorder 到 PhotoThumbnailView (拖拽重排依赖)
+    /// V5.46: 透传 layoutMode 决定 cell 内 image .fill vs .fit letterbox
     @ViewBuilder
     private func photoImage(photo: Photo, width: CGFloat, height: CGFloat) -> some View {
         PhotoThumbnailView(
@@ -95,6 +99,8 @@ struct PhotoRowView: View {
             cellWidth: width,
             rowHeight: height,
             retentionDays: retentionDays,
+            // V5.46: 透传布局模式 (决定 .fill vs .fit letterbox)
+            layoutMode: layoutMode,
             // V5.39.7: 透传排序模式 + 重排回调 (拖拽重排依赖)
             sortOption: sortOption,
             onReorder: onReorder,

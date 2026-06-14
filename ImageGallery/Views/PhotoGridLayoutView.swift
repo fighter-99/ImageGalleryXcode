@@ -27,6 +27,8 @@ struct PhotoGridLayoutView: View {
     //   必须放在 photos 之后, selection 之前——SwiftUI call site 顺序约束
     let sortOption: SortOption
     let onReorder: () -> Void
+    // V5.46: 透传布局模式 (决定 cell 内 image .fill vs .fit letterbox)
+    let layoutMode: ThumbnailLayoutMode
     let selection: SelectionState
     let folders: [Folder]
     let allTags: [Tag]
@@ -52,6 +54,8 @@ struct PhotoGridLayoutView: View {
                     //   在 photos 之后, selection 之前——SwiftUI call site 顺序约束
                     sortOption: sortOption,
                     onReorder: onReorder,
+                    // V5.46: 透传布局模式
+                    layoutMode: layoutMode,
                     selection: selection,
                     folders: folders,
                     allTags: allTags,
