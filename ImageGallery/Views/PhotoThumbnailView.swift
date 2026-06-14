@@ -390,13 +390,19 @@ struct PhotoThumbnailView: View {
             //   两者略不同 → cell 像"浮起"的 tile, row gap 视觉清晰
             //   权衡 (.square 模式): "poloroid" 痕迹 vs "行间无间距"——后者更影响可用性
             //   权衡 (.squareFit 模式): macOS Photos 真版无 card——letterbox 区透明, image 像直接"贴"在窗口上
-            //   实现: V5.47 条件 modifier——layoutMode == .squareFit 时 .opacity(0) 让 RoundedRectangle 不可见
+            // V5.47.3 HOTFIX: 必须用 .background() 包装, 让 RoundedRectangle **在 image 下面**作为背景
+            //   之前 V5.47 误把 .background() 去掉, RoundedRectangle 变成 ZStack 兄弟节点
+            //   渲染在 image 上面, 整 cell 被 Surface.elevated 覆盖, image 完全看不见
+            //   暗色模式下 Surface.elevated = controlBackgroundColor (深色) → 缩略图"黑色"假象
+            // 实现: V5.47 条件 .opacity——layoutMode == .squareFit 时 .opacity(0) 让 card 不可见
             //   (不能用 `if`, ViewBuilder 不支持——会触发 type-check timeout)
-            //   .square: card 可见 (Surface.elevated 浅 controlBackgroundColor)
+            //   .square: card 可见 (Surface.elevated 浅 controlBackgroundColor) 在 image 后面
             //   .squareFit: card 不可见 (opacity 0, 透窗口色) + image 居中 letterbox
-            RoundedRectangle(cornerRadius: Radius.thumb)
-                .fill(Surface.elevated)
-                .opacity(layoutMode == .squareFit ? 0 : 1)
+            .background(
+                RoundedRectangle(cornerRadius: Radius.thumb)
+                    .fill(Surface.elevated)
+                    .opacity(layoutMode == .squareFit ? 0 : 1)
+            )
             // V3.6.26: 异步加载缩略图（缓存命中立即返回；未命中后台线程解码）
             // V4.4.0: 加载失败时 set loadFailed=true（loadImageAsync 返回 nil 视为失败）
             // V5.17: 600→1200 retina 优化（HiDPI 屏 200pt cell 锐化）
