@@ -700,17 +700,11 @@ struct ContentView: View {
         window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = true
 
-        // V5.48-3: macOS Photos.app 风格磨砂玻璃 titlebar 背景——**真正在 titlebar 区域**
-        //   之前 V5.48-2/2.1 错把 visualEffect 加到 window.contentView
-        //   contentView 是工具栏**下方**的内容区, 加 visualEffect 永远是"工具栏下方的 strip"
-        //   不是"工具栏本身有磨砂玻璃"——用户要求的是后者
-        // V5.48-3 修复: 用 NSTitlebarAccessoryViewController + layoutAttribute = .top
-        //   accessory 视图加到 titlebar 区域本身 (工具栏所在区域)
-        //   在 unified titlebar+toolbar 风格下, .top 把 view 放在整个 unified 区域上方
-        //   toolbar items 渲染在 accessory view 上面——视觉上"工具栏有磨砂玻璃"
-        //   z-order: 工具栏 (chrome, 最上) > accessory (titlebar 子视图) > contentView
-        let frostedGlassAccessory = TitlebarFrostedGlassController()
-        window.addTitlebarAccessoryViewController(frostedGlassAccessory)
+        //   之前 V5.48-1/2/2.1/3 (4 个 commit) 尝试 Photos.app 风格磨砂玻璃
+        //   退回 V4.8.0 默认状态: titlebarAppearsTransparent + 系统默认 wash
+        //   系统默认 wash 在 .unified style + transparent 配合下, 浅灰/深灰 (no material)
+        //   macOS Sonoma+ 用户已经习惯这种默认视觉, 没必要自定义
+        // 删的类: ImageGallery/TitlebarFrostedGlass.swift
 
         // V4.37.4: titlebar 右上角小按钮（Photos.app ⓘ 风格 + 状态感知）
         //   V4.37.3 基础上加 setActive / setTooltip——保持与 V4.36.x Filter 按钮 didSet 模式统一
