@@ -385,16 +385,18 @@ struct PhotoThumbnailView: View {
             }
             .frame(maxWidth: .infinity)
             // V5.39.1: cell 背景恢复 Surface.elevated (V4.4 风格) ——
-            //   之前 V5.27 改 .clear 后 cell letterbox 透窗口色, 与 row gap 同色, 视觉上看不到间距
-            //   即使 LazyVStack spacing 12pt 也被透色背景"吞掉"
-            //   恢复 elevated 后: cell 边 = controlBackgroundColor, row gap = windowBackgroundColor
+            // V5.47: .squareFit (按比例) 模式**不显示容器卡片**——letterbox 区直接透窗口色
+            //   区别于 .square 模式: cell 边 = controlBackgroundColor, row gap = windowBackgroundColor
             //   两者略不同 → cell 像"浮起"的 tile, row gap 视觉清晰
-            //   权衡: "poloroid" 痕迹 vs "行间无间距"——后者更影响可用性
-            //   letterbox 区 = 浅 controlBackgroundColor + image 居中
-            .background(
-                RoundedRectangle(cornerRadius: Radius.thumb)
-                    .fill(Surface.elevated)
-            )
+            //   权衡 (.square 模式): "poloroid" 痕迹 vs "行间无间距"——后者更影响可用性
+            //   权衡 (.squareFit 模式): macOS Photos 真版无 card——letterbox 区透明, image 像直接"贴"在窗口上
+            //   实现: V5.47 条件 modifier——layoutMode == .squareFit 时 .opacity(0) 让 RoundedRectangle 不可见
+            //   (不能用 `if`, ViewBuilder 不支持——会触发 type-check timeout)
+            //   .square: card 可见 (Surface.elevated 浅 controlBackgroundColor)
+            //   .squareFit: card 不可见 (opacity 0, 透窗口色) + image 居中 letterbox
+            RoundedRectangle(cornerRadius: Radius.thumb)
+                .fill(Surface.elevated)
+                .opacity(layoutMode == .squareFit ? 0 : 1)
             // V3.6.26: 异步加载缩略图（缓存命中立即返回；未命中后台线程解码）
             // V4.4.0: 加载失败时 set loadFailed=true（loadImageAsync 返回 nil 视为失败）
             // V5.17: 600→1200 retina 优化（HiDPI 屏 200pt cell 锐化）
