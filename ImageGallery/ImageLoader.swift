@@ -94,8 +94,12 @@ enum ImageLoader {
         )
         let image = NSImage(cgImage: cgImage, size: size)
 
-        // 缓存（ThreadSafe：ThumbnailCache.shared 是 NSCache，线程安全）
-        ThumbnailCache.shared.set(image, url: url, maxPixelSize: maxPixelSize)
+        // V5.32: 用实际 cgImage 尺寸算 cost——之前用 maxPixelSize² × 4 估算偏大
+        //   - 1 张 800×600 portrait 实际 1.92MB (vs 估算 5.76MB) — 3x 误差
+        //   - 估算偏大 → NSCache 实际只容纳 ~50 张 (声称 70) — LRU 命中率虚低
+        //   - 实际尺寸更准 → 400MB 容纳 ~280 张 (真实数, 之前被骗)
+        let actualCost = cgImage.width * cgImage.height * 4  // RGBA
+        ThumbnailCache.shared.set(image, url: url, maxPixelSize: maxPixelSize, cost: actualCost)
 
         return image
     }
