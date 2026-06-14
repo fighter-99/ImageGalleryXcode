@@ -61,7 +61,7 @@ struct ActiveFiltersBar: View {
                     Button {
                         filterState = .empty
                     } label: {
-                        Text("清除全部")
+                        Text(Copy.clearAllFilters)
                             .font(.caption)
                             .foregroundStyle(.secondary)
                             .padding(.horizontal, 8)

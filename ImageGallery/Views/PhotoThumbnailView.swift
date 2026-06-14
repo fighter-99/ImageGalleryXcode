@@ -368,7 +368,7 @@ struct PhotoThumbnailView: View {
                                 VStack(spacing: 4) {
                                     Image(systemName: "exclamationmark.triangle")
                                         .font(.title3)
-                                    Text("加载失败")
+                                    Text(Copy.thumbnailLoadFailed)
                                         .font(.caption2)
                                 }
                                 .foregroundStyle(.secondary)
@@ -443,7 +443,7 @@ struct PhotoThumbnailView: View {
                 HStack(spacing: 2) {
                     Image(systemName: "clock")
                         .font(.caption2)
-                    Text("\(days)")
+                    Text(Copy.daysRemaining(days))
                         .font(.caption.monospacedDigit())
                 }
                 .foregroundStyle(badgeColor.foreground)

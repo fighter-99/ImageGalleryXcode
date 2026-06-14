@@ -155,7 +155,7 @@ struct SidebarView: View {
                                 .foregroundStyle(Color.accentColor)
                             // V4.36.x: 显式 SidebarStyle.labelFont——与行 label 字号/字重完全一致
                             //   避免 fallback 到系统默认（可能比行 label 略大或粗，视觉不协调）
-                            Text("新建文件夹")
+                            Text(Copy.newFolder)
                                 .font(SidebarStyle.labelFont)
                                 .foregroundStyle(Color.accentColor)
                         }
@@ -206,7 +206,7 @@ struct SidebarView: View {
                                 .frame(width: SidebarStyle.iconFrameWidth)
                                 .foregroundStyle(Color.accentColor)
                             // V4.36.x: 显式 SidebarStyle.labelFont——与行 label 字号/字重完全一致
-                            Text("新建标签")
+                            Text(Copy.newTag)
                                 .font(SidebarStyle.labelFont)
                                 .foregroundStyle(Color.accentColor)
                         }

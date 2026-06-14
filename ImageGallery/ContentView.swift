@@ -1983,7 +1983,7 @@ extension View {
                 Button("清空", role: .destructive, action: onConfirmEmptyTrash)
                 Button("取消", role: .cancel) {}
             } message: {
-                Text("回收站里的所有照片将被永久删除，无法恢复。")
+                Text(Copy.emptyRecycleBinConfirm)
             }
             // V3.6.24: 导入时重复检测 dialog
             .confirmationDialog(

@@ -158,9 +158,9 @@ struct EmptyDetailPlaceholder: View {
             Image(systemName: "photo")
                 .font(Typography.emptyStateIcon)
                 .foregroundStyle(.tertiary)
-            Text("选择一张图片")
+            Text(Copy.selectAPhoto)
                 .foregroundStyle(.secondary)
-            Text("← → 切换 · ⌘+点击 多选 · ⌥+拖动 框选")
+            Text(Copy.selectAPhotoHint)
                 .font(.caption)
                 .foregroundStyle(.tertiary)
         }

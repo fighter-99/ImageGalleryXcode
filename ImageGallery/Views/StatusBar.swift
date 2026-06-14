@@ -24,7 +24,7 @@ struct StatusBar: View {
     var body: some View {
         HStack(spacing: Spacing.sm) {
             // 总数
-            Text("\(totalCount) 张")
+            Text(Copy.totalCount(totalCount))
 
             separator
 
@@ -38,7 +38,7 @@ struct StatusBar: View {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.caption2)
                         .foregroundStyle(Color.accentColor)
-                    Text("已选 \(selectedCount) 张")
+                    Text(Copy.selectedCount(selectedCount))
                         .foregroundStyle(Color.accentColor)
                 }
             }

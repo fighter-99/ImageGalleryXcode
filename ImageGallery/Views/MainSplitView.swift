@@ -117,10 +117,10 @@ struct MainSplitView<Sidebar: View, Center: View, Detail: View>: View {
                             .font(Typography.emptyStateIconLarge)
                             .symbolRenderingMode(.hierarchical)
                             .foregroundStyle(.tint)
-                        Text("松开导入")
+                        Text(Copy.dropReleaseToImport)
                             .font(.title.weight(.semibold))
                             .foregroundStyle(.primary)
-                        Text("支持图片文件 / 文件夹")
+                        Text(Copy.dropSupportedTypes)
                             .font(.callout)
                             .foregroundStyle(.secondary)
                     }

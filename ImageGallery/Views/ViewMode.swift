@@ -128,7 +128,7 @@ struct PhotoListRow: View {
 
             // 尺寸（仅在有值时显示）
             if photo.width > 0 && photo.height > 0 {
-                Text("\(photo.width) × \(photo.height)")
+                Text(Copy.imageDimensions(width: photo.width, height: photo.height))
                     .font(Typography.captionMono)
                     .foregroundStyle(textColor.opacity(0.7))
                     .frame(width: 100, alignment: .trailing)
@@ -281,7 +281,7 @@ struct TimelineYearSection: View {
             HStack(alignment: .firstTextBaseline, spacing: Spacing.sm) {
                 Text("\(year)")
                     .font(Typography.yearTitle)
-                Text("\(totalCount) 张")
+                Text(Copy.totalCount(totalCount))
                     .font(.callout)
                     .foregroundStyle(.secondary)
             }
@@ -323,7 +323,7 @@ struct TimelineMonthSection: View {
                 Text(title)
                     .font(.title3.weight(.semibold))
                 Spacer()
-                Text("\(photos.count) 张")
+                Text(Copy.totalCount(photos.count))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

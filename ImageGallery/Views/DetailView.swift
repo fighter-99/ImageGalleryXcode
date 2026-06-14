@@ -118,15 +118,15 @@ struct DetailView: View {
         .frame(minWidth: 280, idealWidth: 340, maxWidth: 480)
         .alert("新建标签", isPresented: $showingAddTagAlert) {
             TextField("标签名称", text: $newTagName)
-            Button("取消", role: .cancel) {}
-            Button("创建") { createAndAddTag() }
+            Button(Copy.cancel, role: .cancel) {}
+            Button(Copy.create) { createAndAddTag() }
         }
         .alert("重命名", isPresented: $showingRenameAlert) {
             TextField("新文件名", text: $newFileName)
-            Button("取消", role: .cancel) {}
-            Button("确定") { renamePhoto() }
+            Button(Copy.cancel, role: .cancel) {}
+            Button(Copy.confirm) { renamePhoto() }
         } message: {
-            Text("给图片一个新名字（不包含扩展名）")
+            Text(Copy.renameHint)
         }
         .confirmationDialog(
             "确定要删除这张图片吗？",
@@ -134,7 +134,7 @@ struct DetailView: View {
             titleVisibility: .visible
         ) {
             Button("删除", role: .destructive) { deletePhoto() }
-            Button("取消", role: .cancel) {}
+            Button(Copy.cancel, role: .cancel) {}
         } message: {
             // V5.51: "图馆" → "图库" typo 修复 + 走 Term.photo + Term.library 字典
             Text("\(Term.photo)将从\(Term.library)中移除，文件也会被永久删除。")
@@ -263,7 +263,7 @@ struct DetailView: View {
                 Spacer(minLength: 0)
 
                 if totalCount > 0 {
-                    Text("\(currentIndex) / \(totalCount)")
+                    Text(Copy.photoPosition(current: currentIndex, total: totalCount))
                         .font(Typography.captionMono)
                         .foregroundStyle(.white)
                         .padding(.horizontal, Spacing.sm)
@@ -377,7 +377,7 @@ struct DetailView: View {
         detailCard {
             VStack(alignment: .leading, spacing: Spacing.sm) {
                 HStack {
-                    Text("标签")
+                    Text(Copy.tagLabel)
                         .font(.caption.weight(.medium))
                         .foregroundStyle(.secondary)
                     Spacer()
@@ -398,7 +398,7 @@ struct DetailView: View {
                         Image(systemName: "tag")
                             .font(.caption2)
                             .foregroundStyle(.tertiary)
-                        Text("点击 + 添加标签")
+                        Text(Copy.addTagHint)
                             .font(.caption)
                             .foregroundStyle(.tertiary)
                     }
@@ -435,7 +435,7 @@ struct DetailView: View {
                 } label: {
                     HStack(spacing: 4) {
                         Image(systemName: "trash")
-                        Text("删除")
+                        Text(Copy.delete)
                             .lineLimit(1)
                     }
                     .frame(maxWidth: .infinity)

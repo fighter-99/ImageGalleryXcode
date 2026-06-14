@@ -183,7 +183,7 @@ struct ImmersivePhotoView: View {
 
             // 索引
             VStack(spacing: 2) {
-                Text("\(currentIndex + 1) / \(photos.count)")
+                Text(Copy.photoPosition1Indexed(current: currentIndex + 1, total: photos.count))
                     .font(.title3.monospacedDigit())
                     .foregroundStyle(.white)
                 if photos.count > 0 && photos.count <= 100 {

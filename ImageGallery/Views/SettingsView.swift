@@ -108,9 +108,9 @@ private struct GeneralSettingsView: View {
     var body: some View {
         SettingsSection(title: "默认视图模式", subtitle: "启动应用时使用的图片显示布局") {
             Picker("视图模式", selection: $defaultViewModeRaw) {
-                Text("网格").tag(ViewMode.grid.rawValue)
-                Text("列表").tag(ViewMode.list.rawValue)
-                Text("时间线").tag(ViewMode.timeline.rawValue)
+                Text(Copy.viewModeGrid).tag(ViewMode.grid.rawValue)
+                Text(Copy.viewModeList).tag(ViewMode.list.rawValue)
+                Text(Copy.viewModeTimeline).tag(ViewMode.timeline.rawValue)
             }
             .pickerStyle(.segmented)
             .labelsHidden()
@@ -148,7 +148,7 @@ private struct AppearanceSettingsView: View {
         ) {
             HStack {
                 Slider(value: $defaultThumbnailSize, in: 100...250, step: 10)
-                Text("\(Int(defaultThumbnailSize))")
+                Text(Copy.thumbnailSizeLabel(Int(defaultThumbnailSize)))
                     .font(Typography.captionMono)
                     .foregroundStyle(Surface.textSecondary)
                     .frame(width: 40, alignment: .trailing)

@@ -54,7 +54,7 @@ struct TrashDetailView: View {
                     .font(Typography.title)
                     .symbolRenderingMode(.hierarchical)
                     .foregroundStyle(.tint)
-                Text("回收站有 \(count) 张")
+                Text(Copy.recycleBinCount(count))
                     .font(Typography.title2)
                     .foregroundStyle(Surface.textPrimary)
                 Text(totalSizeText)
