@@ -745,7 +745,7 @@ struct ContentView: View {
         if PhotoStorage.shared.verifyStorage() {
             storageErrorMessage = nil
         } else {
-            storageErrorMessage = "无法写入存储目录。请检查磁盘空间、权限或「系统设置 → 隐私与安全 → 文件与文件夹」授权。"
+            storageErrorMessage = Copy.storageError
         }
     }
 
