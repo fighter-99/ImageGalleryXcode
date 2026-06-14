@@ -1720,34 +1720,26 @@ extension View {
         density: CGFloat? = nil
     ) -> some View {
         onChange(of: selection.hasSelection) { _, hasSelection in
+            // V5.33: 删 layoutMode: 参数——3 模式 toolbar 控件已删
             ToolbarController.shared.updateAllStates(
                 hasSelection: hasSelection,
                 hasMultipleSelection: selection.isMultiSelect,
-                layoutMode: layoutMode,
                 density: density
             )
         }
     }
 
-    /// V5.24 NEW: 布局模式变化 → 同步到 NSToolbar segment selectedSegment
-    func syncNSToolbarLayoutMode(_ mode: ThumbnailLayoutMode) -> some View {
-        onChange(of: mode) { _, newMode in
-            ToolbarController.shared.updateAllStates(
-                hasSelection: false,  // 不会冲突 (SelectionState onChange 也会调)
-                hasMultipleSelection: false,
-                layoutMode: newMode,
-                density: nil
-            )
-        }
-    }
+    // V5.33: 删 syncNSToolbarLayoutMode——3 模式 toolbar 控件已删
+    //   之前 .onChange(of: layoutMode) 推 segment, 现在 toolbar 无 segment 不需同步
+    //   layoutMode 仍可改 (ViewOptionsPopover), 但只影响 masonryRowsView 内部, 无 toolbar UI
 
     /// V5.24 NEW: 密度变化 → 同步到 NSToolbar slider value
     func syncNSToolbarDensity(_ density: CGFloat) -> some View {
         onChange(of: density) { _, newDensity in
+            // V5.33: 删 layoutMode: nil 参数
             ToolbarController.shared.updateAllStates(
                 hasSelection: false,
                 hasMultipleSelection: false,
-                layoutMode: nil,
                 density: newDensity
             )
         }
@@ -2027,8 +2019,9 @@ extension View {
             )
             // V4.8.1: SwiftUI @State searchText 变化 → 同步到 NSSearchField
             .syncNSToolbarSearchField(text: searchText)
-            // V5.24: 布局模式 + 密度变化 → 同步到 NSToolbar segment/slider
-            .syncNSToolbarLayoutMode(layoutMode)
+            // V5.33: 删 .syncNSToolbarLayoutMode(layoutMode)——3 模式 toolbar 控件已删
+            //   layoutMode 仍可改 (ViewOptionsPopover), 但只影响 masonryRowsView 内部, 无 toolbar UI
+            // V5.24: 密度变化 → 同步到 NSToolbar segment/slider
             .syncNSToolbarDensity(thumbnailSize)
     }
 }

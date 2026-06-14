@@ -135,7 +135,9 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
         case filter          // V4.36.x NEW: 工具栏筛选按钮
         case viewOptions
         case quickLook       // V4.37.1 NEW: ⌘Y Quick Look（macOS Finder/Photos 标准）
-        case layoutMode      // V5.24 NEW: 3-icon NSSegmentedControl (方格/按比例/按比例满行)
+        // V5.33: 砍 case layoutMode——3 模式 toolbar 控件已删 (e7695d7)
+        //   - Toolbar 简化: 只留 density (4 段), 与 macOS Photos toolbar 接近
+        //   - 模式仍可切: 走 ViewOptionsPopover 段 3 (.square / .masonry / .masonryStretch)
         case density         // V5.24 NEW: NSSlider 连续密度 (70-240pt, Photos 风格)
 
         var nsIdentifier: NSToolbarItem.Identifier {
@@ -280,16 +282,13 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
 
     /// 全部状态更新（ContentView 在 .onChange 调用）
     /// V5.7: 砍 favoriteEnabled 赋值——工具栏 ❤ 已移除
-    /// V5.24: 加 layoutMode + density 状态同步——ContentView @AppStorage 变化时调
-    func updateAllStates(hasSelection: Bool, hasMultipleSelection: Bool, layoutMode: ThumbnailLayoutMode? = nil, density: CGFloat? = nil) {
+    /// V5.24: 加 density 状态同步——ContentView @AppStorage 变化时调
+    /// V5.33: 砍 layoutMode 参数——3 模式 toolbar 控件已删 (e7695d7)
+    func updateAllStates(hasSelection: Bool, hasMultipleSelection: Bool, density: CGFloat? = nil) {
         exportEnabled = hasSelection
         deleteEnabled = hasSelection
         // V4.37.1: Quick Look 仅在单张选中时可用（多张 / 0 张 都灰显）
         quickLookEnabled = hasSelection && !hasMultipleSelection
-        // V5.24: 布局模式 + 密度 toolbar 状态同步
-        if let mode = layoutMode {
-            (itemCache[Identifier.layoutMode.nsIdentifier]?.view as? NSSegmentedControl)?.selectedSegment = mode.rawValue
-        }
         // V5.31: density 改 NSSegmentedControl 4 段——按 size 找最近 match
         if let d = density {
             let densities = ThumbnailDensity.allCases
