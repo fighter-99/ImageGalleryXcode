@@ -233,10 +233,12 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
             item = makeSearchItem(id: id)
         case .flexibleSpace:
             item = nil  // flexible space 由 NSToolbar 系统处理
-        case .layoutModeMenu:  // V5.39.3 NEW: 方格/按比例 下拉菜单
+        case .layoutModeMenu:  // V5.39.3 NEW: 方格/按比例/方格(完整) 下拉菜单
+            // V5.46: defaultImage 跟 layoutMode 走——初次创建时用默认 .square
+            //   后续 updateAllStates(layoutMode:) 调 updateLayoutModeButtonImage() 同步
             item = makeMenuItem(
                 id: id,
-                defaultImage: ThumbnailLayoutMode.defaultValue.icon,
+                defaultImage: layoutMode.icon,
                 label: "布局模式",
                 action: #selector(handleMenuButtonClicked(_:))
             )
