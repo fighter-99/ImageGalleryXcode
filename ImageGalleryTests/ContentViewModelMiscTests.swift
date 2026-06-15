@@ -177,4 +177,43 @@ struct ContentViewModelMiscTests {
         let restored = model.restoreSelection(key)
         #expect(restored == .all, "UUID 不在 store 应 fallback .all")
     }
+
+    // MARK: - representativePhoto(for: DateGroup) (V5.56 Key Photo)
+    //   优先级: 1. first non-trashed  2. first (即使全 trashed)  3. nil (空 group)
+
+    @Test func representativePhoto_emptyGroup_returnsNil() {
+        let model = ContentViewModel()
+        let group = DateGroup(id: "empty", label: "今天", sortKey: Date(), photos: [])
+        #expect(model.representativePhoto(for: group) == nil)
+    }
+
+    @Test func representativePhoto_allLive_returnsFirstPhoto() {
+        let model = ContentViewModel()
+        let p1 = Photo(filename: "1.jpg", fileURL: URL(fileURLWithPath: "/tmp/V556_rep_1.jpg"), fileSize: 100, width: 10, height: 10)
+        let p2 = Photo(filename: "2.jpg", fileURL: URL(fileURLWithPath: "/tmp/V556_rep_2.jpg"), fileSize: 100, width: 10, height: 10)
+        let group = DateGroup(id: "live", label: "今天", sortKey: Date(), photos: [p1, p2])
+        #expect(model.representativePhoto(for: group)?.id == p1.id, "全 live 时应取 first")
+    }
+
+    @Test func representativePhoto_firstTrashed_returnsFirstLive() {
+        let model = ContentViewModel()
+        let p1 = Photo(filename: "1.jpg", fileURL: URL(fileURLWithPath: "/tmp/V556_rep_3.jpg"), fileSize: 100, width: 10, height: 10)
+        p1.trashedAt = Date()
+        let p2 = Photo(filename: "2.jpg", fileURL: URL(fileURLWithPath: "/tmp/V556_rep_4.jpg"), fileSize: 100, width: 10, height: 10)
+        let group = DateGroup(id: "mixed", label: "今天", sortKey: Date(), photos: [p1, p2])
+        let rep = model.representativePhoto(for: group)
+        #expect(rep?.id == p2.id, "first trashed 时应跳过取 p2")
+        #expect(rep?.isInTrash == false, "代表图必须 non-trashed")
+    }
+
+    @Test func representativePhoto_allTrashed_fallsBackToFirst() {
+        let model = ContentViewModel()
+        let p1 = Photo(filename: "1.jpg", fileURL: URL(fileURLWithPath: "/tmp/V556_rep_5.jpg"), fileSize: 100, width: 10, height: 10)
+        p1.trashedAt = Date()
+        let p2 = Photo(filename: "2.jpg", fileURL: URL(fileURLWithPath: "/tmp/V556_rep_6.jpg"), fileSize: 100, width: 10, height: 10)
+        p2.trashedAt = Date()
+        let group = DateGroup(id: "allTrashed", label: "今天", sortKey: Date(), photos: [p1, p2])
+        let rep = model.representativePhoto(for: group)
+        #expect(rep?.id == p1.id, "全 trashed 时 fallback first (仍显示某张)")
+    }
 }

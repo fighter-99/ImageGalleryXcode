@@ -356,7 +356,14 @@ struct PhotoGridView: View {
                             onReorder: onReorder
                         )
                     } header: {
-                        DateSectionHeader(label: group.label, count: group.photos.count)
+                        // V5.56: Key Photo 段头代表图——每组 1 张 32×32 缩略图
+                        // 镜像 Photos.app 真版: 段头左侧 1 张小图, 标识该日期组
+                        // 内联 representative 选取 (group.photos 已按 importedAt 降序):
+                        //   1. 优先非 trashed (避免代表图指向回收站)
+                        //   2. fallback group.photos.first (即使全 trashed 也显示某张)
+                        // ContentViewModel.representativePhoto(for:) 是同逻辑, 供 sidebar P0 复用
+                        let representative = group.photos.first(where: { !$0.isInTrash }) ?? group.photos.first
+                        DateSectionHeader(label: group.label, count: group.photos.count, representative: representative)
                     }
                 }
             }
