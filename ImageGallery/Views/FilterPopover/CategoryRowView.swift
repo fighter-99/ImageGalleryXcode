@@ -160,7 +160,10 @@ final class CategoryRowView: NSView {
         addSubview(mainStack)
         NSLayoutConstraint.activate([
             mainStack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 12),
-            mainStack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -12),
+            // V5.67: trailing -12→-18 (3pt buffer)——scroller 出现在 x=241..256 (右侧 15pt)
+            //   chevron + count badge 不应重叠 scroller; -18 让 chevron 右边缘在 238, scroller 左边在 241, gap 3pt
+            //   V5.63-2 commit message 说 'chevron 12pt 缩进' 但实际未改代码, 现补回
+            mainStack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -18),
             mainStack.centerYAnchor.constraint(equalTo: centerYAnchor),
             self.heightAnchor.constraint(equalToConstant: PopoverStyle.categoryRowHeight)  // 40pt
         ])

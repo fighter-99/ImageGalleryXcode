@@ -191,6 +191,17 @@ final class FilterUnifiedPopoverController: NSViewController {
         // V5.63-2: 高度按内容 (header + 展开 section 高度) + padding
         //   存了 scrollView 引用, 直接读 documentView.fittingSize.height
         //   不再依赖 view.subviews.first?.subviews.first 链 (脆弱, 任何 layer 顺序变会失败)
+        // V5.67: 抽 updatePopoverSize()——viewDidLayout 不一定在 isHidden 变化时触发
+        //   (NSPopover 大小不依赖 viewDidLayout, 靠 preferredContentSize), toggle 后显式调
+        updatePopoverSize()
+    }
+
+    /// V5.67 NEW: 显式重算 popover 高度——toggle section (expand/collapse) 末尾调
+    ///   不依赖 viewDidLayout 副作用. 强制 layoutSubtreeIfNeeded 后读 fittingSize
+    ///   (contentStack 在 outerStack 内, outerStack 在 scrollView.documentView 内)
+    func updatePopoverSize() {
+        guard isViewLoaded else { return }
+        view.layoutSubtreeIfNeeded()  // V5.67: 强制 layout, fittingSize 反映最新 isHidden 状态
         let contentHeight = scrollView?.documentView?.fittingSize.height ?? 0
         let totalHeight = min(contentHeight + 2 * Self.outerPadding, Self.maxHeight)
         preferredContentSize = NSSize(
@@ -349,6 +360,8 @@ final class FilterUnifiedPopoverController: NSViewController {
             ctx.allowsImplicitAnimation = true
             content.animator().isHidden = false
         }
+        // V5.67: 显式重算 popover 高度——isHidden 改变不触发 viewDidLayout
+        updatePopoverSize()
     }
 
     private func collapseSection(_ category: FilterCategory) {
@@ -363,6 +376,8 @@ final class FilterUnifiedPopoverController: NSViewController {
         //   保持展开高度, 视觉上"上半部分空". 改 snap 后 popover 立即缩到 4 row 高度.
         //   chevron 旋转动画仍保留 (setExpanded 内部走 NSAnimationContext)
         content.isHidden = true
+        // V5.67: 显式重算 popover 高度——解决 rating 6 行内容展开折叠后上半部分空 bug
+        updatePopoverSize()
     }
 
     /// V5.63-2: 立即折叠 (无动画)——accordion 切换时用, 避免两 section 动画重叠
