@@ -176,11 +176,12 @@ extension View {
             .onChange(of: showDetail) { _, newValue in
                 onSyncTitlebarAccessory(newValue)
             }
-            .onChange(of: selection.hasSelection) { _, hasSelection in
-                withAnimation(Animations.medium) {
-                    onToggleShowDetail(hasSelection)
-                }
-            }
+            // V5.60-8: 删 V5.23 的 .onChange(of: selection.hasSelection) { showDetail = hasSelection }
+            //   原因: 用户要求"详情面板常驻" (V5.60-1), V5.23 的"选即显/取消即隐" 冲突
+            //   Bug 表现: 点缩略图进入 immersive → ESC 退出 → 详情面板消失 (因 hasSelection 在 re-render
+            //     瞬间被认为 false, 触发 V5.23 把 showDetail 设为 false)
+            //   修法: 删 onChange——showDetail 现在只受 V5.60-1 默认 (true) + 手动 toggle (⌘I/⌘⌃D/titlebar) 控制
+            //   selection 仍保留 onChange (如有别处用), 但不再影响 showDetail
             .task {
                 model.modelContext = modelContext
                 model.allPhotos = allPhotos
