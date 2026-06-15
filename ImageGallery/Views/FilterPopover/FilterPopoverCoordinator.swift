@@ -89,17 +89,16 @@ final class FilterPopoverCoordinator {
         popover.behavior = .transient
         popover.contentViewController = vc
 
-        // V5.69 → V5.70: 回退 .minY (之前我猜反了——.minY 才是 below, .maxY 是 above)
-        //   V5.69 改 .maxY 实际让 popover 拓上 (覆盖 button) —— 错误
-        //   V5.70: 回 .minY + rect 下移 6pt (smaller y) 给 popover 顶部留视觉间隙
-        //   避免 popover 顶 (NSPopover shadow 5pt) 跟 button 底视觉粘连
+        // V5.73: preferredEdge 统一 .maxY——
+        //   真实方向: .minY = above (popover 拓向 LARGER y, 屏幕上方)
+        //           .maxY = below (popover 拓向 SMALLER y, 屏幕下方)
+        //   filter popover 大 (280x600) 不 fit above, NSPopover auto-flip 到 below (碰巧正确)
+        //   layoutMode popover 小 (140x60) fit above, 不 flip, 显式在 button 上方 (用户报不一致)
+        //   改 .maxY 后两边都显式 below, 无需依赖 auto-flip
         if let anchor = anchor {
-            popover.show(relativeTo: anchor.bounds, of: anchor, preferredEdge: .minY)
+            popover.show(relativeTo: anchor.bounds, of: anchor, preferredEdge: .maxY)
         } else if let positioningView = positioningView {
-            // V5.70: rect y 下移 6pt (buttonInContent.minY - 6)——NSPopover 顶部 shadow 5pt
-            //   加 1pt buffer = 6pt 视觉间隙, popover 不会跟 button 底部粘连
-            // 注: 这是 caller's rect, 本方法不动 rect 值, 改在 caller
-            popover.show(relativeTo: rect, of: positioningView, preferredEdge: .minY)
+            popover.show(relativeTo: rect, of: positioningView, preferredEdge: .maxY)
         }
         filterPopover = popover
     }

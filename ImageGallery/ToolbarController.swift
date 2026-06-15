@@ -561,8 +561,10 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
         let popover = NSPopover()
         popover.behavior = .transient
         popover.contentViewController = vc
-        // V5.71 模式: anchoredTo + .minY (跟 filter popover 一致)
-        popover.show(relativeTo: anchorView.bounds, of: anchorView, preferredEdge: .minY)
+        // V5.73: 改 .maxY——.minY 实际是 above (popover 拓向 LARGER y, 屏幕上方)
+        //   之前 layoutMode small 不 fit above 也 NSPopover auto-flip 到 .maxY 才不
+        //   现改 .maxY 显式 below, 跟 filter popover 一致
+        popover.show(relativeTo: anchorView.bounds, of: anchorView, preferredEdge: .maxY)
         layoutModePopover = popover
     }
 
