@@ -540,9 +540,9 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
             return
         }
 
-        let vc = LayoutModePopoverController(currentMode: layoutMode)
+        let vc = OptionListPopoverController<ThumbnailLayoutMode>(currentItem: layoutMode, minWidth: 140)
         vc.onSelect = { [weak self] mode in
-            // V5.72: 走 onLayoutModeChange closure 写入 UserSettings + ContentView .onChange 推 toolbar icon
+            // V5.77: 走 onLayoutModeChange closure 写入 UserSettings + ContentView .onChange 推 toolbar icon
             //   V5.66 已有 updateAllStates(layoutMode:) 路径
             self?.onLayoutModeChange?(mode)
         }
@@ -572,9 +572,9 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
 
         // V5.74: 4 档 density 跟 thumbnailSize (CGFloat) 走——currentDensity 算最近档
         let current = ThumbnailDensity.nearest(to: thumbnailSize)
-        let vc = DensityPopoverController(currentDensity: current)
+        let vc = OptionListPopoverController<ThumbnailDensity>(currentItem: current, minWidth: 140)
         vc.onSelect = { [weak self] density in
-            // V5.74: 走 onDensityChange closure (CGFloat)——UserSettings + toolbar icon 推
+            // V5.77: 走 onDensityChange closure (CGFloat)——UserSettings + toolbar icon 推
             self?.onDensityChange?(CGFloat(density.size))
         }
 
@@ -599,9 +599,9 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
             return
         }
 
-        let vc = SortOptionPopoverController(currentOption: sortOption)
+        let vc = OptionListPopoverController<SortOption>(currentItem: sortOption, minWidth: 160)
         vc.onSelect = { [weak self] option in
-            // V5.75: 走 onSortOptionChange closure——UserSettings + toolbar icon 推
+            // V5.77: 走 onSortOptionChange closure——UserSettings + toolbar icon 推
             self?.onSortOptionChange?(option)
         }
 

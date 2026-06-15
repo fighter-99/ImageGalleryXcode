@@ -1,0 +1,140 @@
+//
+//  OptionListPopoverController.swift
+//  ImageGallery
+//
+//  V5.77 NEW: 通用 option list NSPopover 控制器
+//    替代 V5.72 LayoutModePopoverController + V5.74 DensityPopoverController + V5.75 SortOptionPopoverController
+//    3 个 ~140 行 popover 重复 99% → 1 个 generic + 3 个 conformance (V5.77 protocol 文件)
+//
+//  约束: T: OptionListItem (displayName + iconName) + CaseIterable (遍历) + Equatable (识别 current)
+//  Visual: 3 层 sandwich (container → NSVisualEffectView.popoverHost → VStack) + ✓ + 24pt item
+//  Layout: chevron/badges 永远占位 (V5.76) 防止选中/取消视觉位移
+//
+
+import AppKit
+
+/// V5.77: 通用 option list popover——3 行可用, 跟 layoutMode / density / sort popover 视觉一致
+///   Photos 范式: 工具栏单按钮单 popover, 选中 accent color + ✓ 标记
+final class OptionListPopoverController<T: OptionListItem>: NSViewController {
+    /// V5.77: 用户选项回调——caller 写入 UserSettings + 更新 toolbar icon
+    var onSelect: ((T) -> Void)?
+
+    /// V5.77: 当前选中的 item——画 ✓ + accent 前景
+    private(set) var currentItem: T
+
+    /// V5.77: popover 最小宽度 (默认 140, sort 用 160 因 7 选项 label 较长)
+    private let minWidth: CGFloat
+
+    private let stackView: NSStackView
+
+    init(currentItem: T, minWidth: CGFloat = 140) {
+        self.currentItem = currentItem
+        self.minWidth = minWidth
+        self.stackView = NSStackView()
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) { fatalError("not implemented") }
+
+    override func loadView() {
+        // V5.77: 3 层 sandwich 仿 V5.72 + nspopover-tamc-sandwich pattern
+        let container = NSView()
+        container.translatesAutoresizingMaskIntoConstraints = false
+
+        let visualEffect = NSVisualEffectView.popoverHost()
+        visualEffect.translatesAutoresizingMaskIntoConstraints = false
+
+        stackView.orientation = .vertical
+        stackView.alignment = .leading
+        stackView.spacing = 2
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+
+        for item in T.allCases {
+            let row = makeOptionItem(for: item)
+            stackView.addArrangedSubview(row)
+        }
+
+        visualEffect.addSubview(stackView)
+        container.addSubview(visualEffect)
+
+        NSLayoutConstraint.activate([
+            visualEffect.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            visualEffect.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            visualEffect.topAnchor.constraint(equalTo: container.topAnchor),
+            visualEffect.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+            stackView.leadingAnchor.constraint(equalTo: visualEffect.leadingAnchor, constant: 12),
+            stackView.trailingAnchor.constraint(equalTo: visualEffect.trailingAnchor, constant: -12),
+            stackView.topAnchor.constraint(equalTo: visualEffect.topAnchor, constant: 4),
+            stackView.bottomAnchor.constraint(equalTo: visualEffect.bottomAnchor, constant: -4)
+        ])
+
+        self.view = container
+    }
+
+    /// V5.77: 单个选项 (icon + label + ✓) 24pt 高——V5.76 count badge always-occupy
+    ///   锁 layout 永远不变, 选中/取消无视觉位移
+    private func makeOptionItem(for item: T) -> NSView {
+        let rowView = OptionItemView(item: item)
+        rowView.translatesAutoresizingMaskIntoConstraints = false
+
+        let isSelected = item == currentItem
+        let icon = NSImageView(image: NSImage(systemSymbolName: item.iconName, accessibilityDescription: nil) ?? NSImage())
+        icon.imageScaling = .scaleProportionallyDown
+        icon.contentTintColor = isSelected ? .controlAccentColor : .labelColor
+        icon.translatesAutoresizingMaskIntoConstraints = false
+        icon.setContentHuggingPriority(.required, for: .horizontal)
+
+        let label = NSTextField(labelWithString: item.displayName)
+        label.font = NSFont.systemFont(ofSize: 13)
+        label.textColor = isSelected ? .controlAccentColor : .labelColor
+        label.translatesAutoresizingMaskIntoConstraints = false
+
+        let checkmark = NSTextField(labelWithString: "✓")
+        checkmark.font = NSFont.systemFont(ofSize: 12, weight: .semibold)
+        checkmark.textColor = .controlAccentColor
+        checkmark.translatesAutoresizingMaskIntoConstraints = false
+        checkmark.isHidden = !isSelected
+
+        rowView.addSubview(icon)
+        rowView.addSubview(label)
+        rowView.addSubview(checkmark)
+
+        let click = NSClickGestureRecognizer(target: self, action: #selector(handleItemClick(_:)))
+        rowView.addGestureRecognizer(click)
+
+        NSLayoutConstraint.activate([
+            icon.leadingAnchor.constraint(equalTo: rowView.leadingAnchor, constant: 4),
+            icon.centerYAnchor.constraint(equalTo: rowView.centerYAnchor),
+            icon.widthAnchor.constraint(equalToConstant: 16),
+            icon.heightAnchor.constraint(equalToConstant: 16),
+
+            label.leadingAnchor.constraint(equalTo: icon.trailingAnchor, constant: 10),
+            label.centerYAnchor.constraint(equalTo: rowView.centerYAnchor),
+
+            checkmark.trailingAnchor.constraint(equalTo: rowView.trailingAnchor, constant: -4),
+            checkmark.centerYAnchor.constraint(equalTo: rowView.centerYAnchor),
+            checkmark.widthAnchor.constraint(equalToConstant: 16),
+
+            rowView.heightAnchor.constraint(equalToConstant: 24),
+            rowView.widthAnchor.constraint(greaterThanOrEqualToConstant: minWidth)
+        ])
+
+        return rowView
+    }
+
+    @objc private func handleItemClick(_ sender: NSClickGestureRecognizer) {
+        guard let rowView = sender.view as? OptionItemView<T> else { return }
+        onSelect?(rowView.item)
+        view.window?.contentViewController?.dismiss(nil)
+    }
+}
+
+/// V5.77: 内部 generic NSView subclass 存 item (NSView.tag 是 readonly)
+private final class OptionItemView<T: OptionListItem>: NSView {
+    let item: T
+    init(item: T) {
+        self.item = item
+        super.init(frame: .zero)
+    }
+    required init?(coder: NSCoder) { fatalError("not implemented") }
+}
