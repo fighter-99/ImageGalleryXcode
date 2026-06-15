@@ -69,6 +69,9 @@ final class CategoryRowView: NSView {
     /// V5.14: 从 private 改 internal——测试读 countBadgeBg.isHidden
     let countBadgeBg: NSView
     private let chevronView: NSImageView
+    /// V5.68: 当前 chevron symbol——测试可读 (private(set))
+    ///   跟踪 isExpanded 状态, 跳过 NSAnimationContext 0.18s 异步
+    private(set) var currentChevronSymbol: String = "chevron.right"
     private let mainStack: NSStackView
 
     // MARK: - init
@@ -214,16 +217,30 @@ final class CategoryRowView: NSView {
         isExpanded = expanded
     }
 
-    /// V5.63-2: chevron 旋转动画 (NSImageView.frameCenterRotation)
-    ///   collapsed: 0° (chevron.right)
-    ///   expanded: 90° (chevron.down 视觉)
+    /// V5.68: 改 image swap (不再用 frameCenterRotation 旋转)
+    ///   原因: 9pt chevron.right 旋转 90° 视觉重量从'右'挪到'下', 用户感知像'箭头左移'
+    ///   改用 chevron.down 系统 symbol 直接替换, 状态视觉 = 图标本身 (Photos 风格)
+    ///   0.18s 动画期用 NSImageView animator 走 alpha 渐变 (image swap 一帧完成无中间态)
     private func animateChevronRotation() {
-        let targetRotation: CGFloat = isExpanded ? 90 : 0
+        let targetSymbol = isExpanded ? "chevron.down" : "chevron.right"
         NSAnimationContext.runAnimationGroup { ctx in
             ctx.duration = 0.18
             ctx.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-            chevronView.animator().frameCenterRotation = targetRotation
+            // V5.68: alpha 渐变—先 fade out, swap image, fade in
+            chevronView.animator().alphaValue = 0
+        } completionHandler: {
+            self.applyChevronSymbol(targetSymbol)
+            NSAnimationContext.runAnimationGroup { ctx in
+                ctx.duration = 0.12
+                self.chevronView.animator().alphaValue = 1
+            }
         }
+    }
+
+    /// V5.68: 抽 helper——直接 swap symbol image. 测试可同步调, 跳过动画
+    func applyChevronSymbol(_ symbol: String) {
+        chevronView.image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)
+        currentChevronSymbol = symbol
     }
 
     /// V5.9 + V5.63-2: 四态视觉更新

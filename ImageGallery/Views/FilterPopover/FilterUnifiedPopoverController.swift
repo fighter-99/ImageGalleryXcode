@@ -220,14 +220,14 @@ final class FilterUnifiedPopoverController: NSViewController {
         let stack = NSStackView()
         stack.orientation = .vertical
         stack.alignment = .leading
-        stack.spacing = 4  // V5.63-4: 2→4pt——checkbox 间距呼吸感, 仿 macOS Photos
+        stack.spacing = 6  // V5.68: 4→6pt——checkbox 间距再宽, 仿 Photos (item 之间留 6pt)
         stack.translatesAutoresizingMaskIntoConstraints = false
         container.addSubview(stack)
         NSLayoutConstraint.activate([
             stack.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: Self.sectionContentPadding),
             stack.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -Self.sectionContentPadding),
-            stack.topAnchor.constraint(equalTo: container.topAnchor, constant: 4),     // V5.63-4: 2→4pt
-            stack.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -4)  // V5.63-4: 2→4pt
+            stack.topAnchor.constraint(equalTo: container.topAnchor, constant: 6),     // V5.68: 4→6pt
+            stack.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -6)  // V5.68: 4→6pt
         ])
 
         switch category {
