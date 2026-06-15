@@ -432,7 +432,6 @@ struct ContentView: View {
             // V4.12.0 删: .background(QuickLookBridge(...))——V5.42 不再走 QLPreviewPanel
             // 快捷键：⌘+1-6 切换侧边栏
             .contentKeyboardShortcuts(
-                sidebarSelection: bindableModel.sidebarSelection,
                 onImport: startImport,
                 onNewFolder: { showingNewFolderAlert = true },
                 onResetFilters: resetFilters,
@@ -445,7 +444,7 @@ struct ContentView: View {
                 onSetRating: { rating in batchSetRating(rating) },
                 // V4.15.0: ⌘F 聚焦搜索框改由 NSSearchField (V4.8.1) 自身处理
                 //   撤回 V3.6.23 旧 notification 桥接——onFocusSearch 用默认 {} 空实现
-                //   contentKeyboardShortcuts 仍调 onFocusSearch（参数保留避免破坏）
+                // V5.52-8: 删 sidebarSelection 参数
             )
             // V4.10.0: 4 dialog 打包（batchDelete / newFolder / emptyTrash / duplicate）
             .batchActionDialogs(
@@ -580,24 +579,9 @@ struct ContentView: View {
         sortOption = sortOption.toggledDirection
     }
 
-    // V3.5 Phase 1 Step 3：分享选中的照片
-    // 使用 macOS 系统分享面板（NSSharingServicePicker）
-    // 可选：AirDrop / 信息 / 邮件 / 备忘录 / 第三方 App 等
-    private func shareSelected() {
-        // V3.6.52: 用 selection.selectedPhotos(in:) 替手写 filter
-        let urls: [URL]
-        if !selection.selectedIDs.isEmpty {
-            urls = selection.selectedPhotos(in: visiblePhotos).map { $0.fileURL }
-        } else if let photo = singleSelectedPhoto {
-            urls = [photo.fileURL]
-        } else {
-            return  // 没有选中
-        }
-
-        let picker = NSSharingServicePicker(items: urls)
-        let view = NSApp.keyWindow?.contentView ?? NSView()
-        picker.show(relativeTo: .zero, of: view, preferredEdge: .minY)
-    }
+    // V5.52-8: 删 shareSelected (dead code, 0 caller)
+    //   NSSharingServicePicker 路径从未被 wire 进来——V3.6.52 之后用 selection.selectedPhotos
+    //   现如要加 share, 直接走 macOS 系统菜单 (Finder > Share) 或 toolbar 按钮
 
     // 复制到剪贴板（支持多选）
     private func copyToPasteboard() {

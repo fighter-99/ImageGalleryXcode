@@ -25,8 +25,8 @@ extension View {
     /// - V5.15: 删 ⌘1-6 sidebar smart folder 快捷键——⌘1-5 与 rating 评分快捷键冲突
     ///        仿 macOS Photos 把 ⌘1-5 让给 rating（侧栏 mouse 交互 + ⌘⌃S 切显隐足够）
     ///        砍 onToggleFavorite 参数——工具栏 ❤ 已移除
+    /// - V5.52-8: 删 sidebarSelection 参数——之前是 dead arg (// _ = sidebarSelection)
     func contentKeyboardShortcuts(
-        sidebarSelection: Binding<SidebarSelection?>,
         onImport: @escaping () -> Void,
         onNewFolder: @escaping () -> Void,
         onResetFilters: @escaping () -> Void,
@@ -59,7 +59,7 @@ extension View {
                 // V5.15：删 ⌘1-6 sidebar smart folder 快捷键——⌘1-5 与 rating 评分快捷键冲突
                 //   仿 macOS Photos 把 ⌘1-5 让给 rating
                 //   sidebar 仍可 ⌘⌃S 切显隐 + 鼠标点击
-                // _ = sidebarSelection  // 保留参数防破坏调用点
+                // V5.52-8: 删 sidebarSelection dead arg (原 // _ = sidebarSelection 防破坏)
 
                 Button("") { onNewFolder() }
                     .keyboardShortcut("n", modifiers: .command)
