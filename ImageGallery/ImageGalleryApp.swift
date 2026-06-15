@@ -29,6 +29,11 @@ struct ImageGalleryApp: App {
     // V3.6.7: 手动建 ModelContainer（SwiftData 26.5 SDK 的 modelContainer modifier 没 VersionedSchema 重载）
     let modelContainer: ModelContainer
 
+    // V5.59-3: 单一 shared UserSettings 实例——@State 生命周期 = app 生命周期
+    //   ContentView/ContentViewModel/SettingsView/menu commands 全部走这同一实例
+    //   UserSettings.init() V5.58-1 从 UserDefaults 读 13 字段
+    @State private var sharedSettings = UserSettings()
+
     init() {
         // V3.6.7: 显式 VersionedSchema + MigrationPlan
         // 之前用 [Photo.self, Folder.self, Tag.self] 隐式 schema，依赖 SwiftData 轻量级自动迁移
@@ -42,21 +47,10 @@ struct ImageGalleryApp: App {
         )
     }
 
-    // View 菜单的 Toggle 通过 UserDefaults binding 与 ContentView 共享
-    // （@AppStorage 重复定义被移除——ContentView 是唯一持有者，菜单项通过 Binding<Bool>(userDefaults:) 监听）
-    private let showSidebarBinding = Binding<Bool>(userDefaults: "showSidebar", default: true)
-    private let showDetailBinding  = Binding<Bool>(userDefaults: "showDetail",  default: true)
-
-    // V4.37.0: viewModeBinding 监听 viewModeRaw key——与 ContentView @AppStorage("viewModeRaw") 同源
-    //   菜单项改 wrappedValue 写 UserDefaults → ContentView @AppStorage 自动 re-render
-    //   Photos.app / Finder View > View As 子菜单风格——单选 3 个视图模式
-    private let viewModeBinding = Binding<ViewMode>(
-        get: {
-            let raw = UserDefaults.standard.string(forKey: "viewModeRaw") ?? ViewMode.grid.rawValue
-            return ViewMode(rawValue: raw) ?? .grid
-        },
-        set: { UserDefaults.standard.set($0.rawValue, forKey: "viewModeRaw") }
-    )
+    // V5.59-3: 删 3 个 userDefaults-based bindings (showSidebarBinding/showDetailBinding/viewModeBinding)
+    //   menu items 现在改用 $sharedSettings.X (V5.59-3 下面命令)——
+    //   @Observable sharedSettings 自动广播, menu 改 → ContentView/SettingsView 即时同步
+    //   删下面 extension Binding<Bool>(userDefaults:) helper (L185-191)——不再用
 
     var body: some Scene {
         // V3.5.D：WindowGroup 加 id 让 macOS 能稳定追踪窗口(用于 frame autosave)
@@ -72,10 +66,9 @@ struct ImageGalleryApp: App {
         //   .primaryAction 在 .unifiedCompact 下也不会被加 section 背景
         //   回归 V4.0.0.1 的 .unifiedCompact（blur 轻，符合"toolbar 是 backdrop"原意）
         // V5.51: "图馆" → "图库" typo 修复 + 走 Term.library 字典
-        // V5.59-3: ContentView 需要 settings 参数——传 sharedSettings (V5.59-3 在 ImageGalleryApp 加 @State)
-        //   当前 commit 临时传新 UserSettings(), V5.59-3 替换
+        // V5.59-3: ContentView 传 sharedSettings——与 menu/SettingsView 共享同一 UserSettings 实例
         WindowGroup(Term.library, id: "main") {
-            ContentView(settings: UserSettings())
+            ContentView(settings: sharedSettings)
         }
         // V4.1.0 m: 默认 1280×800；contentMinSize 由 layout 决定
         //   侧栏 160pt + 工具栏 200pt + grid 400pt + 详情 320pt = 1080pt 横向最小
@@ -91,10 +84,9 @@ struct ImageGalleryApp: App {
         //   之前 V3.5.D 用 NotificationCenter + sheet 弹在主窗口内——与 Photos/Finder
         //   标准 ⌘, 行为不符（标准是独立 Preferences window，无交通灯，title = app name）
         //   Settings scene (macOS 13+) 自动绑定 ⌘, + SettingsLink (macOS 14+)
-        //   V5.58-1: 注入 UserSettings() 实例——SettingsView 改用 @Bindable, 不再 @AppStorage
-        //     每次打开设置新建一个 UserSettings (scene-level 生命周期), 从 UserDefaults 读 13 字段
+        //   V5.59-3: 传 sharedSettings (与 ContentView/menu 同实例)——不再 scene-level 新建
         Settings {
-            SettingsView(settings: UserSettings())
+            SettingsView(settings: sharedSettings)
         }
         .commands {
             // V4.36.x: File 菜单——Open Recent（macOS 标准子菜单）
@@ -110,15 +102,16 @@ struct ImageGalleryApp: App {
                 }
             }
             // macOS 原生 View 菜单（在 View 菜单里加 Toggle 项）
+            // V5.59-3: 3 Toggle + 3 Button 改用 $sharedSettings.X 替代已删的 3 userDefaults bindings
             CommandGroup(after: .sidebar) {
-                Toggle(Copy.showSidebar, isOn: showSidebarBinding)
+                Toggle(Copy.showSidebar, isOn: $sharedSettings.showSidebar)
                     .keyboardShortcut("s", modifiers: [.command, .control])
-                Toggle(Copy.showDetailPanel, isOn: showDetailBinding)
+                Toggle(Copy.showDetailPanel, isOn: $sharedSettings.showDetail)
                     .keyboardShortcut("d", modifiers: [.command, .control])
                 // V4.37.0: macOS Photos 标准 ⌘I = Show Info Panel
                 //   与 ⌘Ctrl+D 同一动作（toggle 详情面板）——Photos.app ⌘I 行为
                 //   ⌘Ctrl+D 保留为项目传统快捷键不破坏现有用户习惯
-                Toggle(Copy.showInfoPanel, isOn: showDetailBinding)
+                Toggle(Copy.showInfoPanel, isOn: $sharedSettings.showDetail)
                     .keyboardShortcut("i", modifiers: .command)
                 // V4.37.1: ⌘Y 快速查看——macOS Finder/Photos 标准 Quick Look 入口
                 //   与 toolbar .quickLook 按钮 + 空格键共用 ContentView.showQuickLook()
@@ -132,19 +125,19 @@ struct ImageGalleryApp: App {
                 //   用 ⌥1/⌥2/⌥3 避开 ContentKeyboardShortcuts 占用的 ⌘1-6（侧边栏 section 切换）
                 //   Photos.app 用 ⌘1-5 是因为它没有多 section 侧边栏
                 Button {
-                    viewModeBinding.wrappedValue = .grid
+                    sharedSettings.viewModeRaw = ViewMode.grid.rawValue
                 } label: {
                     Text(Copy.viewModeGridFull)
                 }
                 .keyboardShortcut("1", modifiers: .option)
                 Button {
-                    viewModeBinding.wrappedValue = .list
+                    sharedSettings.viewModeRaw = ViewMode.list.rawValue
                 } label: {
                     Text(Copy.viewModeListFull)
                 }
                 .keyboardShortcut("2", modifiers: .option)
                 Button {
-                    viewModeBinding.wrappedValue = .timeline
+                    sharedSettings.viewModeRaw = ViewMode.timeline.rawValue
                 } label: {
                     Text(Copy.viewModeTimelineFull)
                 }
@@ -178,18 +171,9 @@ struct ImageGalleryApp: App {
 //   （V3.5.D 旧实现：菜单 post .openSettingsRequested → ContentView 弹 sheet；
 //    V3.6.23 旧实现：⌘F post .focusSearchField → ToolbarView 自绘搜索框聚焦）
 
-// MARK: - UserDefaults Binding 辅助（V3.5.18：去掉 @AppStorage 重复）
-//
-// 让 View 菜单的 Toggle 也能绑定 UserDefaults key，但不需要在 App 里再 @AppStorage 一次。
-// ContentView 是 key 的唯一持有者；这里只是监听同一个 key。
-extension Binding where Value == Bool {
-    init(userDefaults key: String, default defaultValue: Bool) {
-        self.init(
-            get: { UserDefaults.standard.object(forKey: key) as? Bool ?? defaultValue },
-            set: { UserDefaults.standard.set($0, forKey: key) }
-        )
-    }
-}
+// MARK: - V5.59-3: 删 Binding<Bool>(userDefaults:) extension helper
+//   原 V3.5.18: 让 View 菜单 Toggle 绑定 UserDefaults key, 不在 App 里再 @AppStorage 一次
+//   V5.59-3: 全部 menu items 改用 $sharedSettings.X (@Observable 自动广播)——helper 不再需要
 
 // MARK: - V4.7.0 NEW: Undo/Redo Edit menu 按钮
 //
