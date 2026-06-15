@@ -506,6 +506,7 @@ struct ContentView: View {
             }
             // V5.52-1: 注入 modelContext 到 ContentViewModel——.task 在 view 出现后跑一次
             //   V5.52-3 之后 model 非 Optional, 这里只 attach modelContext
+            // V5.52-7: 推送 3 个 @Query 结果到 model (model 是单一真相源)
             .task {
                 model.modelContext = modelContext
                 // V5.52-2: 把 12 个 @AppStorage 同步到 model.settings
@@ -521,7 +522,15 @@ struct ContentView: View {
                 model.settings.thumbnailLayoutMode = storedLayoutModeRaw
                 model.settings.sidebarColumnWidth = storedSidebarWidth
                 model.settings.detailColumnWidth = storedDetailWidth
+                // V5.52-7: 初始 push 3 个 @Query 缓存到 model
+                model.allPhotos = allPhotos
+                model.folders = folders
+                model.allTags = allTags
             }
+            // V5.52-7: @Query 变化时同步到 model——SwiftData store 变化驱动 .onChange
+            .onChange(of: allPhotos) { _, new in model.allPhotos = new }
+            .onChange(of: folders) { _, new in model.folders = new }
+            .onChange(of: allTags) { _, new in model.allTags = new }
     }
 
     // V5.52-3: @Bindable shadow @State model——macOS 14+ 推荐模式
