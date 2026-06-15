@@ -66,8 +66,8 @@ struct ContentView: View {
     // V3.6.13: viewMode 改用 @AppStorage 持久化（SettingsView 可设默认）
     @AppStorage("viewModeRaw") private var viewModeRaw: String = ViewMode.grid.rawValue
     private var viewMode: ViewMode {
-        get { ViewMode(rawValue: viewModeRaw) ?? .grid }
-        nonmutating set { viewModeRaw = newValue.rawValue }
+        get { model.viewMode }
+        nonmutating set { model.viewMode = newValue }
     }
 
     // 排序方式（Eagle 化工具栏新增）
@@ -83,28 +83,8 @@ struct ContentView: View {
     // 注: 侧栏 section 折叠状态 (@AppStorage) 属于 SidebarView 持有, 不在此
 
     /// V4.36.6: 当前可见图片——PhotoStats.filtered 计算
-    /// 3 视图（grid/list/timeline）共用同一份 filtered 列表
-    /// V4.36.x: 加 4 参（工具栏筛选 4 维：folder multi / tag multi / shape / rating）
-    private var visiblePhotos: [Photo] {
-        PhotoStats.filtered(
-            allPhotos,
-            folder: currentFolder,
-            tag: currentTag,
-            searchText: searchText,
-            sortOption: sortOption,
-            // V5.8: 砍 filterFavorites——V5.7 砍 .favorites 侧边栏后 dead
-            filterUnfiled: filterUnfiled,
-            filterDuplicates: filterDuplicates,
-            filterRecent7Days: filterRecent7Days,
-            filterLargeFiles: filterLargeFiles,
-            filterInTrash: filterInTrash,
-            // V4.36.x: 工具栏筛选 4 维
-            selectedFolderIDs: filterState.folders,
-            selectedTagIDs: filterState.tags,
-            selectedShapes: filterState.shapes,
-            minRating: filterState.minRating
-        )
-    }
+    /// V5.52-4: 实现搬到 ContentViewModel.visiblePhotos
+    private var visiblePhotos: [Photo] { model.visiblePhotos }
 
     // 拖拽状态
     @State private var isDropTargeted = false
@@ -179,9 +159,7 @@ struct ContentView: View {
 
     // V3.6.22: 应用外观（默认跟随系统）
     @AppStorage("appearanceMode") private var appearanceModeRaw: Int = AppearanceMode.defaultValue.rawValue
-    private var appearanceMode: AppearanceMode {
-        AppearanceMode(rawValue: appearanceModeRaw) ?? .system
-    }
+    private var appearanceMode: AppearanceMode { model.appearanceMode }
 
     // V3.6 NEW: 启动时清理过期回收站项的"只跑一次"标记
     // ContentView 可能多次出现（开关窗口、切 sidebar），用 flag 避免重复清理
@@ -219,9 +197,7 @@ struct ContentView: View {
     ///   保留 visiblePhotos + fileURL 在 Photo 数据模型, 这里不再展开
 
     // 当前选中的强调色（从 accentColorID 解析）
-    private var accentColor: AccentColor {
-        AccentColor(rawValue: accentColorID) ?? .system
-    }
+    private var accentColor: AccentColor { model.accentColor }
 
     // Toast 提示（队列——V5.13 升级）
     // Toast 提示（队列——V5.13 升级）
@@ -274,8 +250,8 @@ struct ContentView: View {
     //   nonmutating set 必备——否则 closure 内 [self] capture 后 setter 改 self 编译失败
     @AppStorage("thumbnailLayoutMode") private var storedLayoutModeRaw: Int = ThumbnailLayoutMode.defaultValue.rawValue
     private var layoutMode: ThumbnailLayoutMode {
-        get { ThumbnailLayoutMode(rawValue: storedLayoutModeRaw) ?? .defaultValue }
-        nonmutating set { storedLayoutModeRaw = newValue.rawValue }
+        get { model.layoutMode }
+        nonmutating set { model.layoutMode = newValue }
     }
 
     // V3.5.12：三栏列宽（HStack + 自定义 drag handles，避开 NSSplitView）
@@ -306,194 +282,71 @@ struct ContentView: View {
     private let contentMinWidth: CGFloat = 400
 
     // 当前的筛选条件
-    private var currentFolder: Folder? {
-        if case .folder(let folder) = sidebarSelection { return folder }
-        return nil
-    }
-
-    private var currentTag: Tag? {
-        if case .tag(let tag) = sidebarSelection { return tag }
-        return nil
-    }
+    private var currentFolder: Folder? { model.currentFolder }
+    private var currentTag: Tag? { model.currentTag }
 
     // V5.8: 砍 filterFavorites property——V5.7 砍 .favorites 侧边栏后此 property 永远 false
     //   用户想看"收藏"改走筛选 popover (评分 ≥ 5)
 
-    private var filterUnfiled: Bool {
-        if case .unfiled = sidebarSelection { return true }
-        return false
-    }
+    private var filterUnfiled: Bool { model.filterUnfiled }
+    private var filterDuplicates: Bool { model.filterDuplicates }
+    private var filterRecent7Days: Bool { model.filterRecent7Days }
+    private var filterLargeFiles: Bool { model.filterLargeFiles }
+    private var filterInTrash: Bool { model.filterInTrash }
+    private var filterInDuplicates: Bool { model.filterInDuplicates }
 
-    private var filterDuplicates: Bool {
-        if case .duplicates = sidebarSelection { return true }
-        return false
-    }
+    // 派生属性——全部 proxy 到 model
+    private var resolvedSingle: (photo: Photo, visibleIndex: Int)? { model.resolvedSingle }
+    private var singleSelectedPhoto: Photo? { model.singleSelectedPhoto }
+    private var currentIndex: Int { model.currentIndex }
+    private var canPrev: Bool { model.canPrev }
+    private var canNext: Bool { model.canNext }
+    private var isMultiSelect: Bool { model.isMultiSelect }
+    private var trimmedSearch: String { model.trimmedSearch }
 
-    private var filterRecent7Days: Bool {
-        if case .recent7Days = sidebarSelection { return true }
-        return false
-    }
+    // V3.5.6 Finder 化: 总占用空间格式化
+    private var totalSizeFormatted: String { model.totalSizeFormatted }
 
-    private var filterLargeFiles: Bool {
-        if case .largeFiles = sidebarSelection { return true }
-        return false
-    }
+    // V4.2.0 P0❸: navigationTitle
+    private var currentViewTitle: String { model.currentViewTitle }
 
-    // V3.6 NEW: 回收站筛选
-    private var filterInTrash: Bool {
-        if case .recentlyDeleted = sidebarSelection { return true }
-        return false
-    }
+    // V4.2.0 P0❸: subtitle——"N 张 · X MB"
+    private var currentViewSubtitle: String { model.currentViewSubtitle }
 
-    // V3.6.15 NEW: 重复图筛选（用于 .duplicates 视图的 count/totalSize 区分）
-    private var filterInDuplicates: Bool {
-        if case .duplicates = sidebarSelection { return true }
-        return false
-    }
+    // V4.4.8: toolbar 搜索框左 padding
+    private var searchFieldLeadingOffset: CGFloat { model.searchFieldLeadingOffset }
 
-    // 派生属性
-    // V3.6.52: 3 个 O(n) lookup (selectedPhoto + singleSelectedPhoto + currentIndex) 合并为 1 个
-    //   之前每次 body 重算要做 2-3 遍 visiblePhotos.first(where:) / firstIndex(where:)
-    //   现在用 selection.singleSelectedID + 一次 firstIndex 扫描，photo 和 index 一起拿
-    //
-    // 返回 (photo, visibleIndex)——photo 供 DetailPane 用，visibleIndex 供 currentIndex 用
-    private var resolvedSingle: (photo: Photo, visibleIndex: Int)? {
-        guard let id = selection.singleSelectedID,
-              let idx = visiblePhotos.firstIndex(where: { $0.id == id }) else {
-            return nil
-        }
-        return (visiblePhotos[idx], idx)
-    }
+    // V3.5.19: 当前选中图片总大小
+    private var selectedTotalSize: Int64 { model.selectedTotalSize }
 
-    /// V3.6.52：单选 photo（DetailPane.singleSelectedPhoto 用）
-    /// selection.singleSelectedID 已涵盖多选强制 nil 的语义，无需 `!isMultiSelect` 守卫
-    private var singleSelectedPhoto: Photo? {
-        resolvedSingle?.photo
-    }
+    // V3.6: 回收站 count + size
+    private var trashedCount: Int { model.trashedCount }
+    private var trashedTotalSize: Int64 { model.trashedTotalSize }
 
-    // V3.6.52 优化：currentIndex 复用 resolvedSingle 的索引，0 遍额外 lookup
-    private var currentIndex: Int {
-        (resolvedSingle?.visibleIndex ?? -1) + 1
-    }
-
-    private var canPrev: Bool { currentIndex > 1 }
-    private var canNext: Bool { currentIndex > 0 && currentIndex < visiblePhotos.count }
-
-    // 多选模式（>1 张）
-    // V3.6.52: 改用 selection 上的派生属性
-    private var isMultiSelect: Bool { selection.isMultiSelect }
-
-    private var trimmedSearch: String {
-        searchText.trimmingCharacters(in: .whitespaces)
-    }
-
-    // V3.5.6 Finder 化：总占用空间格式化
-    private var totalSizeFormatted: String {
-        let bytes = PhotoStats.totalSize(allPhotos)
-        return ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)
-    }
-
-    // V4.2.0 P0❸: 当前 sidebar 选项的可读名（用作 navigationTitle）
-    //   hidden title bar 模式下不显示在窗口顶部，但作为窗口元数据进入：
-    //   - Dock 右键菜单的窗口名
-    //   - ⌘⇥ 切换器的窗口名
-    //   - Mission Control 的标签
-    //   - VoiceOver 念出的窗口标题
-    private var currentViewTitle: String {
-        switch sidebarSelection {
-        case .all, .none:           return "全部照片"
-        // V5.7: 砍 .favorites 侧边栏项——case 移除
-        case .unfiled:              return "待整理"
-        case .duplicates:           return "重复图"
-        case .recent7Days:          return "最近 7 天"
-        case .largeFiles:           return "大图（>5MB）"
-        case .recentlyDeleted:      return Term.recycleBin
-        case .folder(let f):        return f.name
-        case .tag(let t):           return "#\(t.name)"
-        }
-    }
-
-    // V4.2.0 P0❸: 副标题——"N 张 · X MB"
-    //   visiblePhotos.count 是当前筛选+排序后实际显示的数量；优于 allPhotos.count
-    //   V4.36.x: 工具栏筛选激活时追加 "· 已筛选 (N)" 提示
-    private var currentViewSubtitle: String {
-        let count = visiblePhotos.count
-        let bytes = visiblePhotos.reduce(Int64(0)) { $0 + $1.fileSize }
-        let size = ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)
-        var s = "\(count) 张 · \(size)"
-        if filterState.isActive {
-            s += " · 已筛选 (\(filterState.activeCount))"
-        }
-        return s
-    }
-
-    // V4.4.8: toolbar 搜索框左 padding 动态计算
-    //   让 search 左缘与下方主内容区（grid）左缘对齐——形成 toolbar 与
-    //   content 之间的视觉锚线。Eagle / Lightroom / Photos 等图片管理 app 同款。
-    //   - sidebar 可见时：padding = sidebarColumnWidth - sidebar toggle 占用宽度
-    //     toggle 占用 ≈ 64pt（toggle button 40pt + 系统 spacing 8pt + 边距 16pt）
-    //   - sidebar 隐藏时：仅留 12pt 与 sidebar toggle 视觉分开
-    private var searchFieldLeadingOffset: CGFloat {
-        guard showSidebar else { return 12 }
-        let togglePlusSpacing: CGFloat = 64
-        return max(12, sidebarColumnWidth - togglePlusSpacing)
-    }
-
-    // V3.5.19：当前选中图片的总大小（字节）
-    // 用于多选详情面板显示 "已选 N 张 · 12.3 MB"
-    // V3.6.52: 用 selection.selectedPhotos(in:) 替手写 filter
-    private var selectedTotalSize: Int64 {
-        selection.selectedPhotos(in: visiblePhotos)
-            .reduce(0) { $0 + $1.fileSize }
-    }
-
-    // V3.6 NEW: 回收站视图用的 count + totalSize
-    // DetailPane 在 .recentlyDeleted 模式下显示这两个值
-    // V3.6.1：用 PhotoStats 纯函数（之前在 SidebarView 也重复算过 trashed）
-    private var trashedCount: Int {
-        PhotoStats.trashed(allPhotos).count
-    }
-
-    private var trashedTotalSize: Int64 {
-        PhotoStats.trashedSize(allPhotos)
-    }
-
-    // V3.6.15 NEW: 重复图视图用的 group count + purgeable count + size
-    // DetailPane 在 .duplicates 模式下显示这些值
-    /// 重复组数（fileHash 相同且 ≥ 2 张）
-    private var duplicateGroupCount: Int {
-        PhotoStats.duplicateGroups(in: visiblePhotos).count
-    }
-
-    /// 可清理照片数（每组保留最新，其他）
-    private var duplicatePurgeableCount: Int {
-        PhotoStats.duplicatesToPurge(in: visiblePhotos).count
-    }
-
-    /// 可清理照片总大小
-    private var duplicatePurgeableSize: Int64 {
-        PhotoStats.duplicatesToPurge(in: visiblePhotos).reduce(0) { $0 + $1.fileSize }
-    }
+    // V3.6.15: 重复图 group / purgeable count / size
+    private var duplicateGroupCount: Int { model.duplicateGroupCount }
+    private var duplicatePurgeableCount: Int { model.duplicatePurgeableCount }
+    private var duplicatePurgeableSize: Int64 { model.duplicatePurgeableSize }
 
     // V3.5.17：把 6 个宽度 state vars + 4 个约束 + 2 个 AppStorage 钩子打包
-    // 给 MainSplitView 使用
+    // V5.52-4: state vars 都走 model, 这里用 constants from model
     private var columnLayout: ColumnLayoutState {
         ColumnLayoutState(
             sidebarColumnWidth: Binding(get: { model.sidebarColumnWidth }, set: { model.sidebarColumnWidth = $0 }),
             detailColumnWidth: Binding(get: { model.detailColumnWidth }, set: { model.detailColumnWidth = $0 }),
             sidebarDragStartWidth: Binding(get: { model.sidebarDragStartWidth }, set: { model.sidebarDragStartWidth = $0 }),
             detailDragStartWidth: Binding(get: { model.detailDragStartWidth }, set: { model.detailDragStartWidth = $0 }),
-            sidebarMinWidth: 160,
-            sidebarMaxWidth: 320,
-            detailMinWidth: 340,  // V4.35.x 修复: 旧 240 → 3 按钮被切
-            detailMaxWidth: 480,
-            onSidebarDragEnd: { storedSidebarWidth = Double(sidebarColumnWidth) },
-            onDetailDragEnd: { storedDetailWidth = Double(detailColumnWidth) },
+            sidebarMinWidth: model.sidebarMinWidth,
+            sidebarMaxWidth: model.sidebarMaxWidth,
+            detailMinWidth: model.detailMinWidth,
+            detailMaxWidth: model.detailMaxWidth,
+            onSidebarDragEnd: { model.settings.sidebarColumnWidth = Double(model.sidebarColumnWidth) },
+            onDetailDragEnd: { model.settings.detailColumnWidth = Double(model.detailColumnWidth) },
             restoreFromStorage: {
-                sidebarColumnWidth = CGFloat(storedSidebarWidth)
-                // V4.35.x 修复: 旧值 < 340pt 时升到 340pt（避免窄 detail panel 切按钮）
-                let restored = CGFloat(storedDetailWidth)
-                detailColumnWidth = max(restored, 340)
+                model.sidebarColumnWidth = CGFloat(model.settings.sidebarColumnWidth)
+                // V4.35.x 修复: 旧值 < 340pt 时升到 340pt
+                let restored = CGFloat(model.settings.detailColumnWidth)
+                model.detailColumnWidth = max(restored, 340)
             }
         )
     }
@@ -677,18 +530,17 @@ struct ContentView: View {
     private var bindableModel: Bindable<ContentViewModel> { Bindable(model) }
 
     // V4.0.0: 抽出 importDuplicateCheck 状态到 binding（让 type-check 过得去）
-    // 之前 inline Binding get/set 触发 "unable to type-check in reasonable time"
+    // V5.52-4: importDuplicateCheck 走 model, 这里直接构造 binding
     private var showingDuplicateCheck: Binding<Bool> {
         Binding(
-            get: { importDuplicateCheck != nil },
-            set: { if !$0 { importDuplicateCheck = nil } }
+            get: { model.importDuplicateCheck != nil },
+            set: { if !$0 { model.importDuplicateCheck = nil } }
         )
     }
 
     // V4.0.0: 抽出批量删除确认 title（避免 body 内 string interpolation 触发 type-check 超时）
-    private var batchDeleteTitle: String {
-        "确定要删除 \(selection.selectedIDs.count) 张图片吗？"
-    }
+    // V5.52-4: 走 Copy 字典
+    private var batchDeleteTitle: String { model.batchDeleteTitle }
 
     // V4.8.0: NSToolbar 配置（WindowAccessor 触发）
     //   - 设置 window.toolbar = NSToolbar（AppKit 原生，Photos.app 风格）
@@ -1373,11 +1225,9 @@ struct ContentView: View {
         }
     }
 
-    // V3.6.24: 重复检测 dialog 的动态 title（避免 body message: 闭包触发 type-check）
-    private var duplicateDialogTitle: String {
-        guard let check = importDuplicateCheck else { return "检测到重复文件" }
-        return "发现 \(check.existing.count) 张已存在 / \(check.newCount) 张新文件"
-    }
+    // V3.6.24: 重复检测 dialog 的动态 title
+    // V5.52-4: 实现搬到 ContentViewModel.duplicateDialogTitle
+    private var duplicateDialogTitle: String { model.duplicateDialogTitle }
 
     private func confirmSkipDuplicates() {
         let existing = Set(importDuplicateCheck?.existing ?? [])
