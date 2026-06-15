@@ -111,12 +111,12 @@ struct SettingsView: View {
                 .animation(Animations.standard, value: selectedCategory.wrappedValue)  // V4.55.0: 驱动 transition
 
                 // V5.57-1: 恢复全部为默认——不挂确认弹窗（macOS Photos.app 偏好无确认）
-                // V5.58-1: 临时保留 inline UserDefaults 写——V5.58-2 推 settings.reset() 替代
+                // V5.58-2: 调 settings.reset() 单一入口 (UserSettings 自己处理 12 字段 + UserDefaults 同步)
                 Spacer(minLength: Spacing.md)
                 HStack {
                     Spacer()
                     Button("恢复全部为默认") {
-                        resetAllSettings()
+                        settings.reset()
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.regular)
@@ -128,25 +128,6 @@ struct SettingsView: View {
         // V4.50.0: 删 .padding(Spacing.xl) 和固定 width 480 height 700
         //   NavigationSplitView 自动撑开——macOS 标准偏好设置窗口自适应
         //   Photos.app 偏好窗口也是自适应大小
-    }
-
-    /// V5.57-1: 恢复全部 12 个设置项为默认 (临时 inline UserDefaults 写)
-    /// V5.58-2: 替换为 settings.reset() 单一入口
-    private func resetAllSettings() {
-        let defaults = UserDefaults.standard
-        defaults.set(ViewMode.grid.rawValue, forKey: "viewModeRaw")
-        defaults.set(true, forKey: "showSidebar")
-        defaults.set(false, forKey: "showDetail")
-        defaults.set(AccentColor.system.rawValue, forKey: "accentColorID")
-        defaults.set(TrashRetentionDays.defaultValue.rawValue, forKey: "trashRetentionDays")
-        defaults.set(AppearanceMode.defaultValue.rawValue, forKey: "appearanceMode")
-        defaults.set(200.0, forKey: "thumbnailSize")
-        defaults.set("all", forKey: "sidebarSelection")
-        defaults.set(SortOption.filenameAsc.rawValue, forKey: "sortOption")
-        defaults.set(ThumbnailLayoutMode.defaultValue.rawValue, forKey: "thumbnailLayoutMode")
-        defaults.set(220.0, forKey: "sidebarColumnWidth")
-        defaults.set(360.0, forKey: "detailColumnWidth")
-        // V5.55-2 scrollAnchorPhotoID 不在 reset 范围
     }
 }
 

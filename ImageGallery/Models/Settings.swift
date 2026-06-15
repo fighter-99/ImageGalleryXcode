@@ -155,4 +155,28 @@ final class UserSettings {
             self.scrollAnchorPhotoID = stored
         }
     }
+
+    // MARK: - V5.58-2: reset() 恢复 12 字段到默认
+    //
+    // V5.57-1 inline UserDefaults 写代码迁到这里——单一真相源
+    //   12 字段 (不重置 scrollAnchorPhotoID——per-window 状态, 不应被一键抹掉)
+    //   复用 *.defaultValue (Models/{TrashRetentionDays,AppearanceMode,ThumbnailLayoutMode,AccentColor}.swift)
+    //   inline literal 默认值与 ContentView.swift @AppStorage 声明对齐
+    //   didSet 在 reset 内会触发 → 写回 UserDefaults (与 init 行为一致, didSet 不在 init 触发)
+    //
+    func reset() {
+        viewModeRaw = ViewMode.grid.rawValue
+        showSidebar = true
+        showDetail = false
+        accentColorID = AccentColor.system.rawValue
+        trashRetentionDays = TrashRetentionDays.defaultValue.rawValue
+        appearanceMode = AppearanceMode.defaultValue.rawValue
+        thumbnailSize = 200.0  // V5.30: 240 → 200
+        sidebarSelection = "all"
+        sortOption = SortOption.filenameAsc.rawValue  // V5.31 default
+        thumbnailLayoutMode = ThumbnailLayoutMode.defaultValue.rawValue
+        sidebarColumnWidth = 220.0
+        detailColumnWidth = 360.0
+        // scrollAnchorPhotoID 不在 reset 范围——是 per-window 状态
+    }
 }
