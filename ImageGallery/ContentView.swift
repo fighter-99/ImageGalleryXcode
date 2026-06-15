@@ -23,23 +23,45 @@ import UniformTypeIdentifiers
 struct ContentView: View {
     // V3.6.52: 3 @State (selectedPhoto/selectedIDs/lastSelectedID) 合并为 1 @State<SelectionState>
     //   这是图片选中的唯一真相源；`selectedPhoto: Photo?` 改为下面的 computed property
-    @State private var selection = SelectionState()
+    // V5.52-3: 22 个 @State business state 搬到 ContentViewModel; computed proxy 保留 reads/writes 语法
+    private var selection: SelectionState {
+        get { model.selection }
+        nonmutating set { model.selection = newValue }
+    }
 
     @State private var isBoxSelecting = false
 
     // 侧边栏的选中项
-    @State private var sidebarSelection: SidebarSelection? = .all
+    // 侧边栏的选中项
+    private var sidebarSelection: SidebarSelection? {
+        get { model.sidebarSelection }
+        nonmutating set { model.sidebarSelection = newValue }
+    }
 
     // V4.36.x: 工具栏筛选按钮状态（session-only，不写 UserDefaults / SwiftData）
     //   4 维：folders / tags / shapes / minRating
     //   与侧边栏并存补充——侧边栏选主上下文，筛选按钮叠加多选精细控制
-    @State private var filterState = FilterState()
+    // V4.36.x: 工具栏筛选按钮状态（session-only，不写 UserDefaults / SwiftData）
+    //   4 维：folders / tags / shapes / minRating
+    //   与侧边栏并存补充——侧边栏选主上下文，筛选按钮叠加多选精细控制
+    private var filterState: FilterState {
+        get { model.filterState }
+        nonmutating set { model.filterState = newValue }
+    }
 
     // 搜索文本
-    @State private var searchText = ""
+    // 搜索文本
+    private var searchText: String {
+        get { model.searchText }
+        nonmutating set { model.searchText = newValue }
+    }
 
     // 缩略图大小
-    @State private var thumbnailSize: CGFloat = 200  // V5.16: 170→200 行高（更宽裕视觉）
+    // 缩略图大小
+    private var thumbnailSize: CGFloat {
+        get { model.thumbnailSize }
+        nonmutating set { model.thumbnailSize = newValue }
+    }
     // V3.6.13: 保留 @State 用 toolbar 临时调，onChange 同步 stored
     // V3.6.13: viewMode 改用 @AppStorage 持久化（SettingsView 可设默认）
     @AppStorage("viewModeRaw") private var viewModeRaw: String = ViewMode.grid.rawValue
@@ -49,7 +71,11 @@ struct ContentView: View {
     }
 
     // 排序方式（Eagle 化工具栏新增）
-    @State private var sortOption: SortOption = .filenameAsc  // V5.31: importedAtDesc → filenameAsc (无 date header 默认)
+    // 排序方式（Eagle 化工具栏新增）
+    private var sortOption: SortOption {
+        get { model.sortOption }
+        nonmutating set { model.sortOption = newValue }
+    }
 
     // V4.36.6: visiblePhotos 从 @State 改为 computed property
     //   旧 @State + onVisiblePhotosChange 模式只服务于 grid view——切到 list/timeline 不更新
@@ -87,26 +113,55 @@ struct ContentView: View {
     @State private var importProgress: ImportProgress?
 
     // 批量删除确认
-    @State private var showingBatchDeleteConfirm = false
+    // 批量删除确认
+    private var showingBatchDeleteConfirm: Bool {
+        get { model.showingBatchDeleteConfirm }
+        nonmutating set { model.showingBatchDeleteConfirm = newValue }
+    }
 
     // V3.6.6: 清空回收站二次确认（防误操作：永久删除所有 trashed 项）
-    @State private var showingEmptyTrashConfirm = false
+    // V3.6.6: 清空回收站二次确认（防误操作：永久删除所有 trashed 项）
+    private var showingEmptyTrashConfirm: Bool {
+        get { model.showingEmptyTrashConfirm }
+        nonmutating set { model.showingEmptyTrashConfirm = newValue }
+    }
 
     // V3.6.24: 导入时重复检测 dialog（防止 fileHash 重复的图片被再次导入）
-    @State private var importDuplicateCheck: ImageImporter.DuplicateCheckResult?
-    @State private var pendingImportURLs: [URL] = []
+    // V3.6.24: 导入时重复检测 dialog（防止 fileHash 重复的图片被再次导入）
+    private var importDuplicateCheck: ImageImporter.DuplicateCheckResult? {
+        get { model.importDuplicateCheck }
+        nonmutating set { model.importDuplicateCheck = newValue }
+    }
+    private var pendingImportURLs: [URL] {
+        get { model.pendingImportURLs }
+        nonmutating set { model.pendingImportURLs = newValue }
+    }
 
     // 批量移动
     // （showingBatchMoveSheet 已移除：批量移动流程当前在 PhotoGridView 内联实现，
     //   该状态从未被读。如未来要重新走 sheet 流程再加回。）
 
     // 新建文件夹弹窗
-    @State private var showingNewFolderAlert = false
-    @State private var newFolderName = ""
+    // 新建文件夹弹窗
+    private var showingNewFolderAlert: Bool {
+        get { model.showingNewFolderAlert }
+        nonmutating set { model.showingNewFolderAlert = newValue }
+    }
+    private var newFolderName: String {
+        get { model.newFolderName }
+        nonmutating set { model.newFolderName = newValue }
+    }
 
     // 沉浸式查看
-    @State private var immersivePhoto: Photo?
-    @State private var immersiveIndex: Int = 0
+    // 沉浸式查看
+    private var immersivePhoto: Photo? {
+        get { model.immersivePhoto }
+        nonmutating set { model.immersivePhoto = newValue }
+    }
+    private var immersiveIndex: Int {
+        get { model.immersiveIndex }
+        nonmutating set { model.immersiveIndex = newValue }
+    }
 
     // 栏显隐状态（ContentView 唯一持有，ImageGalleryApp 通过 UserDefaults 同步）
     @AppStorage("showSidebar") private var showSidebar = true
@@ -134,7 +189,12 @@ struct ContentView: View {
 
     // V4.11.0: 存储不可写错误（nil = 正常）
     //   onAppear 调 PhotoStorage.verifyStorage()——失败时填错误消息，detail panel 显示错误态
-    @State private var storageErrorMessage: String? = nil
+    // V4.11.0: 存储不可写错误（nil = 正常）
+    //   onAppear 调 PhotoStorage.verifyStorage()——失败时填错误消息，detail panel 显示错误态
+    private var storageErrorMessage: String? {
+        get { model.storageErrorMessage }
+        nonmutating set { model.storageErrorMessage = newValue }
+    }
 
     // V4.12.0 删: QuickLookPreviewController (@State) 整段——V5.42 走 ImmersivePhotoView, 不再需要
     // V5.42 替代: showQuickLook() 调 enterImmersiveFromSelection() 走系统 ImmersivePhotoView
@@ -142,7 +202,13 @@ struct ContentView: View {
     // V4.37.4: titlebar 右上角小按钮引用——@State 持 NSObject 引用
     //   onChange(of: showDetail) 时调 setActive / setTooltip 同步状态
     //   configureNSToolbar 内构造（一次），SwiftUI 重渲不重新构造（@State 持久）
-    @State private var titlebarAccessory: TitlebarAccessoryController?
+    // V4.37.4: titlebar 右上角小按钮引用——@State 持 NSObject 引用
+    //   onChange(of: showDetail) 时调 setActive / setTooltip 同步状态
+    //   configureNSToolbar 内构造（一次），SwiftUI 重渲不重新构造（@State 持久）
+    private var titlebarAccessory: TitlebarAccessoryController? {
+        get { model.titlebarAccessory }
+        nonmutating set { model.titlebarAccessory = newValue }
+    }
 
     // V4.20.0: 撤回 V4.19.0 glassNamespace + glassEffectUnion
     //   macOS 26 glassEffectUnion 在 sidebar 边界外产生 outline 痕迹（用户截图反馈）
@@ -158,8 +224,15 @@ struct ContentView: View {
     }
 
     // Toast 提示（队列——V5.13 升级）
-    @State private var toastQueue: [ToastInfo] = []
-    @State private var toastTask: Task<Void, Never>?
+    // Toast 提示（队列——V5.13 升级）
+    private var toastQueue: [ToastInfo] {
+        get { model.toastQueue }
+        nonmutating set { model.toastQueue = newValue }
+    }
+    private var toastTask: Task<Void, Never>? {
+        get { model.toastTask }
+        nonmutating set { model.toastTask = newValue }
+    }
 
     // SwiftData：获取所有图片（用于状态栏显示总数）
     @Query private var allPhotos: [Photo]
@@ -170,13 +243,15 @@ struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
 
     // V5.52-1: ContentViewModel 业务模型——@Observable class
-    //   V5.52-1 骨架 (本 commit): 仅 init 注入 modelContext + 空 settings
-    //   V5.52-2..7 逐步把 21 @State + 12 @AppStorage + 30+ computed + 41 funcs 搬过去
-    //   暂为 Optional——.task 里构造。V5.52-3 之后改非 Optional
-    @State private var model: ContentViewModel? = nil
+    //   V5.52-3 之后非 Optional——.task 里注入 modelContext
+    @State private var model = ContentViewModel()
 
     // V3.5 Phase 1 Step 4：撤销/重做（@Observable + @State 模式）
-    @State private var undoManager = ImageGalleryUndoManager()
+    // V3.5 Phase 1 Step 4：撤销/重做（@Observable + @State 模式）
+    private var undoManager: ImageGalleryUndoManager {
+        get { model.undoManager }
+        nonmutating set { model.undoManager = newValue }
+    }
 
     // 启动记忆
     // V5.30: 240pt → 200pt 默认
@@ -206,10 +281,22 @@ struct ContentView: View {
     // V3.5.12：三栏列宽（HStack + 自定义 drag handles，避开 NSSplitView）
     @AppStorage("sidebarColumnWidth") private var storedSidebarWidth: Double = 220
     @AppStorage("detailColumnWidth") private var storedDetailWidth: Double = 360
-    @State private var sidebarColumnWidth: CGFloat = 220
-    @State private var detailColumnWidth: CGFloat = 360
-    @State private var sidebarDragStartWidth: CGFloat = 220
-    @State private var detailDragStartWidth: CGFloat = 360
+    private var sidebarColumnWidth: CGFloat {
+        get { model.sidebarColumnWidth }
+        nonmutating set { model.sidebarColumnWidth = newValue }
+    }
+    private var detailColumnWidth: CGFloat {
+        get { model.detailColumnWidth }
+        nonmutating set { model.detailColumnWidth = newValue }
+    }
+    private var sidebarDragStartWidth: CGFloat {
+        get { model.sidebarDragStartWidth }
+        nonmutating set { model.sidebarDragStartWidth = newValue }
+    }
+    private var detailDragStartWidth: CGFloat {
+        get { model.detailDragStartWidth }
+        nonmutating set { model.detailDragStartWidth = newValue }
+    }
     private let sidebarMinWidth: CGFloat = 160
     private let sidebarMaxWidth: CGFloat = 320
     // V4.35.x 修复: 3 个按钮等分 (收藏/在 Finder 中显示/删除) 至少需要 ~360pt
@@ -392,10 +479,10 @@ struct ContentView: View {
     // 给 MainSplitView 使用
     private var columnLayout: ColumnLayoutState {
         ColumnLayoutState(
-            sidebarColumnWidth: $sidebarColumnWidth,
-            detailColumnWidth: $detailColumnWidth,
-            sidebarDragStartWidth: $sidebarDragStartWidth,
-            detailDragStartWidth: $detailDragStartWidth,
+            sidebarColumnWidth: Binding(get: { model.sidebarColumnWidth }, set: { model.sidebarColumnWidth = $0 }),
+            detailColumnWidth: Binding(get: { model.detailColumnWidth }, set: { model.detailColumnWidth = $0 }),
+            sidebarDragStartWidth: Binding(get: { model.sidebarDragStartWidth }, set: { model.sidebarDragStartWidth = $0 }),
+            detailDragStartWidth: Binding(get: { model.detailDragStartWidth }, set: { model.detailDragStartWidth = $0 }),
             sidebarMinWidth: 160,
             sidebarMaxWidth: 320,
             detailMinWidth: 340,  // V4.35.x 修复: 旧 240 → 3 按钮被切
@@ -492,7 +579,7 @@ struct ContentView: View {
             // V4.12.0 删: .background(QuickLookBridge(...))——V5.42 不再走 QLPreviewPanel
             // 快捷键：⌘+1-6 切换侧边栏
             .contentKeyboardShortcuts(
-                sidebarSelection: $sidebarSelection,
+                sidebarSelection: bindableModel.sidebarSelection,
                 onImport: startImport,
                 onNewFolder: { showingNewFolderAlert = true },
                 onResetFilters: resetFilters,
@@ -509,14 +596,14 @@ struct ContentView: View {
             )
             // V4.10.0: 4 dialog 打包（batchDelete / newFolder / emptyTrash / duplicate）
             .batchActionDialogs(
-                showingBatchDelete: $showingBatchDeleteConfirm,
+                showingBatchDelete: bindableModel.showingBatchDeleteConfirm,
                 batchDeleteTitle: batchDeleteTitle,
                 retentionDays: retentionDays,
                 onConfirmBatchDelete: batchDelete,
-                showingNewFolder: $showingNewFolderAlert,
-                newFolderName: $newFolderName,
+                showingNewFolder: bindableModel.showingNewFolderAlert,
+                newFolderName: bindableModel.newFolderName,
                 onConfirmNewFolder: createFolderFromAlert,
-                showingEmptyTrash: $showingEmptyTrashConfirm,
+                showingEmptyTrash: bindableModel.showingEmptyTrashConfirm,
                 onConfirmEmptyTrash: emptyTrash,
                 showingDuplicateCheck: showingDuplicateCheck,
                 duplicateDialogTitle: duplicateDialogTitle,
@@ -565,17 +652,10 @@ struct ContentView: View {
                 }
             }
             // V5.52-1: 注入 modelContext 到 ContentViewModel——.task 在 view 出现后跑一次
-            //   V5.52-2..7 逐步把 @State / @AppStorage 转移到 model 后,
-            //   这里改为 .task(id: ...) 重新注入或在 .onAppear 一次性注入
+            //   V5.52-3 之后 model 非 Optional, 这里只 attach modelContext
             .task {
-                if model == nil {
-                    model = ContentViewModel(modelContext: modelContext)
-                }
+                model.modelContext = modelContext
                 // V5.52-2: 把 12 个 @AppStorage 同步到 model.settings
-                //   @AppStorage 是 source of truth, model.settings 是 in-memory cache
-                //   双向: view 改 @AppStorage → onChange 推 model; model 改 settings → didSet 写回 @AppStorage (外部可见)
-                //   V5.52-3..7 之后, computed/funcs 读 model.settings.X 走单一路径
-                guard let model else { return }
                 model.settings.viewModeRaw = viewModeRaw
                 model.settings.showSidebar = showSidebar
                 model.settings.showDetail = showDetail
@@ -590,6 +670,11 @@ struct ContentView: View {
                 model.settings.detailColumnWidth = storedDetailWidth
             }
     }
+
+    // V5.52-3: @Bindable shadow @State model——macOS 14+ 推荐模式
+    //   让 body 内的 $model.X 走 Bindable dynamicMember subscript → Binding<T>
+    //   pane builders 也 shadow 一份, 各自 body 范围独立
+    private var bindableModel: Bindable<ContentViewModel> { Bindable(model) }
 
     // V4.0.0: 抽出 importDuplicateCheck 状态到 binding（让 type-check 过得去）
     // 之前 inline Binding get/set 触发 "unable to type-check in reasonable time"
@@ -863,8 +948,8 @@ struct ContentView: View {
             showSidebar: $showSidebar,
             undoManager: undoManager,
             toastQueue: toastQueue,
-            immersivePhoto: $immersivePhoto,
-            immersiveIndex: $immersiveIndex,
+            immersivePhoto: Binding(get: { model.immersivePhoto }, set: { model.immersivePhoto = $0 }),
+            immersiveIndex: Binding(get: { model.immersiveIndex }, set: { model.immersiveIndex = $0 }),
             visiblePhotos: visiblePhotos,
             onImmersiveDismiss: { immersivePhoto = nil }
         )
@@ -890,7 +975,7 @@ struct ContentView: View {
         //   仅 filterState.isActive 时返回 ActiveFiltersBar（内部 EmptyView 早返）
         //   V3.5.17 PathBar 已被本组件"复活"——新的筛选状态可视化
         ActiveFiltersBar(
-            filterState: $filterState,
+            filterState: bindableModel.filterState,
             allFolders: folders,
             allTags: allTags
         )
@@ -914,18 +999,18 @@ struct ContentView: View {
         // V3.6.52: 1 binding<SelectionState> 替 2 bindings
         .boxSelectionGesture(
             isBoxSelecting: $isBoxSelecting,
-            selection: $selection,
+            selection: bindableModel.selection,
             visiblePhotos: visiblePhotos
         )
     }
 
     private var sidebarPane: some View {
         SidebarView(
-            selection: $sidebarSelection,
-            photoSelection: $selection,
+            selection: bindableModel.sidebarSelection,
+            photoSelection: bindableModel.selection,
             // V4.0.0.6: 缩放 + 排序搬到侧栏顶部（"视图控制中心"）
-            thumbnailSize: $thumbnailSize,
-            sortOption: $sortOption
+            thumbnailSize: bindableModel.thumbnailSize,
+            sortOption: bindableModel.sortOption
             // V4.1.0f: 移除 showSidebar binding（hide 按钮完全搬回主工具栏）
         )
     }
@@ -939,7 +1024,7 @@ struct ContentView: View {
         switch viewMode {
         case .grid:
             PhotoGridPane(
-                selection: $selection,
+                selection: bindableModel.selection,
                 folder: currentFolder,
                 tag: currentTag,
                 searchText: searchText,
@@ -982,7 +1067,7 @@ struct ContentView: View {
             )
         case .list:
             PhotoListPane(
-                selection: $selection,
+                selection: bindableModel.selection,
                 folder: currentFolder,
                 tag: currentTag,
                 searchText: searchText,
@@ -1004,7 +1089,7 @@ struct ContentView: View {
             )
         case .timeline:
             PhotoTimelinePane(
-                selection: $selection,
+                selection: bindableModel.selection,
                 folder: currentFolder,
                 tag: currentTag,
                 searchText: searchText,
