@@ -89,10 +89,13 @@ final class FilterPopoverCoordinator {
         popover.behavior = .transient
         popover.contentViewController = vc
 
+        // V5.69: preferredEdge .minY → .maxY——之前 .minY 让 popover 拓向 LARGER y (屏幕上方)
+        //   rect 在 button.bottom (smaller y), popover 拓上 = 覆盖 button 区域
+        //   .maxY 拓向 SMALLER y (屏幕下方) = popover 完整在 button 下方
         if let anchor = anchor {
-            popover.show(relativeTo: anchor.bounds, of: anchor, preferredEdge: .minY)
+            popover.show(relativeTo: anchor.bounds, of: anchor, preferredEdge: .maxY)
         } else if let positioningView = positioningView {
-            popover.show(relativeTo: rect, of: positioningView, preferredEdge: .minY)
+            popover.show(relativeTo: rect, of: positioningView, preferredEdge: .maxY)
         }
         filterPopover = popover
     }
