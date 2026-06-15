@@ -136,9 +136,6 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
 
     enum Identifier: String {
         case sidebarToggle
-        // V5.83: 8pt 固定 space——给工具栏左边缘 8pt padding, 跟 V5.82 fixedTrailingSpace (右 8pt) 镜像
-        //   toolbar 左右各 8pt 呼吸, 视觉对称
-        case fixedLeadingSpace
         case search
         case flexibleSpace
         // V5.7: 砍 favorite case——工具栏 ❤ 收藏按钮移除（走右键菜单评分 / 筛选 popover）
@@ -155,9 +152,6 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
         // V5.39.3 NEW: 排序 toolbar 按钮 (导入时间/文件名/文件大小/自定义 下拉菜单)
         case sortMenu
         case quickLook       // V4.37.1 NEW: ⌘Y Quick Look（macOS Finder/Photos 标准）
-        // V5.82: 8pt 固定 space——给工具栏右边缘 8pt padding, 跟左边缘 (sidebar 0pt) 形成对比不挤
-        //   原 NSToolbar 默认 sortMenu 在右边缘 0pt 紧贴, 现在 8pt 呼吸
-        case fixedTrailingSpace
         // V5.39.3: 砍 case density (V5.24 连续 slider) + case layoutMode (V5.24 3-icon segment)
         //   全部走 NSMenu 下拉 (densityMenu + layoutModeMenu)
 
@@ -176,7 +170,6 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
     /// V5.39.3: filter 之后插入 3 个 NSMenu 下拉按钮 (布局模式/缩略图大小/排序)——viewOptions 砍
     func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
         [
-            Identifier.fixedLeadingSpace.nsIdentifier,  // V5.83: 8pt 左边缘 padding
             Identifier.sidebarToggle.nsIdentifier,
             Identifier.search.nsIdentifier,
             Identifier.flexibleSpace.nsIdentifier,
@@ -187,8 +180,7 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
             Identifier.filter.nsIdentifier,
             Identifier.layoutModeMenu.nsIdentifier,  // V5.39.3: 从 viewOptions 提到 toolbar
             Identifier.densityMenu.nsIdentifier,     // V5.39.3: NSSegmentedControl → NSMenu
-            Identifier.sortMenu.nsIdentifier,         // V5.39.3: 从 viewOptions 提到 toolbar
-            Identifier.fixedTrailingSpace.nsIdentifier  // V5.82: 8pt 右边缘 padding
+            Identifier.sortMenu.nsIdentifier         // V5.39.3: 从 viewOptions 提到 toolbar
         ]
     }
 
@@ -282,29 +274,6 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
                 label: Copy.sort,
                 action: #selector(handleMenuButtonClicked(_:))
             )
-        case .fixedTrailingSpace:  // V5.82: 8pt 固定 space——给工具栏右边缘 padding
-            //  V5.84: 8pt 改 2pt (用户报告 8pt 太大, 2pt 最小呼吸跟原 0pt 区别不大)
-            //  0pt 高 + 2pt 宽的 NSView, 不可交互, NSToolbar 显示为透明 spacing
-            let fixedItem = NSToolbarItem(itemIdentifier: id.nsIdentifier)
-            let spacer = NSView()
-            spacer.translatesAutoresizingMaskIntoConstraints = false
-            NSLayoutConstraint.activate([
-                spacer.widthAnchor.constraint(equalToConstant: 2),
-                spacer.heightAnchor.constraint(equalToConstant: 0)
-            ])
-            fixedItem.view = spacer
-            item = fixedItem
-        case .fixedLeadingSpace:  // V5.83: 镜像 V5.82——给工具栏左边缘 padding
-            //  V5.84: 同步改 2pt 跟右镜像
-            let fixedItem = NSToolbarItem(itemIdentifier: id.nsIdentifier)
-            let spacer = NSView()
-            spacer.translatesAutoresizingMaskIntoConstraints = false
-            NSLayoutConstraint.activate([
-                spacer.widthAnchor.constraint(equalToConstant: 2),
-                spacer.heightAnchor.constraint(equalToConstant: 0)
-            ])
-            fixedItem.view = spacer
-            item = fixedItem
         }
 
         if let item = item {

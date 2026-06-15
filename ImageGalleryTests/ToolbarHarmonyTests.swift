@@ -24,18 +24,4 @@ struct ToolbarHarmonyTests {
         // V5.81: width 缩但 widthExpanded (智能搜索 360pt) 不动
         #expect(SearchFieldMetrics.widthExpanded == 360)
     }
-
-    // MARK: - V5.82: 工具栏右边缘 fixedTrailingSpace (8pt padding)
-
-    @Test func fixedTrailingSpaceIdentifierExists() {
-        // V5.82: 锁住新增 Identifier——防止 revert
-        let id = ToolbarController.Identifier.fixedTrailingSpace.nsIdentifier
-        #expect(id.rawValue == "fixedTrailingSpace")
-    }
-
-    @Test func fixedLeadingSpaceIdentifierExists() {
-        // V5.83: 锁住新增 Identifier (镜像 V5.82)——防止 revert
-        let id = ToolbarController.Identifier.fixedLeadingSpace.nsIdentifier
-        #expect(id.rawValue == "fixedLeadingSpace")
-    }
 }
