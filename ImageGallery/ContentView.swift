@@ -596,6 +596,7 @@ struct ContentView: View {
                 //   透传到 PhotoGridView.masonryRowsView 决定 uniformWidth/stretchLastRow
                 layoutMode: layoutMode,
                 sortOption: sortOption,
+                scrollAnchorPhotoID: model.scrollAnchorPhotoID,  // V5.60-6: 滚动恢复 anchor
                 // V4.36.6: visiblePhotos 改 computed property, 此 callback 不再需要
                 //   保留参数避免破坏 PhotoGridPane 签名——传 noop
                 onVisiblePhotosChange: { _ in },

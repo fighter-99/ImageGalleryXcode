@@ -39,6 +39,8 @@ struct PhotoGridPane: View {
     // V5.17: 缩略图布局模式（3 选项）—— 透传到 PhotoGridView.masonryRowsView
     let layoutMode: ThumbnailLayoutMode
     let sortOption: SortOption
+    // V5.60-6: 滚动位置 anchor (ContentView.model.scrollAnchorPhotoID 透传)——读 only
+    let scrollAnchorPhotoID: String?
     let onVisiblePhotosChange: ([Photo]) -> Void
     let onImport: () -> Void
     let onBatchDelete: () -> Void
@@ -75,6 +77,7 @@ struct PhotoGridPane: View {
             // V5.17: 透传 layoutMode → PhotoGridView.masonryRowsView dispatch
             layoutMode: layoutMode,
             sortOption: sortOption,
+            scrollAnchorPhotoID: scrollAnchorPhotoID,  // V5.60-6: 滚动恢复 anchor 透传
             onVisiblePhotosChange: onVisiblePhotosChange,
             onImport: onImport,
             onBatchDelete: onBatchDelete,

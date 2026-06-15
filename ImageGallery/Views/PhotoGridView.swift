@@ -68,6 +68,11 @@ struct PhotoGridView: View {
     let layoutMode: ThumbnailLayoutMode
     let sortOption: SortOption
 
+    // V5.60-6: 滚动位置 anchor (从 ContentView.scrollAnchorPhotoID 传入)
+    //   只读——PhotoGridView 无 model 引用, 不写回
+    //   auto-save 推到 V5.61+ (用 .onScrollGeometryChange 监听)
+    let scrollAnchorPhotoID: String?
+
     // 通知父视图
     let onVisiblePhotosChange: ([Photo]) -> Void
     let onImport: () -> Void
@@ -337,40 +342,56 @@ struct PhotoGridView: View {
     ) -> some View {
         let groups = cachedDateGroups  // V5.32: 缓存, 不再每 render 重算 O(n log n)
 
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: Spacing.xl, pinnedViews: [.sectionHeaders]) {
-                ForEach(groups) { group in
-                    Section {
-                        masonryRowsView(
-                            photos: group.photos,
-                            availableWidth: availableWidth,
-                            rowHeight: rowHeight,
-                            rowSpacing: rowSpacing,
-                            cellSpacing: cellSpacing,
-                            // V5.18: 日期分组视图显示拍摄日期 caption
-                            // V5.25: 改为 layoutMode != .square——.square (iOS Photos Library 风格) 无 caption
-                            // V5.41 修正: .square 是 iOS Photos.app Library 风格, 不是 macOS Photos 真版
-                            showDateCaption: layoutMode != .square,
-                            // V5.39.7: 透传排序 + 重排回调 (拖拽重排依赖)
-                            sortOption: sortOption,
-                            onReorder: onReorder
-                        )
-                    } header: {
-                        // V5.56: Key Photo 段头代表图——每组 1 张 32×32 缩略图
-                        // 镜像 Photos.app 真版: 段头左侧 1 张小图, 标识该日期组
-                        // 内联 representative 选取 (group.photos 已按 importedAt 降序):
-                        //   1. 优先非 trashed (避免代表图指向回收站)
-                        //   2. fallback group.photos.first (即使全 trashed 也显示某张)
-                        // ContentViewModel.representativePhoto(for:) 是同逻辑, 供 sidebar P0 复用
-                        let representative = group.photos.first(where: { !$0.isInTrash }) ?? group.photos.first
-                        DateSectionHeader(label: group.label, count: group.photos.count, representative: representative)
+        // V5.60-6: ScrollViewReader 包装——onAppear 调 proxy.scrollTo(scrollAnchorPhotoID, .top) 恢复滚动位置
+        //   V5.55-2 已就位 scrollAnchorPhotoID 字段, 本次接 UI 层
+        ScrollViewReader { proxy in
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: Spacing.xl, pinnedViews: [.sectionHeaders]) {
+                    ForEach(groups) { group in
+                        Section {
+                            masonryRowsView(
+                                photos: group.photos,
+                                availableWidth: availableWidth,
+                                rowHeight: rowHeight,
+                                rowSpacing: rowSpacing,
+                                cellSpacing: cellSpacing,
+                                // V5.18: 日期分组视图显示拍摄日期 caption
+                                // V5.25: 改为 layoutMode != .square——.square (iOS Photos Library 风格) 无 caption
+                                // V5.41 修正: .square 是 iOS Photos.app Library 风格, 不是 macOS Photos 真版
+                                showDateCaption: layoutMode != .square,
+                                // V5.39.7: 透传排序 + 重排回调 (拖拽重排依赖)
+                                sortOption: sortOption,
+                                onReorder: onReorder
+                            )
+                        } header: {
+                            // V5.56: Key Photo 段头代表图——每组 1 张 32×32 缩略图
+                            // 镜像 Photos.app 真版: 段头左侧 1 张小图, 标识该日期组
+                            // 内联 representative 选取 (group.photos 已按 importedAt 降序):
+                            //   1. 优先非 trashed (避免代表图指向回收站)
+                            //   2. fallback group.photos.first (即使全 trashed 也显示某张)
+                            // ContentViewModel.representativePhoto(for:) 是同逻辑, 供 sidebar P0 复用
+                            let representative = group.photos.first(where: { !$0.isInTrash }) ?? group.photos.first
+                            DateSectionHeader(label: group.label, count: group.photos.count, representative: representative)
+                                // V5.60-6: 给 header 加 id — proxy.scrollTo(group.id, .top) 锚定
+                                .id(group.id)
+                        }
                     }
                 }
+                // V5.39.2: grid 左右缩进——整组缩进 (包括 DateSectionHeader)
+                //   与 cell 容器一致缩进, 视觉上 date header 和 cell 对齐
+                .padding(.horizontal, gridHorizontalPadding)
+                .animation(Animations.medium, value: photos.count)
             }
-            // V5.39.2: grid 左右缩进——整组缩进 (包括 DateSectionHeader)
-            //   与 cell 容器一致缩进, 视觉上 date header 和 cell 对齐
-            .padding(.horizontal, gridHorizontalPadding)
-            .animation(Animations.medium, value: photos.count)
+            // V5.60-6: 滚动位置恢复——onAppear 调 proxy.scrollTo
+            //   scrollAnchorPhotoID 是 String? (V5.55-2), 可能是 DateGroup.id (本 path)
+            //   也可能是 Photo.id.uuidString (flat path)——proxy.scrollTo 接受任意 Hashable
+            .onAppear {
+                if let anchor = scrollAnchorPhotoID {
+                    // 异步加载竞争: photos 还在加载, UUID 暂时不存在
+                    //   监听 photos.count 变化, 加载完成后再 retry
+                    scrollToAnchorWhenReady(proxy: proxy, anchor: anchor)
+                }
+            }
         }
     }
 
@@ -383,24 +404,58 @@ struct PhotoGridView: View {
         rowSpacing: CGFloat,
         cellSpacing: CGFloat
     ) -> some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
-                masonryRowsView(
-                    photos: photos,
-                    availableWidth: availableWidth,
-                    rowHeight: rowHeight,
-                    rowSpacing: rowSpacing,
-                    cellSpacing: cellSpacing,
-                    // V5.18: 平铺视图无日期 header 也无 caption
-                    showDateCaption: false,
-                    // V5.39.7: 透传排序 + 重排回调
-                    sortOption: sortOption,
-                    onReorder: onReorder
-                )
+        // V5.60-6: ScrollViewReader 包装——onAppear 调 proxy.scrollTo(scrollAnchorPhotoID, .top)
+        ScrollViewReader { proxy in
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    // V5.60-6: flat 路径无 ForEach, 加 ForEach 包装以便 proxy.scrollTo 锚定 Photo.id
+                    //   id 用 Photo.id.uuidString (匹配 scrollAnchorPhotoID 格式)
+                    ForEach(photos) { photo in
+                        // 空 wrapper, 唯一目的是给 ScrollViewReader 一个 id 锚点
+                        Color.clear
+                            .frame(height: 0)
+                            .id(photo.id.uuidString)
+                    }
+                    masonryRowsView(
+                        photos: photos,
+                        availableWidth: availableWidth,
+                        rowHeight: rowHeight,
+                        rowSpacing: rowSpacing,
+                        cellSpacing: cellSpacing,
+                        // V5.18: 平铺视图无日期 header 也无 caption
+                        showDateCaption: false,
+                        // V5.39.7: 透传排序 + 重排回调
+                        sortOption: sortOption,
+                        onReorder: onReorder
+                    )
+                }
+                // V5.39.2: grid 左右缩进 16pt
+                .padding(.horizontal, gridHorizontalPadding)
+                .animation(Animations.medium, value: photos.count)
             }
-            // V5.39.2: grid 左右缩进 16pt
-            .padding(.horizontal, gridHorizontalPadding)
-            .animation(Animations.medium, value: photos.count)
+            .onAppear {
+                if let anchor = scrollAnchorPhotoID {
+                    scrollToAnchorWhenReady(proxy: proxy, anchor: anchor)
+                }
+            }
+        }
+    }
+
+    // V5.60-6: 滚动恢复 helper——处理 photos 异步加载竞争
+    //   onAppear 时 photos 可能还没加载, UUID 不存在 → proxy.scrollTo 无效
+    //   监听 photos.count 变化, 加载完成时 retry (1 次防 loop)
+    private func scrollToAnchorWhenReady(proxy: ScrollViewProxy, anchor: String) {
+        if !photos.isEmpty {
+            // 立即尝试——photo 已加载
+            withAnimation(nil) { proxy.scrollTo(anchor, anchor: .top) }
+        } else {
+            // 延迟 retry——等 photos 加载
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                if !photos.isEmpty {
+                    withAnimation(nil) { proxy.scrollTo(anchor, anchor: .top) }
+                }
+                // 二次 retry 仍空: 放弃 (anchor UUID 可能已被删)
+            }
         }
     }
 
@@ -555,6 +610,7 @@ struct PhotoGridView: View {
         thumbnailSize: 170,
         layoutMode: .square,
         sortOption: .importedAtDesc,
+        scrollAnchorPhotoID: nil,  // V5.60-6: Preview 不需要 anchor
         onVisiblePhotosChange: { _ in },
         onImport: {},
         onBatchDelete: {},
