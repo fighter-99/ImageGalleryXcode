@@ -31,8 +31,10 @@ import UniformTypeIdentifiers
 @MainActor
 @Observable
 final class ContentViewModel {
-    /// V5.52-2: 12 keys UserDefaults 镜像
-    var settings = UserSettings()
+    /// V5.52-2: 13 keys UserDefaults 镜像 (V5.58-1 init 从 UserDefaults 读)
+    /// V5.59-1: var → let + 接受外部注入 (默认 UserSettings() 兼容现有测试)
+    ///   ImageGalleryApp.sharedSettings 传同一引用进来, ContentViewModel 与 menu/SettingsView 共享
+    let settings: UserSettings
 
     /// V5.52-3: modelContext 由 .task 注入
     @ObservationIgnored var modelContext: ModelContext? = nil
@@ -992,5 +994,9 @@ final class ContentViewModel {
     }
 
     /// V5.52-1 起步: 无参 init——modelContext 由 .task 注入
-    init() {}
+    /// V5.59-1: 接受 settings 参数 (默认 nil, body 内 fallback 新实例——避免 default expr 不能调 @MainActor init)
+    ///   ImageGalleryApp 传 sharedSettings 引用进来, 实现 ContentView/menu/SettingsView 共享
+    init(settings: UserSettings? = nil) {
+        self.settings = settings ?? UserSettings()
+    }
 }
