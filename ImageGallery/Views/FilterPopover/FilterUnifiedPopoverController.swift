@@ -47,6 +47,10 @@ final class FilterUnifiedPopoverController: NSViewController {
     private var ratingRows: [Int: RatingRowView] = [:]
     // V5.63-1: 4 个 section content 容器——visibility 通过折叠
     private var sectionContents: [FilterCategory: NSView] = [:]
+    // V5.63-2: 存 scrollView 引用——viewDidLayout 直接用, 替代脆弱的 view.subviews.first?.subviews.first 链
+    private weak var scrollView: NSScrollView?
+    // V5.63-2: 存 4 个 section separator (1pt 分隔线)——之前 L127 创建但未加入视图 (dead code)
+    private var sectionSeparators: [FilterCategory: NSBox] = [:]
 
     // MARK: - 配置常量
 
@@ -54,7 +58,11 @@ final class FilterUnifiedPopoverController: NSViewController {
     private static let maxHeight: CGFloat = 600
     private static let sectionContentPadding: CGFloat = 8
     private static let outerPadding: CGFloat = PopoverStyle.padding  // 12pt
-    private static let sectionSpacing: CGFloat = 0  // section 间不留 gap, 用分隔线
+    private static let sectionSpacing: CGFloat = 0
+    // V5.63-2: scroller 宽度——contentInsets.right 用, 防止 chevron 被遮挡
+    private static let scrollerInset: CGFloat = 15
+    // V5.63-2: expand/collapse 动画时长
+    private static let expandAnimationDuration: TimeInterval = 0.18
 
     // MARK: - init
 
@@ -116,18 +124,19 @@ final class FilterUnifiedPopoverController: NSViewController {
             // 2. section content (initially hidden, show if expanded)
             let content = makeSectionContent(for: category)
             content.translatesAutoresizingMaskIntoConstraints = false
-            // 关键: stack 里 addArrangedSubview + 设 visibility collapsed
             outerStack.addArrangedSubview(content)
             // V5.63-1: 高度约束由内容决定, visibility = .visible / .collapsed
             //   NSStackView 配合 NSView.isHidden——.isHidden true 时自动从 layout 移除
             content.isHidden = (category != expandedSection)
             sectionContents[category] = content
 
-            // V5.63-1: section header 与 content 间加 1pt 分隔线
+            // V5.63-2: 1pt 分隔线 (V5.63-1 创建但未加入, dead code)——加入 outerStack
             let separator = NSBox()
             separator.boxType = .separator
             separator.translatesAutoresizingMaskIntoConstraints = false
-            // (insert between row and content by inserting after both in stack)
+            // separator 加在 row 后, content 前——让所有 section 间有视觉分隔
+            outerStack.addArrangedSubview(separator)
+            sectionSeparators[category] = separator
         }
 
         // header + outerStack
@@ -144,7 +153,10 @@ final class FilterUnifiedPopoverController: NSViewController {
         scrollView.borderType = .noBorder
         scrollView.drawsBackground = false
         scrollView.translatesAutoresizingMaskIntoConstraints = false
+        // V5.63-2: contentInsets.right = 15 给 scroller 留专属区——防止 chevron 被遮挡
+        scrollView.contentInsets = NSEdgeInsets(top: 0, left: 0, bottom: 0, right: Self.scrollerInset)
         scrollView.documentView = contentStack
+        self.scrollView = scrollView  // V5.63-2: 存引用, viewDidLayout 直接用
 
         visualEffect.addSubview(scrollView)
         container.addSubview(visualEffect)
@@ -162,11 +174,13 @@ final class FilterUnifiedPopoverController: NSViewController {
             scrollView.trailingAnchor.constraint(equalTo: visualEffect.trailingAnchor, constant: -Self.outerPadding),
             scrollView.topAnchor.constraint(equalTo: visualEffect.topAnchor, constant: Self.outerPadding),
             scrollView.bottomAnchor.constraint(equalTo: visualEffect.bottomAnchor, constant: -Self.outerPadding),
-            // 3. contentStack 撑满 scrollView 文档宽
+            // 3. contentStack 撑满 contentView (排除 scroller 区)——contentInsets 算入
+            //   V5.63-2: 改 equalTo: scrollView.contentView.widthAnchor——之前 equalTo: scrollView.widthAnchor 让 contentStack 撑满 scrollView 整个 256pt 宽, chevron 在 scroller 区下面
+            //   现在 contentStack = 256 - 15 = 241pt, chevron 在 x=229..238 可见区
             contentStack.leadingAnchor.constraint(equalTo: scrollView.contentView.leadingAnchor),
             contentStack.trailingAnchor.constraint(equalTo: scrollView.contentView.trailingAnchor),
             contentStack.topAnchor.constraint(equalTo: scrollView.contentView.topAnchor),
-            contentStack.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
+            contentStack.widthAnchor.constraint(equalTo: scrollView.contentView.widthAnchor),
             // 4. maxHeight 兜底
             scrollView.heightAnchor.constraint(lessThanOrEqualToConstant: Self.maxHeight - 2 * Self.outerPadding)
         ])
@@ -174,11 +188,11 @@ final class FilterUnifiedPopoverController: NSViewController {
 
     override func viewDidLayout() {
         super.viewDidLayout()
-        // V5.63-1: 高度按内容 (header + 展开 section 高度) + padding
-        //   NSScrollView 自动限制 maxHeight——这里算实际内容高度
-        let visibleContentHeight = (view.subviews.first?.subviews.first as? NSScrollView)?
-            .documentView?.fittingSize.height ?? 200
-        let totalHeight = min(visibleContentHeight + 2 * Self.outerPadding, Self.maxHeight)
+        // V5.63-2: 高度按内容 (header + 展开 section 高度) + padding
+        //   存了 scrollView 引用, 直接读 documentView.fittingSize.height
+        //   不再依赖 view.subviews.first?.subviews.first 链 (脆弱, 任何 layer 顺序变会失败)
+        let contentHeight = scrollView?.documentView?.fittingSize.height ?? 0
+        let totalHeight = min(contentHeight + 2 * Self.outerPadding, Self.maxHeight)
         preferredContentSize = NSSize(
             width: Self.preferredWidth,
             height: totalHeight
@@ -305,24 +319,58 @@ final class FilterUnifiedPopoverController: NSViewController {
         self.availableTags = tags
     }
 
-    // MARK: - V5.63-1: section toggle
+    // MARK: - V5.63-1: section toggle (V5.63-2 加 NSAnimation 动画)
 
+    /// V5.63-2: 改 NSAnimationContext 动画 expand/collapse
+    ///   之前 (V5.63-1) content.isHidden = true/false 瞬时切换, jarring
+    ///   现在 0.18s 渐入渐出 + chevron 同步旋转
     private func toggleSection(_ category: FilterCategory) {
         if expandedSection == category {
-            // 再次点击 → 折叠
-            expandedSection = nil
+            collapseSection(category)
         } else {
-            expandedSection = category
+            expandSection(category)
         }
-        // 更新所有 section content visibility
-        for (cat, content) in sectionContents {
-            content.isHidden = (cat != expandedSection)
+    }
+
+    private func expandSection(_ category: FilterCategory) {
+        // accordion: 先折叠其他 (无动画, 避免视觉过载)
+        if let current = expandedSection, current != category {
+            collapseSectionImmediate(current)
         }
-        // 更新 chevron 视觉 (CategoryRowView.update 内部管)
-        for (cat, row) in categoryRows {
-            let isExpanded = (cat == expandedSection)
-            row.setActive(isExpanded)
+        guard let content = sectionContents[category] else { return }
+        expandedSection = category
+
+        // 1. chevron 同步展开状态 (CategoryRowView.setExpanded 旋转)
+        categoryRows[category]?.setExpanded(true)
+
+        // 2. content 显示 + 渐入动画
+        NSAnimationContext.runAnimationGroup { ctx in
+            ctx.duration = Self.expandAnimationDuration
+            ctx.allowsImplicitAnimation = true
+            content.animator().isHidden = false
         }
+    }
+
+    private func collapseSection(_ category: FilterCategory) {
+        guard let content = sectionContents[category] else { return }
+        expandedSection = nil
+
+        // 1. chevron 同步折叠状态
+        categoryRows[category]?.setExpanded(false)
+
+        // 2. content 渐隐 + 隐藏
+        NSAnimationContext.runAnimationGroup { ctx in
+            ctx.duration = Self.expandAnimationDuration
+            ctx.allowsImplicitAnimation = true
+            content.animator().isHidden = true
+        }
+    }
+
+    /// V5.63-2: 立即折叠 (无动画)——accordion 切换时用, 避免两 section 动画重叠
+    private func collapseSectionImmediate(_ category: FilterCategory) {
+        guard let content = sectionContents[category] else { return }
+        content.isHidden = true
+        categoryRows[category]?.setExpanded(false)
     }
 
     // MARK: - Toggle handlers

@@ -50,6 +50,15 @@ final class CategoryRowView: NSView {
         didSet { updateAppearance() }
     }
 
+    /// V5.63-2: 是否 expanded (section 展开状态)——独立于 isActive
+    ///   didSet 触发 chevron 旋转 0°→90° 动画 + expand 视觉反馈
+    private(set) var isExpanded: Bool = false {
+        didSet {
+            animateChevronRotation()
+            updateAppearance()
+        }
+    }
+
     // MARK: - 子视图
 
     private let backgroundLayer: NSView  // V5.9: 三态背景载体
@@ -191,28 +200,56 @@ final class CategoryRowView: NSView {
 
     /// V5.9: 外部（coordinator）切换 active 状态——子 popover 打开时 true
     ///   关闭 active 由 coordinator 在 popoverDidClose 回调
+    /// V5.63-2: unified popover 模式下不再使用——保留字段兼容性
     func setActive(_ active: Bool) {
         isActive = active
     }
 
-    /// V5.9: 三态视觉更新
-    ///   优先级：active > hover > default
-    ///   颜色：背景 / icon / title / chevron / count badge
+    /// V5.63-2: section 展开/折叠状态切换——chevron 旋转 0°→90° 动画
+    ///   独立于 setActive——用 expand 状态做轻量视觉反馈 (6% accent bg)
+    func setExpanded(_ expanded: Bool) {
+        isExpanded = expanded
+    }
+
+    /// V5.63-2: chevron 旋转动画 (NSImageView.frameCenterRotation)
+    ///   collapsed: 0° (chevron.right)
+    ///   expanded: 90° (chevron.down 视觉)
+    private func animateChevronRotation() {
+        let targetRotation: CGFloat = isExpanded ? 90 : 0
+        NSAnimationContext.runAnimationGroup { ctx in
+            ctx.duration = 0.18
+            ctx.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+            chevronView.animator().frameCenterRotation = targetRotation
+        }
+    }
+
+    /// V5.9 + V5.63-2: 四态视觉更新
+    ///   优先级: expanded > active > hover > default
+    ///   V5.63-2: expanded 态新加——6% accent bg (轻量高亮) + primary chevron
+    ///   active 态保持 V5.9 (85% accent, 保留以备子 popover 模式)
+    ///   颜色: 背景 / icon / title / chevron
     private func updateAppearance() {
-        if isActive {
-            // Active 态：85% accent bg + 白前景（macOS Photos 选中风格）
+        if isExpanded {
+            // Expanded 态 (V5.63-2): 6% accent bg + primary 前景——轻量高亮
+            //   不复用 V5.9 active 态 (85% accent 太重, 与 Photos 风格不符)
+            backgroundLayer.layer?.backgroundColor = NSColor.controlAccentColor.withAlphaComponent(0.06).cgColor
+            iconView.contentTintColor = .labelColor
+            titleLabel.textColor = .labelColor
+            chevronView.contentTintColor = .labelColor  // chevron 高亮 (旋转 90° 后更明显)
+        } else if isActive {
+            // Active 态 (V5.9): 85% accent bg + 白前景 (macOS Photos 选中风格)
             backgroundLayer.layer?.backgroundColor = NSColor.controlAccentColor.withAlphaComponent(0.85).cgColor
             iconView.contentTintColor = .white
             titleLabel.textColor = .white
             chevronView.contentTintColor = .white
         } else if isHovered {
-            // Hover 态：10% labelColor bg + primary 前景
+            // Hover 态: 10% labelColor bg + primary 前景
             backgroundLayer.layer?.backgroundColor = NSColor.labelColor.withAlphaComponent(0.10).cgColor
             iconView.contentTintColor = .labelColor
             titleLabel.textColor = .labelColor
             chevronView.contentTintColor = .secondaryLabelColor
         } else {
-            // 默认态：透明 bg + secondary 前景
+            // 默认态: 透明 bg + secondary 前景
             backgroundLayer.layer?.backgroundColor = .clear
             iconView.contentTintColor = .secondaryLabelColor
             titleLabel.textColor = .labelColor
