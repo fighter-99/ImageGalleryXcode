@@ -328,8 +328,14 @@ final class ContentViewModel {
             model.goNext()
         }
         // V5.24 NEW: 布局模式 + 密度 toolbar 集成桥接
+        // V5.55-3 bug fix: 若当前 viewMode 是 .list/.timeline, 选 layoutMode 不生效
+        // (gridPane 才用 layoutMode——list/timeline 视图下选无效果)
+        // 自动切到 .grid 让用户选的 layoutMode 立即可见
         controller.onLayoutModeChange = { [model = self] mode in
             model.layoutMode = mode
+            if model.viewMode != .grid {
+                model.viewMode = .grid
+            }
         }
         controller.onDensityChange = { [model = self] density in
             model.thumbnailSize = density
