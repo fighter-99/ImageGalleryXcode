@@ -41,12 +41,24 @@ extension View {
     /// V5.39.3 NEW: 统一推 3 个 NSMenu 按钮 state——layoutMode + density + sortOption
     ///   替代 V5.24 syncNSToolbarDensity + V5.33 砍掉的 syncNSToolbarLayoutMode
     ///   ContentView .onChange(of: layoutMode/density/sortOption) 全调这个
+    /// V5.66: 加 .task 启动时主动推一次——.onChange 不触发 initial 值, 启动后 toolbar 默认
+    ///   .defaultValue (.square 3x3) 与用户 settings (可能 .squareFit 2x2) 失同步
     func syncNSToolbarAllStates(
         layoutMode: ThumbnailLayoutMode,
         density: CGFloat,
         sortOption: SortOption
     ) -> some View {
         self
+            .task {
+                // V5.66: 启动推一次, 打破 '无 transition 不同步' 陷阱
+                ToolbarController.shared.updateAllStates(
+                    hasSelection: false,
+                    hasMultipleSelection: false,
+                    density: density,
+                    layoutMode: layoutMode,
+                    sortOption: sortOption
+                )
+            }
             .onChange(of: layoutMode) { _, newMode in
                 ToolbarController.shared.updateAllStates(
                     hasSelection: false,

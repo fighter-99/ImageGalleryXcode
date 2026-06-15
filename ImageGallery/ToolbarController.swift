@@ -116,7 +116,9 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
     // 缓存 NSToolbarItem 用于状态更新
     private var itemCache: [NSToolbarItem.Identifier: NSToolbarItem] = [:]
 
-    private override init() {
+    // V5.66: 改 internal (去掉 private)——测试要能 new ToolbarController() 验证字段 invariant
+    //   单例访问仍走 static let shared
+    override init() {
         super.init()
     }
 
@@ -630,11 +632,12 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
 
     /// V5.39.3: 当前布局模式——buildLayoutModeMenu 勾选用
     ///   ContentView 在 .onChange(of: layoutMode) 调 updateAllStates 推
-    private var layoutMode: ThumbnailLayoutMode = .defaultValue
+    /// V5.66: 改 private(set) 让测试可读——V5.66 修了 '启动不 transition 不同步' bug, 锁住 invariant
+    private(set) var layoutMode: ThumbnailLayoutMode = .defaultValue
 
     /// V5.39.3: 当前缩略图大小——buildDensityMenu 勾选用
     ///   ContentView 在 .onChange(of: thumbnailSize) 调 updateAllStates 推
-    private var thumbnailSize: CGFloat = 200
+    private(set) var thumbnailSize: CGFloat = 200
 
     /// V5.43.1 NEW: 当前缩略图密度 enum——按钮 image 跟随
     ///   之前 V5.39.3 按钮 image 写死 medium (square.fill)——切到大或小按钮自己不变
@@ -651,7 +654,8 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
 
     /// V5.39.3: 当前排序——buildSortMenu 勾选用
     ///   ContentView 在 .onChange(of: sortOption) 调 updateAllStates 推
-    private var sortOption: SortOption = .filenameAsc
+    /// V5.66: 改 private(set) 让测试可读
+    private(set) var sortOption: SortOption = .filenameAsc
 
     // V5.9.7: 砍 setItemPressed 整个方法 + 所有调用点
     //   用户反馈: "可以不产生icon的变化，只有点击的反馈就行了"
