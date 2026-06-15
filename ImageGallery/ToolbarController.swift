@@ -83,6 +83,9 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
     ///   仿 V4.90.0 filterPopoverCoordinator pattern
     private var layoutModePopover: NSPopover?
 
+    /// V5.74 NEW: Density popover 强引用
+    private var densityPopover: NSPopover?
+
     /// V4.36.x: 激活筛选总数（用于工具栏 hover tooltip 角标 "筛选 (N)"）
     /// ContentView 通过 .onChange(of: filterState.activeCount) 同步此值
     var filterActiveCount: Int = 0 {
@@ -508,17 +511,19 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
         // 找到 sender button 对应的 toolbar item → Identifier
         guard let id = identifierForButton(sender) else { return }
 
-        // V5.72: layoutMode 改 NSPopover (仿 filter popover V5.63-1 风格)——统一视觉
-        //   density + sort 仍走 NSMenu, V5.73/V5.74 后续扩
+        // V5.72/V5.74: layoutMode + density 改 NSPopover (仿 filter popover V5.63-1 风格)——统一视觉
+        //   sort 仍走 NSMenu, V5.75 后续扩
         if id == .layoutModeMenu {
             handleShowLayoutMode()
+            return
+        }
+        if id == .densityMenu {
+            handleShowDensity()
             return
         }
 
         let menu: NSMenu?
         switch id {
-        case .densityMenu:
-            menu = buildDensityMenu()
         case .sortMenu:
             menu = buildSortMenu()
         default:
@@ -568,6 +573,35 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
         layoutModePopover = popover
     }
 
+    /// V5.74 NEW: 显示 density NSPopover——仿 handleShowLayoutMode 模式
+    @objc private func handleShowDensity() {
+        if let popover = densityPopover, popover.isShown {
+            popover.close()
+            densityPopover = nil
+            return
+        }
+
+        guard let item = itemCache[Identifier.densityMenu.nsIdentifier],
+              let anchorView = item.view else {
+            return
+        }
+
+        // V5.74: 4 档 density 跟 thumbnailSize (CGFloat) 走——currentDensity 算最近档
+        let current = ThumbnailDensity.nearest(to: thumbnailSize)
+        let vc = DensityPopoverController(currentDensity: current)
+        vc.onSelect = { [weak self] density in
+            // V5.74: 走 onDensityChange closure (CGFloat)——UserSettings + toolbar icon 推
+            self?.onDensityChange?(CGFloat(density.size))
+        }
+
+        let popover = NSPopover()
+        popover.behavior = .transient
+        popover.contentViewController = vc
+        // V5.73: .maxY 显式 below (跟 layoutMode / filter 一致)
+        popover.show(relativeTo: anchorView.bounds, of: anchorView, preferredEdge: .maxY)
+        densityPopover = popover
+    }
+
     /// V5.39.3: 找到 NSButton 对应的 Identifier——遍历 itemCache 比 view ===
     private func identifierForButton(_ button: NSButton) -> Identifier? {
         for id in [Identifier.layoutModeMenu, .densityMenu, .sortMenu] {
@@ -579,26 +613,6 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
     }
 
     // MARK: - 3 个 menu builder (V5.39.3 NEW)
-
-    /// V5.39.3 NEW: 缩略图大小菜单——4 档
-    private func buildDensityMenu() -> NSMenu {
-        let menu = NSMenu()
-        for density in ThumbnailDensity.allCases {
-            let item = NSMenuItem(
-                title: density.label,
-                action: #selector(handleMenuItemSelected(_:)),
-                keyEquivalent: ""
-            )
-            item.target = self
-            item.representedObject = CGFloat(density.size)
-            item.image = NSImage(systemSymbolName: density.iconName, accessibilityDescription: density.label)
-            if CGFloat(density.size) == thumbnailSize {
-                item.state = .on
-            }
-            menu.addItem(item)
-        }
-        return menu
-    }
 
     /// V5.39.3 NEW: 排序菜单——7 种排序 (导入时间/文件名/文件大小/自定义 × 方向)
     private func buildSortMenu() -> NSMenu {
