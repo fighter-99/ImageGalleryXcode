@@ -152,6 +152,9 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
         // V5.39.3 NEW: 排序 toolbar 按钮 (导入时间/文件名/文件大小/自定义 下拉菜单)
         case sortMenu
         case quickLook       // V4.37.1 NEW: ⌘Y Quick Look（macOS Finder/Photos 标准）
+        // V5.82: 8pt 固定 space——给工具栏右边缘 8pt padding, 跟左边缘 (sidebar 0pt) 形成对比不挤
+        //   原 NSToolbar 默认 sortMenu 在右边缘 0pt 紧贴, 现在 8pt 呼吸
+        case fixedTrailingSpace
         // V5.39.3: 砍 case density (V5.24 连续 slider) + case layoutMode (V5.24 3-icon segment)
         //   全部走 NSMenu 下拉 (densityMenu + layoutModeMenu)
 
@@ -180,7 +183,8 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
             Identifier.filter.nsIdentifier,
             Identifier.layoutModeMenu.nsIdentifier,  // V5.39.3: 从 viewOptions 提到 toolbar
             Identifier.densityMenu.nsIdentifier,     // V5.39.3: NSSegmentedControl → NSMenu
-            Identifier.sortMenu.nsIdentifier         // V5.39.3: 从 viewOptions 提到 toolbar
+            Identifier.sortMenu.nsIdentifier,         // V5.39.3: 从 viewOptions 提到 toolbar
+            Identifier.fixedTrailingSpace.nsIdentifier  // V5.82: 8pt 右边缘 padding
         ]
     }
 
@@ -274,6 +278,17 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
                 label: Copy.sort,
                 action: #selector(handleMenuButtonClicked(_:))
             )
+        case .fixedTrailingSpace:  // V5.82: 8pt 固定 space——给工具栏右边缘 padding
+            //  0pt 高 + 8pt 宽的 NSView, 不可交互, NSToolbar 显示为透明 spacing
+            let fixedItem = NSToolbarItem(itemIdentifier: id.nsIdentifier)
+            let spacer = NSView()
+            spacer.translatesAutoresizingMaskIntoConstraints = false
+            NSLayoutConstraint.activate([
+                spacer.widthAnchor.constraint(equalToConstant: 8),
+                spacer.heightAnchor.constraint(equalToConstant: 0)
+            ])
+            fixedItem.view = spacer
+            item = fixedItem
         }
 
         if let item = item {
