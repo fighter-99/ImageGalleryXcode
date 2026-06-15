@@ -11,8 +11,8 @@
 //  1 @State<SelectionState>；`selectedPhoto: Photo?` 改为 computed（从
 //  selection.singleSelectedID + visiblePhotos 派生）；5+ 处 `selectedIDs = []; selectedPhoto = nil`
 //  收成 1 行 `selection = .empty`；5+ 处 `visiblePhotos.filter { selectedIDs.contains($0.id) }`
-//  收成 1 行 `selection.selectedPhotos(in: visiblePhotos)`；3 个 O(n) lookup
-//  (selectedPhoto/singleSelectedPhoto/currentIndex) 合并为 1 个 `resolvedSingle`。
+//  收成 1 行 `selection.selectedPhotos(in: model.visiblePhotos)`；3 个 O(n) lookup
+//  (selectedPhoto/model.singleSelectedPhoto/model.currentIndex) 合并为 1 个 `model.resolvedSingle`。
 //
 
 import SwiftUI
@@ -81,9 +81,12 @@ struct ContentView: View {
     //   改 computed property 用 PhotoStats.filtered 共享 helper, 3 视图同步
     // 注: 侧栏 section 折叠状态 (@AppStorage) 属于 SidebarView 持有, 不在此
 
-    /// V4.36.6: 当前可见图片——PhotoStats.filtered 计算
-    /// V5.52-4: 实现搬到 ContentViewModel.visiblePhotos
-    private var visiblePhotos: [Photo] { model.visiblePhotos }
+    // V5.60-4: 30 个 D 类 get-only proxy 全删——caller 直接用 model.X
+    //   之前 V5.52-3 保留的 "reads/writes 语法糖", 删后改用 model.X 单一访问
+    //   例外: model.X 是 @Observable 字段, 在 View body 读取自动追踪
+    //   保留: bindableModel/columnLayout/showingDuplicateCheck/hasPurgedExpiredTrash (4 个 helper)
+    //   保留: 28 个 get/set 业务 state proxy (selection/sidebarSelection/filterState/...)
+    //     → 这些写源需要 proxy 包装 (setter 路径不能直接 model.X = Y 走 computed)
 
     // 拖拽状态
     @State private var isDropTargeted = false
@@ -168,8 +171,7 @@ struct ContentView: View {
     }
 
     // V3.6.22: 应用外观（默认跟随系统）
-    // V5.59-2: 删 @AppStorage appearanceModeRaw, appearanceMode computed 走 model.appearanceMode
-    private var appearanceMode: AppearanceMode { model.appearanceMode }
+    // V5.59-2: 删 @AppStorage appearanceModeRaw, model.appearanceMode computed 走 model.appearanceMode
 
     // V3.6 NEW: 启动时清理过期回收站项的"只跑一次"标记
     // ContentView 可能多次出现（开关窗口、切 sidebar），用 flag 避免重复清理
@@ -207,7 +209,6 @@ struct ContentView: View {
     ///   保留 visiblePhotos + fileURL 在 Photo 数据模型, 这里不再展开
 
     // 当前选中的强调色（从 accentColorID 解析）
-    private var accentColor: AccentColor { model.accentColor }
 
     // Toast 提示（队列——V5.13 升级）
     // Toast 提示（队列——V5.13 升级）
@@ -303,51 +304,26 @@ struct ContentView: View {
     private let contentMinWidth: CGFloat = 400
 
     // 当前的筛选条件
-    private var currentFolder: Folder? { model.currentFolder }
-    private var currentTag: Tag? { model.currentTag }
 
     // V5.8: 砍 filterFavorites property——V5.7 砍 .favorites 侧边栏后此 property 永远 false
     //   用户想看"收藏"改走筛选 popover (评分 ≥ 5)
 
-    private var filterUnfiled: Bool { model.filterUnfiled }
-    private var filterDuplicates: Bool { model.filterDuplicates }
-    private var filterRecent7Days: Bool { model.filterRecent7Days }
-    private var filterLargeFiles: Bool { model.filterLargeFiles }
-    private var filterInTrash: Bool { model.filterInTrash }
-    private var filterInDuplicates: Bool { model.filterInDuplicates }
 
     // 派生属性——全部 proxy 到 model
-    private var resolvedSingle: (photo: Photo, visibleIndex: Int)? { model.resolvedSingle }
-    private var singleSelectedPhoto: Photo? { model.singleSelectedPhoto }
-    private var currentIndex: Int { model.currentIndex }
-    private var canPrev: Bool { model.canPrev }
-    private var canNext: Bool { model.canNext }
-    private var isMultiSelect: Bool { model.isMultiSelect }
-    private var trimmedSearch: String { model.trimmedSearch }
 
     // V3.5.6 Finder 化: 总占用空间格式化
-    private var totalSizeFormatted: String { model.totalSizeFormatted }
 
     // V4.2.0 P0❸: navigationTitle
-    private var currentViewTitle: String { model.currentViewTitle }
 
     // V4.2.0 P0❸: subtitle——"N 张 · X MB"
-    private var currentViewSubtitle: String { model.currentViewSubtitle }
 
     // V4.4.8: toolbar 搜索框左 padding
-    private var searchFieldLeadingOffset: CGFloat { model.searchFieldLeadingOffset }
 
     // V3.5.19: 当前选中图片总大小
-    private var selectedTotalSize: Int64 { model.selectedTotalSize }
 
     // V3.6: 回收站 count + size
-    private var trashedCount: Int { model.trashedCount }
-    private var trashedTotalSize: Int64 { model.trashedTotalSize }
 
     // V3.6.15: 重复图 group / purgeable count / size
-    private var duplicateGroupCount: Int { model.duplicateGroupCount }
-    private var duplicatePurgeableCount: Int { model.duplicatePurgeableCount }
-    private var duplicatePurgeableSize: Int64 { model.duplicatePurgeableSize }
 
     // V3.5.17：把 6 个宽度 state vars + 4 个约束 + 2 个 AppStorage 钩子打包
     // V5.52-4: state vars 都走 model, 这里用 constants from model
@@ -378,9 +354,9 @@ struct ContentView: View {
             // V5.24: 加 layoutMode + thumbnailSize 参数——传给 windowChromeAndToolbar 推 NSToolbar segment/slider
             // V5.39.3: 加 sortOption 参数——推 NSToolbar sortMenu 按钮 (image 跟 sortOption 走)
             .windowChromeAndToolbar(
-                title: currentViewTitle,
-                subtitle: currentViewSubtitle,
-                colorScheme: appearanceMode.colorScheme,
+                title: model.currentViewTitle,
+                subtitle: model.currentViewSubtitle,
+                colorScheme: model.appearanceMode.colorScheme,
                 selection: selection,
                 searchText: searchText,
                 layoutMode: layoutMode,
@@ -402,11 +378,11 @@ struct ContentView: View {
                 showSidebar: showSidebar,
                 showDetail: showDetail,
                 filterState: filterState,
-                visiblePhotos: visiblePhotos,
-                batchDeleteTitle: batchDeleteTitle,
-                duplicateDialogTitle: duplicateDialogTitle,
+                visiblePhotos: model.visiblePhotos,
+                batchDeleteTitle: model.batchDeleteTitle,
+                duplicateDialogTitle: model.duplicateDialogTitle,
                 undoManager: undoManager,
-                accentColor: accentColor,
+                accentColor: model.accentColor,
                 hasPurgedExpiredTrash: $hasPurgedExpiredTrash,
                 showingNewFolderAlert: Binding(get: { showingNewFolderAlert }, set: { showingNewFolderAlert = $0 }),
                 onImport: startImport,
@@ -419,7 +395,7 @@ struct ContentView: View {
                 onDelete: handleDelete,
                 onPrev: goPrev,
                 onNext: goNext,
-                onSelectAll: { selection = selection.settingAll(in: visiblePhotos) },
+                onSelectAll: { selection = selection.settingAll(in: model.visiblePhotos) },
                 onZoomIn: zoomIn,
                 onZoomOut: zoomOut,
                 onResetZoom: resetThumbnailSize,
@@ -460,7 +436,6 @@ struct ContentView: View {
 
     // V4.0.0: 抽出批量删除确认 title（避免 body 内 string interpolation 触发 type-check 超时）
     // V5.52-4: 走 Copy 字典
-    private var batchDeleteTitle: String { model.batchDeleteTitle }
 
 
     // V4.11.0: 检查 Application Support/ImageGallery/Photos/ 目录可写性
@@ -486,7 +461,7 @@ struct ContentView: View {
     // 进入沉浸式查看（双击图片触发）
     private func enterImmersive(_ photo: Photo) -> Void { model.enterImmersive(photo) }
 
-    // V4.49.1: ⌘↩ Return 触发的进入沉浸式——从 singleSelectedPhoto 派发
+    // V4.49.1: ⌘↩ Return 触发的进入沉浸式——从 model.singleSelectedPhoto 派发
     //   Photos.app 标准：Return 键进入全屏查看当前选中
     //   仅在单选时触发——多选/无选不响应
     private func enterImmersiveFromSelection() -> Void { model.enterImmersiveFromSelection() }
@@ -523,7 +498,7 @@ struct ContentView: View {
             toastQueue: toastQueue,
             immersivePhoto: Binding(get: { model.immersivePhoto }, set: { model.immersivePhoto = $0 }),
             immersiveIndex: Binding(get: { model.immersiveIndex }, set: { model.immersiveIndex = $0 }),
-            visiblePhotos: visiblePhotos,
+            visiblePhotos: model.visiblePhotos,
             onImmersiveDismiss: { immersivePhoto = nil }
         )
     }
@@ -574,7 +549,7 @@ struct ContentView: View {
         .boxSelectionGesture(
             isBoxSelecting: $isBoxSelecting,
             selection: bindableModel.selection,
-            visiblePhotos: visiblePhotos
+            visiblePhotos: model.visiblePhotos
         )
     }
 
@@ -599,15 +574,15 @@ struct ContentView: View {
         case .grid:
             PhotoGridPane(
                 selection: bindableModel.selection,
-                folder: currentFolder,
-                tag: currentTag,
+                folder: model.currentFolder,
+                tag: model.currentTag,
                 searchText: searchText,
                 // V5.8: 砍 filterFavorites
-                filterUnfiled: filterUnfiled,
-                filterDuplicates: filterDuplicates,
-                filterRecent7Days: filterRecent7Days,
-                filterLargeFiles: filterLargeFiles,
-                filterInTrash: filterInTrash,
+                filterUnfiled: model.filterUnfiled,
+                filterDuplicates: model.filterDuplicates,
+                filterRecent7Days: model.filterRecent7Days,
+                filterLargeFiles: model.filterLargeFiles,
+                filterInTrash: model.filterInTrash,
                 // V4.36.x: 工具栏筛选 4 维
                 selectedFolderIDs: filterState.folders,
                 selectedTagIDs: filterState.tags,
@@ -644,22 +619,22 @@ struct ContentView: View {
             //   1 个 Pane + kind 路由替代 2 个 Pane——节省 88 行
             PhotoListOrTimelinePane(
                 selection: bindableModel.selection,
-                folder: currentFolder,
-                tag: currentTag,
+                folder: model.currentFolder,
+                tag: model.currentTag,
                 searchText: searchText,
                 // V5.8: 砍 filterFavorites
-                filterUnfiled: filterUnfiled,
-                filterDuplicates: filterDuplicates,
-                filterRecent7Days: filterRecent7Days,
-                filterLargeFiles: filterLargeFiles,
-                filterInTrash: filterInTrash,
+                filterUnfiled: model.filterUnfiled,
+                filterDuplicates: model.filterDuplicates,
+                filterRecent7Days: model.filterRecent7Days,
+                filterLargeFiles: model.filterLargeFiles,
+                filterInTrash: model.filterInTrash,
                 // V4.36.x: 工具栏筛选 4 维（签名一致；本视图不实际用）
                 selectedFolderIDs: filterState.folders,
                 selectedTagIDs: filterState.tags,
                 selectedShapes: filterState.shapes,
                 filterMinRating: filterState.minRating,
                 sortOption: sortOption,
-                photos: visiblePhotos,
+                photos: model.visiblePhotos,
                 kind: .list,
                 onTap: handleTap,
                 onDoubleTap: enterImmersive
@@ -667,22 +642,22 @@ struct ContentView: View {
         case .timeline:
             PhotoListOrTimelinePane(
                 selection: bindableModel.selection,
-                folder: currentFolder,
-                tag: currentTag,
+                folder: model.currentFolder,
+                tag: model.currentTag,
                 searchText: searchText,
                 // V5.8: 砍 filterFavorites
-                filterUnfiled: filterUnfiled,
-                filterDuplicates: filterDuplicates,
-                filterRecent7Days: filterRecent7Days,
-                filterLargeFiles: filterLargeFiles,
-                filterInTrash: filterInTrash,
+                filterUnfiled: model.filterUnfiled,
+                filterDuplicates: model.filterDuplicates,
+                filterRecent7Days: model.filterRecent7Days,
+                filterLargeFiles: model.filterLargeFiles,
+                filterInTrash: model.filterInTrash,
                 // V4.36.x: 工具栏筛选 4 维（签名一致；本视图不实际用）
                 selectedFolderIDs: filterState.folders,
                 selectedTagIDs: filterState.tags,
                 selectedShapes: filterState.shapes,
                 filterMinRating: filterState.minRating,
                 sortOption: sortOption,
-                photos: visiblePhotos,
+                photos: model.visiblePhotos,
                 kind: .timeline,
                 onTap: handleTap,
                 onDoubleTap: enterImmersive
@@ -692,20 +667,20 @@ struct ContentView: View {
 
     private var detailPane: some View {
         DetailPane(
-            singleSelectedPhoto: singleSelectedPhoto,
-            isMultiSelect: isMultiSelect,
+            singleSelectedPhoto: model.singleSelectedPhoto,
+            isMultiSelect: model.isMultiSelect,
             // V3.6.52: 用 selection.selectedIDs.count 替直接字段
-            count: filterInTrash ? trashedCount : (filterInDuplicates ? duplicatePurgeableCount : selection.selectedIDs.count),
-            totalSize: filterInTrash ? trashedTotalSize : (filterInDuplicates ? duplicatePurgeableSize : selectedTotalSize),
+            count: model.filterInTrash ? model.trashedCount : (model.filterInDuplicates ? model.duplicatePurgeableCount : selection.selectedIDs.count),
+            totalSize: model.filterInTrash ? model.trashedTotalSize : (model.filterInDuplicates ? model.duplicatePurgeableSize : model.selectedTotalSize),
             folders: folders,
             allTags: allTags,
             onDelete: deleteSinglePhoto,
             onPrev: goPrev,
             onNext: goNext,
-            canPrev: canPrev,
-            canNext: canNext,
-            currentIndex: currentIndex,
-            totalCount: visiblePhotos.count,
+            canPrev: model.canPrev,
+            canNext: model.canNext,
+            currentIndex: model.currentIndex,
+            totalCount: model.visiblePhotos.count,
             // V3.5.19：多选 batch 动作从原 PhotoGridView.multiSelectTopBar 搬过来
             onBatchMove: { folder in batchMove(to: folder) },
             onBatchAddTag: { tag in batchAddTag(tag) },
@@ -737,7 +712,7 @@ struct ContentView: View {
         // V3.5.6 Finder 化：Status Bar（底部信息条）
         StatusBar(
             totalCount: allPhotos.count,
-            totalSize: totalSizeFormatted,
+            totalSize: model.totalSizeFormatted,
             // V3.6.52: 用 selection.selectedIDs.count 替直接字段
             selectedCount: selection.selectedIDs.count,
             // V5.15: 导入进度——StatusBar 右侧显示"导入中 X/Y · N 失败"
@@ -820,7 +795,6 @@ struct ContentView: View {
 
     // V3.6.24: 重复检测 dialog 的动态 title
     // V5.52-4: 实现搬到 ContentViewModel.duplicateDialogTitle
-    private var duplicateDialogTitle: String { model.duplicateDialogTitle }
 
     private func confirmSkipDuplicates() -> Void { model.confirmSkipDuplicates() }
 
