@@ -283,22 +283,24 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
                 action: #selector(handleMenuButtonClicked(_:))
             )
         case .fixedTrailingSpace:  // V5.82: 8pt 固定 space——给工具栏右边缘 padding
-            //  0pt 高 + 8pt 宽的 NSView, 不可交互, NSToolbar 显示为透明 spacing
+            //  V5.84: 8pt 改 2pt (用户报告 8pt 太大, 2pt 最小呼吸跟原 0pt 区别不大)
+            //  0pt 高 + 2pt 宽的 NSView, 不可交互, NSToolbar 显示为透明 spacing
             let fixedItem = NSToolbarItem(itemIdentifier: id.nsIdentifier)
             let spacer = NSView()
             spacer.translatesAutoresizingMaskIntoConstraints = false
             NSLayoutConstraint.activate([
-                spacer.widthAnchor.constraint(equalToConstant: 8),
+                spacer.widthAnchor.constraint(equalToConstant: 2),
                 spacer.heightAnchor.constraint(equalToConstant: 0)
             ])
             fixedItem.view = spacer
             item = fixedItem
-        case .fixedLeadingSpace:  // V5.83: 镜像 V5.82——给工具栏左边缘 padding (跟右 8pt 对称)
+        case .fixedLeadingSpace:  // V5.83: 镜像 V5.82——给工具栏左边缘 padding
+            //  V5.84: 同步改 2pt 跟右镜像
             let fixedItem = NSToolbarItem(itemIdentifier: id.nsIdentifier)
             let spacer = NSView()
             spacer.translatesAutoresizingMaskIntoConstraints = false
             NSLayoutConstraint.activate([
-                spacer.widthAnchor.constraint(equalToConstant: 8),
+                spacer.widthAnchor.constraint(equalToConstant: 2),
                 spacer.heightAnchor.constraint(equalToConstant: 0)
             ])
             fixedItem.view = spacer
