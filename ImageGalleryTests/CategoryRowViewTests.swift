@@ -31,12 +31,6 @@ struct CategoryRowViewTests {
         #expect(row.countBadgeBg.isHidden == false)
     }
 
-    @Test func updateWithZeroCountHidesBadge() {
-        let row = CategoryRowView(category: .tag)
-        row.update(count: 0)
-        #expect(row.countBadgeBg.isHidden == true)
-    }
-
     @Test func updateWithSummaryOverridesCount() {
         // V4.84.0: rating 类别用 summary（"≥ 3 ★"）而非数字 count
         let row = CategoryRowView(category: .rating)
@@ -51,5 +45,24 @@ struct CategoryRowViewTests {
         row.onTap = { called = true }
         row.onTap?()  // 直接调 closure（onTap 是 optional closure）
         #expect(called == true)
+    }
+
+    // MARK: - V5.76: count badge always-occupy (不 isHidden, 锁 layout)
+
+    @Test func updateWithZeroCountKeepsBadgeVisible() {
+        // V5.76: count=0 时 badge 仍 visible (不再 isHidden), 防止 stack layout 变化引起视觉位移
+        let row = CategoryRowView(category: .folder)
+        row.update(count: 0)
+        #expect(row.countBadgeBg.isHidden == false, "V5.76: count=0 应 still visible (clear bg + empty)")
+    }
+
+    @Test func updateTogglesBadgeBackgroundColor() {
+        // V5.76: count=0 → clear bg, count>0 → accent bg (切 color 不切 isHidden)
+        let row = CategoryRowView(category: .folder)
+        row.update(count: 0)
+        let clearBg = row.countBadgeBg.layer?.backgroundColor  // 透明
+        row.update(count: 5)
+        let accentBg = row.countBadgeBg.layer?.backgroundColor  // accent
+        #expect(clearBg != accentBg, "V5.76: count=0 和 count=5 背景色应不同")
     }
 }

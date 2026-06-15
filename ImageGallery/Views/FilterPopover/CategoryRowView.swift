@@ -188,17 +188,23 @@ final class CategoryRowView: NSView {
     // MARK: - 更新
 
     /// V4.83.0: 增量更新 count/summary——rebuild 时调用
-    ///   - count 0: 隐藏 count badge
+    ///   - count 0: badge 透明 (clear bg) + 空字, 仍占位 22pt——不改变 stack layout, 防止视觉位移
     ///   - rating 类别用 summary（如 "≥4星"）优先于 count
+    /// V5.76: 改 always-occupy 模式——之前 isHidden=true 移除 stack, title 长度变化导致视觉重心左移
+    ///   现在 badge 永远在 layout 里, 只切 stringValue + bg color, layout 不变
     func update(count: Int, summary: String? = nil) {
         if let summary = summary {
             countBadge.stringValue = summary
-            countBadgeBg.isHidden = false
+            countBadgeBg.layer?.backgroundColor = NSColor.controlAccentColor
+                .withAlphaComponent(PopoverStyle.categoryRowCountBadgeOpacity).cgColor
         } else if count > 0 {
             countBadge.stringValue = "\(count)"
-            countBadgeBg.isHidden = false
+            countBadgeBg.layer?.backgroundColor = NSColor.controlAccentColor
+                .withAlphaComponent(PopoverStyle.categoryRowCountBadgeOpacity).cgColor
         } else {
-            countBadgeBg.isHidden = true
+            // V5.76: count=0 时 bg 透明 + 空字, view 仍占位 22pt 不变 stack layout
+            countBadge.stringValue = ""
+            countBadgeBg.layer?.backgroundColor = NSColor.clear.cgColor
         }
     }
 
