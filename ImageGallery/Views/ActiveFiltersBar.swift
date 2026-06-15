@@ -8,6 +8,14 @@
 //  - 每个 chip 有 × 按钮反向删除
 //  - 末尾"清除全部"按钮
 //
+//  V5.61-2: 同类合并——5 folder → 1 个 "folder · 5" chip + Menu 展开 5 个 × 按钮
+//    Photos 风格紧凑化——节省横向 ~200pt
+//    4 维处理:
+//      - folder 5+: Menu 合并 (数量易爆, 合并收益大)
+//      - tag 4+:   Menu 合并
+//      - shape 1-3: 保留独立 chip (数量稳定, 合并无收益)
+//      - rating 1:  保留独立 chip (单值)
+//
 //  渲染位置：MainLayoutView pathBar slot（ContentView.pathBarPane L731-734）
 //  视觉层级：NSToolbar → ActiveFiltersBar → Split → StatusBar
 //
@@ -25,23 +33,45 @@ struct ActiveFiltersBar: View {
         } else {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 6) {
-                    // folder chips
-                    ForEach(Array(filterState.folders), id: \.self) { id in
-                        chip(
+                    // V5.61-2: folder 同类合并——5 个 → 1 个 "folder · 5" chip + Menu 展开
+                    if !filterState.folders.isEmpty {
+                        groupedFilterMenu(
                             icon: "folder",
-                            label: folderName(for: id) ?? "未知文件夹",
-                            onRemove: { filterState.remove(.folder(id)) }
-                        )
+                            count: filterState.folders.count,
+                            label: "folder"
+                        ) {
+                            ForEach(Array(filterState.folders), id: \.self) { id in
+                                Button {
+                                    filterState.remove(.folder(id))
+                                } label: {
+                                    Label(
+                                        folderName(for: id) ?? "未知文件夹",
+                                        systemImage: "folder"
+                                    )
+                                }
+                            }
+                        }
                     }
-                    // tag chips
-                    ForEach(Array(filterState.tags), id: \.self) { id in
-                        chip(
+                    // V5.61-2: tag 同类合并
+                    if !filterState.tags.isEmpty {
+                        groupedFilterMenu(
                             icon: "tag",
-                            label: "#\(tagName(for: id) ?? "未知标签")",
-                            onRemove: { filterState.remove(.tag(id)) }
-                        )
+                            count: filterState.tags.count,
+                            label: "tag"
+                        ) {
+                            ForEach(Array(filterState.tags), id: \.self) { id in
+                                Button {
+                                    filterState.remove(.tag(id))
+                                } label: {
+                                    Label(
+                                        "#\(tagName(for: id) ?? "未知标签")",
+                                        systemImage: "tag"
+                                    )
+                                }
+                            }
+                        }
                     }
-                    // shape chips
+                    // V5.61-2: shape 保留独立 chip——数量稳定 (1-3), 合并无收益
                     ForEach(Array(filterState.shapes), id: \.self) { s in
                         chip(
                             icon: s.icon,
@@ -49,7 +79,7 @@ struct ActiveFiltersBar: View {
                             onRemove: { filterState.remove(.shape(s)) }
                         )
                     }
-                    // rating chip
+                    // rating 保留独立 chip——单值
                     if filterState.minRating > 0 {
                         chip(
                             icon: "star.fill",
@@ -79,6 +109,40 @@ struct ActiveFiltersBar: View {
             }
             .background(.bar)
         }
+    }
+
+    /// V5.61-2: 同类合并 chip——外部显示 "icon label · count", 点击 Menu 展开各 item
+    ///   - macOS Menu 自动渲染 popup (类似 right-click menu)——比 popover 紧凑
+    ///   - 内嵌 Button 列表——点击单项触发 onTap callback
+    @ViewBuilder
+    private func groupedFilterMenu<Content: View>(
+        icon: String,
+        count: Int,
+        label: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        Menu {
+            content()
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: icon)
+                    .font(.caption2)
+                Text("\(label) · \(count)")
+                    .font(.caption)
+                // V5.61-2: chevron 暗示"可展开"——macOS 标准 Menu 视觉
+                Image(systemName: "chevron.down")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(Color.accentColor.opacity(0.15))
+            .clipShape(Capsule())
+        }
+        .menuStyle(.borderlessButton)  // V5.61-2: 去掉 Menu 默认边框, 视觉与 chip 一致
+        .menuIndicator(.hidden)  // V5.61-2: 隐藏默认 chevron (我们手动加了)
+        // V4.56.0: 渐出过渡——filterState 变化时 chip 从 ForEach 移除触发
+        .transition(.scale(scale: 0.8).combined(with: .opacity))
     }
 
     @ViewBuilder
