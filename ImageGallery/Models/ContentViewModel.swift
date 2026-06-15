@@ -264,6 +264,137 @@ final class ContentViewModel {
         return "发现 \(check.existing.count) 张已存在 / \(check.newCount) 张新文件"
     }
 
+    // MARK: - V5.52-6: configureToolbar 搬过来——12 个 ToolbarController 闭包
+
+    /// V4.8.0: NSToolbar 配置（WindowAccessor 触发）
+    /// V5.52-6: 从 ContentView.configureNSToolbar 搬过来
+    ///   - 设置 window.toolbar = NSToolbar（AppKit 原生，Photos.app 风格）
+    ///   - 设置 NSToolbar.delegate = ToolbarController.shared
+    ///   - 设置 NSToolbar 视觉：.iconOnly display + .unified style
+    ///   - 绑 12 个 action closures 到 ToolbarController.shared
+    ///   - 12 个闭包 capture [model] (class stable ref)——比原 [self] (struct value copy) 更正确
+    func configureToolbar(window: NSWindow) {
+        // 只在第一次设置
+        guard window.toolbar == nil else { return }
+
+        let toolbar = NSToolbar(identifier: NSToolbar.Identifier("MainToolbar"))
+        toolbar.delegate = ToolbarController.shared
+        toolbar.displayMode = .iconOnly
+        // V4.8.3: centeredItemIdentifiers = [.search] 让搜索框居中
+        //   (Photos.app 风格——搜索框与 grid 中线对齐)
+        //   5 actions 走默认 .principalItems 区域，在 trailing 端
+        toolbar.centeredItemIdentifiers = [ToolbarController.Identifier.search.nsIdentifier]
+        toolbar.allowsUserCustomization = true   // 用户可自定义 toolbar items
+        toolbar.autosavesConfiguration = true   // 自定义状态自动保存
+        toolbar.showsBaselineSeparator = false  // 不显示底部分隔线
+
+        // 绑 action closures
+        // V5.52-6: [model] capture (class stable ref)——比原 [self] (struct value copy) 更正确
+        //   避免 struct 改 self 拷贝的 footgun; class ref 稳定 + @Observable 追踪
+        let controller = ToolbarController.shared
+        controller.onToggleSidebar = { [model = self] in
+            withAnimation(Animations.medium) { model.settings.showSidebar.toggle() }
+        }
+        // V5.7: 砍 onToggleFavorite——工具栏 ❤ 收藏按钮已移除
+        controller.onBatchExport = { [model = self] in
+            model.batchExport()
+        }
+        controller.onDelete = { [model = self] in
+            model.handleDelete()
+        }
+        controller.onImport = { [model = self] in
+            model.startImport()
+        }
+        // V4.37.1: ⌘Y Quick Look——复用 showQuickLook()（与空格键同路径）
+        controller.onQuickLook = { [model = self] in
+            model.showQuickLook()
+        }
+        // V4.37.2: ⌘[ / ⌘] 上下张切换（macOS Quick Look 标准）
+        controller.onPrev = { [model = self] in
+            model.goPrev()
+        }
+        controller.onNext = { [model = self] in
+            model.goNext()
+        }
+        // V5.24 NEW: 布局模式 + 密度 toolbar 集成桥接
+        controller.onLayoutModeChange = { [model = self] mode in
+            model.layoutMode = mode
+        }
+        controller.onDensityChange = { [model = self] density in
+            model.thumbnailSize = density
+            // 同步 storedThumbnailSize 以便重启后恢复（V4.15.0 ⌘0 行为一致）
+            model.settings.thumbnailSize = Double(density)
+        }
+        // V5.39.3 NEW: 排序 toolbar 桥接
+        controller.onSortOptionChange = { [model = self] newSort in
+            model.sortOption = newSort
+        }
+        // V4.90.0: filterContentProvider 改 filterCoordinatorFactory
+        //   注意: folders/allTags 是 Q-bucket (view-owned), 由 caller 在调用时 push 进 model
+        // V5.52-7 后: model.folders / model.allTags 由 .onChange 推送
+        controller.filterCoordinatorFactory = { [model = self] onStateChange in
+            return FilterPopoverCoordinator(
+                folders: model.folders,
+                tags: model.allTags,
+                onStateChange: { newState in
+                    model.filterState = newState
+                    onStateChange(newState)
+                }
+            )
+        }
+        // V4.36.x: 首次同步角标
+        controller.filterActiveCount = filterState.activeCount
+        // V4.8.1: search field 改用 NSSearchField
+        controller.onSearchTextChanged = { [model = self] newText in
+            if model.searchText != newText {
+                model.searchText = newText
+            }
+        }
+
+        window.toolbar = toolbar
+        window.toolbarStyle = .unified
+        window.titleVisibility = .hidden
+        window.titlebarAppearsTransparent = true
+
+        // V4.37.4: titlebar 右上角小按钮（Photos.app ⓘ 风格）
+        //   V5.52-6: titlebarAccessory 也搬过来（NSObject 引用，model 持有）
+        let accessory = TitlebarAccessoryController(
+            inactiveSymbol: "info.circle",
+            activeSymbol: "info.circle.fill",
+            accessibilityLabel: "信息面板",
+            tooltip: titlebarAccessoryTooltip(isActive: settings.showDetail),
+            onAction: { [model = self] in
+                withAnimation(Animations.medium) { model.settings.showDetail.toggle() }
+            }
+        )
+        accessory.layoutAttribute = .trailing
+        window.addTitlebarAccessoryViewController(accessory)
+        titlebarAccessory = accessory
+        accessory.setActive(settings.showDetail)
+
+        // 初始 enabled 状态同步
+        controller.updateAllStates(
+            hasSelection: selection.hasSelection,
+            hasMultipleSelection: selection.isMultiSelect
+        )
+    }
+
+    /// V4.37.4: titlebar ⓘ 按钮 tooltip——从 ContentView.titlebarAccessoryTooltip 搬过来
+    private func titlebarAccessoryTooltip(isActive: Bool) -> String {
+        isActive ? "隐藏信息面板 (⌘I)" : "显示信息面板 (⌘I)"
+    }
+
+    // MARK: - V5.52-6 stubs (V5.53+ 实现搬过来)
+    //   41 funcs 没在 V5.52-5 搬——configureToolbar 需要 4 个 (startImport/showQuickLook/goPrev/goNext)
+    //   先放 4 个 stub 占位, V5.53+ 把所有 41 funcs 一次性搬到 model
+
+    func startImport() { /* V5.53+ */ }
+    func showQuickLook() { /* V5.53+ */ }
+    func goPrev() { /* V5.53+ */ }
+    func goNext() { /* V5.53+ */ }
+    func handleDelete() { /* V5.53+ */ }
+    func batchExport() { /* V5.53+ */ }
+
     /// V5.52-1 起步: 无参 init——modelContext 由 .task 注入
     init() {}
 }
