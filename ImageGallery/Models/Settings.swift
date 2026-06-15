@@ -86,4 +86,11 @@ final class UserSettings {
     var detailColumnWidth: Double = 360 {
         didSet { UserDefaults.standard.set(detailColumnWidth, forKey: "detailColumnWidth") }
     }
+
+    // MARK: - V5.55-2: P0 滚动位置保留
+    // 存当前 ScrollView 顶部可见 photo 的 UUID——下次启动恢复
+    // macOS Photos.app 标准行为:重新打开图库后保留滚动位置
+    var scrollAnchorPhotoID: String? = nil {
+        didSet { UserDefaults.standard.set(scrollAnchorPhotoID, forKey: "scrollAnchorPhotoID") }
+    }
 }

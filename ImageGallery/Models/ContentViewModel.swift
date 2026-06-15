@@ -59,6 +59,14 @@ final class ContentViewModel {
     var toastTask: Task<Void, Never>? = nil
     /// V3.6 导入进度 (V5.53 搬过来——startImport/importPhotos 都需要)
     var importProgress: ImportProgress? = nil
+
+    // MARK: - V5.55-2: P0 滚动位置保留
+    // 绑 SwiftUI .scrollPosition(id:)——滚动时自动更新
+    // .onChange 同步到 settings.scrollAnchorPhotoID (持久化)
+    // 启动时 .task 读 settings.scrollAnchorPhotoID 恢复
+    /// 字符串 (UUID) 而非 UUID?——SwiftUI Binding<String?> 兼容
+    var scrollAnchorPhotoID: String? = nil
+
     var undoManager = ImageGalleryUndoManager()
     var sidebarColumnWidth: CGFloat = 220
     var detailColumnWidth: CGFloat = 360
