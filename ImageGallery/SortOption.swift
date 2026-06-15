@@ -64,13 +64,15 @@ enum SortOption: String, CaseIterable, Identifiable {
     ///   - filename*: textformat
     ///   - fileSize*: externaldrive
     ///   - custom: line.3.horizontal
-    ///   desc 加 .fill, asc 不加 (跟 Photos 工具栏 sort 按钮一致)
+    ///   V5.60-2: filenameAsc/Desc 之前共用 textformat (无方向暗示)——改 size.larger/.smaller 区分
+    ///   desc = 大先 (Z→A) → textformat.size.larger; asc = 小先 (A→Z) → textformat.size.smaller
+    ///   其他 desc 加 .fill, asc 不加 (跟 Photos 工具栏 sort 按钮一致)
     var toolbarIcon: String {
         switch self {
         case .importedAtDesc:  return "clock.fill"
         case .importedAtAsc:   return "clock"
-        case .filenameDesc:    return "textformat"
-        case .filenameAsc:     return "textformat"
+        case .filenameDesc:    return "textformat.size.larger"  // V5.60-2: 大写先 Z→A
+        case .filenameAsc:     return "textformat.size.smaller"  // V5.60-2: 小写先 A→Z
         case .fileSizeDesc:    return "externaldrive.fill"
         case .fileSizeAsc:     return "externaldrive"
         case .customOrder:     return "line.3.horizontal"

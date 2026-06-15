@@ -56,10 +56,14 @@ enum ThumbnailLayoutMode: Int, CaseIterable, Identifiable {
         }
     }
 
+    /// V5.60-2: 微调 icon——用密度差异区分, 之前都是 2x2 仅 .fill 不同
+    ///   .square (方格 1:1 居中裁切) → 3x3 (暗示密度高)
+    ///   .squareFit (按比例 1:1 letterbox 不裁切) → 2x2 (暗示密度低)
+    ///   Photos 风格: 高密度 vs 低密度视觉差异明显
     var icon: String {
         switch self {
-        case .square:    return "square.grid.2x2"
-        case .squareFit: return "square.grid.2x2.fill"  // V5.46: .fill 暗示不裁切
+        case .square:    return "square.grid.3x3"          // V5.60-2: 2x2 → 3x3 (高密度)
+        case .squareFit: return "square.grid.2x2"          // V5.60-2: 2x2.fill → 2x2 (低密度)
         }
     }
 
