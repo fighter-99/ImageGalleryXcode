@@ -136,6 +136,9 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
 
     enum Identifier: String {
         case sidebarToggle
+        // V5.83: 8pt 固定 space——给工具栏左边缘 8pt padding, 跟 V5.82 fixedTrailingSpace (右 8pt) 镜像
+        //   toolbar 左右各 8pt 呼吸, 视觉对称
+        case fixedLeadingSpace
         case search
         case flexibleSpace
         // V5.7: 砍 favorite case——工具栏 ❤ 收藏按钮移除（走右键菜单评分 / 筛选 popover）
@@ -173,6 +176,7 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
     /// V5.39.3: filter 之后插入 3 个 NSMenu 下拉按钮 (布局模式/缩略图大小/排序)——viewOptions 砍
     func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
         [
+            Identifier.fixedLeadingSpace.nsIdentifier,  // V5.83: 8pt 左边缘 padding
             Identifier.sidebarToggle.nsIdentifier,
             Identifier.search.nsIdentifier,
             Identifier.flexibleSpace.nsIdentifier,
@@ -280,6 +284,16 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
             )
         case .fixedTrailingSpace:  // V5.82: 8pt 固定 space——给工具栏右边缘 padding
             //  0pt 高 + 8pt 宽的 NSView, 不可交互, NSToolbar 显示为透明 spacing
+            let fixedItem = NSToolbarItem(itemIdentifier: id.nsIdentifier)
+            let spacer = NSView()
+            spacer.translatesAutoresizingMaskIntoConstraints = false
+            NSLayoutConstraint.activate([
+                spacer.widthAnchor.constraint(equalToConstant: 8),
+                spacer.heightAnchor.constraint(equalToConstant: 0)
+            ])
+            fixedItem.view = spacer
+            item = fixedItem
+        case .fixedLeadingSpace:  // V5.83: 镜像 V5.82——给工具栏左边缘 padding (跟右 8pt 对称)
             let fixedItem = NSToolbarItem(itemIdentifier: id.nsIdentifier)
             let spacer = NSView()
             spacer.translatesAutoresizingMaskIntoConstraints = false

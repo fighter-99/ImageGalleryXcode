@@ -32,4 +32,10 @@ struct ToolbarHarmonyTests {
         let id = ToolbarController.Identifier.fixedTrailingSpace.nsIdentifier
         #expect(id.rawValue == "fixedTrailingSpace")
     }
+
+    @Test func fixedLeadingSpaceIdentifierExists() {
+        // V5.83: 锁住新增 Identifier (镜像 V5.82)——防止 revert
+        let id = ToolbarController.Identifier.fixedLeadingSpace.nsIdentifier
+        #expect(id.rawValue == "fixedLeadingSpace")
+    }
 }
