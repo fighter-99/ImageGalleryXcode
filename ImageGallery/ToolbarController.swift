@@ -86,6 +86,9 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
     /// V5.74 NEW: Density popover 强引用
     private var densityPopover: NSPopover?
 
+    /// V5.75 NEW: SortOption popover 强引用
+    private var sortOptionPopover: NSPopover?
+
     /// V4.36.x: 激活筛选总数（用于工具栏 hover tooltip 角标 "筛选 (N)"）
     /// ContentView 通过 .onChange(of: filterState.activeCount) 同步此值
     var filterActiveCount: Int = 0 {
@@ -498,21 +501,14 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
         return item
     }
 
-    /// V5.39.3 NEW: 3 个 NSMenu 按钮的统一 action handler
+    /// V5.75: 3 个 NSMenu 按钮的统一 action handler——全改 NPPopover 路由
     ///   - 找到被点击的 button 对应的 Identifier
-    ///   - 按 Identifier 构造对应 NSMenu
-    ///   - 在 button 底部弹 NSMenu（NSMenu.popUp positioning at: in:）
-    ///   - 用户点 menu item → 触发对应 closure (onLayoutModeChange / onDensityChange / onSortOptionChange)
-    private let menuSelectors: [Selector] = [
-        #selector(handleMenuItemSelected(_:))
-    ]
-
+    ///   - 路由到 handleShowLayoutMode / handleShowDensity / handleShowSort
     @objc private func handleMenuButtonClicked(_ sender: NSButton) {
         // 找到 sender button 对应的 toolbar item → Identifier
         guard let id = identifierForButton(sender) else { return }
 
-        // V5.72/V5.74: layoutMode + density 改 NSPopover (仿 filter popover V5.63-1 风格)——统一视觉
-        //   sort 仍走 NSMenu, V5.75 后续扩
+        // V5.72/V5.74/V5.75: layoutMode + density + sort 都改 NSPopover (仿 filter popover)——统一视觉
         if id == .layoutModeMenu {
             handleShowLayoutMode()
             return
@@ -521,24 +517,12 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
             handleShowDensity()
             return
         }
-
-        let menu: NSMenu?
-        switch id {
-        case .sortMenu:
-            menu = buildSortMenu()
-        default:
-            menu = nil
+        if id == .sortMenu {
+            handleShowSort()
+            return
         }
-        guard let menu = menu else { return }
-        // V5.39.4: 菜单定位——
-        //   - x: 0 (左对齐按钮左边缘)——macOS Photos 风格, 菜单左边缘与按钮左边缘齐平
-        //     (原 at: midX 居中对齐——菜单中心在按钮中心, 但菜单常比按钮宽, 视觉偏右)
-        //   - y: bounds.minY - 2 (按钮底部下方 2pt 视觉间隙)——
-        //     原 at: minY 紧贴按钮 0pt 间隙, 看起来"挤"在按钮上
-        //     2pt 间隙给"按钮浮起"感, 跟 macOS Photos toolbar 菜单节奏一致
-        //   NSButton 默认非 flipped——y 向上为正, minY 在按钮底部, minY-2 是底部下方
-        let location = NSPoint(x: 0, y: sender.bounds.minY - 2)
-        menu.popUp(positioning: nil, at: location, in: sender)
+        // V5.75: 所有 3 个 menu 按钮都改 NSPopover, 这里无 fallback
+        return
     }
 
     /// V5.72 NEW: 显示 layoutMode NSPopover——仿 handleShowFilter 模式 (V4.36.x)
@@ -602,6 +586,33 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
         densityPopover = popover
     }
 
+    /// V5.75 NEW: 显示 sortOption NSPopover——仿 handleShowLayoutMode 模式
+    @objc private func handleShowSort() {
+        if let popover = sortOptionPopover, popover.isShown {
+            popover.close()
+            sortOptionPopover = nil
+            return
+        }
+
+        guard let item = itemCache[Identifier.sortMenu.nsIdentifier],
+              let anchorView = item.view else {
+            return
+        }
+
+        let vc = SortOptionPopoverController(currentOption: sortOption)
+        vc.onSelect = { [weak self] option in
+            // V5.75: 走 onSortOptionChange closure——UserSettings + toolbar icon 推
+            self?.onSortOptionChange?(option)
+        }
+
+        let popover = NSPopover()
+        popover.behavior = .transient
+        popover.contentViewController = vc
+        // V5.73: .maxY 显式 below (跟 layoutMode / density / filter 一致)
+        popover.show(relativeTo: anchorView.bounds, of: anchorView, preferredEdge: .maxY)
+        sortOptionPopover = popover
+    }
+
     /// V5.39.3: 找到 NSButton 对应的 Identifier——遍历 itemCache 比 view ===
     private func identifierForButton(_ button: NSButton) -> Identifier? {
         for id in [Identifier.layoutModeMenu, .densityMenu, .sortMenu] {
@@ -612,38 +623,11 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
         return nil
     }
 
-    // MARK: - 3 个 menu builder (V5.39.3 NEW)
+    // MARK: - V5.75: 删所有 NSMenu builder (3 个 menu 按钮全改 NPPopover)
 
-    /// V5.39.3 NEW: 排序菜单——7 种排序 (导入时间/文件名/文件大小/自定义 × 方向)
-    private func buildSortMenu() -> NSMenu {
-        let menu = NSMenu()
-        for option in SortOption.allCases {
-            let item = NSMenuItem(
-                title: option.label,
-                action: #selector(handleMenuItemSelected(_:)),
-                keyEquivalent: ""
-            )
-            item.target = self
-            item.representedObject = option
-            item.image = NSImage(systemSymbolName: option.toolbarIcon, accessibilityDescription: option.label)
-            if option == sortOption {
-                item.state = .on
-            }
-            menu.addItem(item)
-        }
-        return menu
-    }
-
-    /// V5.39.3 NEW: menu item 选中回调——按 representedObject 类型分派
-    @objc private func handleMenuItemSelected(_ sender: NSMenuItem) {
-        if let mode = sender.representedObject as? ThumbnailLayoutMode {
-            onLayoutModeChange?(mode)
-        } else if let size = sender.representedObject as? CGFloat {
-            onDensityChange?(size)
-        } else if let option = sender.representedObject as? SortOption {
-            onSortOptionChange?(option)
-        }
-    }
+    /// V5.75: 删 handleMenuItemSelected——所有 menu 按钮 (layoutMode/density/sort) 改 NPPopover,
+    ///   各自 onSelect closure 直接调 onLayoutModeChange/onDensityChange/onSortOptionChange
+    ///   不再需要 representedObject 类型分派
 
     // MARK: - 3 个 menu 按钮的 image 更新 (V5.39.3 NEW)
 
