@@ -18,12 +18,14 @@
 import SwiftUI
 
 // MARK: - V4.50.0: 设置类别（sidebar 项）
+// V5.57-1: 加 .about——macOS Photos.app 习惯，about 放最末
 
 enum SettingsCategory: String, CaseIterable, Identifiable, Hashable {
     case general       // 通用：默认视图/排序
     case appearance    // 外观：缩略图大小/外观模式
     case library       // 图库：回收站保留时长
     case accent        // 强调色
+    case about         // V5.57-1: 关于——版本号/build/链接
 
     var id: String { rawValue }
 
@@ -33,6 +35,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable, Hashable {
         case .appearance: return "外观"
         case .library:    return Term.library
         case .accent:     return "强调色"
+        case .about:      return "关于"
         }
     }
 
@@ -43,11 +46,14 @@ enum SettingsCategory: String, CaseIterable, Identifiable, Hashable {
         case .appearance: return "paintbrush"
         case .library:    return "trash"
         case .accent:     return "paintpalette"
+        case .about:      return "info.circle"
         }
     }
 }
 
 // MARK: - V4.50.0: 主设置视图
+// V5.57-1: detail 容器包 VStack(spacing: Spacing.lg) + 底部"恢复全部为默认"按钮
+// V5.57-2: 加 .about 路由 + @SceneStorage 持久化类别选择 (在下方 commit)
 
 struct SettingsView: View {
     @State private var selectedCategory: SettingsCategory = .general
@@ -66,27 +72,68 @@ struct SettingsView: View {
             //   Photos.app 标准：sidebar 选中高亮 + detail 切换
             //   V4.55.0: 加 .id + .transition + .animation——切换时 detail 内容淡入+右移
             //     仿 V3.6.44 DetailPane 模式（.id(viewKind) 强制 SwiftUI 视为不同视图触发 transition）
-            Group {
-                switch selectedCategory {
-                case .general:
-                    GeneralSettingsView()
-                case .appearance:
-                    AppearanceSettingsView()
-                case .library:
-                    LibrarySettingsView()
-                case .accent:
-                    AccentSettingsView()
+            //   V5.57-1: 包 VStack(spacing: Spacing.lg)——多卡片间自动有间距
+            //     + 底部"恢复全部为默认"按钮（macOS 偏好无 undo/确认，Photos.app 同模式）
+            VStack(alignment: .leading, spacing: Spacing.lg) {
+                Group {
+                    switch selectedCategory {
+                    case .general:
+                        GeneralSettingsView()
+                    case .appearance:
+                        AppearanceSettingsView()
+                    case .library:
+                        LibrarySettingsView()
+                    case .accent:
+                        AccentSettingsView()
+                    case .about:
+                        AboutSettingsView()
+                    }
+                }
+                .id(selectedCategory)  // V4.55.0: 强制 SwiftUI 视为不同视图（transition 关键）
+                .transition(.opacity.combined(with: .move(edge: .trailing)))  // V4.55.0: 渐入+右移——Photos 风格
+                .animation(Animations.standard, value: selectedCategory)  // V4.55.0: 驱动 transition
+
+                // V5.57-1: 恢复全部为默认——不挂确认弹窗（macOS Photos.app 偏好无确认）
+                //   写入 12 个 @AppStorage key 到 *.defaultValue/inline literal
+                //   Phase 3 改为走 model.settings 单一真相源
+                Spacer(minLength: Spacing.md)
+                HStack {
+                    Spacer()
+                    Button("恢复全部为默认") {
+                        resetAllSettings()
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.regular)
                 }
             }
-            .id(selectedCategory)  // V4.55.0: 强制 SwiftUI 视为不同视图（transition 关键）
-            .transition(.opacity.combined(with: .move(edge: .trailing)))  // V4.55.0: 渐入+右移——Photos 风格
             .frame(minWidth: 420, minHeight: 320)
-            .animation(Animations.standard, value: selectedCategory)  // V4.55.0: 驱动 transition
         }
         .navigationTitle("设置")
         // V4.50.0: 删 .padding(Spacing.xl) 和固定 width 480 height 700
         //   NavigationSplitView 自动撑开——macOS 标准偏好设置窗口自适应
         //   Photos.app 偏好窗口也是自适应大小
+    }
+
+    /// V5.57-1: 恢复全部 12 个设置项为默认
+    ///   复用 *.defaultValue (Models/{TrashRetentionDays,AppearanceMode,ThumbnailLayoutMode,AccentColor}.swift)
+    ///   inline literal 默认值与 ContentView.swift @AppStorage 声明对齐
+    ///   Phase 3 推 model.settings 后改用 UserSettings.reset() 单一入口
+    private func resetAllSettings() {
+        // V5.57-1: 写回 UserDefaults 12 个 key——临时写在 View 层, Phase 3 迁 model
+        let defaults = UserDefaults.standard
+        defaults.set(ViewMode.grid.rawValue, forKey: "viewModeRaw")
+        defaults.set(true, forKey: "showSidebar")
+        defaults.set(false, forKey: "showDetail")
+        defaults.set(AccentColor.system.rawValue, forKey: "accentColorID")
+        defaults.set(TrashRetentionDays.defaultValue.rawValue, forKey: "trashRetentionDays")
+        defaults.set(AppearanceMode.defaultValue.rawValue, forKey: "appearanceMode")
+        defaults.set(200.0, forKey: "thumbnailSize")  // V5.30: 240 → 200
+        defaults.set("all", forKey: "sidebarSelection")
+        defaults.set(SortOption.filenameAsc.rawValue, forKey: "sortOption")  // V5.31 default
+        defaults.set(ThumbnailLayoutMode.defaultValue.rawValue, forKey: "thumbnailLayoutMode")
+        defaults.set(220.0, forKey: "sidebarColumnWidth")
+        defaults.set(360.0, forKey: "detailColumnWidth")
+        // V5.55-2 scrollAnchorPhotoID 不在 reset 范围——是 per-window 状态, 不应被一键抹掉
     }
 }
 
@@ -96,11 +143,15 @@ struct SettingsView: View {
 //   优势：每类独立测试 + 维护，SettingsView 仅做 sidebar/detail 路由
 //
 
-// MARK: 通用（默认视图/排序）
+// MARK: 通用（默认视图/排序/窗口）
+// V5.57-1: 加"窗口"区 (2 toggle)——与菜单 ⌃⌘S/⌘I 同源, 设置文档化统一入口
 
 private struct GeneralSettingsView: View {
     @AppStorage("viewModeRaw") private var defaultViewModeRaw: String = ViewMode.grid.rawValue
     @AppStorage("sortOption") private var defaultSortOption: String = SortOption.importedAtDesc.rawValue
+    // V5.57-1: 窗口 2 toggle——与 ContentView.swift:147/151 同 key, 双向同步
+    @AppStorage("showSidebar") private var showSidebar: Bool = true
+    @AppStorage("showDetail") private var showDetail: Bool = false
 
     private let defaultViewModeOptions: [ViewMode] = ViewMode.allCases
     private let defaultSortOptions: [SortOption] = SortOption.allCases
@@ -125,13 +176,27 @@ private struct GeneralSettingsView: View {
             .pickerStyle(.menu)
             .labelsHidden()
         }
+
+        // V5.57-1: 窗口 toggle——与菜单 ⌃⌘S / ⌘I 写同一 key, 即时生效
+        SettingsSection(
+            title: "窗口",
+            subtitle: "控制侧栏和详情面板的显示。也可在「显示」菜单用 ⌃⌘S / ⌘I 切换。"
+        ) {
+            VStack(alignment: .leading, spacing: Spacing.sm) {
+                Toggle("显示侧栏", isOn: $showSidebar)
+                Toggle("显示详情面板", isOn: $showDetail)
+            }
+        }
     }
 }
 
-// MARK: 外观（缩略图大小/外观模式）
+// MARK: 外观（缩略图大小/缩略图布局/外观模式）
+// V5.57-1: 加"缩略图布局"区 (方格/按比例)——之前仅 toolbar densityMenu 暴露
 
 private struct AppearanceSettingsView: View {
     @AppStorage("thumbnailSize") private var defaultThumbnailSize: Double = 200  // V5.16: 170→200 行高
+    // V5.57-1: thumbnailLayoutMode 从 toolbar 升入设置——用户单一入口
+    @AppStorage("thumbnailLayoutMode") private var thumbnailLayoutModeRaw: Int = ThumbnailLayoutMode.defaultValue.rawValue
     @AppStorage("appearanceMode") private var appearanceModeRaw: Int = AppearanceMode.defaultValue.rawValue
 
     private var appearanceModeBinding: Binding<AppearanceMode> {
@@ -141,7 +206,29 @@ private struct AppearanceSettingsView: View {
         )
     }
 
+    // V5.57-1: thumbnailLayoutMode Int → enum 双向 binding
+    private var thumbnailLayoutModeBinding: Binding<ThumbnailLayoutMode> {
+        Binding(
+            get: { ThumbnailLayoutMode(rawValue: thumbnailLayoutModeRaw) ?? .defaultValue },
+            set: { thumbnailLayoutModeRaw = $0.rawValue }
+        )
+    }
+
     var body: some View {
+        // V5.57-1: 缩略图布局——.square (1:1 裁切) / .squareFit (1:1 letterbox macOS Photos 真版)
+        SettingsSection(
+            title: "缩略图布局",
+            subtitle: "方格：1:1 居中裁切（iOS Photos 风格）。按比例：1:1 letterbox 不裁切（macOS Photos 真版）。"
+        ) {
+            Picker("缩略图布局", selection: thumbnailLayoutModeBinding) {
+                ForEach(ThumbnailLayoutMode.allCases) { mode in
+                    Label(mode.displayName, systemImage: mode.icon).tag(mode)
+                }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+        }
+
         SettingsSection(
             title: "缩略图大小",
             subtitle: "默认缩略图尺寸。当前会话用 toolbar 临时改的会在重启后恢复。"
@@ -211,6 +298,76 @@ private struct AccentSettingsView: View {
                         isSelected: accentColorID == accent.rawValue,
                         onTap: { accentColorID = accent.rawValue }
                     )
+                }
+            }
+        }
+    }
+}
+
+// MARK: 关于（V5.57-1 新增 6 类）
+//
+// macOS Photos.app 习惯——About 放最末
+// 内容：app 图标 + 名称 + 版本 + build + 版权 + 链接
+// 版本号从 AppVersion.current 读（Bundle.main.infoDictionary + fallback）
+//
+
+private struct AboutSettingsView: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: Spacing.lg) {
+            // V5.57-1: 大图标 + 名称 + 版本号——居中
+            HStack(alignment: .center, spacing: Spacing.lg) {
+                if let appIcon = NSApp.applicationIconImage {
+                    Image(nsImage: appIcon)
+                        .resizable()
+                        .frame(width: 96, height: 96)
+                        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                        .shadow(color: .black.opacity(0.15), radius: 4, x: 0, y: 2)
+                }
+                VStack(alignment: .leading, spacing: Spacing.xs) {
+                    Text("ImageGallery")
+                        .font(Typography.title2)
+                    Text(AppVersion.current.displayString)
+                        .font(Typography.body)
+                        .foregroundStyle(Surface.textSecondary)
+                    Text("macOS 照片管理")
+                        .font(Typography.caption)
+                        .foregroundStyle(Surface.textSecondary)
+                }
+                Spacer()
+            }
+            .padding(Spacing.lg)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Surface.panel, in: RoundedRectangle(cornerRadius: Radius.md, style: .continuous))
+
+            // V5.57-1: 链接行——占位 URL, Phase 4 可改
+            SettingsSection(
+                title: "链接",
+                subtitle: nil
+            ) {
+                VStack(alignment: .leading, spacing: Spacing.sm) {
+                    Link(destination: URL(string: "https://github.com/")!) {
+                        Label("项目主页", systemImage: "arrow.up.right.square")
+                    }
+                    Link(destination: URL(string: "https://github.com/")!) {
+                        Label("使用帮助", systemImage: "book")
+                    }
+                    Link(destination: URL(string: "https://github.com/")!) {
+                        Label("问题反馈", systemImage: "exclamationmark.bubble")
+                    }
+                }
+            }
+
+            // V5.57-1: 版权 + 致谢
+            SettingsSection(
+                title: "版权",
+                subtitle: nil
+            ) {
+                VStack(alignment: .leading, spacing: Spacing.xs) {
+                    Text("© 2026 ImageGallery")
+                        .font(Typography.body)
+                    Text("Built with SwiftUI + SwiftData")
+                        .font(Typography.caption)
+                        .foregroundStyle(Surface.textSecondary)
                 }
             }
         }
