@@ -35,7 +35,9 @@ extension ThumbnailDensity: OptionListItem {
 }
 
 extension SortOption: OptionListItem {
-    // V5.77: 都没有现成名, label + directionIcon alias
+    // V5.78: 改 alias 源——之前用 directionIcon (只 up/down 箭头) 看不出字段
+    //   改 toolbarIcon (clock / textformat.size / externaldrive 区分字段) + 方向 (fill/无 fill)
+    //   V5.75 NPPopover 重构时手抖用错, V5.77 generic 沿用 alias 没发现
     var displayName: String { label }
-    var iconName: String { directionIcon }
+    var iconName: String { toolbarIcon }
 }

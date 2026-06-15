@@ -77,4 +77,13 @@ struct OptionListPopoverControllerTests {
         // V5.39.3 加 7 档 sort (3 字段 × 2 方向 + 1 自定义)
         #expect(SortOption.allCases.count == 7)
     }
+
+    @Test func sortOptionIconNameMatchesToolbarIcon() {
+        // V5.78 invariant: SortOption 的 OptionListItem.iconName 必须 = toolbarIcon
+        //   锁住不再手抖用 directionIcon (V5.75 回归 bug, 6 个选项全 up/down 箭头看不出字段)
+        for option in SortOption.allCases {
+            #expect(option.iconName == option.toolbarIcon,
+                    "SortOption.\(option).iconName (\(option.iconName)) != toolbarIcon (\(option.toolbarIcon))")
+        }
+    }
 }
