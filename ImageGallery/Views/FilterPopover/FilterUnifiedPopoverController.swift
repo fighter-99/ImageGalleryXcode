@@ -56,7 +56,7 @@ final class FilterUnifiedPopoverController: NSViewController {
 
     private static let preferredWidth: CGFloat = 280
     private static let maxHeight: CGFloat = 600
-    private static let sectionContentPadding: CGFloat = 8
+    private static let sectionContentPadding: CGFloat = 12  // V5.63-4: 8→12——与 CategoryRowView 12pt mainStack leading 对齐
     private static let outerPadding: CGFloat = PopoverStyle.padding  // 12pt
     private static let sectionSpacing: CGFloat = 0
     // V5.63-2: scroller 宽度——contentInsets.right 用, 防止 chevron 被遮挡
@@ -209,14 +209,14 @@ final class FilterUnifiedPopoverController: NSViewController {
         let stack = NSStackView()
         stack.orientation = .vertical
         stack.alignment = .leading
-        stack.spacing = 2
+        stack.spacing = 4  // V5.63-4: 2→4pt——checkbox 间距呼吸感, 仿 macOS Photos
         stack.translatesAutoresizingMaskIntoConstraints = false
         container.addSubview(stack)
         NSLayoutConstraint.activate([
             stack.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: Self.sectionContentPadding),
             stack.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -Self.sectionContentPadding),
-            stack.topAnchor.constraint(equalTo: container.topAnchor, constant: 2),
-            stack.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -2)
+            stack.topAnchor.constraint(equalTo: container.topAnchor, constant: 4),     // V5.63-4: 2→4pt
+            stack.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -4)  // V5.63-4: 2→4pt
         ])
 
         switch category {
