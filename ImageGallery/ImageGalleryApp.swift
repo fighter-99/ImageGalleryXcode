@@ -34,6 +34,9 @@ struct ImageGalleryApp: App {
     //   UserSettings.init() V5.58-1 从 UserDefaults 读 13 字段
     @State private var sharedSettings = UserSettings()
 
+    // V5.60-7: ⌘? cheat sheet 状态——sheet 模式弹 KeyboardShortcutsSheet
+    @State private var showShortcutsSheet = false
+
     init() {
         // V3.6.7: 显式 VersionedSchema + MigrationPlan
         // 之前用 [Photo.self, Folder.self, Tag.self] 隐式 schema，依赖 SwiftData 轻量级自动迁移
@@ -69,6 +72,10 @@ struct ImageGalleryApp: App {
         // V5.59-3: ContentView 传 sharedSettings——与 menu/SettingsView 共享同一 UserSettings 实例
         WindowGroup(Term.library, id: "main") {
             ContentView(settings: sharedSettings)
+                // V5.60-7: cheat sheet 挂在 WindowGroup root view——Scene 级不支持 .sheet
+                .sheet(isPresented: $showShortcutsSheet) {
+                    KeyboardShortcutsSheet()
+                }
         }
         // V4.1.0 m: 默认 1280×800；contentMinSize 由 layout 决定
         //   侧栏 160pt + 工具栏 200pt + grid 400pt + 详情 320pt = 1080pt 横向最小
@@ -158,6 +165,14 @@ struct ImageGalleryApp: App {
             //   现在用 .keyboardShortcut 绑到菜单项——系统接管，原 hidden Button 移除
             CommandGroup(replacing: .undoRedo) {
                 UndoRedoMenuButtons()
+            }
+            // V5.60-7: ⌘? 弹 cheat sheet——macOS 14+ CommandGroup(replacing: .help) 标准
+            //   Help 菜单是系统默认菜单, macOS 自动接管 ⌘? shortcut
+            //   加 Button("Keyboard Shortcuts…") 替代无操作
+            CommandGroup(replacing: .help) {
+                Button("Keyboard Shortcuts…") {
+                    showShortcutsSheet = true
+                }
             }
         }
     }

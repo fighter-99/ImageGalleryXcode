@@ -719,7 +719,10 @@ struct ContentView: View {
             // V3.6.52: 用 selection.selectedIDs.count 替直接字段
             selectedCount: selection.selectedIDs.count,
             // V5.15: 导入进度——StatusBar 右侧显示"导入中 X/Y · N 失败"
-            importProgress: importProgress
+            importProgress: importProgress,
+            // V5.60-7: status bar 增强——缩略图档位 + active filter count
+            thumbnailSize: thumbnailSize,
+            activeFilterCount: model.filterState.activeCount
         )
     }
 

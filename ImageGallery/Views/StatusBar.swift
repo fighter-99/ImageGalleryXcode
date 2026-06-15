@@ -20,6 +20,9 @@ struct StatusBar: View {
     let selectedCount: Int
     // V5.15: 导入进度——nil 表示未在导入
     let importProgress: ImportProgress?
+    // V5.60-7: 缩略图大小 (CGFloat) + active filter count (Int)——Photos 风格 status bar 增强
+    let thumbnailSize: CGFloat
+    let activeFilterCount: Int
 
     var body: some View {
         HStack(spacing: Spacing.sm) {
@@ -30,6 +33,11 @@ struct StatusBar: View {
 
             // 占用空间
             Text(totalSize)
+
+            // V5.60-7: 缩略图档位 ("中 200pt" / "大 250pt")——Photos 风格
+            //   跟 .controlSize 档位 (compact/small/medium/large) 映射
+            separator
+            Text(thumbnailSizeLabel)
 
             // 选中数（仅在有选中时显示，更突出）
             if selectedCount > 0 {
@@ -44,6 +52,18 @@ struct StatusBar: View {
             }
 
             Spacer(minLength: 0)
+
+            // V5.60-7: active filter count (条件) — 当 filterState.activeCount > 0 显示
+            if activeFilterCount > 0 {
+                separator
+                HStack(spacing: 4) {
+                    Image(systemName: "line.3.horizontal.decrease.circle.fill")
+                        .font(.caption2)
+                        .foregroundStyle(Color.accentColor)
+                    Text("\(activeFilterCount) 项筛选")
+                        .foregroundStyle(Color.accentColor)
+                }
+            }
 
             // V5.15: 导入进度——右侧显示"导入中 8/15 · 1 失败"
             //   比原"current/total"更准确（含 inserted/failureCount）
@@ -69,6 +89,17 @@ struct StatusBar: View {
             Rectangle()
                 .fill(Surface.separator)
                 .frame(height: 0.5)
+        }
+    }
+
+    /// V5.60-7: 缩略图档位 label——4 档 (compact/small/medium/large) 映射中文
+    ///   70 → 特小, 110 → 小, 200 → 中 (default), 250 → 大
+    private var thumbnailSizeLabel: String {
+        switch thumbnailSize {
+        case ..<80:    return "特小 70pt"
+        case ..<150:   return "小 110pt"
+        case ..<220:   return "中 200pt"
+        default:       return "大 250pt"
         }
     }
 
