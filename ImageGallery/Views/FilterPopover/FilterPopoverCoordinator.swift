@@ -188,6 +188,25 @@ final class FilterPopoverCoordinator {
         }
     }
 
+    /// V5.62-2: 外部 filterState 变化推送——push 给当前 open 的 child popover
+    ///   ContentView.onChange(of: filterState) 触发
+    ///   只 child popover 接收——顶层 popover 自己有 updateState 路径 (closeAll 重新创建)
+    ///   child popover 视觉真正同步——checkbox/segment/星 active 状态实时更新
+    func pushStateToOpenChild(_ newState: FilterState) {
+        guard let childVC = childPopover?.contentViewController,
+              childPopover?.isShown == true else { return }
+        // 4 个子 popover 都有 updateState(_:)——按具体类型调
+        if let vc = childVC as? FolderFilterPopoverController {
+            vc.updateState(newState)
+        } else if let vc = childVC as? TagFilterPopoverController {
+            vc.updateState(newState)
+        } else if let vc = childVC as? ShapeFilterPopoverController {
+            vc.updateState(newState)
+        } else if let vc = childVC as? RatingFilterPopoverController {
+            vc.updateState(newState)
+        }
+    }
+
     // MARK: - 关闭全部
 
     /// V4.89.0: 顶层 + 子 popover 都关（外部清理用）

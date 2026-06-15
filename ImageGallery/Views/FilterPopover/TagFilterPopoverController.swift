@@ -38,6 +38,8 @@ final class TagFilterPopoverController: NSViewController {
     // MARK: - 子视图引用（V5.1: viewDidLayout 计算 content height 用）
 
     private var listContainer: NSView?
+    // V5.62-2: 子 checkbox button 引用 (tag id → NSButton)——updateState 实时同步用
+    private var checkButtons: [UUID: NSButton] = [:]
 
     // MARK: - 配置常量
 
@@ -81,12 +83,15 @@ final class TagFilterPopoverController: NSViewController {
         //   用户反馈权重: V5.62-1 "保留 #, 符合 Instagram/Twitter hashtag 视觉" > V5.4 "tag 下 # 冗余"
         //   视觉一致性优先——一处 # 处处 #
         let list = PopoverItemFactory.makeOneColumnCheckList(items: tags) { [weak self] tag in
-            PopoverItemFactory.makeCheckItem(
+            let button = PopoverItemFactory.makeCheckItem(
                 label: "#\(tag.name)",
                 isOn: self?.filterState.tags.contains(tag.id) ?? false
             ) { [weak self] in
                 self?.handleToggle(tag.id)
             }
+            // V5.62-2: 存 button 引用——updateState 实时同步用
+            self?.checkButtons[tag.id] = button
+            return button
         }
         scrollView.documentView = list
         self.listContainer = list
@@ -134,13 +139,14 @@ final class TagFilterPopoverController: NSViewController {
 
     // MARK: - 状态同步
 
-    /// V4.87.0: 接收外部 filterState 变化
-    ///   V4.36.x #4 范式——ContentView .onChange 推送
-    ///   当前无独立 button 缓存——updateState 无需操作
-    ///   13 个 tag 数量稳定
+    /// V5.62-2: 接收外部 filterState 变化——真正同步 checkbox 视觉
+    ///   之前 (V4.87.0) no-op: 用户开 tag popover → 外面 × folder chip → tag checkbox 仍显示旧状态
+    ///   现在: 迭代 checkButtons 字典, 更新每个 button.state 匹配新 filterState
     func updateState(_ newState: FilterState) {
         self.filterState = newState
-        // 当前无子 button——no-op
+        for (id, button) in checkButtons {
+            button.state = newState.tags.contains(id) ? .on : .off
+        }
     }
 
     // MARK: - toggle

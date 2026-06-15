@@ -663,6 +663,12 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
     //   viewOptions popover 已删, filter popover 由 coordinator 内部管
     //   现在 popoverDidClose 已无任何 NSPopover 需要清理——整个方法可砍
     //   但保留 delegate conformance 以防未来 NSPopover 引入
+
+    /// V5.62-2: 外部 filterState 变化推送 (ContentView.onChange 触发)
+    ///   透传到 coordinator.pushStateToOpenChild——若 child popover open, 同步 checkbox 视觉
+    func pushFilterStateToOpenChild(_ newState: FilterState) {
+        filterPopoverCoordinator?.pushStateToOpenChild(newState)
+    }
     func popoverDidClose(_ notification: Notification) {
         // V5.39.3: 空实现——所有 popover 关闭由各自 controller 内部处理
         //   保留方法以维持 NSPopoverDelegate conformance

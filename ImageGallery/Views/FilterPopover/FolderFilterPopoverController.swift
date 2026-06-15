@@ -31,6 +31,9 @@ final class FolderFilterPopoverController: NSViewController {
     // MARK: - 子视图引用（V5.4: viewDidLayout 计算 content height 用）
 
     private var listContainer: NSView?
+    // V5.62-2: 子 checkbox button 引用 (folder id → NSButton)
+    //   用于 updateState 实时同步外部 filterState 变化到 checkbox 视觉
+    private var checkButtons: [UUID: NSButton] = [:]
 
     // MARK: - 配置常量
 
@@ -66,12 +69,15 @@ final class FolderFilterPopoverController: NSViewController {
         visualEffect.translatesAutoresizingMaskIntoConstraints = false
         // 1 列 checkbox list——V4.81.0 PopoverItemFactory 共享
         let list = PopoverItemFactory.makeOneColumnCheckList(items: folders) { [weak self] folder in
-            PopoverItemFactory.makeCheckItem(
+            let button = PopoverItemFactory.makeCheckItem(
                 label: folder.name,
                 isOn: self?.filterState.folders.contains(folder.id) ?? false
             ) { [weak self] in
                 self?.handleToggle(folder.id)
             }
+            // V5.62-2: 存 button 引用——updateState 实时同步用
+            self?.checkButtons[folder.id] = button
+            return button
         }
         container.addSubview(visualEffect)
         visualEffect.addSubview(list)
@@ -109,14 +115,15 @@ final class FolderFilterPopoverController: NSViewController {
 
     // MARK: - 状态同步
 
-    /// V4.86.0: 接收外部 filterState 变化
-    ///   V4.36.x #4 范式——ContentView .onChange 推送
-    ///   当前实现：folder 1 列无独立 button 缓存——updateState 无需操作
-    ///   folder 数量 8 个——不需要 rebuild
+    /// V5.62-2: 接收外部 filterState 变化——真正同步 checkbox 视觉
+    ///   之前 (V4.86.0) no-op: 用户开 folder popover → 外面 × tag chip → folder checkbox 仍显示旧状态
+    ///   现在: 迭代 checkButtons 字典, 更新每个 button.state 匹配新 filterState
+    ///   loop-safe: NSButton.state setter idempotent, 重复设同值无副作用
     func updateState(_ newState: FilterState) {
         self.filterState = newState
-        // 当前无子 button——no-op
-        // 后续如需复选同步可在此 rebuild list
+        for (id, button) in checkButtons {
+            button.state = newState.folders.contains(id) ? .on : .off
+        }
     }
 
     // MARK: - toggle

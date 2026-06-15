@@ -33,6 +33,11 @@ final class ShapeFilterPopoverController: NSViewController {
 
     private var filterState: FilterState
 
+    // MARK: - 子视图引用
+
+    // V5.62-2: 3 个 segment button 引用 (PhotoShape → NSButton)
+    private var shapeButtons: [PhotoShape: NSButton] = [:]
+
     // MARK: - 配置常量
 
     private static let preferredWidth: CGFloat = 240  // V5.6: 180→240pt——与 folder/tag 一致
@@ -64,6 +69,8 @@ final class ShapeFilterPopoverController: NSViewController {
             ) { [weak self] in
                 self?.handleToggle(shape)
             }
+            // V5.62-2: 存 button 引用——updateState 实时同步用
+            self.shapeButtons[shape] = button
             row.addArrangedSubview(button)
         }
         visualEffect.addSubview(row)
@@ -85,11 +92,25 @@ final class ShapeFilterPopoverController: NSViewController {
 
     // MARK: - 状态同步
 
-    /// V4.88.0: 接收外部 filterState 变化
-    ///   当前 3 个 button 无独立缓存——updateState 无需操作
+    /// V5.62-2: 接收外部 filterState 变化——真正同步 segment 视觉
+    ///   之前 (V4.88.0) no-op: 用户开 shape popover → 外面 × shape chip → 3 icon 仍显示旧 active 状态
+    ///   现在: 迭代 shapeButtons 字典, 更新每个 button 视觉匹配新 filterState
+    ///   shape 视觉用 isActive + tint color, 通过 re-apply style 重设
     func updateState(_ newState: FilterState) {
         self.filterState = newState
-        // 当前无子 button——no-op
+        for (shape, button) in shapeButtons {
+            let isActive = newState.shapes.contains(shape)
+            // V4.36.x #5 范式: applySegmentStyle 重设 active 视觉 (icon tint + bezel)
+            // V5.5: icon size 22pt 保留
+            PopoverItemFactory.applySegmentStyle(
+                button,
+                isActive: isActive,
+                text: nil,
+                symbolName: shape.icon,
+                iconTintOverride: nil,
+                iconSize: Self.shapeIconSize
+            )
+        }
     }
 
     // MARK: - toggle

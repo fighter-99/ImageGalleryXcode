@@ -35,6 +35,9 @@ final class RatingFilterPopoverController: NSViewController {
     // MARK: - 子视图引用（V5.5: viewDidLayout 计算 content height 用）
 
     private var rowContainer: NSStackView?
+    // V5.62-2: 6 行 RatingRowView 引用 (rating 值 → row)——updateState 实时同步用
+    //   rating 0..5 对应 6 行 (0=全部, 1..5=≥N 星)
+    private var ratingRows: [Int: RatingRowView] = [:]
 
     // MARK: - 配置常量
 
@@ -73,25 +76,29 @@ final class RatingFilterPopoverController: NSViewController {
         let contentWidth = Self.preferredWidth - 2 * Self.padding
 
         // 全部行：5 颗空心 + "全部" 文字
-        rowStack.addArrangedSubview(RatingRowView(
+        let allRow = RatingRowView(
             filledCount: 0,
             label: "全部",
             isActive: filterState.minRating == 0,
             width: contentWidth
         ) { [weak self] in
             self?.handleToggle(0)
-        })
+        }
+        rowStack.addArrangedSubview(allRow)
+        self.ratingRows[0] = allRow  // V5.62-2: 存引用
 
         // 5 评分行：N 实 + (5-N) 空 + "≥N 星" 文字
         for n in 1...5 {
-            rowStack.addArrangedSubview(RatingRowView(
+            let row = RatingRowView(
                 filledCount: n,
                 label: "≥\(n) 星",
                 isActive: filterState.minRating == n,
                 width: contentWidth
             ) { [weak self] in
                 self?.handleToggle(n)
-            })
+            }
+            rowStack.addArrangedSubview(row)
+            self.ratingRows[n] = row  // V5.62-2: 存引用
         }
 
         self.rowContainer = rowStack
@@ -124,11 +131,15 @@ final class RatingFilterPopoverController: NSViewController {
 
     // MARK: - 状态同步
 
-    /// V4.88.0: 接收外部 filterState 变化
-    ///   当前无独立 button 缓存——updateState 需重建（active 视觉同步）
-    ///   当前 sub-popover 关闭后即丢弃——coordinator 重建——updateState 不会触发
+    /// V5.62-2: 接收外部 filterState 变化——真正同步 active 视觉
+    ///   之前 (V4.88.0) no-op: 用户开 rating popover → 外面选不同 rating → 旧 popover 6 行 visual 不变
+    ///   现在: 迭代 ratingRows 字典, 调各 row.setActive() 匹配新 filterState.minRating
+    ///   rating 是单值: 只 1 行 active, 其余 inactive
     func updateState(_ newState: FilterState) {
         self.filterState = newState
+        for (rating, row) in ratingRows {
+            row.setActive(rating == newState.minRating)
+        }
     }
 
     // MARK: - toggle

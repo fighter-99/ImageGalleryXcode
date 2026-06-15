@@ -168,7 +168,10 @@ extension View {
             .onChange(of: filterState.activeCount) { _, count in
                 ToolbarController.shared.filterActiveCount = count
             }
-            .onChange(of: filterState) { _, _ in
+            // V5.62-2: 外部 filterState 变化推送 (如 chip × 删除, ActiveFiltersBar 弹 Menu 删)
+            //   若 child popover open, coordinator 调对应子 popover.updateState() 同步视觉
+            .onChange(of: filterState) { _, newState in
+                ToolbarController.shared.pushFilterStateToOpenChild(newState)
                 if !selection.isEmpty {
                     onSelectionEscape()
                 }
