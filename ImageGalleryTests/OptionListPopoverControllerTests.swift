@@ -86,4 +86,28 @@ struct OptionListPopoverControllerTests {
                     "SortOption.\(option).iconName (\(option.iconName)) != toolbarIcon (\(option.toolbarIcon))")
         }
     }
+
+    // MARK: - V5.80: 选中项 bg layer (6% accent) + ✓
+
+    @Test func selectedItemHasVisibleBackgroundLayer() {
+        // V5.80: 选中项应加 6% accent bg——找 view hierarchy 中 bg color 非 nil 的 CALayer
+        let vc = OptionListPopoverController<ThumbnailLayoutMode>(currentItem: .square)
+        vc.loadView()
+        // 递归搜: 找有 backgroundColor 的 CALayer
+        let hasBgLayer = findBgLayer(in: vc.view)
+        #expect(hasBgLayer,
+                "V5.80: 选中项 selectionBackgroundLayer 应有 bg color (6% accent)")
+    }
+
+    /// V5.80: 递归搜 view 找 backgroundColor 非 nil 的 CALayer
+    private func findBgLayer(in view: NSView) -> Bool {
+        if let bg = view.layer?.backgroundColor, bg != nil { return true }
+        for sublayer in view.layer?.sublayers ?? [] {
+            if sublayer.backgroundColor != nil { return true }
+        }
+        for subview in view.subviews {
+            if findBgLayer(in: subview) { return true }
+        }
+        return false
+    }
 }

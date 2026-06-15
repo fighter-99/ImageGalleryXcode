@@ -73,11 +73,25 @@ final class OptionListPopoverController<T: OptionListItem>: NSViewController {
 
     /// V5.77: 单个选项 (icon + label + ✓) 24pt 高——V5.76 count badge always-occupy
     ///   锁 layout 永远不变, 选中/取消无视觉位移
+    /// V5.80: 选中项加 6% accent bg 视觉高亮——之前只切 icon/label accent color, 加 bg 一眼看出选中
     private func makeOptionItem(for item: T) -> NSView {
         let rowView = OptionItemView(item: item)
         rowView.translatesAutoresizingMaskIntoConstraints = false
+        rowView.wantsLayer = true  // V5.80: bg layer 需要 rowView 是 layer-backed
 
         let isSelected = item == currentItem
+
+        // V5.80: 选中背景层 (6% accent, 4pt 圆角, 2pt 边距内缩)
+        //   加在 rowView 底层 (icon/label/checkmark 上层), 选中时才显示
+        let bgLayer = CALayer()
+        bgLayer.cornerRadius = 4
+        bgLayer.backgroundColor = isSelected
+            ? NSColor.controlAccentColor.withAlphaComponent(0.06).cgColor
+            : nil
+        rowView.layer?.addSublayer(bgLayer)
+        // 存 bgLayer 到 rowView, layout 时更新 frame
+        rowView.selectionBackgroundLayer = bgLayer
+
         let icon = NSImageView(image: NSImage(systemSymbolName: item.iconName, accessibilityDescription: nil) ?? NSImage())
         icon.imageScaling = .scaleProportionallyDown
         icon.contentTintColor = isSelected ? .controlAccentColor : .labelColor
@@ -130,11 +144,21 @@ final class OptionListPopoverController<T: OptionListItem>: NSViewController {
 }
 
 /// V5.77: 内部 generic NSView subclass 存 item (NSView.tag 是 readonly)
+/// V5.80: 加 selectionBackgroundLayer 引用 + layout override 更新 bg frame
 private final class OptionItemView<T: OptionListItem>: NSView {
     let item: T
+    /// V5.80: 选中背景层 (6% accent bg) 引用——在 layout() 时更新 frame
+    var selectionBackgroundLayer: CALayer?
+
     init(item: T) {
         self.item = item
         super.init(frame: .zero)
     }
     required init?(coder: NSCoder) { fatalError("not implemented") }
+
+    /// V5.80: layout 时更新 bg layer frame——inset 2pt 边距 + 4pt 圆角
+    override func layout() {
+        super.layout()
+        selectionBackgroundLayer?.frame = bounds.insetBy(dx: 2, dy: 2)
+    }
 }
