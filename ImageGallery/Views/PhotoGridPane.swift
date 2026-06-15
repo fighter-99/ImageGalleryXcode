@@ -54,6 +54,8 @@ struct PhotoGridPane: View {
     let onDropImport: ([URL]) -> Void
     // V5.39.7: 透传重排回调 (customOrder 拖拽重排后触发, 调 ContentView recomputePhotos)
     let onReorder: () -> Void
+    // V5.61-1: 滚动位置变化回调——透传 PhotoGridView.scrollAnchorID 变化到 ContentView 写回 model
+    let onScrollAnchorChange: (String) -> Void
 
     var body: some View {
         PhotoGridView(
@@ -78,6 +80,7 @@ struct PhotoGridPane: View {
             layoutMode: layoutMode,
             sortOption: sortOption,
             scrollAnchorPhotoID: scrollAnchorPhotoID,  // V5.60-6: 滚动恢复 anchor 透传
+            onScrollAnchorChange: onScrollAnchorChange,  // V5.61-1: auto-save 透传
             onVisiblePhotosChange: onVisiblePhotosChange,
             onImport: onImport,
             onBatchDelete: onBatchDelete,

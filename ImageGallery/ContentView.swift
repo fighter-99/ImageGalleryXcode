@@ -596,7 +596,8 @@ struct ContentView: View {
                 //   透传到 PhotoGridView.masonryRowsView 决定 uniformWidth/stretchLastRow
                 layoutMode: layoutMode,
                 sortOption: sortOption,
-                scrollAnchorPhotoID: model.scrollAnchorPhotoID,  // V5.60-6: 滚动恢复 anchor
+                // V5.60-6 启动恢复 + V5.61-1 auto-save——PhotoGridView 双向读写 model
+                scrollAnchorPhotoID: model.scrollAnchorPhotoID,
                 // V4.36.6: visiblePhotos 改 computed property, 此 callback 不再需要
                 //   保留参数避免破坏 PhotoGridPane 签名——传 noop
                 onVisiblePhotosChange: { _ in },
@@ -615,7 +616,9 @@ struct ContentView: View {
                 // V5.39.7: 重排回调——no-op (PhotoGridView 内部 @State trigger 已处理刷新)
                 //   透传 onReorder 闭包到 cell → 调时增 reorderRefreshTrigger → .onChange → recomputePhotos
                 //   ContentView 不需要做事, 闭包仅用于保持 chain 类型一致
-                onReorder: {}
+                onReorder: {},
+                // V5.61-1: .scrollPosition(id:) onChange 写回 model (UserDefaults 持久化)
+                onScrollAnchorChange: { newID in model.scrollAnchorPhotoID = newID }
             )
         case .list:
             // V5.60-3: 合并 PhotoListPane + PhotoTimelinePane → PhotoListOrTimelinePane
