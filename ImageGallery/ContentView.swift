@@ -555,80 +555,32 @@ struct ContentView: View {
     //   失败时填 storageErrorMessage 触发 detail panel 错误态
     //   用户可点重试按钮再次检测（磁盘腾出空间 / 权限恢复后）
     //   PhotoStorage.verifyStorage() 是 v3.6 写但从未调用的死代码——v4.11.0 接入
-    private func checkStorage() {
-        if PhotoStorage.shared.verifyStorage() {
-            storageErrorMessage = nil
-        } else {
-            storageErrorMessage = Copy.storageError
-        }
-    }
+    private func checkStorage() -> Void { model.checkStorage() }
 
     // ⌘N 触发的创建文件夹
-    private func createFolderFromAlert() {
-        let trimmed = newFolderName.trimmingCharacters(in: .whitespaces)
-        guard !trimmed.isEmpty else { return }
-        let folder = Folder(name: trimmed)
-        modelContext.insert(folder)
-        modelContext.saveWithLog()
-        sidebarSelection = .folder(folder)
-    }
+    private func createFolderFromAlert() -> Void { model.createFolderFromAlert() }
 
     // 隐藏的快捷键按钮（.background 注入，不可见但响应快捷键）
     // 切换当前排序方向（在同字段的 asc/desc 之间切换）
-    private func toggleSortDirection() {
-        sortOption = sortOption.toggledDirection
-    }
+    private func toggleSortDirection() -> Void { model.toggleSortDirection() }
 
     // V5.52-8: 删 shareSelected (dead code, 0 caller)
     //   NSSharingServicePicker 路径从未被 wire 进来——V3.6.52 之后用 selection.selectedPhotos
     //   现如要加 share, 直接走 macOS 系统菜单 (Finder > Share) 或 toolbar 按钮
 
     // 复制到剪贴板（支持多选）
-    private func copyToPasteboard() {
-        let pasteboard = NSPasteboard.general
-        pasteboard.clearContents()
-
-        // 收集所有要复制的文件 URL
-        // V3.6.52: 用 selection.selectedPhotos(in:) 替手写 filter
-        let urls: [URL]
-        if !selection.selectedIDs.isEmpty {
-            // 多选：复制所有选中
-            urls = selection.selectedPhotos(in: visiblePhotos).map { $0.fileURL }
-        } else if let photo = singleSelectedPhoto {
-            // 单选：复制单张
-            urls = [photo.fileURL]
-        } else {
-            return  // 没有选中
-        }
-
-        // 写入剪贴板
-        pasteboard.writeObjects(urls as [NSURL])
-        showToast(urls.count == 1 ? "已复制 1 张图片" : "已复制 \(urls.count) 张图片", type: .success)
-    }
+    private func copyToPasteboard() -> Void { model.copyToPasteboard() }
 
     // 进入沉浸式查看（双击图片触发）
-    private func enterImmersive(_ photo: Photo) {
-        if let idx = visiblePhotos.firstIndex(where: { $0.id == photo.id }) {
-            immersiveIndex = idx
-            immersivePhoto = photo
-        }
-    }
+    private func enterImmersive(_ photo: Photo) -> Void { model.enterImmersive(photo) }
 
     // V4.49.1: ⌘↩ Return 触发的进入沉浸式——从 singleSelectedPhoto 派发
     //   Photos.app 标准：Return 键进入全屏查看当前选中
     //   仅在单选时触发——多选/无选不响应
-    private func enterImmersiveFromSelection() {
-        guard let photo = singleSelectedPhoto else { return }
-        enterImmersive(photo)
-    }
+    private func enterImmersiveFromSelection() -> Void { model.enterImmersiveFromSelection() }
 
     // 清除所有筛选
-    private func resetFilters() {
-        sidebarSelection = .all
-        searchText = ""
-        // V4.36.x: 工具栏筛选按钮 4 维也清
-        filterState = .empty
-    }
+    private func resetFilters() -> Void { model.resetFilters() }
 
     // V5.7: 砍 toggleFavorite()——工具栏 ❤ 收藏按钮已移除
     //   原逻辑：单选切换 / 多选批量反向——通过右键菜单评分 / 筛选 popover 替代
@@ -872,115 +824,44 @@ struct ContentView: View {
     /// V5.13: 入队 Toast（V4.36.x 单 in-flight 改 queue）
     /// - 自动 dismiss：用 scheduleDismiss 单点维护 task
     /// - 错误 toast 用 .long duration（5s）让用户看清
-    private func enqueueToast(_ message: String, type: ToastView.ToastType = .info, duration: ToastInfo.Duration = .normal) {
-        let info = ToastInfo(message: message, type: type, duration: duration)
-        toastQueue.append(info)
-        if toastQueue.count == 1 {
-            // 队列从空到非空——启动 dismiss task
-            scheduleDismiss(after: info.duration.seconds)
-        }
-        // 否则排队中——当前 dismiss task 处理完后会自动续 next
-    }
+    private func enqueueToast(_ message: String, type: ToastView.ToastType = .info, duration: ToastInfo.Duration = .normal) -> Void { model.enqueueToast(message, type: type, duration: duration) }
 
     /// V5.13: dismiss task 单点维护
     /// - 每次启动新 task 取消上一个（防 race）
     /// - 队列空时停；非空时按队首 duration 续 task
-    private func scheduleDismiss(after seconds: TimeInterval) {
-        toastTask?.cancel()
-        toastTask = Task { @MainActor in
-            try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
-            guard !Task.isCancelled else { return }
-            guard !toastQueue.isEmpty else { return }
-            toastQueue.removeFirst()
-            if let next = toastQueue.first {
-                scheduleDismiss(after: next.duration.seconds)
-            }
-        }
-    }
+    private func scheduleDismiss(after seconds: TimeInterval) -> Void { model.scheduleDismiss(after: seconds) }
 
     /// 兼容旧 showToast 调用（V4.36.x 8 处 call site 保持 0 改动）
     ///   Day 5 错误 toast 改用 enqueueToast(message, type: .error, duration: .long)
-    private func showToast(_ message: String, type: ToastView.ToastType = .info) {
-        enqueueToast(message, type: type, duration: .normal)
-    }
+    private func showToast(_ message: String, type: ToastView.ToastType = .info) -> Void { model.showToast(message, type: type) }
 
 
     // 处理 Delete 键
-    private func handleDelete() {
-        // V3.6.52: 用 selection.selectedIDs 替旧 selectedIDs
-        if !selection.selectedIDs.isEmpty {
-            showingBatchDeleteConfirm = true
-        } else if singleSelectedPhoto != nil {
-            deleteSinglePhoto()
-        }
-    }
+    private func handleDelete() -> Void { model.handleDelete() }
 
     // V4.36.6: 从 PhotoGridView.handleTap 抽出到 ContentView——3 视图共用
     //   旧版 tap 处理逻辑在 PhotoGridView 内, List/Timeline 视图无法复用
     //   现在 3 视图都传 onTap: handleTap 闭包, 选中行为完全一致
-    private func handleTap(_ photo: Photo) {
-        let modifiers = NSEvent.modifierFlags
-        let modifier: ClickModifier = {
-            if modifiers.contains(.command) { return .command }
-            if modifiers.contains(.shift) { return .shift }
-            return .plain
-        }()
-        let photoIDs = visiblePhotos.map { $0.id }
-        let outcome = MultiSelectMath.handleTap(
-            state: selection,
-            photoID: photo.id,
-            modifier: modifier,
-            photoIDs: photoIDs
-        )
-        // TapOutcome 是 enum with associated values——从 3 个 case 都拿 SelectionState
-        switch outcome {
-        case .singleSelect(let s), .toggleMultiSelect(let s), .rangeSelect(let s):
-            selection = s
-        }
-    }
+    private func handleTap(_ photo: Photo) -> Void { model.handleTap(photo) }
 
     // ─── 上一张 / 下一张 ───
     // V3.6.52: 用 selection.selectingSingle(_:) 替 2 字段手工赋值
-    private func goPrev() {
-        guard canPrev,
-              let id = selection.singleSelectedID,
-              let idx = visiblePhotos.firstIndex(where: { $0.id == id }),
-              idx > 0 else { return }
-        let newID = visiblePhotos[idx - 1].id
-        selection = selection.selectingSingle(newID)
-    }
+    private func goPrev() -> Void { model.goPrev() }
 
-    private func goNext() {
-        guard canNext,
-              let id = selection.singleSelectedID,
-              let idx = visiblePhotos.firstIndex(where: { $0.id == id }),
-              idx < visiblePhotos.count - 1 else { return }
-        let newID = visiblePhotos[idx + 1].id
-        selection = selection.selectingSingle(newID)
-    }
+    private func goNext() -> Void { model.goNext() }
 
     // ─── V4.0.0.6: 缩放快捷键（⌘+ / ⌘-）───
     // 缩放搬到侧栏顶部后，必须配快捷键——否则要"绕到侧栏才能缩"
     // 参考 macOS Photos.app / Preview：⌘+ / ⌘- 缩略图大小
-    private func zoomIn() {
-        if let next = ThumbnailDensity.larger(than: thumbnailSize) {
-            thumbnailSize = next.size
-        }
-    }
+    private func zoomIn() -> Void { model.zoomIn() }
 
-    private func zoomOut() {
-        if let prev = ThumbnailDensity.smaller(than: thumbnailSize) {
-            thumbnailSize = prev.size
-        }
-    }
+    private func zoomOut() -> Void { model.zoomOut() }
 
     // V4.15.0: ⌘0 reset zoom——macOS Photos/Finder 标准快捷键
     //   恢复 thumbnailSize 到用户偏好（storedThumbnailSize from @AppStorage）
     //   不硬编码 170——尊重用户在 Settings 设的 default
     //   （与 ⌘+ / ⌘- 配合——缩放后可一键 reset 回默认）
-    private func resetThumbnailSize() {
-        thumbnailSize = CGFloat(storedThumbnailSize)
-    }
+    private func resetThumbnailSize() -> Void { model.resetThumbnailSize() }
 
     // V4.37.1: 触发 Quick Look——复用于 ⌘Y 菜单 / toolbar 按钮 / 空格键
     //   抽出 onSpace 闭包逻辑（避免 3 处重复 currentVisibleURLs + firstIndex 计算）
@@ -989,151 +870,44 @@ struct ContentView: View {
     //   - 4 个入口 (⌘Y / 工具栏 / 空格 / 双击) 行为完全一致
     //   - 镜像 Photos.app 行为：Spacebar 选中照片进沉浸式
     // V5.42: 旧 QLPreviewPanel 实现删除（QuickLookPreviewController.swift + QuickLookBridge）
-    private func showQuickLook() {
-        enterImmersiveFromSelection()
-    }
+    private func showQuickLook() -> Void { model.showQuickLook() }
 
     // V4.37.4: titlebar accessory tooltip——反映当前 showDetail 状态
     //   加 ⌘I 快捷键提示——用户 hover 时发现 macOS Photos 标准快捷键
     //   仿 V4.36.x Filter 按钮 "筛选 (N)" 动态 tooltip 模式
-    private func titlebarAccessoryTooltip(isActive: Bool) -> String {
-        isActive ? "隐藏信息面板（⌘I）" : "显示信息面板（⌘I）"
-    }
+    private func titlebarAccessoryTooltip(isActive: Bool) -> String { model.titlebarAccessoryTooltip(isActive: isActive) }
 
     // ─── 启动时清理过期回收站项（V3.6 NEW）───
-    private func purgeExpiredTrashOnStartup() {
-        let days = TrashRetentionDays(rawValue: retentionDays) ?? .defaultValue
-        let service = RecycleBinService(storage: .shared, modelContext: modelContext)
-        service.purgeExpired(retentionDays: days.rawValue)
-    }
+    private func purgeExpiredTrashOnStartup() -> Void { model.purgeExpiredTrashOnStartup() }
 
     // ─── 启动导入 ───
-    private func startImport() {
-        let panel = NSOpenPanel()
-        panel.title = "选择图片或文件夹"
-        panel.allowsMultipleSelection = true
-        panel.canChooseDirectories = true
-        panel.canChooseFiles = true
-        panel.allowedContentTypes = [.image]
-
-        guard panel.runModal() == .OK else { return }
-
-        importProgress = ImportProgress(current: 0, total: 0, isImporting: true)
-
-        // V5.15: 4 参数 onProgress (current, total, inserted, failureCount)
-        let importer = ImageImporter(
-            modelContext: modelContext,
-            folder: currentFolder
-        ) { current, total, inserted, failureCount in
-            Task { @MainActor in
-                importProgress = ImportProgress(
-                    current: current, total: total,
-                    inserted: inserted, failureCount: failureCount,
-                    isImporting: true
-                )
-                if current >= total && total > 0 {
-                    try? await Task.sleep(nanoseconds: 1_500_000_000)
-                    if let p = importProgress, p.current >= p.total {
-                        importProgress = nil
-                    }
-                }
-            }
-        }
-        // V3.6.24: 导入前重复检测（fileHash 重复弹 dialog 让用户选跳过/副本）
-        runImportWithDuplicateCheck(urls: panel.urls)
-    }
+    private func startImport() -> Void { model.startImport() }
 
     // ─── 拖入导入 (V5.39.6 NEW) ───
     /// Finder 拖文件 / 文件夹到 grid 任何位置直接导入
     ///   - 走 ImageImporter 内部 collectFiles 递归展开文件夹
     ///   - 走 runImportWithDuplicateCheck 同 NSOpenPanel 路径 (fileHash 重复检测 + 进度反馈)
     ///   - 空 urls 直接 return (用户拖了非图片文件)
-    private func handleDropImport(_ urls: [URL]) {
-        guard !urls.isEmpty else { return }
-        runImportWithDuplicateCheck(urls: urls)
-    }
+    private func handleDropImport(_ urls: [URL]) -> Void { model.handleDropImport(urls) }
 
     /// V3.6.24: 扫现有 photo + 算新 url fileHash，弹 dialog 让用户选
     /// V3.6.27: 改用 async 版本（后台 actor 算 SHA256，不阻塞 main thread）
-    private func runImportWithDuplicateCheck(urls: [URL]) {
-        Task { @MainActor in
-            let check = await ImageImporter.checkDuplicatesAsync(
-                newURLs: urls,
-                in: modelContext
-            ) { current, total in
-                // V3.6.27: 进度反馈（"检测重复中... 5/12"）
-                importProgress = ImportProgress(current: current, total: total, isImporting: true)
-            }
-            // 算完后清进度
-            importProgress = nil
-            if check.hasDuplicates {
-                pendingImportURLs = urls
-                importDuplicateCheck = check
-            } else {
-                importPhotos(urls: urls)
-            }
-        }
-    }
+    private func runImportWithDuplicateCheck(urls: [URL]) -> Void { model.runImportWithDuplicateCheck(urls: urls) }
 
     // V3.6.24: 重复检测 dialog 的动态 title
     // V5.52-4: 实现搬到 ContentViewModel.duplicateDialogTitle
     private var duplicateDialogTitle: String { model.duplicateDialogTitle }
 
-    private func confirmSkipDuplicates() {
-        let existing = Set(importDuplicateCheck?.existing ?? [])
-        let newURLs = pendingImportURLs.filter { !existing.contains($0) }
-        importDuplicateCheck = nil
-        pendingImportURLs = []
-        if !newURLs.isEmpty { importPhotos(urls: newURLs) }
-    }
+    private func confirmSkipDuplicates() -> Void { model.confirmSkipDuplicates() }
 
-    private func confirmImportAllDuplicates() {
-        let allURLs = pendingImportURLs
-        importDuplicateCheck = nil
-        pendingImportURLs = []
-        importPhotos(urls: allURLs)
-    }
+    private func confirmImportAllDuplicates() -> Void { model.confirmImportAllDuplicates() }
 
-    private func cancelDuplicateImport() {
-        importDuplicateCheck = nil
-        pendingImportURLs = []
-    }
+    private func cancelDuplicateImport() -> Void { model.cancelDuplicateImport() }
 
     /// V3.6.24: 实际跑导入（dialog 确认后调用，或无重复时直接调）
     /// V5.13: 接 ImportResult——成功 1 个 success toast + 失败 N 个 error toasts
     /// V5.15: 进度用 inserted/failureCount 显示；混合结果合并 1 个 summary toast
-    private func importPhotos(urls: [URL]) {
-        importProgress = ImportProgress(current: 0, total: 0, isImporting: true)
-        // V5.15: 4 参数 onProgress (current, total, inserted, failureCount)
-        let importer = ImageImporter(modelContext: modelContext, folder: currentFolder) { current, total, inserted, failureCount in
-            Task { @MainActor in
-                importProgress = ImportProgress(
-                    current: current, total: total,
-                    inserted: inserted, failureCount: failureCount,
-                    isImporting: true
-                )
-                if current >= total && total > 0 {
-                    try? await Task.sleep(nanoseconds: 1_500_000_000)
-                    if let p = importProgress, p.current >= p.total {
-                        importProgress = nil
-                    }
-                }
-            }
-        }
-        let result = importer.importURLs(urls)
-        // V5.15: 合并 1 个 summary toast（避免 N 个 per-failure 堆叠）
-        if result.inserted > 0 && result.hasFailures {
-            // 部分成功 + 部分失败
-            enqueueToast("已导入 \(result.inserted) 张，\(result.failureCount) 张失败", type: .info)
-        } else if result.inserted > 0 {
-            // 全成功
-            enqueueToast("已导入 \(result.inserted) 张图片", type: .success)
-        }
-        // 纯失败时仍 per-file 报（让用户知道哪些文件）
-        for (url, _) in result.failures where result.inserted == 0 {
-            enqueueToast("导入失败：\(url.lastPathComponent)", type: .error, duration: .long)
-        }
-    }
+    private func importPhotos(urls: [URL]) -> Void { model.importPhotos(urls: urls) }
 
     // ─── 拖拽导入 ───
     /// V4.49.0: 支持的图像扩展名——拖入时先过滤,避免非图片文件进 importer
@@ -1142,207 +916,44 @@ struct ContentView: View {
         "jpg", "jpeg", "png", "heic", "heif", "tiff", "tif", "gif", "bmp", "webp"
     ]
 
-    private func handleDrop(providers: [NSItemProvider]) -> Bool {
-        let group = DispatchGroup()
-        let lock = NSLock()
-        var urls: [URL] = []
-
-        for provider in providers {
-            group.enter()
-            provider.loadDataRepresentation(forTypeIdentifier: "public.file-url") { data, _ in
-                defer { group.leave() }
-                guard let data = data,
-                      let url = URL(dataRepresentation: data, relativeTo: nil) else { return }
-                // V4.49.0: 文件夹递归展开
-                //   Photos.app 行为：拖入文件夹 = 导入文件夹内所有图片
-                let expanded = Self.expandFolders([url])
-                lock.lock()
-                urls.append(contentsOf: expanded)
-                lock.unlock()
-            }
-        }
-
-        group.notify(queue: .main) {
-            // V4.49.0: 过滤非图片文件（macOS 拖入可能含 .txt/.pdf 等）
-            let imageURLs = urls.filter { Self.supportedImageExtensions.contains($0.pathExtension.lowercased()) }
-            guard !imageURLs.isEmpty else { return }
-            // V3.6.24: 拖拽导入也走重复检测
-            runImportWithDuplicateCheck(urls: imageURLs)
-        }
-
-        return true
-    }
+    private func handleDrop(providers: [NSItemProvider]) -> Bool { model.handleDrop(providers: providers) }
 
     /// V4.49.0: 递归展开文件夹——返回所有文件 URL
     ///   Photos.app 行为：拖入文件夹 = 导入该文件夹 + 子文件夹的图片
     ///   跳隐藏文件 (.DS_Store 等)
-    private static func expandFolders(_ urls: [URL]) -> [URL] {
-        var result: [URL] = []
-        let fileManager = FileManager.default
-        for url in urls {
-            var isDir: ObjCBool = false
-            guard fileManager.fileExists(atPath: url.path, isDirectory: &isDir) else { continue }
-            if isDir.boolValue {
-                if let contents = try? fileManager.contentsOfDirectory(
-                    at: url,
-                    includingPropertiesForKeys: [.isRegularFileKey],
-                    options: [.skipsHiddenFiles]
-                ) {
-                    result.append(contentsOf: expandFolders(contents))
-                }
-            } else {
-                result.append(url)
-            }
-        }
-        return result
-    }
+    private static func expandFolders(_ urls: [URL]) -> [URL] { Self.expandFolders(urls) }
 
     // V4.1.0 l: 切换侧栏 section 时清选中（避免"选中的照片不在新 section"）
-    private func clearSelectionOnFilterChange() {
-        if !selection.isEmpty {
-            selection = .empty
-        }
-    }
+    private func clearSelectionOnFilterChange() -> Void { model.clearSelectionOnFilterChange() }
 
     // ─── 删除单张（V3.6：走 RecycleBinService，不再调 undoManager）───
-    private func deleteSinglePhoto() {
-        guard let photo = singleSelectedPhoto else { return }
-        // V3.6：删除 = 移到回收站（软删），文件保留在 Photos/ 原位
-        // V5.13: 注入 onError 失败时 toast
-        RecycleBinService(
-            storage: .shared,
-            modelContext: modelContext,
-            onError: { error in
-                enqueueToast("移到回收站失败：\(error.localizedDescription)", type: .error, duration: .long)
-            }
-        ).recycle(photo)
-        // V3.6.52: 单字段清空替 2 字段 pair
-        selection = .empty
-        showToast("已移到回收站（\(retentionDays) 天后永久删除）", type: .info)
-    }
+    private func deleteSinglePhoto() -> Void { model.deleteSinglePhoto() }
 
     // ─── 批量删除（V3.6：走 RecycleBinService，不再调 undoManager）───
-    private func batchDelete() {
-        performOnSelectedTrash(
-            { svc, photos in photos.forEach { svc.recycle($0) } },
-            message: { "已移到回收站 \($0) 张" }
-        )
-    }
+    private func batchDelete() -> Void { model.batchDelete() }
 
     // V3.5.19：从 PhotoGridView 搬上来的 4 个 batch 方法
     // 原因：multi-select 顶部栏被移到详情面板里，详情面板的 MultiSelectDetailView
     // 需要直接调用这些方法。
 
     // ─── 批量移动到文件夹 ───
-    private func batchMove(to folder: Folder?) {
-        // V3.6.52: 用 selection.selectedPhotos(in:) 替手写 filter
-        let photosToMove = selection.selectedPhotos(in: visiblePhotos)
-        guard !photosToMove.isEmpty else { return }
-
-        // 快照：移动前的 folder 列表
-        let oldFolders = photosToMove.map { $0.folder }
-        let count = photosToMove.count
-        let folderName = folder?.name ?? "待整理"
-
-        undoManager.registerAction(
-            description: "移动 \(count) 张照片到 \(folderName)"
-        ) {
-            for photo in photosToMove {
-                photo.folder = folder
-            }
-            modelContext.saveWithLog()
-            // 移动后清空多选
-            selection = .empty
-        } undo: {
-            for (photo, oldFolder) in zip(photosToMove, oldFolders) {
-                photo.folder = oldFolder
-            }
-            modelContext.saveWithLog()
-        }
-    }
+    private func batchMove(to folder: Folder?) -> Void { model.batchMove(to: folder) }
 
     // ─── 批量加标签 ───
-    private func batchAddTag(_ tag: Tag) {
-        // V3.6.52: 用 selection.selectedPhotos(in:) 替手写 filter
-        let photosToTag = selection.selectedPhotos(in: visiblePhotos)
-        for photo in photosToTag {
-            if !photo.tags.contains(where: { $0.id == tag.id }) {
-                photo.tags.append(tag)
-            }
-        }
-        modelContext.saveWithLog()
-        // 加标签后保留多选（用户可能想加多个标签）
-    }
+    private func batchAddTag(_ tag: Tag) -> Void { model.batchAddTag(tag) }
 
     // V5.12: 批量评分
     //   - 多选 N 张 → onBatchSetRating(M) 一次设 M 星
     //   - M = 0 表示清除评分
     //   - 与详情页 RatingStarsView 共用同一 photo.rating 字段
     //   - ⌘0-⌘5 快捷键也走同一函数（ContentKeyboardShortcuts.onSetRating）
-    private func batchSetRating(_ rating: Int) {
-        let photosToRate = selection.selectedPhotos(in: visiblePhotos)
-        guard !photosToRate.isEmpty else { return }
-        BatchSetRatingMath.applyRating(rating, count: photosToRate.count) { index, r in
-            photosToRate[index].rating = r
-        }
-        // V5.13: 失败 toast（onError 默认 no-op 向后兼容）
-        modelContext.saveWithLog { _ in
-            enqueueToast("批量评分失败", type: .error, duration: .long)
-        }
-    }
+    private func batchSetRating(_ rating: Int) -> Void { model.batchSetRating(rating) }
 
     // ─── 批量导出 ───
-    private func batchExport() {
-        // V3.6.52: 用 selection.selectedPhotos(in:) 替手写 filter
-        let photosToExport = selection.selectedPhotos(in: visiblePhotos)
-        guard !photosToExport.isEmpty else { return }
-
-        let panel = NSOpenPanel()
-        panel.title = "选择导出位置"
-        panel.prompt = "导出"
-        panel.canChooseFiles = false
-        panel.canChooseDirectories = true
-        panel.allowsMultipleSelection = false
-        panel.canCreateDirectories = true
-
-        guard panel.runModal() == .OK, let destDir = panel.url else { return }
-
-        var successCount = 0
-        for photo in photosToExport {
-            let destURL = destDir.appendingPathComponent(photo.filename)
-            do {
-                if FileManager.default.fileExists(atPath: destURL.path) {
-                    let uniqueDest = uniqueDestinationForBatchExport(for: destURL)
-                    try FileManager.default.copyItem(at: photo.fileURL, to: uniqueDest)
-                } else {
-                    try FileManager.default.copyItem(at: photo.fileURL, to: destURL)
-                }
-                successCount += 1
-            } catch {
-                // V5.13: 删 print 改 error toast（每个失败 1 个）—— 错误用 .long 让用户看清
-                enqueueToast("导出失败：\(photo.filename)", type: .error, duration: .long)
-            }
-        }
-        if successCount > 0 {
-            showToast("已导出 \(successCount) 张图片", type: .success)
-        }
-    }
+    private func batchExport() -> Void { model.batchExport() }
 
     /// 避免导出时文件名冲突
-    private func uniqueDestinationForBatchExport(for url: URL) -> URL {
-        let dir = url.deletingLastPathComponent()
-        let baseName = url.deletingPathExtension().lastPathComponent
-        let ext = url.pathExtension
-        var counter = 1
-        while true {
-            let newName = ext.isEmpty ? "\(baseName)_\(counter)" : "\(baseName)_\(counter).\(ext)"
-            let candidate = dir.appendingPathComponent(newName)
-            if !FileManager.default.fileExists(atPath: candidate.path) {
-                return candidate
-            }
-            counter += 1
-        }
-    }
+    private func uniqueDestinationForBatchExport(for url: URL) -> URL { model.uniqueDestinationForBatchExport(for: url) }
 
     // ─── V5.7: 砍 batchToggleFavorite()——多选面板的"收藏"按钮已移除 ───
 
@@ -1354,132 +965,25 @@ struct ContentView: View {
     ///   - message: toast 消息生成器（接收处理数量）
     ///   - type: toast 类型（默认 .info；恢复用 .success）
     /// V5.13: 注入 onError → RecycleBinService 失败时 toast
-    private func performOnSelectedTrash(
-        _ operation: (RecycleBinService, [Photo]) -> Void,
-        message: (Int) -> String,
-        type: ToastView.ToastType = .info
-    ) {
-        // V3.6.52: 用 selection.selectedPhotos(in:) 替手写 filter
-        let photos = selection.selectedPhotos(in: visiblePhotos)
-        guard !photos.isEmpty else { return }
-        let service = RecycleBinService(
-            storage: .shared,
-            modelContext: modelContext,
-            onError: { error in
-                enqueueToast(
-                    Copy.recycleBinOperationFailed(error.localizedDescription),
-                    type: .error,
-                    duration: .long
-                )
-            }
-        )
-        operation(service, photos)
-        let count = photos.count
-        selection = .empty
-        showToast(message(count), type: type)
-    }
+    private func performOnSelectedTrash(_ operation: (RecycleBinService, [Photo]) -> Void, message: (Int) -> String, type: ToastView.ToastType = .info) -> Void { model.performOnSelectedTrash(operation, message: message, type: type) }
 
     /// 恢复选中的照片（从回收站 → 图库）
-    private func restoreSelectedFromTrash() {
-        performOnSelectedTrash(
-            { svc, photos in photos.forEach { svc.restore($0) } },
-            message: { "已恢复 \($0) 张图片" },
-            type: .success
-        )
-    }
+    private func restoreSelectedFromTrash() -> Void { model.restoreSelectedFromTrash() }
 
     /// 永久删除选中的照片（文件 + SwiftData）
-    private func permanentDeleteSelected() {
-        performOnSelectedTrash(
-            { svc, photos in svc.purgeAll(photos) },
-            message: { "已永久删除 \($0) 张图片" }
-        )
-    }
+    private func permanentDeleteSelected() -> Void { model.permanentDeleteSelected() }
 
     /// 清空回收站（永久删除所有 trashed 项；不走 selectedIDs）
-    private func emptyTrash() {
-        let trashed = allPhotos.filter { $0.isInTrash }
-        guard !trashed.isEmpty else { return }
-        // V5.13: 注入 onError → purge 失败时 toast
-        RecycleBinService(
-            storage: .shared,
-            modelContext: modelContext,
-            onError: { error in
-                enqueueToast("清空回收站失败：\(error.localizedDescription)", type: .error, duration: .long)
-            }
-        ).purgeAll(trashed)
-        let count = trashed.count
-        // V3.6.52: 单字段清空替 2 字段 pair
-        selection = .empty
-        showToast("已清空回收站（\(count) 张）", type: .info)
-    }
+    private func emptyTrash() -> Void { model.emptyTrash() }
 
     /// V3.6.15 NEW: 重复图清理 — 每组保留 importedAt 最新的，其他移到回收站
-    private func keepNewestPerDuplicateGroup() {
-        // 找所有可见图（应用当前 filter 后的子集）里可清理的
-        let visible = visiblePhotos.filter { !$0.isInTrash }
-        let purgeable = PhotoStats.duplicatesToPurge(in: visible)
-        guard !purgeable.isEmpty else { return }
-        // V5.13: 注入 onError → 批量 recycle 失败时 toast
-        let service = RecycleBinService(
-            storage: .shared,
-            modelContext: modelContext,
-            onError: { error in
-                enqueueToast("批量移到回收站失败：\(error.localizedDescription)", type: .error, duration: .long)
-            }
-        )
-        for photo in purgeable { service.recycle(photo) }
-        showToast("已移到回收站 \(purgeable.count) 张重复图", type: .info)
-    }
+    private func keepNewestPerDuplicateGroup() -> Void { model.keepNewestPerDuplicateGroup() }
 
     // ─── 序列化 SidebarSelection ───
-    private func serializeSelection(_ selection: SidebarSelection?) -> String {
-        guard let selection = selection else { return "all" }
-        switch selection {
-        case .all: return "all"
-        // V5.7: 砍 .favorites case
-        case .unfiled: return "unfiled"
-        case .duplicates: return "duplicates"
-        case .recent7Days: return "recent7Days"
-        case .largeFiles: return "largeFiles"
-        case .folder(let f): return "folder:\(f.id.uuidString)"
-        case .tag(let t): return "tag:\(t.id.uuidString)"
-        case .recentlyDeleted: return "recentlyDeleted"  // V3.6 NEW
-        }
-    }
+    private func serializeSelection(_ selection: SidebarSelection?) -> String { model.serializeSelection(selection) }
 
     // ─── 恢复 SidebarSelection ───
-    private func restoreSelection(_ key: String) -> SidebarSelection? {
-        switch key {
-        case "all": return .all
-        // V5.7: 砍 "favorites" case
-        case "unfiled": return .unfiled
-        case "duplicates": return .duplicates
-        case "recent7Days": return .recent7Days
-        case "largeFiles": return .largeFiles
-        case "recentlyDeleted": return .recentlyDeleted  // V3.6 NEW
-        default:
-            if key.hasPrefix("folder:") {
-                let uuidStr = String(key.dropFirst(7))
-                if let uuid = UUID(uuidString: uuidStr) {
-                    let descriptor = FetchDescriptor<Folder>(predicate: #Predicate { $0.id == uuid })
-                    if let folder = try? modelContext.fetch(descriptor).first {
-                        return .folder(folder)
-                    }
-                }
-            }
-            if key.hasPrefix("tag:") {
-                let uuidStr = String(key.dropFirst(4))
-                if let uuid = UUID(uuidString: uuidStr) {
-                    let descriptor = FetchDescriptor<Tag>(predicate: #Predicate { $0.id == uuid })
-                    if let tag = try? modelContext.fetch(descriptor).first {
-                        return .tag(tag)
-                    }
-                }
-            }
-            return .all
-        }
-    }
+    private func restoreSelection(_ key: String) -> SidebarSelection? { model.restoreSelection(key) }
 }
 
 #Preview {

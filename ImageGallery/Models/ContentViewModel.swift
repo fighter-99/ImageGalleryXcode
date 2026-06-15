@@ -25,6 +25,7 @@
 import Foundation
 import SwiftUI
 import SwiftData
+import UniformTypeIdentifiers
 
 /// V5.52: ContentView 的业务模型——@MainActor @Observable 单一根
 @MainActor
@@ -56,6 +57,8 @@ final class ContentViewModel {
     var titlebarAccessory: TitlebarAccessoryController? = nil
     var toastQueue: [ToastInfo] = []
     var toastTask: Task<Void, Never>? = nil
+    /// V3.6 导入进度 (V5.53 搬过来——startImport/importPhotos 都需要)
+    var importProgress: ImportProgress? = nil
     var undoManager = ImageGalleryUndoManager()
     var sidebarColumnWidth: CGFloat = 220
     var detailColumnWidth: CGFloat = 360
@@ -380,20 +383,583 @@ final class ContentViewModel {
     }
 
     /// V4.37.4: titlebar ⓘ 按钮 tooltip——从 ContentView.titlebarAccessoryTooltip 搬过来
-    private func titlebarAccessoryTooltip(isActive: Bool) -> String {
+    func titlebarAccessoryTooltip(isActive: Bool) -> String {
         isActive ? "隐藏信息面板 (⌘I)" : "显示信息面板 (⌘I)"
     }
 
-    // MARK: - V5.52-6 stubs (V5.53+ 实现搬过来)
-    //   41 funcs 没在 V5.52-5 搬——configureToolbar 需要 4 个 (startImport/showQuickLook/goPrev/goNext)
-    //   先放 4 个 stub 占位, V5.53+ 把所有 41 funcs 一次性搬到 model
+    // MARK: - V5.53: 40 funcs + 2 statics 全部搬到 model
+    //   V5.52-5 deferred 的 41 funcs 全部实现
+    //   ContentView 里的版本改为 1-liner proxy: `private func X() { model.X() }`
 
-    func startImport() { /* V5.53+ */ }
-    func showQuickLook() { /* V5.53+ */ }
-    func goPrev() { /* V5.53+ */ }
-    func goNext() { /* V5.53+ */ }
-    func handleDelete() { /* V5.53+ */ }
-    func batchExport() { /* V5.53+ */ }
+    /// V4.11.0: 检查 Application Support/ImageGallery/Photos/ 目录可写性
+    ///   PhotoStorage.verifyStorage() 是 v3.6 写但从未调用的死代码——v4.11.0 接入
+    func checkStorage() {
+        if PhotoStorage.shared.verifyStorage() {
+            storageErrorMessage = nil
+        } else {
+            storageErrorMessage = Copy.storageError
+        }
+    }
+
+    /// ⌘N 触发的创建文件夹
+    func createFolderFromAlert() {
+        let trimmed = newFolderName.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty, let modelContext else { return }
+        let folder = Folder(name: trimmed)
+        modelContext.insert(folder)
+        modelContext.saveWithLog()
+        sidebarSelection = .folder(folder)
+    }
+
+    /// 切换当前排序方向
+    func toggleSortDirection() {
+        sortOption = sortOption.toggledDirection
+    }
+
+    /// 复制到剪贴板（支持多选）
+    func copyToPasteboard() {
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        let urls: [URL]
+        if !selection.selectedIDs.isEmpty {
+            urls = selection.selectedPhotos(in: visiblePhotos).map { $0.fileURL }
+        } else if let photo = singleSelectedPhoto {
+            urls = [photo.fileURL]
+        } else {
+            return
+        }
+        pasteboard.writeObjects(urls as [NSURL])
+        showToast(urls.count == 1 ? "已复制 1 张图片" : "已复制 \(urls.count) 张图片", type: .success)
+    }
+
+    /// 进入沉浸式查看
+    func enterImmersive(_ photo: Photo) {
+        if let idx = visiblePhotos.firstIndex(where: { $0.id == photo.id }) {
+            immersiveIndex = idx
+            immersivePhoto = photo
+        }
+    }
+
+    /// V4.49.1: ⌘↩ Return 触发进入沉浸式
+    func enterImmersiveFromSelection() {
+        guard let photo = singleSelectedPhoto else { return }
+        enterImmersive(photo)
+    }
+
+    /// 清除所有筛选
+    func resetFilters() {
+        sidebarSelection = .all
+        searchText = ""
+        filterState = .empty
+    }
+
+    /// V5.13: Toast 队列
+    func enqueueToast(_ message: String, type: ToastView.ToastType = .info, duration: ToastInfo.Duration = .normal) {
+        let info = ToastInfo(message: message, type: type, duration: duration)
+        toastQueue.append(info)
+        if toastQueue.count == 1 {
+            scheduleDismiss(after: info.duration.seconds)
+        }
+    }
+
+    /// V5.13: dismiss task 单点维护
+    func scheduleDismiss(after seconds: TimeInterval) {
+        toastTask?.cancel()
+        toastTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
+            guard !Task.isCancelled, !toastQueue.isEmpty else { return }
+            toastQueue.removeFirst()
+            if let next = toastQueue.first {
+                scheduleDismiss(after: next.duration.seconds)
+            }
+        }
+    }
+
+    /// 兼容旧 showToast 调用
+    func showToast(_ message: String, type: ToastView.ToastType = .info) {
+        enqueueToast(message, type: type, duration: .normal)
+    }
+
+    /// Delete 键处理
+    func handleDelete() {
+        if !selection.selectedIDs.isEmpty {
+            showingBatchDeleteConfirm = true
+        } else if singleSelectedPhoto != nil {
+            deleteSinglePhoto()
+        }
+    }
+
+    /// V4.36.6: 3 视图共用 tap 处理
+    func handleTap(_ photo: Photo) {
+        let modifiers = NSEvent.modifierFlags
+        let modifier: ClickModifier = {
+            if modifiers.contains(.command) { return .command }
+            if modifiers.contains(.shift) { return .shift }
+            return .plain
+        }()
+        let photoIDs = visiblePhotos.map { $0.id }
+        let outcome = MultiSelectMath.handleTap(
+            state: selection,
+            photoID: photo.id,
+            modifier: modifier,
+            photoIDs: photoIDs
+        )
+        switch outcome {
+        case .singleSelect(let s), .toggleMultiSelect(let s), .rangeSelect(let s):
+            selection = s
+        }
+    }
+
+    /// 上一张
+    func goPrev() {
+        guard canPrev,
+              let id = selection.singleSelectedID,
+              let idx = visiblePhotos.firstIndex(where: { $0.id == id }),
+              idx > 0 else { return }
+        let newID = visiblePhotos[idx - 1].id
+        selection = selection.selectingSingle(newID)
+    }
+
+    /// 下一张
+    func goNext() {
+        guard canNext,
+              let id = selection.singleSelectedID,
+              let idx = visiblePhotos.firstIndex(where: { $0.id == id }),
+              idx < visiblePhotos.count - 1 else { return }
+        let newID = visiblePhotos[idx + 1].id
+        selection = selection.selectingSingle(newID)
+    }
+
+    /// ⌘+ 放大
+    func zoomIn() {
+        if let next = ThumbnailDensity.larger(than: thumbnailSize) {
+            thumbnailSize = next.size
+        }
+    }
+
+    /// ⌘- 缩小
+    func zoomOut() {
+        if let prev = ThumbnailDensity.smaller(than: thumbnailSize) {
+            thumbnailSize = prev.size
+        }
+    }
+
+    /// ⌘0 reset zoom
+    func resetThumbnailSize() {
+        thumbnailSize = CGFloat(settings.thumbnailSize)
+    }
+
+    /// V4.37.1: Quick Look——V5.42 改走 enterImmersiveFromSelection
+    func showQuickLook() {
+        enterImmersiveFromSelection()
+    }
+
+    /// ─── 启动时清理过期回收站项（V3.6 NEW）───
+    func purgeExpiredTrashOnStartup() {
+        let days = TrashRetentionDays(rawValue: settings.trashRetentionDays) ?? .defaultValue
+        guard let modelContext else { return }
+        let service = RecycleBinService(storage: .shared, modelContext: modelContext)
+        service.purgeExpired(retentionDays: days.rawValue)
+    }
+
+    /// ─── 启动导入 ───
+    func startImport() {
+        let panel = NSOpenPanel()
+        panel.title = "选择图片或文件夹"
+        panel.allowsMultipleSelection = true
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = true
+        panel.allowedContentTypes = [.image]
+
+        guard panel.runModal() == .OK else { return }
+
+        importProgress = ImportProgress(current: 0, total: 0, isImporting: true)
+        runImportWithDuplicateCheck(urls: panel.urls)
+    }
+
+    /// Finder 拖入导入
+    func handleDropImport(_ urls: [URL]) {
+        guard !urls.isEmpty else { return }
+        runImportWithDuplicateCheck(urls: urls)
+    }
+
+    /// V3.6.24: 扫现有 photo + 算新 url fileHash
+    /// V3.6.27: 改用 async 版本
+    func runImportWithDuplicateCheck(urls: [URL]) {
+        Task { @MainActor in
+            guard let modelContext else { return }
+            let check = await ImageImporter.checkDuplicatesAsync(
+                newURLs: urls,
+                in: modelContext
+            ) { [self] current, total in
+                self.importProgress = ImportProgress(current: current, total: total, isImporting: true)
+            }
+            importProgress = nil
+            if check.hasDuplicates {
+                pendingImportURLs = urls
+                importDuplicateCheck = check
+            } else {
+                importPhotos(urls: urls)
+            }
+        }
+    }
+
+    func confirmSkipDuplicates() {
+        let existing = Set(importDuplicateCheck?.existing ?? [])
+        let newURLs = pendingImportURLs.filter { !existing.contains($0) }
+        importDuplicateCheck = nil
+        pendingImportURLs = []
+        if !newURLs.isEmpty { importPhotos(urls: newURLs) }
+    }
+
+    func confirmImportAllDuplicates() {
+        let allURLs = pendingImportURLs
+        importDuplicateCheck = nil
+        pendingImportURLs = []
+        importPhotos(urls: allURLs)
+    }
+
+    func cancelDuplicateImport() {
+        importDuplicateCheck = nil
+        pendingImportURLs = []
+    }
+
+    /// V3.6.24: 实际跑导入
+    /// V5.15: 接 4 参数 onProgress + 合并 summary toast
+    func importPhotos(urls: [URL]) {
+        importProgress = ImportProgress(current: 0, total: 0, isImporting: true)
+        guard let modelContext else { return }
+        let importer = ImageImporter(modelContext: modelContext, folder: currentFolder) { [self] current, total, inserted, failureCount in
+            Task { @MainActor in
+                self.importProgress = ImportProgress(
+                    current: current, total: total,
+                    inserted: inserted, failureCount: failureCount,
+                    isImporting: true
+                )
+                if current >= total && total > 0 {
+                    try? await Task.sleep(nanoseconds: 1_500_000_000)
+                    if let p = self.importProgress, p.current >= p.total {
+                        self.importProgress = nil
+                    }
+                }
+            }
+        }
+        let result = importer.importURLs(urls)
+        if result.inserted > 0 && result.hasFailures {
+            enqueueToast("已导入 \(result.inserted) 张，\(result.failureCount) 张失败", type: .info)
+        } else if result.inserted > 0 {
+            enqueueToast("已导入 \(result.inserted) 张图片", type: .success)
+        }
+        for (url, _) in result.failures where result.inserted == 0 {
+            enqueueToast("导入失败：\(url.lastPathComponent)", type: .error, duration: .long)
+        }
+    }
+
+    /// V4.49.0: 拖入时支持的图像扩展名
+    static let supportedImageExtensions: Set<String> = [
+        "jpg", "jpeg", "png", "heic", "heif", "tiff", "tif", "gif", "bmp", "webp"
+    ]
+
+    /// Finder 拖拽导入
+    func handleDrop(providers: [NSItemProvider]) -> Bool {
+        let group = DispatchGroup()
+        let lock = NSLock()
+        var urls: [URL] = []
+
+        for provider in providers {
+            group.enter()
+            provider.loadDataRepresentation(forTypeIdentifier: "public.file-url") { data, _ in
+                defer { group.leave() }
+                guard let data = data,
+                      let url = URL(dataRepresentation: data, relativeTo: nil) else { return }
+                let expanded = Self.expandFolders([url])
+                lock.lock()
+                urls.append(contentsOf: expanded)
+                lock.unlock()
+            }
+        }
+
+        group.notify(queue: .main) {
+            let imageURLs = urls.filter { Self.supportedImageExtensions.contains($0.pathExtension.lowercased()) }
+            guard !imageURLs.isEmpty else { return }
+            self.runImportWithDuplicateCheck(urls: imageURLs)
+        }
+
+        return true
+    }
+
+    /// V4.49.0: 递归展开文件夹
+    static func expandFolders(_ urls: [URL]) -> [URL] {
+        var result: [URL] = []
+        let fileManager = FileManager.default
+        for url in urls {
+            var isDir: ObjCBool = false
+            guard fileManager.fileExists(atPath: url.path, isDirectory: &isDir) else { continue }
+            if isDir.boolValue {
+                if let contents = try? fileManager.contentsOfDirectory(
+                    at: url,
+                    includingPropertiesForKeys: [.isRegularFileKey],
+                    options: [.skipsHiddenFiles]
+                ) {
+                    result.append(contentsOf: expandFolders(contents))
+                }
+            } else {
+                result.append(url)
+            }
+        }
+        return result
+    }
+
+    /// V4.1.0 l: 切换侧栏 section 时清选中
+    func clearSelectionOnFilterChange() {
+        if !selection.isEmpty {
+            selection = .empty
+        }
+    }
+
+    /// V3.6: 删除单张 = 移到回收站
+    func deleteSinglePhoto() {
+        guard let photo = singleSelectedPhoto, let modelContext else { return }
+        RecycleBinService(
+            storage: .shared,
+            modelContext: modelContext,
+            onError: { [self] error in
+                enqueueToast("移到回收站失败：\(error.localizedDescription)", type: .error, duration: .long)
+            }
+        ).recycle(photo)
+        selection = .empty
+        showToast("已移到回收站（\(settings.trashRetentionDays) 天后永久删除）", type: .info)
+    }
+
+    /// V3.6: 批量删除
+    func batchDelete() {
+        performOnSelectedTrash(
+            { svc, photos in photos.forEach { svc.recycle($0) } },
+            message: { "已移到回收站 \($0) 张" }
+        )
+    }
+
+    /// 批量移动到文件夹
+    func batchMove(to folder: Folder?) {
+        let photosToMove = selection.selectedPhotos(in: visiblePhotos)
+        guard !photosToMove.isEmpty, let modelContext else { return }
+        let oldFolders = photosToMove.map { $0.folder }
+        let count = photosToMove.count
+        let folderName = folder?.name ?? "待整理"
+
+        undoManager.registerAction(
+            description: "移动 \(count) 张照片到 \(folderName)"
+        ) {
+            for photo in photosToMove {
+                photo.folder = folder
+            }
+            modelContext.saveWithLog()
+            self.selection = .empty
+        } undo: {
+            for (photo, oldFolder) in zip(photosToMove, oldFolders) {
+                photo.folder = oldFolder
+            }
+            modelContext.saveWithLog()
+        }
+    }
+
+    /// 批量加标签
+    func batchAddTag(_ tag: Tag) {
+        let photosToTag = selection.selectedPhotos(in: visiblePhotos)
+        guard let modelContext else { return }
+        for photo in photosToTag {
+            if !photo.tags.contains(where: { $0.id == tag.id }) {
+                photo.tags.append(tag)
+            }
+        }
+        modelContext.saveWithLog()
+    }
+
+    /// V5.12: 批量评分
+    func batchSetRating(_ rating: Int) {
+        let photosToRate = selection.selectedPhotos(in: visiblePhotos)
+        guard !photosToRate.isEmpty, let modelContext else { return }
+        BatchSetRatingMath.applyRating(rating, count: photosToRate.count) { index, r in
+            photosToRate[index].rating = r
+        }
+        modelContext.saveWithLog { [self] _ in
+            enqueueToast("批量评分失败", type: .error, duration: .long)
+        }
+    }
+
+    /// 批量导出
+    func batchExport() {
+        let photosToExport = selection.selectedPhotos(in: visiblePhotos)
+        guard !photosToExport.isEmpty else { return }
+
+        let panel = NSOpenPanel()
+        panel.title = "选择导出位置"
+        panel.prompt = "导出"
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.canCreateDirectories = true
+
+        guard panel.runModal() == .OK, let destDir = panel.url else { return }
+
+        var successCount = 0
+        for photo in photosToExport {
+            let destURL = destDir.appendingPathComponent(photo.filename)
+            do {
+                if FileManager.default.fileExists(atPath: destURL.path) {
+                    let uniqueDest = uniqueDestinationForBatchExport(for: destURL)
+                    try FileManager.default.copyItem(at: photo.fileURL, to: uniqueDest)
+                } else {
+                    try FileManager.default.copyItem(at: photo.fileURL, to: destURL)
+                }
+                successCount += 1
+            } catch {
+                enqueueToast("导出失败：\(photo.filename)", type: .error, duration: .long)
+            }
+        }
+        if successCount > 0 {
+            showToast("已导出 \(successCount) 张图片", type: .success)
+        }
+    }
+
+    /// 避免导出时文件名冲突
+    func uniqueDestinationForBatchExport(for url: URL) -> URL {
+        let dir = url.deletingLastPathComponent()
+        let baseName = url.deletingPathExtension().lastPathComponent
+        let ext = url.pathExtension
+        var counter = 1
+        while true {
+            let newName = ext.isEmpty ? "\(baseName)_\(counter)" : "\(baseName)_\(counter).\(ext)"
+            let candidate = dir.appendingPathComponent(newName)
+            if !FileManager.default.fileExists(atPath: candidate.path) {
+                return candidate
+            }
+            counter += 1
+        }
+    }
+
+    /// 在 visiblePhotos ∩ selectedIDs 上执行 trash 操作
+    /// V5.13: 注入 onError
+    func performOnSelectedTrash(
+        _ operation: (RecycleBinService, [Photo]) -> Void,
+        message: (Int) -> String,
+        type: ToastView.ToastType = .info
+    ) {
+        let photos = selection.selectedPhotos(in: visiblePhotos)
+        guard !photos.isEmpty, let modelContext else { return }
+        let service = RecycleBinService(
+            storage: .shared,
+            modelContext: modelContext,
+            onError: { [self] error in
+                enqueueToast(
+                    Copy.recycleBinOperationFailed(error.localizedDescription),
+                    type: .error,
+                    duration: .long
+                )
+            }
+        )
+        operation(service, photos)
+        let count = photos.count
+        selection = .empty
+        showToast(message(count), type: type)
+    }
+
+    /// 恢复选中的照片
+    func restoreSelectedFromTrash() {
+        performOnSelectedTrash(
+            { svc, photos in photos.forEach { svc.restore($0) } },
+            message: { "已恢复 \($0) 张图片" },
+            type: .success
+        )
+    }
+
+    /// 永久删除选中的照片
+    func permanentDeleteSelected() {
+        performOnSelectedTrash(
+            { svc, photos in svc.purgeAll(photos) },
+            message: { "已永久删除 \($0) 张图片" }
+        )
+    }
+
+    /// 清空回收站
+    func emptyTrash() {
+        let trashed = allPhotos.filter { $0.isInTrash }
+        guard !trashed.isEmpty, let modelContext else { return }
+        RecycleBinService(
+            storage: .shared,
+            modelContext: modelContext,
+            onError: { [self] error in
+                enqueueToast("清空回收站失败：\(error.localizedDescription)", type: .error, duration: .long)
+            }
+        ).purgeAll(trashed)
+        let count = trashed.count
+        selection = .empty
+        showToast("已清空回收站（\(count) 张）", type: .info)
+    }
+
+    /// V3.6.15: 重复图清理
+    func keepNewestPerDuplicateGroup() {
+        let visible = visiblePhotos.filter { !$0.isInTrash }
+        let purgeable = PhotoStats.duplicatesToPurge(in: visible)
+        guard !purgeable.isEmpty, let modelContext else { return }
+        let service = RecycleBinService(
+            storage: .shared,
+            modelContext: modelContext,
+            onError: { [self] error in
+                enqueueToast("批量移到回收站失败：\(error.localizedDescription)", type: .error, duration: .long)
+            }
+        )
+        for photo in purgeable { service.recycle(photo) }
+        showToast("已移到回收站 \(purgeable.count) 张重复图", type: .info)
+    }
+
+    /// 序列化 SidebarSelection
+    func serializeSelection(_ selection: SidebarSelection?) -> String {
+        guard let selection = selection else { return "all" }
+        switch selection {
+        case .all: return "all"
+        case .unfiled: return "unfiled"
+        case .duplicates: return "duplicates"
+        case .recent7Days: return "recent7Days"
+        case .largeFiles: return "largeFiles"
+        case .folder(let f): return "folder:\(f.id.uuidString)"
+        case .tag(let t): return "tag:\(t.id.uuidString)"
+        case .recentlyDeleted: return "recentlyDeleted"
+        }
+    }
+
+    /// 恢复 SidebarSelection
+    func restoreSelection(_ key: String) -> SidebarSelection? {
+        guard let modelContext else { return nil }
+        switch key {
+        case "all": return .all
+        case "unfiled": return .unfiled
+        case "duplicates": return .duplicates
+        case "recent7Days": return .recent7Days
+        case "largeFiles": return .largeFiles
+        case "recentlyDeleted": return .recentlyDeleted
+        default:
+            if key.hasPrefix("folder:") {
+                let uuidStr = String(key.dropFirst(7))
+                if let uuid = UUID(uuidString: uuidStr) {
+                    let descriptor = FetchDescriptor<Folder>(predicate: #Predicate { $0.id == uuid })
+                    if let folder = try? modelContext.fetch(descriptor).first {
+                        return .folder(folder)
+                    }
+                }
+            }
+            if key.hasPrefix("tag:") {
+                let uuidStr = String(key.dropFirst(4))
+                if let uuid = UUID(uuidString: uuidStr) {
+                    let descriptor = FetchDescriptor<Tag>(predicate: #Predicate { $0.id == uuid })
+                    if let tag = try? modelContext.fetch(descriptor).first {
+                        return .tag(tag)
+                    }
+                }
+            }
+            return .all
+        }
+    }
 
     /// V5.52-1 起步: 无参 init——modelContext 由 .task 注入
     init() {}
