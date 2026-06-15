@@ -846,11 +846,14 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
         //   V5.9.4 引入此 helper (V5.9.4 注释: "刚创建的 NSButton 还没进 window, anchor 无效")
         //   V5.9.5 回退到 V5.8 anchoredTo 路径, 在 macOS 26+ 上 popover 不显示 (用户反馈)
         //   现统一回 showTopAtRect——contentView 永远在 window, 1x1 rect 在按钮底部中心
+        // V5.70: rect y 从 buttonInContent.minY → buttonInContent.minY - 6
+        //   6pt 视觉间隙 (NSPopover 顶部 shadow 5pt + 1pt buffer)——避免 popover 跟 button 底部粘连
+        //   preferredEdge 保持 .minY (V5.69 猜反了已回退)
         let positioningView = anchorView.window?.contentView ?? anchorView
         let buttonInContent = anchorView.convert(anchorView.bounds, to: positioningView)
         let rectAtButtonBottom = NSRect(
             x: buttonInContent.midX,
-            y: buttonInContent.minY,
+            y: buttonInContent.minY - 6,  // V5.70: 6pt below button's bottom (smaller y)
             width: 1,
             height: 1
         )
