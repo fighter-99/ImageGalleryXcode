@@ -79,6 +79,10 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
     /// V4.90.0: Filter popover coordinator 强引用（避免被释放）
     private var filterPopoverCoordinator: FilterPopoverCoordinator?
 
+    /// V5.72 NEW: LayoutMode popover 强引用——避免被 ARC 释放
+    ///   仿 V4.90.0 filterPopoverCoordinator pattern
+    private var layoutModePopover: NSPopover?
+
     /// V4.36.x: 激活筛选总数（用于工具栏 hover tooltip 角标 "筛选 (N)"）
     /// ContentView 通过 .onChange(of: filterState.activeCount) 同步此值
     var filterActiveCount: Int = 0 {
@@ -503,10 +507,16 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
     @objc private func handleMenuButtonClicked(_ sender: NSButton) {
         // 找到 sender button 对应的 toolbar item → Identifier
         guard let id = identifierForButton(sender) else { return }
+
+        // V5.72: layoutMode 改 NSPopover (仿 filter popover V5.63-1 风格)——统一视觉
+        //   density + sort 仍走 NSMenu, V5.73/V5.74 后续扩
+        if id == .layoutModeMenu {
+            handleShowLayoutMode()
+            return
+        }
+
         let menu: NSMenu?
         switch id {
-        case .layoutModeMenu:
-            menu = buildLayoutModeMenu()
         case .densityMenu:
             menu = buildDensityMenu()
         case .sortMenu:
@@ -526,6 +536,36 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
         menu.popUp(positioning: nil, at: location, in: sender)
     }
 
+    /// V5.72 NEW: 显示 layoutMode NSPopover——仿 handleShowFilter 模式 (V4.36.x)
+    ///   强引用 layoutModePopover 避免 ARC 释放, V5.71 改 anchoredTo 路径
+    @objc private func handleShowLayoutMode() {
+        // 切换关闭（再点 toolbar 按钮 toggle）
+        if let popover = layoutModePopover, popover.isShown {
+            popover.close()
+            layoutModePopover = nil
+            return
+        }
+
+        guard let item = itemCache[Identifier.layoutModeMenu.nsIdentifier],
+              let anchorView = item.view else {
+            return
+        }
+
+        let vc = LayoutModePopoverController(currentMode: layoutMode)
+        vc.onSelect = { [weak self] mode in
+            // V5.72: 走 onLayoutModeChange closure 写入 UserSettings + ContentView .onChange 推 toolbar icon
+            //   V5.66 已有 updateAllStates(layoutMode:) 路径
+            self?.onLayoutModeChange?(mode)
+        }
+
+        let popover = NSPopover()
+        popover.behavior = .transient
+        popover.contentViewController = vc
+        // V5.71 模式: anchoredTo + .minY (跟 filter popover 一致)
+        popover.show(relativeTo: anchorView.bounds, of: anchorView, preferredEdge: .minY)
+        layoutModePopover = popover
+    }
+
     /// V5.39.3: 找到 NSButton 对应的 Identifier——遍历 itemCache 比 view ===
     private func identifierForButton(_ button: NSButton) -> Identifier? {
         for id in [Identifier.layoutModeMenu, .densityMenu, .sortMenu] {
@@ -537,27 +577,6 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
     }
 
     // MARK: - 3 个 menu builder (V5.39.3 NEW)
-
-    /// V5.39.3 NEW: 布局模式菜单——方格 / 按比例
-    /// V5.39.5: 删 .masonryStretch (按比例（满行）)——只剩 2 选项
-    private func buildLayoutModeMenu() -> NSMenu {
-        let menu = NSMenu()
-        for mode in ThumbnailLayoutMode.allCases {
-            let item = NSMenuItem(
-                title: mode.displayName,
-                action: #selector(handleMenuItemSelected(_:)),
-                keyEquivalent: ""
-            )
-            item.target = self
-            item.representedObject = mode
-            item.image = NSImage(systemSymbolName: mode.icon, accessibilityDescription: mode.displayName)
-            if mode == layoutMode {
-                item.state = .on
-            }
-            menu.addItem(item)
-        }
-        return menu
-    }
 
     /// V5.39.3 NEW: 缩略图大小菜单——4 档
     private func buildDensityMenu() -> NSMenu {
