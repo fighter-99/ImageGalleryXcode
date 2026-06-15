@@ -14,6 +14,7 @@ import SwiftData
 @testable import ImageGallery
 
 @MainActor
+@Suite(.serialized)  // V5.55: 强制串行——避免 Swift Testing runner 跟 ModelContainer 并行创建冲突
 struct ContentViewModelImportTests {
 
     @Test func cancelDuplicateImport_clearsAllDialogState() throws {
