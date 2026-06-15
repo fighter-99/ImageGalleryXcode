@@ -169,6 +169,12 @@ struct ContentView: View {
     // SwiftData 上下文
     @Environment(\.modelContext) private var modelContext
 
+    // V5.52-1: ContentViewModel 业务模型——@Observable class
+    //   V5.52-1 骨架 (本 commit): 仅 init 注入 modelContext + 空 settings
+    //   V5.52-2..7 逐步把 21 @State + 12 @AppStorage + 30+ computed + 41 funcs 搬过去
+    //   暂为 Optional——.task 里构造。V5.52-3 之后改非 Optional
+    @State private var model: ContentViewModel? = nil
+
     // V3.5 Phase 1 Step 4：撤销/重做（@Observable + @State 模式）
     @State private var undoManager = ImageGalleryUndoManager()
 
@@ -556,6 +562,14 @@ struct ContentView: View {
             .onChange(of: selection.hasSelection) { _, hasSelection in
                 withAnimation(Animations.medium) {
                     showDetail = hasSelection
+                }
+            }
+            // V5.52-1: 注入 modelContext 到 ContentViewModel——.task 在 view 出现后跑一次
+            //   V5.52-2..7 逐步把 @State / @AppStorage 转移到 model 后,
+            //   这里改为 .task(id: ...) 重新注入或在 .onAppear 一次性注入
+            .task {
+                if model == nil {
+                    model = ContentViewModel(modelContext: modelContext)
                 }
             }
     }
