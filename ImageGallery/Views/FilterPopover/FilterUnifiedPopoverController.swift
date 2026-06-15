@@ -36,7 +36,7 @@ final class FilterUnifiedPopoverController: NSViewController {
     private var filterState: FilterState
 
     // V5.63-1: 展开 section 状态——accordion 模式 (单 section 展开)
-    private var expandedSection: FilterCategory? = .folder
+    private(set) var expandedSection: FilterCategory? = nil  // V5.65: 默认 .folder → nil——accordion 范式应全折叠, 用户主动开; private(set) 让测试可读
 
     // MARK: - 子视图引用
 
@@ -355,15 +355,14 @@ final class FilterUnifiedPopoverController: NSViewController {
         guard let content = sectionContents[category] else { return }
         expandedSection = nil
 
-        // 1. chevron 同步折叠状态
+        // 1. chevron 同步折叠状态 (保留 0.18s 旋转动画)
         categoryRows[category]?.setExpanded(false)
 
-        // 2. content 渐隐 + 隐藏
-        NSAnimationContext.runAnimationGroup { ctx in
-            ctx.duration = Self.expandAnimationDuration
-            ctx.allowsImplicitAnimation = true
-            content.animator().isHidden = true
-        }
+        // V5.65: 改 snap (不用 animator)——之前 content.animator().isHidden = true 动画期间
+        //   documentView.fittingSize.height 仍返回展开前值, viewDidLayout 据此设的 preferredContentSize
+        //   保持展开高度, 视觉上"上半部分空". 改 snap 后 popover 立即缩到 4 row 高度.
+        //   chevron 旋转动画仍保留 (setExpanded 内部走 NSAnimationContext)
+        content.isHidden = true
     }
 
     /// V5.63-2: 立即折叠 (无动画)——accordion 切换时用, 避免两 section 动画重叠
