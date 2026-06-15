@@ -199,8 +199,12 @@ enum PopoverItemFactory {
 
 /// V4.81.0: 改 internal（去掉 private）——PopoverItemFactory 跨文件用
 ///   NSButton closure 包装——避免 NSButton.action 只能 #selector
+/// V5.88: 加 hover 状态 (4% labelColor bg)——filter popover checkbox 鼠标悬停视觉反馈
+///   仿 macOS Photos hover 风格. 所有 ClosureButton (makeCheckItem / makeIconOnlySegmentItem) 共享
 final class ClosureButton: NSButton {
     private let actionClosure: () -> Void
+    /// V5.88: hover bg layer (4% labelColor, 4pt 圆角)——hover 时显示
+    private let hoverBackgroundLayer = CALayer()
 
     init(title: String, action: @escaping () -> Void) {
         self.actionClosure = action
@@ -208,9 +212,51 @@ final class ClosureButton: NSButton {
         self.title = title
         self.target = self
         self.action = #selector(invoke)
+
+        // V5.88: 初始化 hover bg layer——透明默认, hover 时切 4% labelColor
+        self.wantsLayer = true
+        hoverBackgroundLayer.cornerRadius = 4
+        hoverBackgroundLayer.backgroundColor = NSColor.clear.cgColor
+        // V5.88: 插在 button.layer 下面 (button 是 text + checkbox, bg 在底层)
+        self.layer?.insertSublayer(hoverBackgroundLayer, at: 0)
     }
 
     required init?(coder: NSCoder) { fatalError("not implemented") }
 
     @objc private func invoke() { actionClosure() }
+
+    // MARK: - V5.88: hover 状态
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        // V5.88: 清理旧 tracking area 加新的——bounds 变化时跟随
+        for area in trackingAreas {
+            removeTrackingArea(area)
+        }
+        let area = NSTrackingArea(
+            rect: bounds,
+            options: [.mouseEnteredAndExited, .activeInKeyWindow, .inVisibleRect],
+            owner: self,
+            userInfo: nil
+        )
+        addTrackingArea(area)
+    }
+
+    override func layout() {
+        super.layout()
+        // V5.88: bg layer 撑满 bounds (inset 1pt, 给 button 边缘留 1pt 视觉缓冲)
+        hoverBackgroundLayer.frame = bounds.insetBy(dx: 1, dy: 1)
+    }
+
+    override func mouseEntered(with event: NSEvent) {
+        super.mouseEntered(with: event)
+        // V5.88: 4% labelColor (跟 macOS Photos 选中项 hover 同色阶)
+        hoverBackgroundLayer.backgroundColor = NSColor.labelColor
+            .withAlphaComponent(0.04).cgColor
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        super.mouseExited(with: event)
+        hoverBackgroundLayer.backgroundColor = NSColor.clear.cgColor
+    }
 }
