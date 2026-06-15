@@ -38,7 +38,8 @@ struct UserSettingsTests {
         let settings = UserSettings()
         #expect(settings.viewModeRaw == ViewMode.grid.rawValue)
         #expect(settings.showSidebar == true)
-        #expect(settings.showDetail == false)
+        // V5.60-1: showDetail 默认改 true (用户要求"详情面板常驻")
+        #expect(settings.showDetail == true)
         #expect(settings.accentColorID == AccentColor.system.rawValue)
         #expect(settings.trashRetentionDays == TrashRetentionDays.defaultValue.rawValue)
         #expect(settings.appearanceMode == AppearanceMode.defaultValue.rawValue)
@@ -121,7 +122,8 @@ struct UserSettingsTests {
 
         #expect(settings.viewModeRaw == ViewMode.grid.rawValue)
         #expect(settings.showSidebar == true)
-        #expect(settings.showDetail == false)
+        // V5.60-1: reset() 同步 showDetail 回新默认 true
+        #expect(settings.showDetail == true)
         #expect(settings.accentColorID == AccentColor.system.rawValue)
         #expect(settings.trashRetentionDays == TrashRetentionDays.defaultValue.rawValue)
         #expect(settings.appearanceMode == AppearanceMode.defaultValue.rawValue)

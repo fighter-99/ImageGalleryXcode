@@ -43,7 +43,10 @@ final class UserSettings {
     }
 
     /// V3.6.13: 详情面板可见性 (ImageGalleryApp 菜单 ⌃⌘D / ⌘I 写)
-    var showDetail: Bool = false {
+    /// V5.60-1: 默认 true (V5.22 改 false, V5.60-1 改回 true——用户要求"详情面板常驻")
+    ///   老用户 @AppStorage 已有 stored showDetail=false 不动 (仅新装/重置生效)
+    ///   手动 ⌘I / ⌘⌃D / titlebar 按钮仍可 toggle——不锁死
+    var showDetail: Bool = true {
         didSet { UserDefaults.standard.set(showDetail, forKey: "showDetail") }
     }
 
@@ -167,7 +170,8 @@ final class UserSettings {
     func reset() {
         viewModeRaw = ViewMode.grid.rawValue
         showSidebar = true
-        showDetail = false
+        // V5.60-1: showDetail 默认改为 true, reset 也回到 true
+        showDetail = true
         accentColorID = AccentColor.system.rawValue
         trashRetentionDays = TrashRetentionDays.defaultValue.rawValue
         appearanceMode = AppearanceMode.defaultValue.rawValue
