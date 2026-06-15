@@ -325,8 +325,10 @@ struct ContentView: View {
 
     // V3.6.15: 重复图 group / purgeable count / size
 
-    // V3.5.17：把 6 个宽度 state vars + 4 个约束 + 2 个 AppStorage 钩子打包
+    // V3.5.17: 把 6 个宽度 state vars + 4 个约束 + 2 个 AppStorage 钩子打包
     // V5.52-4: state vars 都走 model, 这里用 constants from model
+    // V5.60-5: 尝试抽到 ContentView+ColumnLayout.swift extension 失败——`private var model` 跨文件不可见
+    //   撤回, 保留在 ContentView 内——20 行不值得做跨文件重构
     private var columnLayout: ColumnLayoutState {
         ColumnLayoutState(
             sidebarColumnWidth: Binding(get: { model.sidebarColumnWidth }, set: { model.sidebarColumnWidth = $0 }),
