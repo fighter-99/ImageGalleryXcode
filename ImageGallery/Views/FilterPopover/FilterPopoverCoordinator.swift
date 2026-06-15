@@ -94,11 +94,11 @@ final class FilterPopoverCoordinator {
         }
 
         let popover = NSPopover()
-        // V5.15: .applicationDefined 强制 always-below（弃用 NSPopover flip 保护）
-        //   .transient 模式下窗口靠下时 NSPopover 自动翻到上方——见 V5.13.1 调查
-        //   .applicationDefined 模式按 preferredEdge 严格定位，弃用 flip
-        //   折衷：click-outside 不再自动关（需 toggle 按钮或 closeAll 显式关）
-        popover.behavior = .applicationDefined
+        // V5.62-1: 改回 .transient——用户报告 click-outside 不关是 bug
+        //   V5.15 改 .applicationDefined 牺牲 click-outside 自动关避免 auto-flip——但违背 macOS Photos 等标准 UX
+        //   折衷: 接受 auto-flip (NSPopover 内置防溢出, 极端情况下仍 flip), 换回 click-outside 自动关
+        //   同时解决 V5.9.4 提到的 '.transient race condition'——showTop 用 view-based anchor 避开 (L97-103)
+        popover.behavior = .transient
         popover.contentViewController = topVC
         popover.show(relativeTo: anchor.bounds, of: anchor, preferredEdge: .minY)
         topPopover = popover
@@ -134,8 +134,8 @@ final class FilterPopoverCoordinator {
         }
 
         let popover = NSPopover()
-        // V5.15: .applicationDefined（见 showTop 注释）——V5.9.4 dead code 但保持一致
-        popover.behavior = .applicationDefined
+        // V5.62-1: 改回 .transient (见 showTop 注释)
+        popover.behavior = .transient
         popover.contentViewController = topVC
         // V5.9.4: positioningView + rect 路径——避开 view-based anchor 的两个坑
         popover.show(relativeTo: rect, of: positioningView, preferredEdge: .minY)
@@ -168,8 +168,8 @@ final class FilterPopoverCoordinator {
         }
 
         let popover = NSPopover()
-        // V5.15: .applicationDefined（见 showTop 注释）
-        popover.behavior = .applicationDefined
+        // V5.62-1: 改回 .transient (见 showTop 注释)
+        popover.behavior = .transient
         popover.contentViewController = childVC
         popover.show(relativeTo: anchor.bounds, of: anchor, preferredEdge: .minY)
         childPopover = popover

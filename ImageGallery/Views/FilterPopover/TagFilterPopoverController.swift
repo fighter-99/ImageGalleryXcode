@@ -77,11 +77,12 @@ final class TagFilterPopoverController: NSViewController {
 
         // V4.87.0: 1 列 checkbox list——V4.81.0 PopoverItemFactory 共享
         // V5.4: 移除 '#' 前缀——用户截图 17 反馈"标签文本前的 # 多余"
-        //   之前 "#\(tag.name)" 加 # 是 V4.87.0 设计——模仿社交媒体 hashtag 风格
-        //   但实际使用中 # 是冗余的——tag 已经在 tag 类别下，# 视觉污染
+        // V5.62-1: 加回 '#' 前缀——统一 ActiveFiltersBar 视觉 (V5.61-2 加了 #, 之前 V5.4 popover 无 # 视觉割裂)
+        //   用户反馈权重: V5.62-1 "保留 #, 符合 Instagram/Twitter hashtag 视觉" > V5.4 "tag 下 # 冗余"
+        //   视觉一致性优先——一处 # 处处 #
         let list = PopoverItemFactory.makeOneColumnCheckList(items: tags) { [weak self] tag in
             PopoverItemFactory.makeCheckItem(
-                label: tag.name,
+                label: "#\(tag.name)",
                 isOn: self?.filterState.tags.contains(tag.id) ?? false
             ) { [weak self] in
                 self?.handleToggle(tag.id)
