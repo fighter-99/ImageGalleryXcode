@@ -104,7 +104,10 @@ final class OptionListPopoverController<T: OptionListItem>: NSViewController {
         label.translatesAutoresizingMaskIntoConstraints = false
 
         let checkmark = NSTextField(labelWithString: "✓")
-        checkmark.font = NSFont.systemFont(ofSize: 12, weight: .semibold)
+        // V5.86: 12pt → 16pt 跟 icon (16x16) 匹配——macOS Photos 选中态风格
+        //   之前 12pt 视觉比 icon 小 4pt, 看起来 icon/checkmark 视觉权重不一致
+        //   现在 2-tier hierarchy: icon+checkmark 同 16pt, label 13pt
+        checkmark.font = NSFont.systemFont(ofSize: 16, weight: .semibold)
         checkmark.textColor = .controlAccentColor
         checkmark.translatesAutoresizingMaskIntoConstraints = false
         checkmark.isHidden = !isSelected
