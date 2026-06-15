@@ -640,7 +640,9 @@ struct ContentView: View {
                 onReorder: {}
             )
         case .list:
-            PhotoListPane(
+            // V5.60-3: 合并 PhotoListPane + PhotoTimelinePane → PhotoListOrTimelinePane
+            //   1 个 Pane + kind 路由替代 2 个 Pane——节省 88 行
+            PhotoListOrTimelinePane(
                 selection: bindableModel.selection,
                 folder: currentFolder,
                 tag: currentTag,
@@ -658,11 +660,12 @@ struct ContentView: View {
                 filterMinRating: filterState.minRating,
                 sortOption: sortOption,
                 photos: visiblePhotos,
+                kind: .list,
                 onTap: handleTap,
                 onDoubleTap: enterImmersive
             )
         case .timeline:
-            PhotoTimelinePane(
+            PhotoListOrTimelinePane(
                 selection: bindableModel.selection,
                 folder: currentFolder,
                 tag: currentTag,
@@ -680,6 +683,7 @@ struct ContentView: View {
                 filterMinRating: filterState.minRating,
                 sortOption: sortOption,
                 photos: visiblePhotos,
+                kind: .timeline,
                 onTap: handleTap,
                 onDoubleTap: enterImmersive
             )
