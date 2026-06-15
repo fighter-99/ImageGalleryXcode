@@ -66,9 +66,10 @@ struct ContentViewModelMiscTests {
         #expect(result == "tag:\(tag.id.uuidString)")
     }
 
-    // 注意: restoreSelection 需要 ModelContainer.fetch (for folder:/tag: lookup)
-    // 这些 test 移到 V5.54-3 RecycleBin 模式 (inline ModelContainer per test)
-    // 这里只测 serializeSelection + clearSelectionOnFilterChange (不需 modelContext)
+    // 注意: restoreSelection valid folder/tag 测试需要 ModelContainer.fetch——
+    // 见 V5.55-3 下的 fetch 路径 tests (inline ModelContainer 模式)
+
+    // MARK: - restoreSelection fetch 路径 (需要 inline ModelContainer)
 
     // MARK: - clearSelectionOnFilterChange
 
@@ -123,5 +124,57 @@ struct ContentViewModelMiscTests {
 
     // MARK: - 跨测试集成：serialize → restore roundtrip
 
-    // 需要 ModelContainer——移到 V5.54-3 inline 模式 (for folder:/tag: roundtrip)
+    @Test func serialize_thenRestore_folder_roundtrip() throws {
+        // 真实 folder: serialize → restore → 应得回原 folder
+        let container = try ModelContainer(
+            for: Photo.self, Folder.self, Tag.self,
+            configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+        )
+        let context = container.mainContext
+        let model = ContentViewModel()
+        model.modelContext = context
+
+        let folder = Folder(name: "Vacation")
+        context.insert(folder)
+        try context.save()
+
+        let key = model.serializeSelection(.folder(folder))
+        let restored = model.restoreSelection(key)
+        #expect(restored == .folder(folder), "serialize→restore folder 应 roundtrip")
+    }
+
+    @Test func serialize_thenRestore_tag_roundtrip() throws {
+        let container = try ModelContainer(
+            for: Photo.self, Folder.self, Tag.self,
+            configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+        )
+        let context = container.mainContext
+        let model = ContentViewModel()
+        model.modelContext = context
+
+        let tag = Tag(name: "favorite")
+        context.insert(tag)
+        try context.save()
+
+        let key = model.serializeSelection(.tag(tag))
+        let restored = model.restoreSelection(key)
+        #expect(restored == .tag(tag), "serialize→restore tag 应 roundtrip")
+    }
+
+    @Test func serialize_thenRestore_folderUUIDNotInStore_fallsBackToAll() throws {
+        // 序列化一个 folder, 但 context 里没存——restore 应 fallback .all
+        let container = try ModelContainer(
+            for: Photo.self, Folder.self, Tag.self,
+            configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+        )
+        let context = container.mainContext
+        let model = ContentViewModel()
+        model.modelContext = context
+
+        // 不 insert——只用 uuid 构造 key
+        let orphanID = UUID()
+        let key = "folder:\(orphanID.uuidString)"
+        let restored = model.restoreSelection(key)
+        #expect(restored == .all, "UUID 不在 store 应 fallback .all")
+    }
 }
