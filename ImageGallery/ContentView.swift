@@ -62,9 +62,8 @@ struct ContentView: View {
         get { model.thumbnailSize }
         nonmutating set { model.thumbnailSize = newValue }
     }
-    // V3.6.13: 保留 @State 用 toolbar 临时调，onChange 同步 stored
     // V3.6.13: viewMode 改用 @AppStorage 持久化（SettingsView 可设默认）
-    @AppStorage("viewModeRaw") private var viewModeRaw: String = ViewMode.grid.rawValue
+    // V5.59-2: 删 @AppStorage viewModeRaw, viewMode computed 走 model.settings.viewModeRaw
     private var viewMode: ViewMode {
         get { model.viewMode }
         nonmutating set { model.viewMode = newValue }
@@ -144,21 +143,32 @@ struct ContentView: View {
     }
 
     // 栏显隐状态（ContentView 唯一持有，ImageGalleryApp 通过 UserDefaults 同步）
-    @AppStorage("showSidebar") private var showSidebar = true
+    // V5.59-2: 删 @AppStorage showSidebar, 改用 computed proxy 走 model.settings.showSidebar
+    private var showSidebar: Bool {
+        get { model.settings.showSidebar }
+        nonmutating set { model.settings.showSidebar = newValue }
+    }
     // V5.22: 默认 showDetail = false——grid 窗口右侧 30% 留给图片而不是空 detail panel
-    //   老用户 @AppStorage 有 stored showDetail=true 不受影响（仅新装/重置生效）
     //   选照片时仍可在 onChange 触发自动 show（V5.22 后续 sprint 加）——目前只改默认
-    @AppStorage("showDetail") private var showDetail = false
+    // V5.59-2: 删 @AppStorage showDetail, 改用 computed proxy 走 model.settings.showDetail
+    private var showDetail: Bool {
+        get { model.settings.showDetail }
+        nonmutating set { model.settings.showDetail = newValue }
+    }
 
     // V4.13.0: 撤回 V3.5.18 旧 @State showSettings——⌘, 现在走 Settings scene
     //   独立 Preferences 窗口（macOS 标准），不再需要 ContentView sheet 状态
-    @AppStorage("accentColorID") private var accentColorID: String = AccentColor.system.rawValue
+    // V5.59-2: 删 @AppStorage accentColorID, 内部仅由 model.accentColor (computed) 消费
 
     // V3.6 NEW: 回收站保留时长（默认 30 天）
-    @AppStorage("trashRetentionDays") private var retentionDays: Int = TrashRetentionDays.defaultValue.rawValue
+    // V5.59-2: 删 @AppStorage retentionDays, 改用 computed proxy 走 model.settings.trashRetentionDays
+    private var retentionDays: Int {
+        get { model.settings.trashRetentionDays }
+        nonmutating set { model.settings.trashRetentionDays = newValue }
+    }
 
     // V3.6.22: 应用外观（默认跟随系统）
-    @AppStorage("appearanceMode") private var appearanceModeRaw: Int = AppearanceMode.defaultValue.rawValue
+    // V5.59-2: 删 @AppStorage appearanceModeRaw, appearanceMode computed 走 model.appearanceMode
     private var appearanceMode: AppearanceMode { model.appearanceMode }
 
     // V3.6 NEW: 启动时清理过期回收站项的"只跑一次"标记
@@ -218,9 +228,21 @@ struct ContentView: View {
     // SwiftData 上下文
     @Environment(\.modelContext) private var modelContext
 
+    // V5.59-2: 接收 ImageGalleryApp 注入的 sharedSettings 引用
+    //   ContentView/menu/SettingsView 共享同一 UserSettings 实例
+    let settings: UserSettings
+
     // V5.52-1: ContentViewModel 业务模型——@Observable class
     //   V5.52-3 之后非 Optional——.task 里注入 modelContext
-    @State private var model = ContentViewModel()
+    //   V5.59-1: init 接受 settings (与 let settings 共享同一引用)
+    @State private var model: ContentViewModel
+
+    /// V5.59-2: init 从 ImageGalleryApp 传 settings 引用
+    ///   model 与 menu/SettingsView 共享同一 UserSettings 实例
+    init(settings: UserSettings) {
+        self.settings = settings
+        self._model = State(initialValue: ContentViewModel(settings: settings))
+    }
 
     // V3.5 Phase 1 Step 4：撤销/重做（@Observable + @State 模式）
     // V3.5 Phase 1 Step 4：撤销/重做（@Observable + @State 模式）
@@ -235,28 +257,27 @@ struct ContentView: View {
     //   - macOS Photos.app Library 默认 cell 边长 ~180-200pt, 更密集
     //   - 240pt 太稀 (3-4 cell/row), 200pt 是 Photos 真版 (4-5 cell/row, 1188pt 窗口)
     //   - 4 cell 档仍可切: compact 70 / small 110 / medium 200 / large 240
-    //   - 老用户 @AppStorage 已有 storedThumbnailSize 不受影响 (仅新装/重置生效)
-    @AppStorage("thumbnailSize") private var storedThumbnailSize: Double = 200  // V5.30: 240→200 (Photos 真版密度)
-    @AppStorage("sidebarSelection") private var storedSidebarKey: String = "all"
+    // V5.59-2: 删 @AppStorage storedThumbnailSize/storedSidebarKey/storedSortOption
+    //   改用 model.thumbnailSize/model.settings.sidebarSelection/model.sortOption
+    //   (thumbnailSize 是 CGFloat, sortOption 是 SortOption, sidebarSelection 是 SidebarSelection?)
+    //   已有 computed proxy 透传 (上 L70-78), 无需重复声明
     // V5.31: 默认 sort 改 filenameAsc——Photos.app Library 视图无 date header
-    //   - 之前 importedAtDesc → isDateBased=true → DateSectionHeader 显示
     //   - Photos 真版: Library 连续流, 无 date section
     //   - 改 filenameAsc: 字母序, isDateBased=false → masonryFlatLayout (无 header)
     //   - 老用户 @AppStorage 已有 storedSortOption 不受影响 (仅新装/重置生效)
-    @AppStorage("sortOption") private var storedSortOption: String = SortOption.filenameAsc.rawValue  // V5.31: importedAtDesc → filenameAsc
+    // V5.59-2: 删 @AppStorage storedSortOption, sortOption computed (L75) 已走 model.sortOption
     // V5.17: 缩略图布局模式 (2 选项 .square / .squareFit, V5.47 砍 .masonry)
     //   镜像 AppearanceMode Int-backed pattern
     //   @AppStorage 持久化 + computed 读写 + 透传给 ViewOptionsPopover/PhotoGridPane
     //   nonmutating set 必备——否则 closure 内 [self] capture 后 setter 改 self 编译失败
-    @AppStorage("thumbnailLayoutMode") private var storedLayoutModeRaw: Int = ThumbnailLayoutMode.defaultValue.rawValue
+    // V5.59-2: 删 @AppStorage storedLayoutModeRaw, layoutMode computed 走 model.layoutMode
     private var layoutMode: ThumbnailLayoutMode {
         get { model.layoutMode }
         nonmutating set { model.layoutMode = newValue }
     }
 
     // V3.5.12：三栏列宽（HStack + 自定义 drag handles，避开 NSSplitView）
-    @AppStorage("sidebarColumnWidth") private var storedSidebarWidth: Double = 220
-    @AppStorage("detailColumnWidth") private var storedDetailWidth: Double = 360
+    // V5.59-2: 删 @AppStorage storedSidebarWidth/storedDetailWidth, computed proxy 走 model
     private var sidebarColumnWidth: CGFloat {
         get { model.sidebarColumnWidth }
         nonmutating set { model.sidebarColumnWidth = newValue }
@@ -367,169 +388,60 @@ struct ContentView: View {
                 sortOption: sortOption,
                 configureWindow: { model.configureToolbar(window: $0) }
             )
-            // V4.10.0: app lifecycle hooks（.onAppear + 6 个 .onChange 打包）
-            //   避免 body 链超长触发 type-check 超时
-            .appLifecycleHooks(
-                thumbnailSize: thumbnailSize,
+            // V5.59-2: 抽离 4 dialog + 4 onChange + 1 task 到 contentBodyModifiers 解决 type-check 超时
+            .contentBodyModifiers(
+                model: model,
+                bindableModel: bindableModel,
+                settings: settings,
+                modelContext: modelContext,
+                allPhotos: allPhotos,
+                folders: folders,
+                allTags: allTags,
+                selection: selection,
                 sidebarSelection: sidebarSelection,
-                sortOption: sortOption,
-                viewModeRaw: viewModeRaw,
-                storedThumbnailSize: storedThumbnailSize,
-                storedSortOption: storedSortOption,
-                onAppear: {
-                    thumbnailSize = CGFloat(storedThumbnailSize)
-                    sidebarSelection = restoreSelection(storedSidebarKey)
-                    sortOption = SortOption(rawValue: storedSortOption) ?? .filenameAsc  // V5.31
-                    // V3.6 NEW: 启动时清理过期回收站项（只跑一次）
-                    if !hasPurgedExpiredTrash {
-                        hasPurgedExpiredTrash = true
-                        purgeExpiredTrashOnStartup()
-                    }
-                    // V4.11.0: 检测 Application Support 可写性（v3.6 死代码接入）
-                    checkStorage()
-                    // V5.8: 一次性数据迁移——isFavorite=true 的照片 rating 升到 5
-                    //   收藏 = 评分 ≥ 5 语义合并——历史数据对齐
-                    Photo.migrateFavoriteToRating(in: allPhotos, context: modelContext)
-                },
-                onStoredThumbnailChange: { thumbnailSize = CGFloat($0) },
-                onStoredSortChange: { sortOption = SortOption(rawValue: $0) ?? .filenameAsc },  // V5.31
-                onThumbnailChange: { storedThumbnailSize = Double($0) },
-                onSidebarSelectionChange: { new in
-                    storedSidebarKey = serializeSelection(new)
-                    // V4.1.0 l: 切换侧栏 section 同时清选中（避免"选中的照片不在新 section"）
-                    clearSelectionOnFilterChange()
-                },
-                onSortOptionChange: { storedSortOption = $0.rawValue }
-            )
-            // V4.10.0: grid input handling（.onDeleteCommand + .focusable + 6 .onKeyPress 打包）
-            .gridInputHandling(
-                canPrev: canPrev,
-                canNext: canNext,
-                hasSelection: !selection.isEmpty,
-                onDelete: handleDelete,
-                onPrev: goPrev,
-                onNext: goNext,
-                onEscape: { selection = .empty },
-                onSelectAll: { selection = selection.settingAll(in: visiblePhotos) },
-                onZoomIn: zoomIn,
-                onZoomOut: zoomOut,
-                // V4.12.0: 空格键 QuickLook——仅选中单张时生效
-                //   V4.37.1: 抽出到 showQuickLook()——⌘Y 菜单 / toolbar 按钮复用同一路径
-                //   计算 currentIndex (visiblePhotos 内的位置) + 整个 URL 列表
-                //   让 QLPreviewPanel 支持 ←→ 翻页（Photos.app 行为）
-                hasSelectedPhoto: singleSelectedPhoto != nil,
-                onSpace: showQuickLook,
-                // V4.15.0: ⌘0 reset zoom（macOS Photos/Finder 标准）
-                //   恢复 thumbnailSize 到用户偏好（storedThumbnailSize）
-                onResetZoom: resetThumbnailSize,
-                // V4.17.0: ⌘E 导出（macOS Finder 标准）—— 走 batchExport 路径
-                onExport: batchExport,
-                // V4.49.1: ⌘↩ Return 进入沉浸式查看（macOS Photos 标准）
-                //   仅在选中单张时生效——多选/无选 .ignored
-                //   Photos.app 用 Return/Enter 进入全屏图片查看
-                onReturn: enterImmersiveFromSelection
-            )
-            // V4.12.0 删: .background(QuickLookBridge(...))——V5.42 不再走 QLPreviewPanel
-            // 快捷键：⌘+1-6 切换侧边栏
-            .contentKeyboardShortcuts(
+                showSidebar: showSidebar,
+                showDetail: showDetail,
+                filterState: filterState,
+                visiblePhotos: visiblePhotos,
+                batchDeleteTitle: batchDeleteTitle,
+                duplicateDialogTitle: duplicateDialogTitle,
+                undoManager: undoManager,
+                accentColor: accentColor,
+                hasPurgedExpiredTrash: $hasPurgedExpiredTrash,
+                showingNewFolderAlert: Binding(get: { showingNewFolderAlert }, set: { showingNewFolderAlert = $0 }),
                 onImport: startImport,
                 onNewFolder: { showingNewFolderAlert = true },
                 onResetFilters: resetFilters,
-                // V5.7: 砍 onToggleFavorite——工具栏 ❤ 收藏按钮已移除
                 onCopy: copyToPasteboard,
                 onToggleSortDirection: toggleSortDirection,
                 onToggleSidebar: { showSidebar.toggle() },
-                // V5.12: ⌘0-⌘5 评分快捷键
-                //   单选 → 设该照片；多选 → 批量设所有选中照片；无选中 → no-op
                 onSetRating: { rating in batchSetRating(rating) },
-                // V4.15.0: ⌘F 聚焦搜索框改由 NSSearchField (V4.8.1) 自身处理
-                //   撤回 V3.6.23 旧 notification 桥接——onFocusSearch 用默认 {} 空实现
-                // V5.52-8: 删 sidebarSelection 参数
-            )
-            // V4.10.0: 4 dialog 打包（batchDelete / newFolder / emptyTrash / duplicate）
-            .batchActionDialogs(
-                showingBatchDelete: bindableModel.showingBatchDeleteConfirm,
-                batchDeleteTitle: batchDeleteTitle,
-                retentionDays: retentionDays,
-                onConfirmBatchDelete: batchDelete,
-                showingNewFolder: bindableModel.showingNewFolderAlert,
-                newFolderName: bindableModel.newFolderName,
-                onConfirmNewFolder: createFolderFromAlert,
-                showingEmptyTrash: bindableModel.showingEmptyTrashConfirm,
-                onConfirmEmptyTrash: emptyTrash,
-                showingDuplicateCheck: showingDuplicateCheck,
-                duplicateDialogTitle: duplicateDialogTitle,
+                onDelete: handleDelete,
+                onPrev: goPrev,
+                onNext: goNext,
+                onSelectAll: { selection = selection.settingAll(in: visiblePhotos) },
+                onZoomIn: zoomIn,
+                onZoomOut: zoomOut,
+                onResetZoom: resetThumbnailSize,
+                onExport: batchExport,
+                onReturn: enterImmersiveFromSelection,
+                onSpace: showQuickLook,
+                onBatchDelete: batchDelete,
+                onCreateFolder: createFolderFromAlert,
+                onEmptyTrash: emptyTrash,
                 onConfirmSkipDuplicates: confirmSkipDuplicates,
                 onConfirmImportAllDuplicates: confirmImportAllDuplicates,
-                onCancelDuplicateImport: cancelDuplicateImport
+                onCancelDuplicateImport: cancelDuplicateImport,
+                onSelectionEscape: { selection = .empty },
+                onRestoreSelection: { restoreSelection(model.settings.sidebarSelection) },
+                onSerializeSidebarSelection: { serializeSelection($0) },
+                onClearSelectionOnFilterChange: { clearSelectionOnFilterChange() },
+                onSyncTitlebarAccessory: { syncTitlebarAccessory(isActive: $0) },
+                onToggleShowDetail: { showDetail = $0 },
+                onPurgeExpiredTrashOnStartup: { purgeExpiredTrashOnStartup() },
+                onCheckStorage: { checkStorage() },
+                onMigrateFavoriteToRating: { Photo.migrateFavoriteToRating(in: allPhotos, context: modelContext) }
             )
-            // V4.13.0: 撤回 V3.5.18 sheet 路径——⌘, 现在走 Settings scene 独立窗口
-            //   applySettingsChrome 简化为只应用强调色（.tint + .environment(\.appAccent)）
-            .applySettingsChrome(tintColor: accentColor.color)
-            // V4.7.0: 暴露 undoManager 给 Edit menu commands
-            //   抽到 extension（exposeUndoManager）避免 body 链过长触发 type-check 超时
-            .exposeUndoManager(undoManager)
-            // V4.36.x: 工具栏筛选按钮 → 角标 tooltip 同步
-            //   filterActiveCount 变化时推送到 NSToolbar item.tooltip
-            //   onChange 不在初始化时触发——configureNSToolbar 闭包内首次手动 push
-            .onChange(of: filterState.activeCount) { _, count in
-                ToolbarController.shared.filterActiveCount = count
-            }
-            // V4.36.x: 切换筛选条件时清选中（仿 clearSelectionOnFilterChange L1114-1119）
-            //   避免"选中的照片不在新筛选结果里"
-            .onChange(of: filterState) { _, newState in
-                if !selection.isEmpty {
-                    selection = .empty
-                }
-                // V4.94.0: 删 .filterStateChangedFromOutside 通知
-                //   V4.90.0 Coordinator 直接接收 onStateChange——通知机制已不需要
-                //   旧 FilterPopoverViewController.swift 删后，notification 名 extension 消失
-            }
-            // V4.37.4: 同步 showDetail 状态到 titlebar accessory
-            //   三个入口（titlebar 按钮 / ⌘I 菜单 / ⌘Ctrl+D 菜单）toggle 同一 @AppStorage
-            //   onChange 推到 accessory.setActive / setTooltip 让按钮反映真实状态
-            //   仿 V4.36.x Filter 按钮 filterActiveCount didSet → updateFilterBadge 模式
-            .onChange(of: showDetail) { _, newValue in
-                titlebarAccessory?.setActive(newValue)
-                titlebarAccessory?.setTooltip(titlebarAccessoryTooltip(isActive: newValue))
-            }
-            // V5.23: 选照片自动 showDetail / deselect 自动 hide
-            //   V5.22 默认 showDetail=false——无选中时 grid 100% 占窗口
-            //   但选 1 张时希望自动展开 detail 看 metadata
-            //   手动 toggle (⌘Ctrl+D / titlebar 按钮) 仍优先——onChange 只在自动路径触发
-            //   V5.23 镜像 Mac Photos 行为：选即显，取消即隐
-            .onChange(of: selection.hasSelection) { _, hasSelection in
-                withAnimation(Animations.medium) {
-                    showDetail = hasSelection
-                }
-            }
-            // V5.52-1: 注入 modelContext 到 ContentViewModel——.task 在 view 出现后跑一次
-            //   V5.52-3 之后 model 非 Optional, 这里只 attach modelContext
-            // V5.52-7: 推送 3 个 @Query 结果到 model (model 是单一真相源)
-            .task {
-                model.modelContext = modelContext
-                // V5.52-2: 把 12 个 @AppStorage 同步到 model.settings
-                model.settings.viewModeRaw = viewModeRaw
-                model.settings.showSidebar = showSidebar
-                model.settings.showDetail = showDetail
-                model.settings.accentColorID = accentColorID
-                model.settings.trashRetentionDays = retentionDays
-                model.settings.appearanceMode = appearanceModeRaw
-                model.settings.thumbnailSize = storedThumbnailSize
-                model.settings.sidebarSelection = storedSidebarKey
-                model.settings.sortOption = storedSortOption
-                model.settings.thumbnailLayoutMode = storedLayoutModeRaw
-                model.settings.sidebarColumnWidth = storedSidebarWidth
-                model.settings.detailColumnWidth = storedDetailWidth
-                // V5.52-7: 初始 push 3 个 @Query 缓存到 model
-                model.allPhotos = allPhotos
-                model.folders = folders
-                model.allTags = allTags
-            }
-            // V5.52-7: @Query 变化时同步到 model——SwiftData store 变化驱动 .onChange
-            .onChange(of: allPhotos) { _, new in model.allPhotos = new }
-            .onChange(of: folders) { _, new in model.folders = new }
-            .onChange(of: allTags) { _, new in model.allTags = new }
     }
 
     // V5.52-3: @Bindable shadow @State model——macOS 14+ 推荐模式
@@ -582,6 +494,13 @@ struct ContentView: View {
     // 清除所有筛选
     private func resetFilters() -> Void { model.resetFilters() }
 
+    // V5.59-2: 拆出 helper 函数, 避免 .onChange(of: showDetail) body 复杂导致 type-check 超时
+    private func syncTitlebarAccessory(isActive: Bool) {
+        titlebarAccessory?.setActive(isActive)
+        let tooltip = titlebarAccessoryTooltip(isActive: isActive)
+        titlebarAccessory?.setTooltip(tooltip)
+    }
+
     // V5.7: 砍 toggleFavorite()——工具栏 ❤ 收藏按钮已移除
     //   原逻辑：单选切换 / 多选批量反向——通过右键菜单评分 / 筛选 popover 替代
 
@@ -599,7 +518,7 @@ struct ContentView: View {
             pathBar: { pathBarPane },
             split: { mainSplitPane },
             statusBar: { statusBarPane },
-            showSidebar: $showSidebar,
+            showSidebar: Binding(get: { showSidebar }, set: { showSidebar = $0 }),
             undoManager: undoManager,
             toastQueue: toastQueue,
             immersivePhoto: Binding(get: { model.immersivePhoto }, set: { model.immersivePhoto = $0 }),
@@ -641,8 +560,9 @@ struct ContentView: View {
     private var mainSplitPane: some View {
         MainSplitView(
             layout: columnLayout,
-            showSidebar: $showSidebar,
-            showDetail: $showDetail,
+            // V5.59-2: showSidebar/showDetail 改为 computed proxy, 需显式 Binding(get:set:) 替代 $
+            showSidebar: Binding(get: { showSidebar }, set: { showSidebar = $0 }),
+            showDetail: Binding(get: { showDetail }, set: { showDetail = $0 }),
             isDropTargeted: $isDropTargeted,
             isBoxSelecting: $isBoxSelecting,
             onDrop: handleDrop,
@@ -987,7 +907,7 @@ struct ContentView: View {
 }
 
 #Preview {
-    ContentView()
+    ContentView(settings: UserSettings())
         .frame(width: 1000, height: 700)
 }
 

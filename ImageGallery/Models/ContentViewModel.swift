@@ -42,11 +42,20 @@ final class ContentViewModel {
     /// V5.52-3: 22 个 business @State
 
     var selection = SelectionState()
-    var sidebarSelection: SidebarSelection? = .all
+    var sidebarSelection: SidebarSelection? = nil  // V5.59-2: init 时从 settings.sidebarSelection 反序列化
     var filterState = FilterState()
     var searchText = ""
-    var thumbnailSize: CGFloat = 200
-    var sortOption: SortOption = .filenameAsc
+    /// V5.59-2: thumbnailSize 改为 computed 绑 settings.thumbnailSize——单一真相源
+    ///   UserSettings init 时已从 UserDefaults 读 200 默认
+    var thumbnailSize: CGFloat {
+        get { CGFloat(settings.thumbnailSize) }
+        set { settings.thumbnailSize = Double(newValue) }
+    }
+    /// V5.59-2: sortOption 改为 computed 绑 settings.sortOption
+    var sortOption: SortOption {
+        get { SortOption(rawValue: settings.sortOption) ?? .filenameAsc }
+        set { settings.sortOption = newValue.rawValue }
+    }
     var showingBatchDeleteConfirm = false
     var showingEmptyTrashConfirm = false
     var importDuplicateCheck: ImageImporter.DuplicateCheckResult? = nil
@@ -70,8 +79,16 @@ final class ContentViewModel {
     var scrollAnchorPhotoID: String? = nil
 
     var undoManager = ImageGalleryUndoManager()
-    var sidebarColumnWidth: CGFloat = 220
-    var detailColumnWidth: CGFloat = 360
+    /// V5.59-2: sidebarColumnWidth/detailColumnWidth 改为 computed 绑 settings
+    ///   dragStartWidth 是临时态, 保留 stored
+    var sidebarColumnWidth: CGFloat {
+        get { CGFloat(settings.sidebarColumnWidth) }
+        set { settings.sidebarColumnWidth = Double(newValue) }
+    }
+    var detailColumnWidth: CGFloat {
+        get { CGFloat(settings.detailColumnWidth) }
+        set { settings.detailColumnWidth = Double(newValue) }
+    }
     var sidebarDragStartWidth: CGFloat = 220
     var detailDragStartWidth: CGFloat = 360
 

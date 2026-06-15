@@ -72,8 +72,10 @@ struct ImageGalleryApp: App {
         //   .primaryAction 在 .unifiedCompact 下也不会被加 section 背景
         //   回归 V4.0.0.1 的 .unifiedCompact（blur 轻，符合"toolbar 是 backdrop"原意）
         // V5.51: "图馆" → "图库" typo 修复 + 走 Term.library 字典
+        // V5.59-3: ContentView 需要 settings 参数——传 sharedSettings (V5.59-3 在 ImageGalleryApp 加 @State)
+        //   当前 commit 临时传新 UserSettings(), V5.59-3 替换
         WindowGroup(Term.library, id: "main") {
-            ContentView()
+            ContentView(settings: UserSettings())
         }
         // V4.1.0 m: 默认 1280×800；contentMinSize 由 layout 决定
         //   侧栏 160pt + 工具栏 200pt + grid 400pt + 详情 320pt = 1080pt 横向最小
