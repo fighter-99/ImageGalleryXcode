@@ -82,12 +82,12 @@ struct PopoverStyleTokensTests {
     // MARK: - PopoverStyle 4 类别行专用（V4.79.0 NEW）
 
     @Test func popoverCategoryRowTokens() {
-        #expect(PopoverStyle.categoryRowHeight == 32)
+        #expect(PopoverStyle.categoryRowHeight == 40)              // V5.63-3: 32 → 40
         #expect(PopoverStyle.categoryRowIconSize == 15)
         #expect(PopoverStyle.categoryRowChevronSize == 9)
-        #expect(PopoverStyle.categoryRowCountBadgeSize == 11)
+        #expect(PopoverStyle.categoryRowCountBadgeSize == 10)      // V5.63-3: 11 → 10
         #expect(PopoverStyle.categoryRowCountBadgeHeight == 16)
-        #expect(PopoverStyle.categoryRowCountBadgeOpacity == 0.12)
+        #expect(PopoverStyle.categoryRowCountBadgeOpacity == 0.10)  // V5.63-3: 0.12 → 0.10
     }
 
     // MARK: - ToolbarStyle

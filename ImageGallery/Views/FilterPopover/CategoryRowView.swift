@@ -7,10 +7,10 @@
 //    每个 row 显示：icon + 标题 + count badge + chevron
 //
 //  范式：
-//    - 32pt 高（V4.79.0 categoryRowHeight）
+//    - 40pt 高（V4.79.0 categoryRowHeight, V5.63-3: 32→40——更易点击 target + 视觉 breathing）
 //    - icon 15pt（V4.79.0 categoryRowIconSize）
 //    - chevron 9pt（V4.79.0 categoryRowChevronSize）
-//    - count badge 11pt 数字 + 16pt 高（V4.79.0 countBadgeSize/Height）
+//    - count badge 10pt 数字 + 16pt 高（V4.79.0 countBadgeSize/Height, V5.63-3: 11→10pt 更轻）
 //    - 0 激活时 count badge 隐藏
 //
 //  Why NSView 子类（而非 NSStackView 内嵌 NSButton）：
@@ -90,26 +90,26 @@ final class CategoryRowView: NSView {
         self.iconView.setContentHuggingPriority(.required, for: .horizontal)
 
         // title
+        // V5.63-3: 13pt regular → 14pt medium——section title 字号权重提升, 仿 macOS Photos
         self.titleLabel = NSTextField(labelWithString: category.title)
-        self.titleLabel.font = NSFont.systemFont(ofSize: 13, weight: .regular)
+        self.titleLabel.font = NSFont.systemFont(ofSize: 14, weight: .medium)
         self.titleLabel.textColor = .labelColor
         self.titleLabel.translatesAutoresizingMaskIntoConstraints = false
 
         // count badge bg (圆角矩形)
-        // V4.96.0: 强化视觉——12% → 20% accent bg
-        //   之前 12% 在 transl material 上太弱——截图 11 几乎看不到 count
-        //   20% accent 让 active count 视觉明显
+        // V5.63-3: 20% → 10% accent——配合整行 4% labelColor tint, 视觉层次:
+        //   整行 4% (最弱) > count badge 10% (中等) > active 100% (最强)
         self.countBadgeBg = NSView()
         self.countBadgeBg.wantsLayer = true
         self.countBadgeBg.layer?.cornerRadius = PopoverStyle.categoryRowCountBadgeHeight / 2  // 8pt
         self.countBadgeBg.layer?.backgroundColor = NSColor.controlAccentColor
-            .withAlphaComponent(0.20).cgColor  // V4.96.0: 12% → 20%
+            .withAlphaComponent(PopoverStyle.categoryRowCountBadgeOpacity).cgColor  // V5.63-3: 0.20 → 0.10
         self.countBadgeBg.translatesAutoresizingMaskIntoConstraints = false
 
         // count badge text
-        // V4.96.0: .medium → .semibold——count 数字更醒目
+        // V5.63-3: .semibold → .regular + 字号 11→10pt——Mac 原生感更轻, 不抢 title
         self.countBadge = NSTextField(labelWithString: "0")
-        self.countBadge.font = NSFont.systemFont(ofSize: PopoverStyle.categoryRowCountBadgeSize, weight: .semibold)
+        self.countBadge.font = NSFont.systemFont(ofSize: PopoverStyle.categoryRowCountBadgeSize, weight: .regular)
         self.countBadge.textColor = .labelColor
         self.countBadge.alignment = .center
         self.countBadge.translatesAutoresizingMaskIntoConstraints = false
@@ -162,7 +162,7 @@ final class CategoryRowView: NSView {
             mainStack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 12),
             mainStack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -12),
             mainStack.centerYAnchor.constraint(equalTo: centerYAnchor),
-            self.heightAnchor.constraint(equalToConstant: PopoverStyle.categoryRowHeight)  // 32pt
+            self.heightAnchor.constraint(equalToConstant: PopoverStyle.categoryRowHeight)  // 40pt
         ])
 
         // icon/chevron 固定尺寸

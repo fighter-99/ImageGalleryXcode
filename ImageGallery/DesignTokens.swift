@@ -570,16 +570,16 @@ enum PopoverStyle {
     static let hostBorderWidth: CGFloat = 0.5
 
     // ─── V4.79.0 NEW: 顶层 popover 4 类别行专用 token ───
-    /// 类别行高度——32pt（比 item 24pt 大——含 icon + title + count + chevron 4 元素）
-    static let categoryRowHeight: CGFloat = 32
+    /// V5.63-3: 类别行高度 32→40pt——更易点击 target + 视觉 breathing, 仿 macOS Photos
+    static let categoryRowHeight: CGFloat = 40
     /// 类别行 icon 字号——15pt（与 item icon 一致）
     static let categoryRowIconSize: CGFloat = 15
     /// 类别行 chevron 字号——9pt（chevron 比 icon 小——次要视觉元素）
     static let categoryRowChevronSize: CGFloat = 9
-    /// 类别行 count badge 数字字号——11pt（次要信息）
-    static let categoryRowCountBadgeSize: CGFloat = 11
+    /// V5.63-3: count badge 数字字号 11→10pt——更轻量, 仿 macOS Photos
+    static let categoryRowCountBadgeSize: CGFloat = 10
     /// 类别行 count badge 高度——16pt（圆形/胶囊形高度）
     static let categoryRowCountBadgeHeight: CGFloat = 16
-    /// 类别行 count badge 背景透明度——12% accent
-    static let categoryRowCountBadgeOpacity: CGFloat = 0.12
+    /// V5.63-3: count badge 背景透明度 12→10% accent——更轻, 不与整行 tint 争抢对比
+    static let categoryRowCountBadgeOpacity: CGFloat = 0.10
 }
