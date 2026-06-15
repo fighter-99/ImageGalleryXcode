@@ -364,7 +364,10 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
         button.imageScaling = .scaleProportionallyDown
         button.target = self
         button.action = action
-        button.bezelStyle = .recessed  // 跟 NSToolbar 系统按钮风格一致
+        // V5.81: 改 .circular——5 个系统按钮 (sidebar/quickLook/export/delete/import) 跟 4 个 popover 按钮 (filter/layoutMode/density/sort) 统一
+        //   V5.9.7 注释 "圆形 pill 跟其他 5 按钮统一" 但实际 5 按钮是 .recessed, 现治本
+        //   macOS Photos 风格——9 按钮全 .circular
+        button.bezelStyle = .circular
         button.toolTip = label
         button.isBordered = true
         button.setContentHuggingPriority(.defaultLow, for: .horizontal)

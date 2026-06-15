@@ -407,7 +407,9 @@ enum SearchFieldMetrics {
     // V4.2.3: 200 → 170pt——给两侧按钮组让出呼吸空间
     // V4.2.4: 170 → 180pt——170 装不下原 placeholder "搜索文件名、标签、备注"
     //   配合 placeholder 缩短为 "搜索照片、标签..." 两手抓
-    static let width: CGFloat = 180
+    // V5.81: 180 → 150pt——placeholder 现在 "搜索照片、标签..." 短, 180pt 偏宽
+    //   缩 30pt 给 toolbar 两侧按钮组 (4×28pt=112pt + 30pt 富余) 让出更多呼吸空间
+    static let width: CGFloat = 150
     static let widthExpanded: CGFloat = 360  // 展开历史时（V4.0.1 智能搜索）
     static let height: CGFloat = 30          // V4.0.0.4 与其他 item 对齐
 }

@@ -117,7 +117,7 @@ struct PopoverStyleTokensTests {
     // MARK: - SearchFieldMetrics + StatusBarMetrics + WindowChrome
 
     @Test func searchAndStatusBarMetrics() {
-        #expect(SearchFieldMetrics.width == 180)         // V4.2.4
+        #expect(SearchFieldMetrics.width == 150)         // V5.81: 180 → 150
         #expect(SearchFieldMetrics.widthExpanded == 360)
         #expect(SearchFieldMetrics.height == 30)
         #expect(StatusBarMetrics.height == 24)
