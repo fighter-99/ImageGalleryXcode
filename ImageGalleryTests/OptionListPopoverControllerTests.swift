@@ -87,6 +87,14 @@ struct OptionListPopoverControllerTests {
         }
     }
 
+    @Test func customOrderIconHasVisualWeight() {
+        // V5.87 invariant: customOrder icon 必须有视觉重量 (跟 clock/externaldrive 实心 icon 一致)
+        //   之前 line.3.horizontal (3 条细线) 视觉重量不足, 看起来比 clock/externaldrive 小一截
+        //   改 arrow.up.arrow.down (有'上下排'语义, 跟 asc/desc 主题一致, 视觉重量相当)
+        #expect(SortOption.customOrder.toolbarIcon == "arrow.up.arrow.down",
+                "SortOption.customOrder.icon 应是 arrow.up.arrow.down, 实际 \(SortOption.customOrder.toolbarIcon)")
+    }
+
     // MARK: - V5.80: 选中项 bg layer (6% accent) + ✓
 
     @Test func selectedItemHasVisibleBackgroundLayer() {

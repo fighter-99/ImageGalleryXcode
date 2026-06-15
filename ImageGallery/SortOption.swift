@@ -54,7 +54,9 @@ enum SortOption: String, CaseIterable, Identifiable {
         switch self {
         case .importedAtDesc, .fileSizeDesc, .filenameDesc: return "arrow.down"
         case .importedAtAsc, .fileSizeAsc, .filenameAsc:    return "arrow.up"
-        case .customOrder:                                  return "line.3.horizontal"
+        // V5.87: line.3.horizontal (3 条细线) 视觉重量不足, 跟 clock/externaldrive 实心 icon 不一致
+        //   改 arrow.up.arrow.down (有'上下排'语义, 跟 asc/desc 主题一致, 视觉重量跟其他 icon 相当)
+        case .customOrder:                                  return "arrow.up.arrow.down"
         }
     }
 
@@ -63,7 +65,7 @@ enum SortOption: String, CaseIterable, Identifiable {
     ///   - importedAt*: clock 暗示时间
     ///   - filename*: textformat
     ///   - fileSize*: externaldrive
-    ///   - custom: line.3.horizontal
+    ///   - custom: arrow.up.arrow.down (V5.87: line.3.horizontal 视觉重量不足, 改 arrow.up.arrow.down)
     ///   V5.60-2: filenameAsc/Desc 之前共用 textformat (无方向暗示)——改 size.larger/.smaller 区分
     ///   desc = 大先 (Z→A) → textformat.size.larger; asc = 小先 (A→Z) → textformat.size.smaller
     ///   其他 desc 加 .fill, asc 不加 (跟 Photos 工具栏 sort 按钮一致)
@@ -75,7 +77,7 @@ enum SortOption: String, CaseIterable, Identifiable {
         case .filenameAsc:     return "textformat.size.smaller"  // V5.60-2: 小写先 A→Z
         case .fileSizeDesc:    return "externaldrive.fill"
         case .fileSizeAsc:     return "externaldrive"
-        case .customOrder:     return "line.3.horizontal"
+        case .customOrder:     return "arrow.up.arrow.down"  // V5.87: 视觉重量跟其他 icon 一致
         }
     }
 
