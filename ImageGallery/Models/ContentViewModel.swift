@@ -216,6 +216,22 @@ final class ContentViewModel {
         PhotoStats.duplicatesToPurge(in: visiblePhotos).reduce(0) { $0 + $1.fileSize }
     }
 
+    // MARK: V5.56 Key Photo——每日期组代表图
+
+    /// V5.56: DateGroup 代表图 (每组 1 张)——sidebar 折叠 / DateSectionHeader 用
+    /// 优先级 (从高到低):
+    ///   1. group.photos.first 排除 trashed (避免代表图指向已删)
+    ///   2. fallback 到 group.photos.first (即使全 trashed 也返回某张)
+    ///   3. group.photos 为空 → nil
+    /// 时间复杂度 O(n) (group 内 photos 数量, 实际 n ≤ 几十)
+    /// group.photos 已按 importedAt 降序 (PhotoStats.groupByDate 实现)
+    func representativePhoto(for group: DateGroup) -> Photo? {
+        if let live = group.photos.first(where: { !$0.isInTrash }) {
+            return live
+        }
+        return group.photos.first
+    }
+
     // MARK: navigation title / subtitle
 
     /// V4.2.0 P0❸: navigationTitle——给 Dock / ⌘⇥ / Mission Control / VoiceOver 用
