@@ -571,6 +571,23 @@ struct ContentView: View {
                 if model == nil {
                     model = ContentViewModel(modelContext: modelContext)
                 }
+                // V5.52-2: 把 12 个 @AppStorage 同步到 model.settings
+                //   @AppStorage 是 source of truth, model.settings 是 in-memory cache
+                //   双向: view 改 @AppStorage → onChange 推 model; model 改 settings → didSet 写回 @AppStorage (外部可见)
+                //   V5.52-3..7 之后, computed/funcs 读 model.settings.X 走单一路径
+                guard let model else { return }
+                model.settings.viewModeRaw = viewModeRaw
+                model.settings.showSidebar = showSidebar
+                model.settings.showDetail = showDetail
+                model.settings.accentColorID = accentColorID
+                model.settings.trashRetentionDays = retentionDays
+                model.settings.appearanceMode = appearanceModeRaw
+                model.settings.thumbnailSize = storedThumbnailSize
+                model.settings.sidebarSelection = storedSidebarKey
+                model.settings.sortOption = storedSortOption
+                model.settings.thumbnailLayoutMode = storedLayoutModeRaw
+                model.settings.sidebarColumnWidth = storedSidebarWidth
+                model.settings.detailColumnWidth = storedDetailWidth
             }
     }
 
