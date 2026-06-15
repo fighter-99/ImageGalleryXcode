@@ -472,6 +472,8 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
             systemSymbolName: currentDensity.iconName,
             accessibilityDescription: Copy.thumbnailSize
         )
+        // V5.79: 同步 imageScaling——之前 makeMenuItem 设过, 但 image 替换时仍保持
+        btn.imageScaling = .scaleProportionallyDown
     }
 
     // MARK: - V5.39.3: NSMenu 工具栏按钮 (布局模式 / 缩略图大小 / 排序)
@@ -495,7 +497,16 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
         button.isBordered = true
         button.image = NSImage(systemSymbolName: defaultImage, accessibilityDescription: label)
         button.imagePosition = .imageOnly
+        // V5.79: 显式 imageScaling——4 档 density SF Symbol (square.grid.4x3.fill / .3x3 / .2x2 / square)
+        //   intrinsic size 微差, 不设 scaling 时 bezel 跟着 image 变 → 按钮大小切换时变化
+        button.imageScaling = .scaleProportionallyDown
         button.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        // V5.79: 显式 28x28 constraints 锁死 frame——防 toolbar 重新 layout 时 button 跟 image intrinsic 变
+        button.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            button.widthAnchor.constraint(equalToConstant: 28),
+            button.heightAnchor.constraint(equalToConstant: 28)
+        ])
         item.view = button
 
         return item
