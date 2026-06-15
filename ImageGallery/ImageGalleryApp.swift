@@ -89,8 +89,10 @@ struct ImageGalleryApp: App {
         //   之前 V3.5.D 用 NotificationCenter + sheet 弹在主窗口内——与 Photos/Finder
         //   标准 ⌘, 行为不符（标准是独立 Preferences window，无交通灯，title = app name）
         //   Settings scene (macOS 13+) 自动绑定 ⌘, + SettingsLink (macOS 14+)
+        //   V5.58-1: 注入 UserSettings() 实例——SettingsView 改用 @Bindable, 不再 @AppStorage
+        //     每次打开设置新建一个 UserSettings (scene-level 生命周期), 从 UserDefaults 读 13 字段
         Settings {
-            SettingsView()
+            SettingsView(settings: UserSettings())
         }
         .commands {
             // V4.36.x: File 菜单——Open Recent（macOS 标准子菜单）

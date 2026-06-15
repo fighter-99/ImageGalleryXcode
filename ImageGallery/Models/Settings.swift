@@ -7,6 +7,11 @@
 //  View 保留 @AppStorage 作为 source of truth (兼容外部写: ImageGalleryApp menu / SettingsView)
 //  Model 通过 Binding 同步到 Settings 字段, didSet 写回 UserDefaults
 //
+//  V5.58-1: 加 init() 从 UserDefaults 读 13 字段——修 V5.52-2 漏的 init-from-UserDefaults
+//    之前 UserSettings 永远从硬编码默认开始, 必须 ContentView L512-523 push 才能拿到持久化值
+//    现在 init() 一次性从 UserDefaults 读, model 变成真正的 in-memory source of truth
+//    SettingsView 子 View 改用 @Bindable UserSettings, 不再需要 @AppStorage 双写
+//
 //  命名: SwiftUI 自带 Settings scene (ImageGalleryApp.swift:92 用作 `Settings { SettingsView() }`),
 //  所以本类改名 UserSettings, 但 ContentViewModel 里 `var settings = UserSettings()` 字段仍叫 settings (调用点短)
 //
@@ -17,7 +22,7 @@
 import Foundation
 import SwiftUI
 
-/// V5.52: 12 个 UserDefaults 键的 @Observable 镜像
+/// V5.52: 13 个 UserDefaults 键的 @Observable 镜像 (V5.58-1 加 init() 从 UserDefaults 读)
 /// - View 持有 @AppStorage (source of truth) → 推到 model.settings via Binding
 /// - Settings 字段被改时 didSet 写回 UserDefaults (双写保持外部兼容)
 /// - Future V5.52 String Catalog 时: 直接换 NSLocalizedString fallback
@@ -92,5 +97,62 @@ final class UserSettings {
     // macOS Photos.app 标准行为:重新打开图库后保留滚动位置
     var scrollAnchorPhotoID: String? = nil {
         didSet { UserDefaults.standard.set(scrollAnchorPhotoID, forKey: "scrollAnchorPhotoID") }
+    }
+
+    // MARK: - V5.58-1: init() 从 UserDefaults 读 13 字段
+    //
+    // V5.52-2 漏的 init-from-UserDefaults——之前 UserSettings 永远从硬编码默认开始,
+    // 必须 ContentView L512-523 一次性 push @AppStorage → model.settings 才能拿到持久化值.
+    //
+    // 现在 init() 一次性读 UserDefaults, UserSettings 变成 in-memory source of truth.
+    // didSet 在 init 内不触发 (Swift 语义), 所以 field declaration 默认值 + init 覆盖赋值是安全的.
+    //
+    // scrollAnchorPhotoID 是 String? —— 空字符串当 nil 处理避免脏数据
+    //
+    init() {
+        let defaults = UserDefaults.standard
+
+        // 12 个键值——用 object(forKey:) + 类型转换, 缺字段或类型不匹配 fallback 到 field 默认
+        if let stored = defaults.string(forKey: "viewModeRaw") {
+            self.viewModeRaw = stored
+        }
+        if defaults.object(forKey: "showSidebar") != nil {
+            self.showSidebar = defaults.bool(forKey: "showSidebar")
+        }
+        if defaults.object(forKey: "showDetail") != nil {
+            self.showDetail = defaults.bool(forKey: "showDetail")
+        }
+        if let stored = defaults.string(forKey: "accentColorID") {
+            self.accentColorID = stored
+        }
+        if defaults.object(forKey: "trashRetentionDays") != nil {
+            self.trashRetentionDays = defaults.integer(forKey: "trashRetentionDays")
+        }
+        if defaults.object(forKey: "appearanceMode") != nil {
+            self.appearanceMode = defaults.integer(forKey: "appearanceMode")
+        }
+        if defaults.object(forKey: "thumbnailSize") != nil {
+            self.thumbnailSize = defaults.double(forKey: "thumbnailSize")
+        }
+        if let stored = defaults.string(forKey: "sidebarSelection") {
+            self.sidebarSelection = stored
+        }
+        if let stored = defaults.string(forKey: "sortOption") {
+            self.sortOption = stored
+        }
+        if defaults.object(forKey: "thumbnailLayoutMode") != nil {
+            self.thumbnailLayoutMode = defaults.integer(forKey: "thumbnailLayoutMode")
+        }
+        if defaults.object(forKey: "sidebarColumnWidth") != nil {
+            self.sidebarColumnWidth = defaults.double(forKey: "sidebarColumnWidth")
+        }
+        if defaults.object(forKey: "detailColumnWidth") != nil {
+            self.detailColumnWidth = defaults.double(forKey: "detailColumnWidth")
+        }
+
+        // V5.55-2 scrollAnchorPhotoID: 空字符串当 nil 处理
+        if let stored = defaults.string(forKey: "scrollAnchorPhotoID"), !stored.isEmpty {
+            self.scrollAnchorPhotoID = stored
+        }
     }
 }

@@ -54,8 +54,14 @@ enum SettingsCategory: String, CaseIterable, Identifiable, Hashable {
 // MARK: - V4.50.0: 主设置视图
 // V5.57-1: detail 容器包 VStack(spacing: Spacing.lg) + 底部"恢复全部为默认"按钮
 // V5.57-2: @SceneStorage 持久化 selectedCategory——关掉设置重开回到上次类别
+// V5.58-1: 接收 UserSettings 实例, 4 个子 View 改用 @Bindable 直接绑 UserSettings
+//   (去掉子 view 的 @AppStorage 双写, 改用 $settings.xxx Binding)
 
 struct SettingsView: View {
+    // V5.58-1: 接收注入的 UserSettings 实例——从 ImageGalleryApp Settings scene 传过来
+    //   不是 @State 不是 @Environment——是普通的 let (init 时拿到引用即可)
+    let settings: UserSettings
+
     // V5.57-2: @SceneStorage 持久化类别选择 (scope = scene, 不是 app)
     //   同时开 2 个 ImageGallery 窗口各自记忆——photos.app Settings scene 同模式
     //   字符串 (rawValue) 而非 enum——@SceneStorage 不直接支持 enum
@@ -84,17 +90,18 @@ struct SettingsView: View {
             //     仿 V3.6.44 DetailPane 模式（.id(viewKind) 强制 SwiftUI 视为不同视图触发 transition）
             //   V5.57-1: 包 VStack(spacing: Spacing.lg)——多卡片间自动有间距
             //     + 底部"恢复全部为默认"按钮（macOS 偏好无 undo/确认，Photos.app 同模式）
+            //   V5.58-1: 4 子 View 接收 settings 参数, 改用 @Bindable 直接绑 UserSettings
             VStack(alignment: .leading, spacing: Spacing.lg) {
                 Group {
                     switch selectedCategory.wrappedValue {
                     case .general:
-                        GeneralSettingsView()
+                        GeneralSettingsView(settings: settings)
                     case .appearance:
-                        AppearanceSettingsView()
+                        AppearanceSettingsView(settings: settings)
                     case .library:
-                        LibrarySettingsView()
+                        LibrarySettingsView(settings: settings)
                     case .accent:
-                        AccentSettingsView()
+                        AccentSettingsView(settings: settings)
                     case .about:
                         AboutSettingsView()
                     }
@@ -104,8 +111,7 @@ struct SettingsView: View {
                 .animation(Animations.standard, value: selectedCategory.wrappedValue)  // V4.55.0: 驱动 transition
 
                 // V5.57-1: 恢复全部为默认——不挂确认弹窗（macOS Photos.app 偏好无确认）
-                //   写入 12 个 @AppStorage key 到 *.defaultValue/inline literal
-                //   Phase 3 改为走 model.settings 单一真相源
+                // V5.58-1: 临时保留 inline UserDefaults 写——V5.58-2 推 settings.reset() 替代
                 Spacer(minLength: Spacing.md)
                 HStack {
                     Spacer()
@@ -124,12 +130,9 @@ struct SettingsView: View {
         //   Photos.app 偏好窗口也是自适应大小
     }
 
-    /// V5.57-1: 恢复全部 12 个设置项为默认
-    ///   复用 *.defaultValue (Models/{TrashRetentionDays,AppearanceMode,ThumbnailLayoutMode,AccentColor}.swift)
-    ///   inline literal 默认值与 ContentView.swift @AppStorage 声明对齐
-    ///   Phase 3 推 model.settings 后改用 UserSettings.reset() 单一入口
+    /// V5.57-1: 恢复全部 12 个设置项为默认 (临时 inline UserDefaults 写)
+    /// V5.58-2: 替换为 settings.reset() 单一入口
     private func resetAllSettings() {
-        // V5.57-1: 写回 UserDefaults 12 个 key——临时写在 View 层, Phase 3 迁 model
         let defaults = UserDefaults.standard
         defaults.set(ViewMode.grid.rawValue, forKey: "viewModeRaw")
         defaults.set(true, forKey: "showSidebar")
@@ -137,13 +140,13 @@ struct SettingsView: View {
         defaults.set(AccentColor.system.rawValue, forKey: "accentColorID")
         defaults.set(TrashRetentionDays.defaultValue.rawValue, forKey: "trashRetentionDays")
         defaults.set(AppearanceMode.defaultValue.rawValue, forKey: "appearanceMode")
-        defaults.set(200.0, forKey: "thumbnailSize")  // V5.30: 240 → 200
+        defaults.set(200.0, forKey: "thumbnailSize")
         defaults.set("all", forKey: "sidebarSelection")
-        defaults.set(SortOption.filenameAsc.rawValue, forKey: "sortOption")  // V5.31 default
+        defaults.set(SortOption.filenameAsc.rawValue, forKey: "sortOption")
         defaults.set(ThumbnailLayoutMode.defaultValue.rawValue, forKey: "thumbnailLayoutMode")
         defaults.set(220.0, forKey: "sidebarColumnWidth")
         defaults.set(360.0, forKey: "detailColumnWidth")
-        // V5.55-2 scrollAnchorPhotoID 不在 reset 范围——是 per-window 状态, 不应被一键抹掉
+        // V5.55-2 scrollAnchorPhotoID 不在 reset 范围
     }
 }
 
@@ -155,20 +158,18 @@ struct SettingsView: View {
 
 // MARK: 通用（默认视图/排序/窗口）
 // V5.57-1: 加"窗口"区 (2 toggle)——与菜单 ⌃⌘S/⌘I 同源, 设置文档化统一入口
+// V5.58-1: 改用 @Bindable UserSettings——去 4 个 @AppStorage 双写
 
 private struct GeneralSettingsView: View {
-    @AppStorage("viewModeRaw") private var defaultViewModeRaw: String = ViewMode.grid.rawValue
-    @AppStorage("sortOption") private var defaultSortOption: String = SortOption.importedAtDesc.rawValue
-    // V5.57-1: 窗口 2 toggle——与 ContentView.swift:147/151 同 key, 双向同步
-    @AppStorage("showSidebar") private var showSidebar: Bool = true
-    @AppStorage("showDetail") private var showDetail: Bool = false
+    // V5.58-1: @Bindable 让 $settings.xxx 直接是 Binding<T>——SwiftUI 标准 pattern
+    @Bindable var settings: UserSettings
 
     private let defaultViewModeOptions: [ViewMode] = ViewMode.allCases
     private let defaultSortOptions: [SortOption] = SortOption.allCases
 
     var body: some View {
         SettingsSection(title: "默认视图模式", subtitle: "启动应用时使用的图片显示布局") {
-            Picker("视图模式", selection: $defaultViewModeRaw) {
+            Picker("视图模式", selection: $settings.viewModeRaw) {
                 Text(Copy.viewModeGrid).tag(ViewMode.grid.rawValue)
                 Text(Copy.viewModeList).tag(ViewMode.list.rawValue)
                 Text(Copy.viewModeTimeline).tag(ViewMode.timeline.rawValue)
@@ -178,7 +179,7 @@ private struct GeneralSettingsView: View {
         }
 
         SettingsSection(title: "默认排序", subtitle: "启动时图片按以下规则排序") {
-            Picker("排序", selection: $defaultSortOption) {
+            Picker("排序", selection: $settings.sortOption) {
                 ForEach(defaultSortOptions) { option in
                     Text(option.label).tag(option.rawValue)
                 }
@@ -193,8 +194,8 @@ private struct GeneralSettingsView: View {
             subtitle: "控制侧栏和详情面板的显示。也可在「显示」菜单用 ⌃⌘S / ⌘I 切换。"
         ) {
             VStack(alignment: .leading, spacing: Spacing.sm) {
-                Toggle("显示侧栏", isOn: $showSidebar)
-                Toggle("显示详情面板", isOn: $showDetail)
+                Toggle("显示侧栏", isOn: $settings.showSidebar)
+                Toggle("显示详情面板", isOn: $settings.showDetail)
             }
         }
     }
@@ -202,37 +203,22 @@ private struct GeneralSettingsView: View {
 
 // MARK: 外观（缩略图大小/缩略图布局/外观模式）
 // V5.57-1: 加"缩略图布局"区 (方格/按比例)——之前仅 toolbar densityMenu 暴露
+// V5.58-1: 改用 @Bindable UserSettings——去 3 个 @AppStorage 双写
 
 private struct AppearanceSettingsView: View {
-    @AppStorage("thumbnailSize") private var defaultThumbnailSize: Double = 200  // V5.16: 170→200 行高
-    // V5.57-1: thumbnailLayoutMode 从 toolbar 升入设置——用户单一入口
-    @AppStorage("thumbnailLayoutMode") private var thumbnailLayoutModeRaw: Int = ThumbnailLayoutMode.defaultValue.rawValue
-    @AppStorage("appearanceMode") private var appearanceModeRaw: Int = AppearanceMode.defaultValue.rawValue
-
-    private var appearanceModeBinding: Binding<AppearanceMode> {
-        Binding(
-            get: { AppearanceMode(rawValue: appearanceModeRaw) ?? .defaultValue },
-            set: { appearanceModeRaw = $0.rawValue }
-        )
-    }
-
-    // V5.57-1: thumbnailLayoutMode Int → enum 双向 binding
-    private var thumbnailLayoutModeBinding: Binding<ThumbnailLayoutMode> {
-        Binding(
-            get: { ThumbnailLayoutMode(rawValue: thumbnailLayoutModeRaw) ?? .defaultValue },
-            set: { thumbnailLayoutModeRaw = $0.rawValue }
-        )
-    }
+    // V5.58-1: @Bindable UserSettings 单一真相源——替换 3 个 @AppStorage
+    @Bindable var settings: UserSettings
 
     var body: some View {
         // V5.57-1: 缩略图布局——.square (1:1 裁切) / .squareFit (1:1 letterbox macOS Photos 真版)
+        // V5.58-1: Picker 直接绑 $settings.thumbnailLayoutMode (Int)——通过 .tag(Int) 路由
         SettingsSection(
             title: "缩略图布局",
             subtitle: "方格：1:1 居中裁切（iOS Photos 风格）。按比例：1:1 letterbox 不裁切（macOS Photos 真版）。"
         ) {
-            Picker("缩略图布局", selection: thumbnailLayoutModeBinding) {
+            Picker("缩略图布局", selection: $settings.thumbnailLayoutMode) {
                 ForEach(ThumbnailLayoutMode.allCases) { mode in
-                    Label(mode.displayName, systemImage: mode.icon).tag(mode)
+                    Label(mode.displayName, systemImage: mode.icon).tag(mode.rawValue)
                 }
             }
             .pickerStyle(.segmented)
@@ -244,13 +230,13 @@ private struct AppearanceSettingsView: View {
             subtitle: "默认缩略图尺寸。拖动 slider 实时预览缩略图大小。当前会话用 toolbar 临时改的会在重启后恢复。"
         ) {
             HStack(alignment: .center, spacing: Spacing.md) {
-                Slider(value: $defaultThumbnailSize, in: 100...250, step: 10)
-                Text(Copy.thumbnailSizeLabel(Int(defaultThumbnailSize)))
+                Slider(value: $settings.thumbnailSize, in: 100...250, step: 10)
+                Text(Copy.thumbnailSizeLabel(Int(settings.thumbnailSize)))
                     .font(Typography.captionMono)
                     .foregroundStyle(Surface.textSecondary)
                     .frame(width: 40, alignment: .trailing)
                 // V5.57-2: 实时预览——SF Symbol 按 size 缩放
-                ThumbnailSizePreview(size: $defaultThumbnailSize)
+                ThumbnailSizePreview(size: $settings.thumbnailSize)
             }
         }
 
@@ -258,9 +244,9 @@ private struct AppearanceSettingsView: View {
             title: "外观",
             subtitle: "应用整体外观。\u{201C}跟随系统\u{201D} 会随 macOS 切换自动调整。"
         ) {
-            Picker("外观", selection: appearanceModeBinding) {
+            Picker("外观", selection: $settings.appearanceMode) {
                 ForEach(AppearanceMode.allCases) { mode in
-                    Label(mode.displayName, systemImage: mode.icon).tag(mode)
+                    Label(mode.displayName, systemImage: mode.icon).tag(mode.rawValue)
                 }
             }
             .pickerStyle(.segmented)
@@ -270,16 +256,17 @@ private struct AppearanceSettingsView: View {
 }
 
 // MARK: 图库（回收站保留时长）
+// V5.58-1: 改用 @Bindable UserSettings——去 @AppStorage("trashRetentionDays")
 
 private struct LibrarySettingsView: View {
-    @AppStorage("trashRetentionDays") private var retentionDays: Int = TrashRetentionDays.defaultValue.rawValue
+    @Bindable var settings: UserSettings
 
     var body: some View {
         SettingsSection(
             title: "自动清理",
             subtitle: "删除的图片会先进入回收站，超过下面设置的天数后会被自动永久删除。"
         ) {
-            Picker("保留时长", selection: $retentionDays) {
+            Picker("保留时长", selection: $settings.trashRetentionDays) {
                 ForEach(TrashRetentionDays.allCases) { days in
                     Text(days.displayName).tag(days.rawValue)
                 }
@@ -291,9 +278,10 @@ private struct LibrarySettingsView: View {
 }
 
 // MARK: 强调色
+// V5.58-1: 改用 @Bindable UserSettings——去 @AppStorage("accentColorID")
 
 private struct AccentSettingsView: View {
-    @AppStorage("accentColorID") private var accentColorID: String = AccentColor.system.rawValue
+    @Bindable var settings: UserSettings
 
     var body: some View {
         SettingsSection(
@@ -307,8 +295,8 @@ private struct AccentSettingsView: View {
                 ForEach(AccentColor.allCases) { accent in
                     AccentSwatch(
                         accent: accent,
-                        isSelected: accentColorID == accent.rawValue,
-                        onTap: { accentColorID = accent.rawValue }
+                        isSelected: settings.accentColorID == accent.rawValue,
+                        onTap: { settings.accentColorID = accent.rawValue }
                     )
                 }
             }
