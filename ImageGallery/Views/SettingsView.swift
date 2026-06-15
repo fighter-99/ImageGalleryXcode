@@ -53,15 +53,25 @@ enum SettingsCategory: String, CaseIterable, Identifiable, Hashable {
 
 // MARK: - V4.50.0: 主设置视图
 // V5.57-1: detail 容器包 VStack(spacing: Spacing.lg) + 底部"恢复全部为默认"按钮
-// V5.57-2: 加 .about 路由 + @SceneStorage 持久化类别选择 (在下方 commit)
+// V5.57-2: @SceneStorage 持久化 selectedCategory——关掉设置重开回到上次类别
 
 struct SettingsView: View {
-    @State private var selectedCategory: SettingsCategory = .general
+    // V5.57-2: @SceneStorage 持久化类别选择 (scope = scene, 不是 app)
+    //   同时开 2 个 ImageGallery 窗口各自记忆——photos.app Settings scene 同模式
+    //   字符串 (rawValue) 而非 enum——@SceneStorage 不直接支持 enum
+    @SceneStorage("settingsSelectedCategoryRaw") private var selectedCategoryRaw: String = SettingsCategory.general.rawValue
+
+    private var selectedCategory: Binding<SettingsCategory> {
+        Binding(
+            get: { SettingsCategory(rawValue: selectedCategoryRaw) ?? .general },
+            set: { selectedCategoryRaw = $0.rawValue }
+        )
+    }
 
     var body: some View {
         NavigationSplitView {
             // Sidebar: 类别列表
-            List(SettingsCategory.allCases, selection: $selectedCategory) { category in
+            List(SettingsCategory.allCases, selection: selectedCategory) { category in
                 Label(category.title, systemImage: category.icon)
                     .tag(category)
             }
@@ -76,7 +86,7 @@ struct SettingsView: View {
             //     + 底部"恢复全部为默认"按钮（macOS 偏好无 undo/确认，Photos.app 同模式）
             VStack(alignment: .leading, spacing: Spacing.lg) {
                 Group {
-                    switch selectedCategory {
+                    switch selectedCategory.wrappedValue {
                     case .general:
                         GeneralSettingsView()
                     case .appearance:
@@ -89,9 +99,9 @@ struct SettingsView: View {
                         AboutSettingsView()
                     }
                 }
-                .id(selectedCategory)  // V4.55.0: 强制 SwiftUI 视为不同视图（transition 关键）
+                .id(selectedCategory.wrappedValue)  // V4.55.0: 强制 SwiftUI 视为不同视图（transition 关键）
                 .transition(.opacity.combined(with: .move(edge: .trailing)))  // V4.55.0: 渐入+右移——Photos 风格
-                .animation(Animations.standard, value: selectedCategory)  // V4.55.0: 驱动 transition
+                .animation(Animations.standard, value: selectedCategory.wrappedValue)  // V4.55.0: 驱动 transition
 
                 // V5.57-1: 恢复全部为默认——不挂确认弹窗（macOS Photos.app 偏好无确认）
                 //   写入 12 个 @AppStorage key 到 *.defaultValue/inline literal
@@ -231,14 +241,16 @@ private struct AppearanceSettingsView: View {
 
         SettingsSection(
             title: "缩略图大小",
-            subtitle: "默认缩略图尺寸。当前会话用 toolbar 临时改的会在重启后恢复。"
+            subtitle: "默认缩略图尺寸。拖动 slider 实时预览缩略图大小。当前会话用 toolbar 临时改的会在重启后恢复。"
         ) {
-            HStack {
+            HStack(alignment: .center, spacing: Spacing.md) {
                 Slider(value: $defaultThumbnailSize, in: 100...250, step: 10)
                 Text(Copy.thumbnailSizeLabel(Int(defaultThumbnailSize)))
                     .font(Typography.captionMono)
                     .foregroundStyle(Surface.textSecondary)
                     .frame(width: 40, alignment: .trailing)
+                // V5.57-2: 实时预览——SF Symbol 按 size 缩放
+                ThumbnailSizePreview(size: $defaultThumbnailSize)
             }
         }
 
@@ -444,5 +456,39 @@ struct AccentSwatch: View {
             }
         }
         .buttonStyle(.plain)
+    }
+}
+
+// MARK: - 缩略图大小 slider 实时预览（V5.57-2）
+//
+// 100pt 固定容器内放 SF Symbol "photo" + scaleEffect
+//   displayScale 范围 0.3..1.0——size=100 → 30pt, size=250 → 100pt
+//   用 scaleEffect 而非 font size——SF Symbol 缩放不重设布局
+//
+// 用 SF Symbol 而非真样图:
+//   - 零 file 依赖, 零 async load
+//   - Phase 3 推 model.settings 改造时可换真 sample photo
+//
+
+private struct ThumbnailSizePreview: View {
+    @Binding var size: Double
+
+    var body: some View {
+        ZStack {
+            // V5.57-2: 灰底容器——预览区视觉边界
+            RoundedRectangle(cornerRadius: Radius.sm, style: .continuous)
+                .fill(.quaternary)
+            Image(systemName: "photo")
+                .font(.system(size: 100))
+                .scaleEffect(displayScale)
+                .foregroundStyle(.secondary)
+        }
+        .frame(width: 100, height: 100)
+        .help("实时预览缩略图大小")
+    }
+
+    /// V5.57-2: size 100..250 映射到 scale 0.3..1.0
+    private var displayScale: Double {
+        0.3 + (size - 100) / 150 * 0.7
     }
 }
