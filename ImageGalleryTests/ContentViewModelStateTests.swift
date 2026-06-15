@@ -217,8 +217,8 @@ struct ContentViewModelStateTests {
 
     @Test func totalSizeFormatted_withEmptyAllPhotos_returnsZeroBytes() {
         let model = ContentViewModel()
-        // ByteCountFormatter: 0 bytes → "0 bytes"
-        #expect(model.totalSizeFormatted == "0 bytes")
+        // ByteCountFormatter .file: 0 bytes → "Zero KB"
+        #expect(model.totalSizeFormatted == "Zero KB")
     }
 
     @Test func sidebarColumnWidth_canBeAdjusted() {
