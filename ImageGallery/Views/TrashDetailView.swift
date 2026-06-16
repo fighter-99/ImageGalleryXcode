@@ -32,7 +32,7 @@ struct TrashDetailView: View {
             EmptyStateView(
                 icon: "trash",
                 title: Copy.emptyRecycleBin,
-                subtitle: "\(retentionDays) 天后删除的照片会自动永久清除",
+                subtitle: Copy.hintTrashAutoPurge(days: retentionDays),
                 iconColor: Surface.textTertiary,
                 primaryAction: EmptyStateView.Action(
                     label: "查看全部",

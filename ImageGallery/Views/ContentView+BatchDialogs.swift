@@ -55,7 +55,7 @@ extension View {
             }
             // V3.6.6: 清空回收站二次确认
             .confirmationDialog(
-                "确定要清空回收站吗？",
+                Copy.emptyRecycleBinConfirmTitle,
                 isPresented: showingEmptyTrash,
                 titleVisibility: .visible
             ) {

@@ -118,12 +118,12 @@ struct DetailView: View {
         //   旧仅 minWidth: 280 → 列宽可能扩到 480 但 detail panel 自身没边界 → 内容溢出
         .background(.regularMaterial)
         .frame(minWidth: 280, idealWidth: 340, maxWidth: 480)
-        .alert("新建标签", isPresented: $showingAddTagAlert) {
+        .alert(Copy.newTag, isPresented: $showingAddTagAlert) {
             TextField("标签名称", text: $newTagName)
             Button(Copy.cancel, role: .cancel) {}
             Button(Copy.create) { createAndAddTag() }
         }
-        .alert("重命名", isPresented: $showingRenameAlert) {
+        .alert(Copy.renamePhotoTitle, isPresented: $showingRenameAlert) {
             TextField("新文件名", text: $newFileName)
             Button(Copy.cancel, role: .cancel) {}
             Button(Copy.confirm) { renamePhoto() }

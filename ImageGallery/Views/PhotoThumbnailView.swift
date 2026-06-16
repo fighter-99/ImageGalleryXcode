@@ -663,7 +663,7 @@ struct PhotoThumbnailView: View {
             onDelete: onDelete
         ))
         .confirmationDialog(
-            "确定要删除这张图片吗？",
+            Copy.deleteConfirmTitle,
             isPresented: $showingDeleteConfirm,
             titleVisibility: .visible
         ) {
