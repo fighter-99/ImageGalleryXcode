@@ -431,6 +431,15 @@ final class ContentViewModel {
         titlebarAccessory = accessory
         accessory.setActive(settings.showDetail)
 
+        // V6.12.3: titlebar+toolbar 整条磨砂玻璃背景——补 V5.48 漏挂的 wiring
+        //   V5.48 commit 加了 TitlebarFrostedGlassController 类 + .titlebar material 配 .behindWindow blending,
+        //   但**没调 addTitlebarAccessoryViewController**——5 个版本里 toolbar/titlebar 一直是 plain 背景
+        //   Photos / Finder / Safari 都是磨砂玻璃 chrome, 现在补上
+        //   layoutAttribute = .top → accessory view 放 unified titlebar+toolbar 区域上方
+        let titlebarGlass = TitlebarFrostedGlassController()
+        titlebarGlass.layoutAttribute = .top
+        window.addTitlebarAccessoryViewController(titlebarGlass)
+
         // 初始 enabled 状态同步
         controller.updateAllStates(
             hasSelection: selection.hasSelection,
