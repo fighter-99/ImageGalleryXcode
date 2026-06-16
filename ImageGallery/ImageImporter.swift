@@ -234,6 +234,18 @@ struct ImageImporter {
 
     /// 递归收集所有图片文件
     private func collectFiles(at url: URL, into collection: inout [URL]) {
+        // V6.09: 防 symlink 循环——FileManager.enumerator 默认递归 + 本函数又递归,
+        //   拖入含 symlink 自身环的文件夹会无限递归栈溢出。用 visited Set 跟踪已访问的
+        //   规范化路径 (resolvingSymlinksInPath 解析 symlink), 命中即跳过
+        var visited = Set<URL>()
+        collectFiles(at: url, into: &collection, visited: &visited)
+    }
+
+    private func collectFiles(at url: URL, into collection: inout [URL], visited: inout Set<URL>) {
+        let canonical = url.standardizedFileURL.resolvingSymlinksInPath()
+        if visited.contains(canonical) { return }
+        visited.insert(canonical)
+
         var isDir: ObjCBool = false
         let isDirectory = FileManager.default.fileExists(atPath: url.path, isDirectory: &isDir) && isDir.boolValue
 
@@ -244,7 +256,7 @@ struct ImageImporter {
                 options: [.skipsHiddenFiles]
             ) {
                 for case let fileURL as URL in enumerator {
-                    collectFiles(at: fileURL, into: &collection)
+                    collectFiles(at: fileURL, into: &collection, visited: &visited)
                 }
             }
         } else if supportedExtensions.contains(url.pathExtension.lowercased()) {
