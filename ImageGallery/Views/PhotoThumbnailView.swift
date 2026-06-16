@@ -317,18 +317,16 @@ struct PhotoThumbnailView: View {
         // V5.99.1: 跟 image clip 一致用 Radius.lg (12pt), 之前 thumb (8pt) 跟 12pt clip 不对齐
         let overlayRadius = max(0, Radius.lg - inset)
         ZStack {
-            // V5.28: 砍 tint, 加 3pt accent border——"仅显示蓝色边框" (Photos 真版)
-            //   - 之前 V5.27 砍 border 是误判, 实际 Photos 选中态有边框
-            //   - tint 0 → 只 border, 极简
-            // V5.99: 改 .inset(by:) + .stroke——stroke 不被 cell clip, 4 边都 2pt
+            // V6.12.7: 重构为显式 ZStack——fill 在底, stroke 在上, 渲染顺序 100% 确定
+            //   之前 .stroke().background(.fill()) chain 在某些 SwiftUI 版本下 Z-order 不确定
+            //   → 用户反馈"选中框 top/bottom 不可见, 只有 left/right"
+            //   现在两 shape 独立, fill 必在 stroke 下面
+            RoundedRectangle(cornerRadius: overlayRadius)
+                .inset(by: inset)
+                .fill(Color.accentColor.opacity(state.tintOpacity))
             RoundedRectangle(cornerRadius: overlayRadius)
                 .inset(by: inset)
                 .stroke(Color.accentColor.opacity(0.9), lineWidth: state.borderWidth)
-                .background(
-                    RoundedRectangle(cornerRadius: overlayRadius)
-                        .inset(by: inset)
-                        .fill(Color.accentColor.opacity(state.tintOpacity))  // V5.28: 始终 0
-                )
             if state.showsCheckmark {
                 // 角标 ✓ 保留——V3.6.51 selection state machine 设计
                 // 单选不显 ✓（subtle），多选显 ✓（更明确）
@@ -459,7 +457,11 @@ struct PhotoThumbnailView: View {
             .background(
                 RoundedRectangle(cornerRadius: Radius.lg)  // V5.99: 跟 image clip 圆角统一
                     .fill(Surface.elevated)
-                    .opacity(layoutMode == .squareFit ? 0 : 1)
+                    // V6.12.7: 永远透明 (layoutMode == .squareFit ? 0 : 1 → 0)
+                    //   之前 .square 模式 Surface.elevated 可见 → 圆角处跟 image 同色时圆角消失
+                    //   → cellSelectionOverlay 的 .background() chain 在某些 SwiftUI 渲染下 Z-order 不确定
+                    //   现在 .square 跟 .squareFit 视觉一致——image 浮在窗口背景上
+                    .opacity(0)
             )
             // V3.6.26: 异步加载缩略图（缓存命中立即返回；未命中后台线程解码）
             // V4.4.0: 加载失败时 set loadFailed=true（loadImageAsync 返回 nil 视为失败）
