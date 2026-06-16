@@ -276,14 +276,24 @@ struct PhotoThumbnailView: View {
     @ViewBuilder
     private var cellSelectionOverlay: some View {
         let state = selectionState
+        // V5.99: inset 1pt 让 2pt stroke 完全落在 cell 内
+        //   - 之前 .strokeBorder() 居中 path, half-outside 被 cell.clipped() 切掉
+        //   - 实际可见只有 1pt, top/bottom 几乎看不见, 误以为"border 不完整"
+        //   - inset 1pt 后, 2pt stroke 全在 cell 内, 4 边同样 2pt 粗
+        let inset = state.borderWidth / 2
+        // V5.99.1: 跟 image clip 一致用 Radius.lg (12pt), 之前 thumb (8pt) 跟 12pt clip 不对齐
+        let overlayRadius = max(0, Radius.lg - inset)
         ZStack {
             // V5.28: 砍 tint, 加 3pt accent border——"仅显示蓝色边框" (Photos 真版)
             //   - 之前 V5.27 砍 border 是误判, 实际 Photos 选中态有边框
             //   - tint 0 → 只 border, 极简
-            RoundedRectangle(cornerRadius: Radius.thumb)
-                .strokeBorder(Color.accentColor.opacity(0.9), lineWidth: state.borderWidth)
+            // V5.99: 改 .inset(by:) + .stroke——stroke 不被 cell clip, 4 边都 2pt
+            RoundedRectangle(cornerRadius: overlayRadius)
+                .inset(by: inset)
+                .stroke(Color.accentColor.opacity(0.9), lineWidth: state.borderWidth)
                 .background(
-                    RoundedRectangle(cornerRadius: Radius.thumb)
+                    RoundedRectangle(cornerRadius: overlayRadius)
+                        .inset(by: inset)
                         .fill(Color.accentColor.opacity(state.tintOpacity))  // V5.28: 始终 0
                 )
             if state.showsCheckmark {
@@ -353,7 +363,10 @@ struct PhotoThumbnailView: View {
                         Image(nsImage: nsImage)
                             .resizable()
                             .aspectRatio(aspectRatio, contentMode: contentMode)  // V5.46: .squareFit → .fit (letterbox)
-                            .clipShape(RoundedRectangle(cornerRadius: Radius.thumb))
+                            // V5.99: 8pt → 12pt 圆角——用户反馈"缩略图没有圆角"
+                            //   之前 Radius.thumb (8pt) 在 200pt cell 上 = 4%, 几乎看不到圆角
+                            //   Radius.lg (12pt) = 6%, 视觉上明显是圆角
+                            .clipShape(RoundedRectangle(cornerRadius: Radius.lg))
                             .saturation(photo.isInTrash ? 0.05 : 1)
                             .opacity(photo.isInTrash ? (colorScheme == .dark ? 0.65 : 0.55) : 1)
                             // V5.30: image 加载完淡入——镜像 Photos.app Library cell 行为
@@ -361,7 +374,8 @@ struct PhotoThumbnailView: View {
                             .animation(.easeOut(duration: 0.1), value: loadedImage != nil)  // V5.31: 0.2→0.1 (快滚动不'波')
                     } else if loadFailed {
                         // V5.34: 失败占位也 .fill——保持一致
-                        RoundedRectangle(cornerRadius: Radius.thumb)
+                        // V5.99: Radius.thumb → Radius.lg——跟 image clip 统一
+                        RoundedRectangle(cornerRadius: Radius.lg)
                             .fill(.quaternary)
                             .aspectRatio(aspectRatio, contentMode: .fill)  // V5.34: 回 .fill
                             .overlay {
@@ -375,7 +389,8 @@ struct PhotoThumbnailView: View {
                             }
                     } else {
                         // V5.34: 加载中 shimmer 也 .fill
-                        RoundedRectangle(cornerRadius: Radius.thumb)
+                        // V5.99: Radius.thumb → Radius.lg——跟 image clip 统一
+                        RoundedRectangle(cornerRadius: Radius.lg)
                             .fill(.quaternary)
                             .aspectRatio(aspectRatio, contentMode: .fill)  // V5.34: 回 .fill
                             .shimmer()
@@ -409,7 +424,7 @@ struct PhotoThumbnailView: View {
             //   .square: card 可见 (Surface.elevated 浅 controlBackgroundColor) 在 image 后面
             //   .squareFit: card 不可见 (opacity 0, 透窗口色) + image 居中 letterbox
             .background(
-                RoundedRectangle(cornerRadius: Radius.thumb)
+                RoundedRectangle(cornerRadius: Radius.lg)  // V5.99: 跟 image clip 圆角统一
                     .fill(Surface.elevated)
                     .opacity(layoutMode == .squareFit ? 0 : 1)
             )
