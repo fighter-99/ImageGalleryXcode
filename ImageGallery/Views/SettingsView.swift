@@ -177,28 +177,15 @@ private struct GeneralSettingsView: View {
     // V5.58-1: @Bindable 让 $settings.xxx 直接是 Binding<T>——SwiftUI 标准 pattern
     @Bindable var settings: UserSettings
 
-    private let defaultViewModeOptions: [ViewMode] = ViewMode.allCases
+    // V6.04: 删 defaultViewModeOptions——视图模式搬到外观跟缩略图布局合并
     private let defaultSortOptions: [SortOption] = SortOption.allCases
 
     var body: some View {
         // V5.95: HStack label 左 / control 右——Photos 偏好设置范式
         //   之前 Picker 占整 row 宽, 像表单; 现在 label 左 + control 右 紧凑
-        SettingsSection(
-            title: "默认视图模式",
-            subtitle: "启动应用时使用的图片显示布局"
-        ) {
-            HStack(alignment: .center, spacing: Spacing.md) {
-                Text("视图模式")
-                    .frame(width: SettingsMetrics.labelColumnWidth, alignment: .leading)
-                Picker("", selection: $settings.viewModeRaw) {
-                    Text(Copy.viewModeGrid).tag(ViewMode.grid.rawValue)
-                    Text(Copy.viewModeList).tag(ViewMode.list.rawValue)
-                    Text(Copy.viewModeTimeline).tag(ViewMode.timeline.rawValue)
-                }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-            }
-        }
+        // V6.04: 删"默认视图模式"section——搬到外观跟"缩略图布局"合并
+        //   之前 视图模式(grid/list/timeline) 跟 缩略图布局(square/squareFit) 拆 2 个 section
+        //   概念重叠 (都关于图片显示), 跨 通用/外观 2 个 page 不便对照
 
         SettingsSection(
             title: "默认排序",
@@ -217,8 +204,8 @@ private struct GeneralSettingsView: View {
                 Spacer()  // V5.95: menu picker 不撑满, 留 trailing 视觉缓冲
             }
         }
-        // V5.95: 2 sections 都用 HStack (label 80pt 宽 + control 右对齐)
-        // V5.90: 删"窗口"section——showSidebar/showDetail toggle 跟菜单"显示"重复
+        // V6.04: 通用 page 只剩"默认排序"1 个 section——视图模式搬到外观
+        //   IA 角度: 排序跟内容组织有关, 留在通用; 显示模式/布局跟外观有关, 搬走
     }
 }
 
@@ -231,13 +218,25 @@ private struct AppearanceSettingsView: View {
     @Bindable var settings: UserSettings
 
     var body: some View {
-        // V5.57-1: 缩略图布局——.square (1:1 裁切) / .squareFit (1:1 letterbox macOS Photos 真版)
-        // V5.58-1: Picker 直接绑 $settings.thumbnailLayoutMode (Int)——通过 .tag(Int) 路由
-        // V5.95: HStack label 左 (80pt 宽) / control 右——Photos 偏好设置范式
+        // V6.04: 合并"视图模式"(从通用搬来) + "缩略图布局"为 1 个 section
+        //   之前 2 个独立 section, 跨 page (通用/外观) 不便对照
+        //   现在 1 section 2 Picker——视图模式 (grid/list/timeline) + 布局 (方格/按比例)
+        //   概念都是 '启动时的图片显示', 合并更紧凑
         SettingsSection(
-            title: "缩略图布局",
-            subtitle: "方格：1:1 居中裁切（iOS Photos 风格）。按比例：1:1 letterbox 不裁切（macOS Photos 真版）。"
+            title: "默认视图",
+            subtitle: "启动应用时的图片排列方式和缩略图形状。视图模式决定整体布局, 布局决定单个 cell 形状。"
         ) {
+            HStack(alignment: .center, spacing: Spacing.md) {
+                Text("视图模式")
+                    .frame(width: SettingsMetrics.labelColumnWidth, alignment: .leading)
+                Picker("", selection: $settings.viewModeRaw) {
+                    Text(Copy.viewModeGrid).tag(ViewMode.grid.rawValue)
+                    Text(Copy.viewModeList).tag(ViewMode.list.rawValue)
+                    Text(Copy.viewModeTimeline).tag(ViewMode.timeline.rawValue)
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+            }
             HStack(alignment: .center, spacing: Spacing.md) {
                 Text("布局")
                     .frame(width: SettingsMetrics.labelColumnWidth, alignment: .leading)
