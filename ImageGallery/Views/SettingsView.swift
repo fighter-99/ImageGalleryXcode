@@ -54,13 +54,18 @@ enum SettingsCategory: String, CaseIterable, Identifiable, Hashable {
     }
 
     /// macOS Photos 风格 SF Symbol——sidebar 类别 icon
+    /// V6.07: 全部加 .fill (solid)——视觉重量统一
+    ///   之前 mix: gearshape/paintbrush/trash 看起来更重, paintpalette/info.circle 看起来更轻
+    ///   (gearshape 齿多视觉密度高, paintbrush 单线视觉密度低)
+    ///   改 .fill 后 5 个 icon 都是 solid, 视觉重量齐整——sidebar 类别一眼能扫
+    ///   跟 macOS Sonoma+ System Settings sidebar 范式一致
     var icon: String {
         switch self {
-        case .general:    return "gearshape"
-        case .appearance: return "paintbrush"
-        case .library:    return "trash"
-        case .accent:     return "paintpalette"
-        case .about:      return "info.circle"
+        case .general:    return "gearshape.fill"
+        case .appearance: return "paintbrush.fill"
+        case .library:    return "trash.fill"
+        case .accent:     return "paintpalette.fill"
+        case .about:      return "info.circle.fill"
         }
     }
 }
