@@ -223,4 +223,34 @@ final class UserSettings {
         defaultExportQuality = 0.9
         // scrollAnchorPhotoID 不在 reset 范围——是 per-window 状态
     }
+
+    // MARK: - V5.92: per-section reset (4 methods)
+
+    /// V5.92: 重置通用 section (默认视图模式, 默认排序)
+    ///   showSidebar/showDetail 跟菜单"显示"重复, 不归 per-section reset
+    func resetGeneral() {
+        viewModeRaw = ViewMode.grid.rawValue
+        sortOption = SortOption.filenameAsc.rawValue
+    }
+
+    /// V5.92: 重置外观 section (缩略图布局, 缩略图大小, 外观模式)
+    func resetAppearance() {
+        thumbnailLayoutMode = ThumbnailLayoutMode.defaultValue.rawValue
+        thumbnailSize = 200.0
+        appearanceMode = AppearanceMode.defaultValue.rawValue
+    }
+
+    /// V5.92: 重置图库 section (导入 + 导出 + 自动清理)
+    func resetLibrary() {
+        autoDeduplicate = true
+        autoGenerateThumbnails = true
+        defaultExportFormat = ExportFormat.defaultValue.rawValue
+        defaultExportQuality = 0.9
+        trashRetentionDays = TrashRetentionDays.defaultValue.rawValue
+    }
+
+    /// V5.92: 重置强调色 section
+    func resetAccent() {
+        accentColorID = AccentColor.system.rawValue
+    }
 }

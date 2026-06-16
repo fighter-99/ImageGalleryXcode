@@ -67,6 +67,9 @@ struct SettingsView: View {
     //   字符串 (rawValue) 而非 enum——@SceneStorage 不直接支持 enum
     @SceneStorage("settingsSelectedCategoryRaw") private var selectedCategoryRaw: String = SettingsCategory.general.rawValue
 
+    // V5.92: search 文本状态——sidebar 顶部搜索框过滤 categories
+    @State private var searchText: String = ""
+
     private var selectedCategory: Binding<SettingsCategory> {
         Binding(
             get: { SettingsCategory(rawValue: selectedCategoryRaw) ?? .general },
@@ -74,14 +77,26 @@ struct SettingsView: View {
         )
     }
 
+    /// V5.92: search 过滤后的 categories (空查询显示全部)
+    private var filteredCategories: [SettingsCategory] {
+        guard !searchText.isEmpty else { return SettingsCategory.allCases }
+        return SettingsCategory.allCases.filter { category in
+            category.title.localizedCaseInsensitiveContains(searchText)
+        }
+    }
+
     var body: some View {
         NavigationSplitView {
-            // Sidebar: 类别列表
-            List(SettingsCategory.allCases, selection: selectedCategory) { category in
-                Label(category.title, systemImage: category.icon)
-                    .tag(category)
+            // V5.92: sidebar 顶部加 search field——过滤 categories
+            //   输入文字时实时过滤, 清空恢复全部
+            VStack(spacing: 0) {
+                List(filteredCategories, selection: selectedCategory) { category in
+                    Label(category.title, systemImage: category.icon)
+                        .tag(category)
+                }
+                .navigationSplitViewColumnWidth(min: 160, ideal: 180, max: 220)
             }
-            .navigationSplitViewColumnWidth(min: 160, ideal: 180, max: 220)
+            .searchable(text: $searchText, placement: .sidebar, prompt: "搜索设置")
         } detail: {
             // V5.89: 拆 cards → fluid rows——detail 改 ScrollView 包 VStack(spacing: Spacing.xxl)
             //   之前每个 section 是大卡片 (背景 + padding + 圆角),看着像表单
@@ -146,7 +161,11 @@ private struct GeneralSettingsView: View {
     private let defaultSortOptions: [SortOption] = SortOption.allCases
 
     var body: some View {
-        SettingsSection(title: "默认视图模式", subtitle: "启动应用时使用的图片显示布局") {
+        SettingsSection(
+            title: "默认视图模式",
+            subtitle: "启动应用时使用的图片显示布局",
+            onReset: { settings.resetGeneral() }
+        ) {
             Picker("视图模式", selection: $settings.viewModeRaw) {
                 Text(Copy.viewModeGrid).tag(ViewMode.grid.rawValue)
                 Text(Copy.viewModeList).tag(ViewMode.list.rawValue)
@@ -156,7 +175,11 @@ private struct GeneralSettingsView: View {
             .labelsHidden()
         }
 
-        SettingsSection(title: "默认排序", subtitle: "启动时图片按以下规则排序") {
+        SettingsSection(
+            title: "默认排序",
+            subtitle: "启动时图片按以下规则排序",
+            onReset: { settings.resetGeneral() }
+        ) {
             Picker("排序", selection: $settings.sortOption) {
                 ForEach(defaultSortOptions) { option in
                     Text(option.label).tag(option.rawValue)
@@ -165,8 +188,8 @@ private struct GeneralSettingsView: View {
             .pickerStyle(.menu)
             .labelsHidden()
         }
+        // V5.92: 2 sections 都共用 resetGeneral()——视图模式 + 默认排序
         // V5.90: 删"窗口"section——showSidebar/showDetail toggle 跟菜单"显示"重复
-        //   设置里只放"启动时"的偏好, 不放"当前"的窗口状态
     }
 }
 
@@ -181,9 +204,11 @@ private struct AppearanceSettingsView: View {
     var body: some View {
         // V5.57-1: 缩略图布局——.square (1:1 裁切) / .squareFit (1:1 letterbox macOS Photos 真版)
         // V5.58-1: Picker 直接绑 $settings.thumbnailLayoutMode (Int)——通过 .tag(Int) 路由
+        // V5.92: 3 sections 都共用 resetAppearance()——一次重置布局/大小/外观
         SettingsSection(
             title: "缩略图布局",
-            subtitle: "方格：1:1 居中裁切（iOS Photos 风格）。按比例：1:1 letterbox 不裁切（macOS Photos 真版）。"
+            subtitle: "方格：1:1 居中裁切（iOS Photos 风格）。按比例：1:1 letterbox 不裁切（macOS Photos 真版）。",
+            onReset: { settings.resetAppearance() }
         ) {
             Picker("缩略图布局", selection: $settings.thumbnailLayoutMode) {
                 ForEach(ThumbnailLayoutMode.allCases) { mode in
@@ -196,7 +221,8 @@ private struct AppearanceSettingsView: View {
 
         SettingsSection(
             title: "缩略图大小",
-            subtitle: "默认缩略图尺寸。拖动 slider 实时预览缩略图大小。当前会话用 toolbar 临时改的会在重启后恢复。"
+            subtitle: "默认缩略图尺寸。拖动 slider 实时预览缩略图大小。当前会话用 toolbar 临时改的会在重启后恢复。",
+            onReset: { settings.resetAppearance() }
         ) {
             HStack(alignment: .center, spacing: Spacing.md) {
                 Slider(value: $settings.thumbnailSize, in: 100...250, step: 10)
@@ -211,7 +237,8 @@ private struct AppearanceSettingsView: View {
 
         SettingsSection(
             title: "外观",
-            subtitle: "应用整体外观。\u{201C}跟随系统\u{201D} 会随 macOS 切换自动调整。"
+            subtitle: "应用整体外观。\u{201C}跟随系统\u{201D} 会随 macOS 切换自动调整。",
+            onReset: { settings.resetAppearance() }
         ) {
             Picker("外观", selection: $settings.appearanceMode) {
                 ForEach(AppearanceMode.allCases) { mode in
@@ -233,9 +260,11 @@ private struct LibrarySettingsView: View {
 
     var body: some View {
         // V5.90: 导入——默认从哪个文件夹导入
+        // V5.92: 3 sections 都共用 resetLibrary()——一次重置导入/导出/清理
         SettingsSection(
             title: "导入",
-            subtitle: "拖入或选择文件夹导入图片时的默认行为。"
+            subtitle: "拖入或选择文件夹导入图片时的默认行为。",
+            onReset: { settings.resetLibrary() }
         ) {
             VStack(alignment: .leading, spacing: Spacing.sm) {
                 Toggle("导入时自动去重", isOn: $settings.autoDeduplicate)
@@ -246,7 +275,8 @@ private struct LibrarySettingsView: View {
         // V5.90: 导出——默认导出格式/质量
         SettingsSection(
             title: "导出",
-            subtitle: "导出图片时的默认格式和质量。"
+            subtitle: "导出图片时的默认格式和质量。",
+            onReset: { settings.resetLibrary() }
         ) {
             Picker("格式", selection: $settings.defaultExportFormat) {
                 ForEach(ExportFormat.allCases) { format in
@@ -270,7 +300,8 @@ private struct LibrarySettingsView: View {
         // V5.58-1: 自动清理——回收站保留时长
         SettingsSection(
             title: "自动清理",
-            subtitle: "删除的图片会先进入回收站，超过下面设置的天数后会被自动永久删除。"
+            subtitle: "删除的图片会先进入回收站，超过下面设置的天数后会被自动永久删除。",
+            onReset: { settings.resetLibrary() }
         ) {
             Picker("保留时长", selection: $settings.trashRetentionDays) {
                 ForEach(TrashRetentionDays.allCases) { days in
@@ -292,7 +323,8 @@ private struct AccentSettingsView: View {
     var body: some View {
         SettingsSection(
             title: "强调色",
-            subtitle: "选择应用的主色调，影响按钮、选中状态、链接等。"
+            subtitle: "选择应用的主色调，影响按钮、选中状态、链接等。",
+            onReset: { settings.resetAccent() }
         ) {
             LazyVGrid(
                 columns: Array(repeating: GridItem(.flexible(), spacing: Spacing.md), count: 5),
@@ -379,27 +411,41 @@ private struct AboutSettingsView: View {
 //   之前: title/subtitle + content 在 Surface.panel 卡片里 (padding.lg + Radius.md 圆角)
 //   现在: title/subtitle + content 无背景, padding 由外层 ScrollView .padding(Spacing.xl) 统一
 //   section 之间 Spacing.xxl 24pt 留白 (Photos.app 同节奏)
+// V5.92: 加 onReset 闭包——右上角 ghost button "重置本节", 调 settings.resetXxx()
 private struct SettingsSection<Content: View>: View {
     let title: String
     let subtitle: String?
+    let onReset: (() -> Void)?
     @ViewBuilder let content: () -> Content
 
-    init(title: String, subtitle: String? = nil, @ViewBuilder content: @escaping () -> Content) {
+    init(title: String, subtitle: String? = nil, onReset: (() -> Void)? = nil, @ViewBuilder content: @escaping () -> Content) {
         self.title = title
         self.subtitle = subtitle
+        self.onReset = onReset
         self.content = content
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(Typography.headline)
-                if let subtitle = subtitle {
-                    Text(subtitle)
-                        .font(Typography.caption)
-                        .foregroundStyle(Surface.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
+            // V5.92: title 跟 onReset 按钮同行——title 左,reset 按钮右 (右对齐)
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title)
+                        .font(Typography.headline)
+                    if let subtitle = subtitle {
+                        Text(subtitle)
+                            .font(Typography.caption)
+                            .foregroundStyle(Surface.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                Spacer()
+                // V5.92: 右上角 ghost button "重置本节"——macOS Photos 偏好设置范式
+                if let onReset = onReset {
+                    Button("重置本节", action: onReset)
+                        .buttonStyle(.borderless)
+                        .controlSize(.small)
+                        .foregroundStyle(.secondary)
                 }
             }
             content()
