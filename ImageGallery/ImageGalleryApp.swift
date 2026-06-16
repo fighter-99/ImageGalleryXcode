@@ -108,6 +108,10 @@ struct ImageGalleryApp: App {
                 .sheet(isPresented: $showShortcutsSheet) {
                     KeyboardShortcutsSheet()
                 }
+                // V6.12.16: App 语言——SettingsView picker 改 sharedSettings.appLanguage, 这里 .environment 注入 locale
+                //   所有 SwiftUI Text / Formatter / String(localized:) 自动跟随
+                //   V6.12.17 Copy 迁 NSLocalizedString 后, 整个 UI 文案会按选的语言显示
+                .environment(\.locale, Locale(identifier: sharedSettings.appLanguage.localeId))
         }
         // V4.1.0 m: 默认 1280×800；contentMinSize 由 layout 决定
         //   侧栏 160pt + 工具栏 200pt + grid 400pt + 详情 320pt = 1080pt 横向最小

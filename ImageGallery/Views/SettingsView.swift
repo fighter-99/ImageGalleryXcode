@@ -272,6 +272,27 @@ private struct AppearanceSettingsView: View {
             }
         }
 
+        // V6.12.16: 语言选项——简体中文 / 繁體中文 / English
+        //   Copy dict 改 NSLocalizedString 后 (V6.12.17), 所有 UI 文案按这里选的语言显示
+        //   SettingsView 现在还会显示中文 ("语言")——V6.12.17 一起迁
+        SettingsSection(
+            title: "语言 / Language",
+            subtitle: "App 显示语言。需重启 app 让部分 SwiftUI 文案刷新。"
+        ) {
+            HStack(alignment: .center, spacing: Spacing.md) {
+                Text("Language")
+                    .frame(width: SettingsMetrics.labelColumnWidth, alignment: .leading)
+                Picker("", selection: $settings.appLanguage) {
+                    ForEach(Language.allCases) { lang in
+                        Text(lang.displayName).tag(lang)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .labelsHidden()
+            }
+        }
+
         SettingsSection(
             title: "缩略图大小",
             subtitle: "默认缩略图尺寸。拖动 slider 实时预览缩略图大小。当前会话用 toolbar 临时改的会在重启后恢复。"

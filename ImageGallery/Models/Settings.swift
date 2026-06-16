@@ -129,6 +129,20 @@ final class UserSettings {
         didSet { defaults.set(scrollAnchorPhotoID, forKey: "scrollAnchorPhotoID") }
     }
 
+    // MARK: - V6.12.16: App 语言选项 (简体中文 / 繁體中文 / English)
+    //   ImageGalleryApp 读 settings.language 调 .environment(\.locale, ...)
+    //   所有 SwiftUI Text + Formatter + String(localized:) 自动跟随
+    //   V6.12.17 迁移 Copy dict 到 NSLocalizedString 后, 所有 UI 文案会按 language 切换
+    var language: String = Language.zhHans.rawValue {
+        didSet { defaults.set(language, forKey: "language") }
+    }
+
+    // V6.12.16: computed language enum——typed access 比 rawValue 字符串好用
+    var appLanguage: Language {
+        get { Language(rawValue: language) ?? .zhHans }
+        set { language = newValue.rawValue }
+    }
+
     // MARK: - V5.58-1: init() 从 UserDefaults 读 13 字段
     //
     // V5.52-2 漏的 init-from-UserDefaults——之前 UserSettings 永远从硬编码默认开始,
@@ -197,6 +211,11 @@ final class UserSettings {
         if let stored = defaults.string(forKey: "scrollAnchorPhotoID"), !stored.isEmpty {
             self.scrollAnchorPhotoID = stored
         }
+
+        // V6.12.16: language 从 UserDefaults 读——缺字段 fallback .zhHans
+        if let stored = defaults.string(forKey: "language") {
+            self.language = stored
+        }
     }
 
     // MARK: - V5.58-2: reset() 恢复 12 字段到默认
@@ -224,10 +243,8 @@ final class UserSettings {
         thumbnailLayoutMode = ThumbnailLayoutMode.defaultValue.rawValue
         sidebarColumnWidth = 220.0
         detailColumnWidth = 360.0
-        // V5.90: 4 个导入/导出偏好也 reset
-        autoDeduplicate = true
-        autoGenerateThumbnails = true
-        defaultExportFormat = ExportFormat.defaultValue.rawValue
+        // V6.12.16: language 也 reset 到默认 (.zhHans)
+        language = Language.zhHans.rawValue
         defaultExportQuality = 0.9
         // scrollAnchorPhotoID 不在 reset 范围——是 per-window 状态
     }
