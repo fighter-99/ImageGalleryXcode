@@ -78,9 +78,12 @@ struct SidebarView: View {
     @AppStorage("sidebar.section.tags") private var isTagsExpanded: Bool = true
 
     // 弹窗控制
+    // V6.11: newName 拆 newFolderName + newTagName——之前 2 alert 共享 @State
+    //   取消后再开旧值会残留, placeholder 不一致
     @State private var showingNewFolderAlert = false
     @State private var showingNewTagAlert = false
-    @State private var newName = ""
+    @State private var newFolderName = ""
+    @State private var newTagName = ""
 
     // 拖拽目标高亮
     @State private var dropTargetFolderID: UUID?
@@ -173,7 +176,7 @@ struct SidebarView: View {
                     }
 
                     Button {
-                        newName = ""
+                        newFolderName = ""
                         showingNewFolderAlert = true
                     } label: {
                         HStack(spacing: SidebarStyle.rowIconTextSpacing) {
@@ -226,7 +229,7 @@ struct SidebarView: View {
                     }
 
                     Button {
-                        newName = ""
+                        newTagName = ""
                         showingNewTagAlert = true
                     } label: {
                         HStack(spacing: SidebarStyle.rowIconTextSpacing) {
@@ -279,13 +282,13 @@ struct SidebarView: View {
         .navigationTitle(Term.library)
 
         .alert(Copy.newFolder, isPresented: $showingNewFolderAlert) {
-            TextField(Copy.folderNamePlaceholder, text: $newName)
+            TextField(Copy.folderNamePlaceholder, text: $newFolderName)
             Button(Copy.cancel, role: .cancel) {}
             Button(Copy.create) { createFolder() }
         }
 
         .alert(Copy.newTag, isPresented: $showingNewTagAlert) {
-            TextField(Copy.tagNamePlaceholder, text: $newName)
+            TextField(Copy.tagNamePlaceholder, text: $newTagName)
             Button(Copy.cancel, role: .cancel) {}
             Button(Copy.create) { createTag() }
         }
@@ -321,7 +324,7 @@ struct SidebarView: View {
     // MARK: - 原有方法（保留）
 
     private func createFolder() {
-        let trimmed = newName.trimmingCharacters(in: .whitespaces)
+        let trimmed = newFolderName.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return }
         let folder = Folder(name: trimmed)
         modelContext.insert(folder)
@@ -340,7 +343,7 @@ struct SidebarView: View {
     }
 
     private func createTag() {
-        let trimmed = newName.trimmingCharacters(in: .whitespaces)
+        let trimmed = newTagName.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return }
         let randomColor = TagColors.presets.randomElement() ?? "#5B8FF9"
         let tag = Tag(name: trimmed, colorHex: randomColor)
