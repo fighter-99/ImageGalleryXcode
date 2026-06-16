@@ -8,6 +8,7 @@
 import Foundation
 import SwiftData
 import SwiftUI
+import os
 
 @Model
 final class Tag {
@@ -34,22 +35,34 @@ extension Color {
         let trimmed = hex.trimmingCharacters(in: .whitespacesAndNewlines)
             .replacingOccurrences(of: "#", with: "")
         var rgb: UInt64 = 0
-        Scanner(string: trimmed).scanHexInt64(&rgb)
+        // V6.10: check Scanner 返回值——畸形 hex (空 / 非 hex 字符 / 长度不对) rgb 留 0,
+        //   之前无 check 落到 case 6/8 时按 0 解析成纯黑, 长度错时落兜底蓝, 静默
+        let scanned = Scanner(string: trimmed).scanHexInt64(&rgb)
 
         let r, g, b, a: Double
-        switch trimmed.count {
-        case 6:
-            r = Double((rgb & 0xFF0000) >> 16) / 255
-            g = Double((rgb & 0x00FF00) >> 8) / 255
-            b = Double(rgb & 0x0000FF) / 255
-            a = 1
-        case 8:
-            r = Double((rgb & 0xFF000000) >> 24) / 255
-            g = Double((rgb & 0x00FF0000) >> 16) / 255
-            b = Double((rgb & 0x0000FF00) >> 8) / 255
-            a = Double(rgb & 0x000000FF) / 255
-        default:
+        if !scanned {
+            // V6.10: 解析失败显式 fallback + os.Logger 警告 (之前静默)
+            os.Logger(subsystem: "ImageGallery", category: "Color")
+                .warning("Color(hex:) 解析失败: \(trimmed, privacy: .public)")
             r = 0.4; g = 0.4; b = 0.9; a = 1  // 兜底蓝色
+        } else {
+            switch trimmed.count {
+            case 6:
+                r = Double((rgb & 0xFF0000) >> 16) / 255
+                g = Double((rgb & 0x00FF00) >> 8) / 255
+                b = Double(rgb & 0x0000FF) / 255
+                a = 1
+            case 8:
+                r = Double((rgb & 0xFF000000) >> 24) / 255
+                g = Double((rgb & 0x00FF0000) >> 16) / 255
+                b = Double((rgb & 0x0000FF00) >> 8) / 255
+                a = Double(rgb & 0x000000FF) / 255
+            default:
+                // scanned=true 但长度非 6/8 (如 "12345" hex 合法但 5 字符): 也走兜底
+                os.Logger(subsystem: "ImageGallery", category: "Color")
+                    .warning("Color(hex:) 长度异常: \(trimmed.count) 字符")
+                r = 0.4; g = 0.4; b = 0.9; a = 1
+            }
         }
         self.init(red: r, green: g, blue: b, opacity: a)
     }
