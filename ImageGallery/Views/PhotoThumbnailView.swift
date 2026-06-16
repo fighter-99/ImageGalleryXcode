@@ -273,8 +273,8 @@ struct PhotoThumbnailView: View {
         var tintOpacity: Double {
             switch self {
             case .none:   return 0
-            case .single: return 0.06 // V5.99.2: 0 → 0.06 (visibility, 深色图片补强)
-            case .multi:  return 0.10 // V5.99.2: 0 → 0.10 (multi 加重)
+            case .single: return 0.15 // V5.99.2: 0 → 0.06 → V6.12.9: 0.06 → 0.15 (深色图片 top/bottom 更明显)
+            case .multi:  return 0.22 // V5.99.2: 0 → 0.10 → V6.12.9: 0.10 → 0.22 (multi 加重)
             }
         }
 
@@ -408,6 +408,16 @@ struct PhotoThumbnailView: View {
                             //   之前 Radius.thumb (8pt) 在 200pt cell 上 = 4%, 几乎看不到圆角
                             //   Radius.lg (12pt) = 6%, 视觉上明显是圆角
                             .clipShape(RoundedRectangle(cornerRadius: Radius.lg))
+                            // V6.12.9: 1pt 半透描边——保证 .square 模式圆角可见
+                            //   之前 V6.12.7 (cell bg 透明) + V6.12.8 (innerCellPadding 2) 仍不够:
+                            //   .square 模式 image .fill 贴 cell 边缘, image 内容跟 cell 边缘紧邻
+                            //   即使有 2pt buffer, 圆角仍可能跟 image 内容颜色撞色 (低对比)
+                            //   Photos.app 真版用 subtle 1pt 描边强制圆角边界可见
+                            //   Color.primary 8% opacity——亮/暗模式自适应, 不抢戏
+                            .overlay(
+                                RoundedRectangle(cornerRadius: Radius.lg)
+                                    .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+                            )
                             .saturation(photo.isInTrash ? 0.05 : 1)
                             .opacity(photo.isInTrash ? (colorScheme == .dark ? 0.65 : 0.55) : 1)
                             // V5.30: image 加载完淡入——镜像 Photos.app Library cell 行为
