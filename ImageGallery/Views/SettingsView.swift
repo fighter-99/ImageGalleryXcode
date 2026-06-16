@@ -307,20 +307,22 @@ private struct LibrarySettingsView: View {
 
     var body: some View {
         // V5.90: 导入——默认从哪个文件夹导入
-        // V5.95: HStack label 左 (60pt 宽) / Toggle 右——Photos 偏好设置范式
+        // V6.03: 删外层 VStack 包装——之前 VStack(spacing: .sm) 让 2 toggle 行有 8pt gap
+        //   跟 导出/自动清理 section 的 2 HStack back-to-back 节奏不齐
+        //   改: 2 HStack 直列 (0pt gap), 跟 导出/自动清理 节奏统一
+        //   Text 用 .frame(maxWidth: .infinity) 撑满左侧, Toggle 推到 trailing
+        //   跟其他 section 不同: 此处 label 不固定 80pt (label 6+ 中文字 80pt 装不下)
         SettingsSection(
             title: "导入",
             subtitle: "拖入或选择文件夹导入图片时的默认行为。"
         ) {
-            VStack(alignment: .leading, spacing: Spacing.sm) {
-                HStack {
-                    Text("导入时自动去重").frame(maxWidth: .infinity, alignment: .leading)
-                    Toggle("", isOn: $settings.autoDeduplicate).labelsHidden()
-                }
-                HStack {
-                    Text("导入时生成缩略图").frame(maxWidth: .infinity, alignment: .leading)
-                    Toggle("", isOn: $settings.autoGenerateThumbnails).labelsHidden()
-                }
+            HStack {
+                Text("导入时自动去重").frame(maxWidth: .infinity, alignment: .leading)
+                Toggle("", isOn: $settings.autoDeduplicate).labelsHidden()
+            }
+            HStack {
+                Text("导入时生成缩略图").frame(maxWidth: .infinity, alignment: .leading)
+                Toggle("", isOn: $settings.autoGenerateThumbnails).labelsHidden()
             }
         }
 
@@ -386,8 +388,10 @@ private struct AccentSettingsView: View {
             title: "强调色",
             subtitle: "选择应用的主色调，影响按钮、选中状态、链接等。"
         ) {
+            // V6.03: 5 → 3 列——9 colors ÷ 3 = 3 行整, 之前 5 列末行 4 colors 残缺
+            //   3 列 × 3 行 = 9 cells, 视觉方阵, 无空白 cell
             LazyVGrid(
-                columns: Array(repeating: GridItem(.flexible(), spacing: Spacing.md), count: 5),
+                columns: Array(repeating: GridItem(.flexible(), spacing: Spacing.md), count: 3),
                 spacing: Spacing.md
             ) {
                 ForEach(AccentColor.allCases) { accent in
