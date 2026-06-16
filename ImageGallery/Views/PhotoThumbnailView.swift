@@ -381,6 +381,16 @@ struct PhotoThumbnailView: View {
                             .shimmer()
                     }
                 }
+                // V5.98: 选中 overlay 贴 image (Group) 而非 cell
+                //   - 之前 V3.6.51 refactor 把 overlay 放在 cell 级 (.overlay(cellSelectionOverlay) on ZStack)
+                //   - cell 级 overlay 在 .squareFit 模式下圈住 letterbox 容器, 不贴图片
+                //   - 用户反馈"选中的蓝框不是贴合图片的, 好像是圈住的是容器卡片的感觉"
+                //   - 现在 overlay 落在 image Group 上, 边框 + ✓ 都跟 image 走
+                //   - .squareFit 模式下蓝框跟着 letterbox 的实际 image 形状走, ✓ 也在 image 角上
+                //   - .square 模式下 image 本来就 fill cell, 视觉等同 (但语义更清晰)
+                //   - .animation 也搬过来——border width 过渡只跟 selectionState 走, 跟 cell 其他动画解耦
+                .overlay(cellSelectionOverlay)
+                .animation(Animations.standard, value: selectionState)
                 Spacer(minLength: 0)
             }
             .frame(maxWidth: .infinity)
@@ -456,18 +466,11 @@ struct PhotoThumbnailView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
 
-            // 多选 ✓ 圆点
-            // V3.6.38: 加 .animation 触发 transition（之前 transition 写了但没 animation 所以不生效）
-            if isInMultiSelect {
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.title2)
-                    .foregroundStyle(.white, Color.accentColor)
-                    .background(
-                        Circle().fill(.background).padding(3)
-                    )
-                    .padding(6)
-                    .transition(.scale.combined(with: .opacity))
-            }
+            // V5.98: 删 cell 级 ✓ 角标——cellSelectionOverlay 里的 ✓ 已经在 image 上了
+            //   - 之前 cell 级 ✓ + cellSelectionOverlay 的 ✓ 同时画, 视觉重叠
+            //   - overlay 的 ✓ 在 .squareFit 模式 letterbox 区 (cell 角上)
+            //   - overlay 搬到 image 后, ✓ 在 image 角上, cell 级 ✓ 是 letterbox 角落 = 两个错位 ✓
+            //   - 删 cell 级 ✓, 只留 overlay 内 ✓ (跟 image 走)
         }
         .frame(maxWidth: .infinity)
         // V5.19: 内 cell 2pt padding——Photos.app "framed photo" 风格
@@ -506,7 +509,7 @@ struct PhotoThumbnailView: View {
         //   现在：单一 overlay 由 selectionState enum 驱动，单一 .animation(value: selectionState)
         //   状态切换时所有视觉元素（边框 + ✓）一起淡入淡出，无'先后'错觉
         //   V3.6.51 也彻底删除 selectionOverlayMulti 染色（16% accent 太显眼被读成'浅框'）
-        .overlay(cellSelectionOverlay)
+        // V5.98: .overlay(cellSelectionOverlay) 搬到 image Group 上——overlay 贴 image 不贴 cell
         // V5.27: 删 .overlay(cellHoverOverlay)——hover border 砍了，cellHoverOverlay 整段删
         // V5.17: 砍 hover scale 1.01 / 选中 1.015（V4.62.0 教训"3 重视觉锤 = 累赘"）
         //   之前 isActive 1.015 / hover 1.01 / ✓ 角标——3 锤叠加
@@ -522,7 +525,7 @@ struct PhotoThumbnailView: View {
         //   - 镜像 macOS Photos.app: cell hover 无 shadow 反馈
         //   - 选中态仅 border 视觉锤——不需要 shadow 配合
         // V3.6.51: 单一 .animation 驱动所有选中状态过渡
-        .animation(Animations.standard, value: selectionState)
+        // V5.98: selectionState 动画搬到 image Group——跟 overlay 一起, 不污染 cell 其他动画
         .animation(Animations.springGentle, value: isFocused)
         // V5.30: 删 .onHover 整段——isHovered state 已删, hook 失效
         //   之前 V5.28-4 保留为"未来 hook", 但 dead code 违反 V4.62.0 收敛原则
