@@ -174,18 +174,24 @@ private struct GeneralSettingsView: View {
     private let defaultSortOptions: [SortOption] = SortOption.allCases
 
     var body: some View {
+        // V5.95: HStack label 左 / control 右——Photos 偏好设置范式
+        //   之前 Picker 占整 row 宽, 像表单; 现在 label 左 + control 右 紧凑
         SettingsSection(
             title: "默认视图模式",
             subtitle: "启动应用时使用的图片显示布局",
             onReset: { settings.resetGeneral() }
         ) {
-            Picker("视图模式", selection: $settings.viewModeRaw) {
-                Text(Copy.viewModeGrid).tag(ViewMode.grid.rawValue)
-                Text(Copy.viewModeList).tag(ViewMode.list.rawValue)
-                Text(Copy.viewModeTimeline).tag(ViewMode.timeline.rawValue)
+            HStack(alignment: .center, spacing: Spacing.md) {
+                Text("视图模式")
+                    .frame(width: 80, alignment: .leading)
+                Picker("", selection: $settings.viewModeRaw) {
+                    Text(Copy.viewModeGrid).tag(ViewMode.grid.rawValue)
+                    Text(Copy.viewModeList).tag(ViewMode.list.rawValue)
+                    Text(Copy.viewModeTimeline).tag(ViewMode.timeline.rawValue)
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
             }
-            .pickerStyle(.segmented)
-            .labelsHidden()
         }
 
         SettingsSection(
@@ -193,14 +199,20 @@ private struct GeneralSettingsView: View {
             subtitle: "启动时图片按以下规则排序",
             onReset: { settings.resetGeneral() }
         ) {
-            Picker("排序", selection: $settings.sortOption) {
-                ForEach(defaultSortOptions) { option in
-                    Text(option.label).tag(option.rawValue)
+            HStack(alignment: .center, spacing: Spacing.md) {
+                Text("排序")
+                    .frame(width: 80, alignment: .leading)
+                Picker("", selection: $settings.sortOption) {
+                    ForEach(defaultSortOptions) { option in
+                        Text(option.label).tag(option.rawValue)
+                    }
                 }
+                .pickerStyle(.menu)
+                .labelsHidden()
+                Spacer()  // V5.95: menu picker 不撑满, 留 trailing 视觉缓冲
             }
-            .pickerStyle(.menu)
-            .labelsHidden()
         }
+        // V5.95: 2 sections 都用 HStack (label 80pt 宽 + control 右对齐)
         // V5.92: 2 sections 都共用 resetGeneral()——视图模式 + 默认排序
         // V5.90: 删"窗口"section——showSidebar/showDetail toggle 跟菜单"显示"重复
     }
@@ -218,18 +230,23 @@ private struct AppearanceSettingsView: View {
         // V5.57-1: 缩略图布局——.square (1:1 裁切) / .squareFit (1:1 letterbox macOS Photos 真版)
         // V5.58-1: Picker 直接绑 $settings.thumbnailLayoutMode (Int)——通过 .tag(Int) 路由
         // V5.92: 3 sections 都共用 resetAppearance()——一次重置布局/大小/外观
+        // V5.95: HStack label 左 (80pt 宽) / control 右——Photos 偏好设置范式
         SettingsSection(
             title: "缩略图布局",
             subtitle: "方格：1:1 居中裁切（iOS Photos 风格）。按比例：1:1 letterbox 不裁切（macOS Photos 真版）。",
             onReset: { settings.resetAppearance() }
         ) {
-            Picker("缩略图布局", selection: $settings.thumbnailLayoutMode) {
-                ForEach(ThumbnailLayoutMode.allCases) { mode in
-                    Label(mode.displayName, systemImage: mode.icon).tag(mode.rawValue)
+            HStack(alignment: .center, spacing: Spacing.md) {
+                Text("布局")
+                    .frame(width: 80, alignment: .leading)
+                Picker("", selection: $settings.thumbnailLayoutMode) {
+                    ForEach(ThumbnailLayoutMode.allCases) { mode in
+                        Label(mode.displayName, systemImage: mode.icon).tag(mode.rawValue)
+                    }
                 }
+                .pickerStyle(.segmented)
+                .labelsHidden()
             }
-            .pickerStyle(.segmented)
-            .labelsHidden()
         }
 
         SettingsSection(
@@ -238,6 +255,8 @@ private struct AppearanceSettingsView: View {
             onReset: { settings.resetAppearance() }
         ) {
             HStack(alignment: .center, spacing: Spacing.md) {
+                Text("大小")
+                    .frame(width: 80, alignment: .leading)
                 Slider(value: $settings.thumbnailSize, in: 100...250, step: 10)
                 Text(Copy.thumbnailSizeLabel(Int(settings.thumbnailSize)))
                     .font(Typography.captionMono)
@@ -245,6 +264,7 @@ private struct AppearanceSettingsView: View {
                     .frame(width: 40, alignment: .trailing)
                 // V5.57-2: 实时预览——SF Symbol 按 size 缩放
                 ThumbnailSizePreview(size: $settings.thumbnailSize)
+                Spacer()  // V5.95: trailing Spacer 防 slider 撑满 row
             }
         }
 
@@ -253,13 +273,17 @@ private struct AppearanceSettingsView: View {
             subtitle: "应用整体外观。\u{201C}跟随系统\u{201D} 会随 macOS 切换自动调整。",
             onReset: { settings.resetAppearance() }
         ) {
-            Picker("外观", selection: $settings.appearanceMode) {
-                ForEach(AppearanceMode.allCases) { mode in
-                    Label(mode.displayName, systemImage: mode.icon).tag(mode.rawValue)
+            HStack(alignment: .center, spacing: Spacing.md) {
+                Text("外观")
+                    .frame(width: 80, alignment: .leading)
+                Picker("", selection: $settings.appearanceMode) {
+                    ForEach(AppearanceMode.allCases) { mode in
+                        Label(mode.displayName, systemImage: mode.icon).tag(mode.rawValue)
+                    }
                 }
+                .pickerStyle(.segmented)
+                .labelsHidden()
             }
-            .pickerStyle(.segmented)
-            .labelsHidden()
         }
     }
 }
@@ -274,30 +298,42 @@ private struct LibrarySettingsView: View {
     var body: some View {
         // V5.90: 导入——默认从哪个文件夹导入
         // V5.92: 3 sections 都共用 resetLibrary()——一次重置导入/导出/清理
+        // V5.95: HStack label 左 (60pt 宽) / Toggle 右——Photos 偏好设置范式
         SettingsSection(
             title: "导入",
             subtitle: "拖入或选择文件夹导入图片时的默认行为。",
             onReset: { settings.resetLibrary() }
         ) {
             VStack(alignment: .leading, spacing: Spacing.sm) {
-                Toggle("导入时自动去重", isOn: $settings.autoDeduplicate)
-                Toggle("导入时生成缩略图", isOn: $settings.autoGenerateThumbnails)
+                HStack {
+                    Text("导入时自动去重").frame(maxWidth: .infinity, alignment: .leading)
+                    Toggle("", isOn: $settings.autoDeduplicate).labelsHidden()
+                }
+                HStack {
+                    Text("导入时生成缩略图").frame(maxWidth: .infinity, alignment: .leading)
+                    Toggle("", isOn: $settings.autoGenerateThumbnails).labelsHidden()
+                }
             }
         }
 
         // V5.90: 导出——默认导出格式/质量
+        // V5.95: HStack label 左 / control 右
         SettingsSection(
             title: "导出",
             subtitle: "导出图片时的默认格式和质量。",
             onReset: { settings.resetLibrary() }
         ) {
-            Picker("格式", selection: $settings.defaultExportFormat) {
-                ForEach(ExportFormat.allCases) { format in
-                    Text(format.displayName).tag(format.rawValue)
+            HStack(alignment: .center, spacing: Spacing.md) {
+                Text("格式")
+                    .frame(width: 60, alignment: .leading)
+                Picker("", selection: $settings.defaultExportFormat) {
+                    ForEach(ExportFormat.allCases) { format in
+                        Text(format.displayName).tag(format.rawValue)
+                    }
                 }
+                .pickerStyle(.segmented)
+                .labelsHidden()
             }
-            .pickerStyle(.segmented)
-            .labelsHidden()
 
             HStack(alignment: .center, spacing: Spacing.md) {
                 Text("质量")
@@ -307,6 +343,7 @@ private struct LibrarySettingsView: View {
                     .font(Typography.captionMono)
                     .foregroundStyle(Surface.textSecondary)
                     .frame(width: 40, alignment: .trailing)
+                Spacer()  // V5.95: trailing Spacer 防 slider 撑满 row
             }
         }
 
@@ -316,13 +353,18 @@ private struct LibrarySettingsView: View {
             subtitle: "删除的图片会先进入回收站，超过下面设置的天数后会被自动永久删除。",
             onReset: { settings.resetLibrary() }
         ) {
-            Picker("保留时长", selection: $settings.trashRetentionDays) {
-                ForEach(TrashRetentionDays.allCases) { days in
-                    Text(days.displayName).tag(days.rawValue)
+            HStack(alignment: .center, spacing: Spacing.md) {
+                Text("保留时长")
+                    .frame(width: 60, alignment: .leading)
+                Picker("", selection: $settings.trashRetentionDays) {
+                    ForEach(TrashRetentionDays.allCases) { days in
+                        Text(days.displayName).tag(days.rawValue)
+                    }
                 }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                Spacer()
             }
-            .pickerStyle(.segmented)
-            .labelsHidden()
         }
     }
 }
