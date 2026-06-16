@@ -232,10 +232,13 @@ final class ContentViewModel {
     var trashedTotalSize: Int64 { PhotoStats.trashedSize(allPhotos) }
 
     /// V3.6.15: 重复图 group / purgeable count / size
-    var duplicateGroupCount: Int { PhotoStats.duplicateGroups(in: visiblePhotos).count }
-    var duplicatePurgeableCount: Int { PhotoStats.duplicatesToPurge(in: visiblePhotos).count }
+    /// V6.12: 用 allPhotos 替 visiblePhotos——sidebar 数字 (DuplicateCount 用 allPhotos)
+    ///   跟 detail panel 数字 保持一致 (trashedCount 用 allPhotos 同 precedent)
+    ///   之前 visiblePhotos 在 folder/search 激活时算, 跟 sidebar 对不上
+    var duplicateGroupCount: Int { PhotoStats.duplicateGroups(in: allPhotos).count }
+    var duplicatePurgeableCount: Int { PhotoStats.duplicatesToPurge(in: allPhotos).count }
     var duplicatePurgeableSize: Int64 {
-        PhotoStats.duplicatesToPurge(in: visiblePhotos).reduce(0) { $0 + $1.fileSize }
+        PhotoStats.duplicatesToPurge(in: allPhotos).reduce(0) { $0 + $1.fileSize }
     }
 
     // MARK: V5.56 Key Photo——每日期组代表图
