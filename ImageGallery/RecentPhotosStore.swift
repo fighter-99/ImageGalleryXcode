@@ -14,10 +14,15 @@
 
 import AppKit
 import Foundation
+import Observation  // V6.11: @Observable (macOS 14+)
 
 /// 跟踪最近导入的照片 URL（最多 20 个）
 /// V4.36.x: 给 File > Open Recent 菜单提供数据
+/// V6.11: @Observable 升级——V6.08 #24 留, 之前 RecentPhotosStoreObservable 包装
+///   类 + @ObservedObject 跟项目其他 model 风格不一致 (ContentViewModel/PhotoStats
+///   都用 @Observable)。直接给 RecentPhotosStore 加 @Observable 即可, 删包装类
 @MainActor
+@Observable
 final class RecentPhotosStore {
     static let shared = RecentPhotosStore()
 
@@ -27,7 +32,9 @@ final class RecentPhotosStore {
     /// 最多保留 20 个
     private let maxCount = 20
 
-    private(set) var urls: [URL] = []
+    // V6.11: 去掉 private(set)——@Observable 跟踪读写, 外部只读
+    //   模式跟 ContentViewModel 一致 (model 直接 @Observable, 不需要包装)
+    var urls: [URL] = []
 
     private init() {
         load()

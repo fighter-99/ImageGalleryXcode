@@ -8,7 +8,7 @@
 import SwiftUI
 import AppKit
 import SwiftData
-import Combine  // V4.36.x: RecentPhotosStoreObservable 需要 @Published
+import Combine  // V4.36.x: 保留——HistoryStore/ImageGalleryUndoManager 等用 @Published
 import os  // V6.08: ModelContainer 启动失败 log
 
 // AppDelegate：处理应用层 macOS 事件
@@ -227,8 +227,9 @@ struct ImageGalleryApp: App {
 /// V4.36.x: 最近打开菜单——File > Open Recent
 /// 显示 RecentPhotosStore 中的最近 20 个照片 URL
 /// 点击 → 在 Finder 中揭示；空时显示"清空菜单"
+/// V6.11: @ObservedObject + ObservableObject 包装 → @State + @Observable 直持
 struct RecentPhotosMenu: View {
-    @ObservedObject private var store = RecentPhotosStoreObservable.shared
+    @State private var store = RecentPhotosStore.shared
 
     var body: some View {
         Group {
@@ -280,7 +281,11 @@ struct NavigateMenuItems: View {
 }
 
 /// V4.36.x: RecentPhotosStore 的 ObservableObject 包装
-/// SwiftUI 菜单需要 ObservableObject 来响应 URL 变化
+/// V6.11: 删除整个包装类——RecentPhotosStore 升级 @Observable 后不需要包装
+///   RecentPhotosMenu 改 @State 直持 RecentPhotosStore.shared
+///   之前 2 处 recordImport/recordImports 显式同步 urls = store.urls 是为触发
+///   @Published 重渲, 跟 @Observable 集成后 store.urls 写操作自动追踪
+/*
 @MainActor
 final class RecentPhotosStoreObservable: ObservableObject {
     static let shared = RecentPhotosStoreObservable()
@@ -311,6 +316,7 @@ final class RecentPhotosStoreObservable: ObservableObject {
         store.revealInFinder(url)
     }
 }
+*/
 
 struct UndoRedoMenuButtons: View {
     @FocusedValue(\.imageGalleryUndoManager) private var undoManager
