@@ -57,13 +57,17 @@ struct GridLayout: Equatable {
     /// 纯函数: 输入 items, 输出 rows
     /// V5.29-3: 测试入口——不依赖 SwiftData, 可独立单测
     /// V5.36 → V5.39 → V5.39.5: 按 layoutMode 分发到不同算法
-    /// V6.12.12: 砍 .square 后 switch 简化——只剩 .squareFit, 1 个 case
-    ///   V5.35 算法 1:1 方格 + dynamic cellSize 填满 + .fit letterbox 渲染
-    ///   (旧 .square 跟 .squareFit 走同一路径, 砍后无差别)
+    /// V6.12.14: ThumbnailLayoutMode 加 .list 后 switch 需要 exhaustive
+    ///   .list 实际不调 GridLayout (ContentViewModel 切 viewMode = .list 后用 PhotoListView)
+    ///   防御性返回空数组——若逻辑漏掉, render 阶段显示空 grid, 用户可见 bug
     func computeRows(from items: [PhotoGridItem]) -> [GridRow] {
         switch layoutMode {
         case .squareFit:
             return computeUniformSquareRows(items: items)
+        case .list:
+            // 防御: 不应到达——若到达, 返空数组让上层 render 空 grid
+            // (实际由 ContentViewModel.onLayoutModeChange 保证切到 .list 时同步 viewMode = .list)
+            return []
         }
     }
 

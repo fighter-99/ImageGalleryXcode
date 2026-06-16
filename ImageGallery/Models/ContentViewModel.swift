@@ -381,9 +381,18 @@ final class ContentViewModel {
         // V5.55-3 bug fix: 若当前 viewMode 是 .list/.timeline, 选 layoutMode 不生效
         // (gridPane 才用 layoutMode——list/timeline 视图下选无效果)
         // 自动切到 .grid 让用户选的 layoutMode 立即可见
+        // V6.12.14: ThumbnailLayoutMode 加 .list 后——选 .list 切 viewMode = .list
+        //   之前总是强制 .grid; 现在按 mode 切对应 viewMode
+        //   .grid (.squareFit) → viewMode = .grid
+        //   .list             → viewMode = .list
+        //   thumbnailSize/density 等其他 toolbar 不变, 只换 viewMode 配合
         controller.onLayoutModeChange = { [model = self] mode in
             model.layoutMode = mode
-            if model.viewMode != .grid {
+            // V6.12.14: 同步切 viewMode——list 选项切到 list 视图, grid 选项回 grid 视图
+            switch mode {
+            case .list:
+                model.viewMode = .list
+            case .squareFit:
                 model.viewMode = .grid
             }
         }

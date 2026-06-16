@@ -28,12 +28,15 @@ import Foundation
 import CoreGraphics
 
 enum ThumbnailLayoutMode: Int, CaseIterable, Identifiable {
-    case squareFit = 2  // V6.12.12: 砍 .square 后唯一选项 (macOS Photos.app 按比例真版)
-                        //   V5.46 NEW: macOS Photos.app 按比例 真版 (1:1 方格 + .fit letterbox)
-                        //   V5.47: rawValue 保持 2 (不重排)——兼容 V5.46 老用户
-                        //   V5.47: displayName 从 '方格 (完整)' 改成 '按比例' (因为 V5.47 砍了原 .masonry '按比例')
-                        // V6.12.12: 仍保留 rawValue=2——不重排避免老 UserDefaults 数据迁移
-                        //   老 rawValue=0 (.square) 用户会自动 fallback 到 .defaultValue (.squareFit)
+    case squareFit = 2  // macOS Photos.app 按比例真版 (1:1 方格 + .fit letterbox)
+                        // V6.12.13 displayName "按比例" → "网格"
+                        // V6.12.14 加 case .list 后, 不再是唯一选项
+                        // V5.46 NEW + V5.47 rawValue=2 兼容 + V6.12.12 保留
+    case list = 3       // V6.12.14 NEW: 用户 4 次请求 '布局模式加列表选项'
+                        //   选中后自动切 viewMode = .list (ContentViewModel.onLayoutModeChange)
+                        //   ThumbnailLayoutMode.list 不影响 grid 视图渲染——grid viewMode 强制切 .grid
+                        //   是 toolbar layout picker 上 "列表" 按钮的 hook, 让用户无需记 ⌥2 快捷键
+                        //   rawValue=3——避开已删 .square (0) + 已删 .masonry (1) + 现有 .squareFit (2)
 
     var id: Int { rawValue }
 
@@ -53,21 +56,25 @@ enum ThumbnailLayoutMode: Int, CaseIterable, Identifiable {
         //   跟 Photos.app / Finder / ViewMode.grid 命名一致
         //   之前 V5.47 '按比例' 是相对 .masonry '按比例满行'——V5.47 砍了 .masonry 后名字失去对比
         case .squareFit: return "网格"
+        // V6.12.14: 新增 '列表' displayName
+        //   用户 4 次请求 '布局模式加列表选项'——V6.12.14 落地
+        //   语义上跟 ViewMode.list 重复——但用户视角: layout picker 有 list 就能切到 list 视图
+        //   内部实现: 选中 .list → ContentViewModel 切 viewMode = .list
+        case .list:       return "列表"
         }
     }
 
-    /// V6.12.12: 单 case 后 icon 简化——只 1 个选项, 不需区分密度
+    /// V6.12.14: 2 case 后 icon 区分——square.grid.2x2 (grid) + list.bullet (list)
     var icon: String {
         switch self {
         case .squareFit: return "square.grid.2x2"
+        case .list:      return "list.bullet"
         }
     }
 
-    /// V6.12.12: 单 case 后 masonryParams 简化——总是 rowHeight (1:1 方格)
+    /// V6.12.14: 2 case 后 masonryParams——都返 rowHeight (1:1 方格)
+    ///   .list 不影响 masonryParams (list view 不用 GridLayout)——保留 .squareFit 等价返回值
     ///   V5.39.5 简化 + V5.46 增 .squareFit 分支 + V5.47 删 .masonry 分支
-    ///   - .square:    uniformWidth = rowHeight (方形 cell, MasonryMath 用, .fill 裁切)
-    ///   - .squareFit: uniformWidth = rowHeight (方形 cell, MasonryMath 用, .fit letterbox, V5.47 无 cell card)
-    ///   - V6.12.12: 砍 .square 后只剩 .squareFit——总是 rowHeight
     ///
     /// stretchLastRow 字段已删——所有模式末行都保持 targetRowHeight (左对齐, Photos Days 风格)
     ///
@@ -76,6 +83,7 @@ enum ThumbnailLayoutMode: Int, CaseIterable, Identifiable {
     func masonryParams(rowHeight: CGFloat) -> CGFloat? {
         switch self {
         case .squareFit: return rowHeight  // 1:1 方格, .fit letterbox
+        case .list:      return rowHeight  // 不影响 GridLayout, 但保持 switch 完整性
         }
     }
 }

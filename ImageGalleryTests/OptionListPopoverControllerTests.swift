@@ -33,9 +33,10 @@ struct OptionListPopoverControllerTests {
         #expect(captured == .squareFit)
     }
 
-    @Test func layoutModeAllCasesCountIs1() {
+    @Test func layoutModeAllCasesCountIs2() {
+        // V6.12.14: 1 → 2 (.list 加)
         // V6.12.12: 砍 .square 后剩 1 选项 (.squareFit only)
-        #expect(ThumbnailLayoutMode.allCases.count == 1)
+        #expect(ThumbnailLayoutMode.allCases.count == 2)
     }
 
     // MARK: - ThumbnailDensity (V5.74 替代)

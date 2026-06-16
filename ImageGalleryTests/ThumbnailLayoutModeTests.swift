@@ -25,13 +25,14 @@ struct ThumbnailLayoutModeTests {
 
     // MARK: - 完整性
 
-    @Test func allCasesCountIsOne() {
+    @Test func allCasesCountIsTwo() {
+        // V6.12.14: 1 → 2 (.list 加, 用户 4 次请求 '布局模式加列表选项')
         // V6.12.12: 2 → 1 (.square 砍)
         // V5.47: 3 → 2 (.masonry 删)
         // V5.46: 2 → 3 (.squareFit 加)
         // V5.39.5: 3 → 2 (.masonryStretch 删)
-        // 防止以后误加 case 而忘更新 Toolbar 布局模式菜单 + masonryParams switch
-        #expect(ThumbnailLayoutMode.allCases.count == 1)
+        // 防止以后误删/加 case 而忘更新 Toolbar 布局模式菜单 + masonryParams switch
+        #expect(ThumbnailLayoutMode.allCases.count == 2)
     }
 
     @Test func idsAreUnique() {
@@ -45,9 +46,11 @@ struct ThumbnailLayoutModeTests {
     @Test func rawValuesAreStable() {
         // @AppStorage("thumbnailLayoutMode") 用 rawValue 持久化
         // rawValue 改了就破坏老用户偏好——必须锁死
+        // V6.12.14: .list (rawValue=3) 新增, 老 rawValue=0 (.square) + 2 (.squareFit) 不变
         // V6.12.12: .square (rawValue=0) 砍, 老用户 storedLayoutModeRaw=0 ?? defaultValue (.squareFit) 平滑回退
         // V5.46: .squareFit 复用 rawValue=2——V5.46+ 老用户 ?? .squareFit
         #expect(ThumbnailLayoutMode.squareFit.rawValue == 2)
+        #expect(ThumbnailLayoutMode.list.rawValue == 3)
     }
 
     @Test func rawValueRoundTrip() {
@@ -88,6 +91,14 @@ struct ThumbnailLayoutModeTests {
         // V6.12.12: 单 case 后 masonryParams 简化——只 .squareFit
         //   返 rowHeight (1:1 方格, MasonryMath 用)
         let uniformWidth = ThumbnailLayoutMode.squareFit.masonryParams(rowHeight: 200)
+        #expect(uniformWidth == 200)
+    }
+
+    @Test func listMapsToUniformWidth() {
+        // V6.12.14 NEW: .list 也返 rowHeight
+        //   .list 不影响 GridLayout (ContentViewModel 切 viewMode = .list 后用 PhotoListView)
+        //   但 masonryParams switch 要 exhaustive, 这里返 rowHeight 保持 API 完整性
+        let uniformWidth = ThumbnailLayoutMode.list.masonryParams(rowHeight: 200)
         #expect(uniformWidth == 200)
     }
 
