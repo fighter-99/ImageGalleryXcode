@@ -101,7 +101,7 @@ struct DateSectionHeader: View {
             //   之前 secondary 在深背景上偏淡，截图 29 几乎看不清
             //   仍 callout 字号（比 label 15pt 小）——不抢 label 视觉权重
             Text(Copy.dateSectionCount(count))
-                .font(.callout.weight(.medium))
+                .font(Typography.body.weight(.medium))
                 .foregroundStyle(.primary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)

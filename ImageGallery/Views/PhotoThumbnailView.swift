@@ -333,7 +333,7 @@ struct PhotoThumbnailView: View {
                 // 角标 ✓ 保留——V3.6.51 selection state machine 设计
                 // 单选不显 ✓（subtle），多选显 ✓（更明确）
                 Image(systemName: "checkmark.circle.fill")
-                    .font(.title2)
+                    .font(Typography.detailCount)
                     .foregroundStyle(.white, Color.accentColor)
                     .background(Circle().fill(.background).padding(3))
                     .padding(6)
@@ -414,9 +414,9 @@ struct PhotoThumbnailView: View {
                             .overlay {
                                 VStack(spacing: 4) {
                                     Image(systemName: "exclamationmark.triangle")
-                                        .font(.title3)
+                                        .font(Typography.headline)
                                     Text(Copy.thumbnailLoadFailed)
-                                        .font(.caption2)
+                                        .font(Typography.caption)
                                 }
                                 .foregroundStyle(.secondary)
                             }
@@ -500,9 +500,9 @@ struct PhotoThumbnailView: View {
                 let badgeColor = daysLeftBadgeColor(days: days)
                 HStack(spacing: 2) {
                     Image(systemName: "clock")
-                        .font(.caption2)
+                        .font(Typography.caption)
                     Text(Copy.daysRemaining(days))
-                        .font(.caption.monospacedDigit())
+                        .font(Typography.captionMono)
                 }
                 .foregroundStyle(badgeColor.foreground)
                 .padding(.horizontal, 6)
@@ -648,7 +648,7 @@ struct PhotoThumbnailView: View {
                         .clipShape(RoundedRectangle(cornerRadius: Radius.thumb))
                 } else {
                     Image(systemName: "photo")
-                        .font(.title)
+                        .font(Typography.title)
                         .foregroundStyle(.secondary)
                 }
             }

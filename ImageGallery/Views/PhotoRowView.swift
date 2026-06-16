@@ -74,8 +74,9 @@ struct PhotoRowView: View {
                 photoImage(photo: photo, width: width, height: imageHeight)
                 Text(dateCaptionText(for: photo))
                     // V5.21: caption (12pt) → callout (14pt) — V5.19 反馈"12pt 仍看不到"
-                    //   14pt callout 在 240pt 大 cell 上更明显, 但仍不抢主图
-                    .font(.callout)
+                    //   V6.12: 改 Typography.dateCaption (13pt regular) 跟 DesignTokens 契约一致
+                    //   14pt → 13pt 调整 (1pt 缩小), 仍是 list 模式可视尺寸
+                    .font(Typography.dateCaption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                     .frame(maxWidth: .infinity, alignment: .leading)

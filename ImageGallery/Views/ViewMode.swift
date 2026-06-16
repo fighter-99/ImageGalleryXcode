@@ -93,7 +93,7 @@ struct PhotoListRow: View {
                         .overlay {
                             Image(systemName: "photo")
                                 .foregroundStyle(.secondary)
-                                .font(.callout)
+                                .font(Typography.body)
                         }
                 }
             }
@@ -106,7 +106,7 @@ struct PhotoListRow: View {
             .overlay {
                 if isInMultiSelect {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.callout)
+                        .font(Typography.body)
                         .foregroundStyle(.white, Color.accentColor)
                         .background(
                             Circle().fill(.background).padding(2)
@@ -282,7 +282,7 @@ struct TimelineYearSection: View {
                 Text(Copy.yearLabel(year))
                     .font(Typography.yearTitle)
                 Text(Copy.totalCount(totalCount))
-                    .font(.callout)
+                    .font(Typography.body)
                     .foregroundStyle(.secondary)
             }
 
@@ -321,7 +321,7 @@ struct TimelineMonthSection: View {
             // 月份 header（小一号字体 + secondary 色）
             HStack(alignment: .firstTextBaseline) {
                 Text(title)
-                    .font(.title3.weight(.semibold))
+                    .font(Typography.headline.weight(.semibold))
                 Spacer()
                 Text(Copy.totalCount(photos.count))
                     .font(.caption)
@@ -374,7 +374,7 @@ struct TimelineThumbnail: View {
                     .overlay {
                         Image(systemName: "photo")
                             .foregroundStyle(.secondary)
-                            .font(.callout)
+                            .font(Typography.body)
                     }
             }
         }
@@ -390,7 +390,7 @@ struct TimelineThumbnail: View {
                 RoundedRectangle(cornerRadius: Radius.sm)
                     .fill(Surface.selectedStrong)
                 Image(systemName: "checkmark.circle.fill")
-                    .font(.callout)
+                    .font(Typography.body)
                     .foregroundStyle(.white, Color.accentColor)
                     .background(
                         Circle().fill(.background).padding(2)

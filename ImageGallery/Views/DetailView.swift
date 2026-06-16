@@ -314,7 +314,7 @@ struct DetailView: View {
                 //         重命名按钮 .plain → .borderless（hover 出系统圆角灰底，可识别为按钮）
                 HStack(spacing: Spacing.sm) {
                     Text(photo.filename)
-                        .font(.headline)
+                        .font(Typography.headline)
                         .lineLimit(2)
                         .truncationMode(.middle)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -323,7 +323,7 @@ struct DetailView: View {
                         showingRenameAlert = true
                     } label: {
                         Image(systemName: "pencil")
-                            .font(.callout)
+                            .font(Typography.body)
                     }
                     .buttonStyle(.borderless)
                     .help(Copy.renamePhotoTitle)
@@ -352,7 +352,7 @@ struct DetailView: View {
     private func infoRow(icon: String, text: String, mono: Bool = false) -> some View {
         HStack(spacing: Spacing.sm) {
             Image(systemName: icon)
-                .font(.caption)
+                .font(Typography.caption)
                 .foregroundStyle(.secondary)
                 .frame(width: 14)
             if mono {
@@ -364,7 +364,7 @@ struct DetailView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             } else {
                 Text(text)
-                    .font(.caption)
+                    .font(Typography.caption)
                     .foregroundStyle(.primary)
                     .lineLimit(1)
                     .truncationMode(.middle)
@@ -380,7 +380,7 @@ struct DetailView: View {
             VStack(alignment: .leading, spacing: Spacing.sm) {
                 HStack {
                     Text(Copy.tagLabel)
-                        .font(.caption.weight(.medium))
+                        .font(Typography.caption.weight(.medium))
                         .foregroundStyle(.secondary)
                     Spacer()
                     Button {
@@ -388,7 +388,7 @@ struct DetailView: View {
                         showingAddTagAlert = true
                     } label: {
                         Image(systemName: "plus.circle")
-                            .font(.callout)
+                            .font(Typography.body)
                             .foregroundStyle(.tint)
                     }
                     .buttonStyle(.borderless)
@@ -398,10 +398,10 @@ struct DetailView: View {
                 if photo.tags.isEmpty {
                     HStack {
                         Image(systemName: "tag")
-                            .font(.caption2)
+                            .font(Typography.caption)
                             .foregroundStyle(.tertiary)
                         Text(Copy.addTagHint)
-                            .font(.caption)
+                            .font(Typography.caption)
                             .foregroundStyle(.tertiary)
                     }
                     .padding(.vertical, Spacing.xs)
@@ -467,7 +467,7 @@ struct DetailView: View {
             )
             Spacer()
             Text(photo.rating > 0 ? "\(photo.rating) 星" : "未评分")
-                .font(.caption2)
+                .font(Typography.caption)
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
         }
@@ -643,12 +643,12 @@ struct TagChip: View {
                 .fill(Color(hex: tag.colorHex))
                 .frame(width: 8, height: 8)
             Text(tag.name)
-                .font(.caption)
+                .font(Typography.caption)
             Button {
                 onRemove()
             } label: {
                 Image(systemName: "xmark")
-                    .font(.caption2)
+                    .font(Typography.caption)
                     .foregroundStyle(.secondary)
             }
             .buttonStyle(.plain)
