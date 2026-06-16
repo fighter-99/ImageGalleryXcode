@@ -255,6 +255,11 @@ private struct AppearanceSettingsView: View {
             title: "缩略图大小",
             subtitle: "默认缩略图尺寸。拖动 slider 实时预览缩略图大小。当前会话用 toolbar 临时改的会在重启后恢复。"
         ) {
+            // V6.02: 拆 2 行——slider row + preview row
+            //   之前 1 行放 slider + 40pt 数字 + 100pt preview + spacer, 总宽 ~400pt
+            //   跟其他 section 'label 80pt + control 撑满' 节奏不齐, trailing 也不齐
+            //   现在: slider row 跟其他 section 同节奏 (label + slider + 数字)
+            //         preview row 居中 100x100, 视觉重心独立
             HStack(alignment: .center, spacing: Spacing.md) {
                 Text("大小")
                     .frame(width: SettingsMetrics.labelColumnWidth, alignment: .leading)
@@ -263,9 +268,14 @@ private struct AppearanceSettingsView: View {
                     .font(Typography.captionMono)
                     .foregroundStyle(Surface.textSecondary)
                     .frame(width: 40, alignment: .trailing)
+                Spacer()
+            }
+            // V6.02: 预览挪到独立行——label column 80pt 占位 (跟其他 row 同节奏)
+            HStack(alignment: .center, spacing: Spacing.md) {
+                Color.clear.frame(width: SettingsMetrics.labelColumnWidth)  // 占位对齐 slider row
                 // V5.57-2: 实时预览——SF Symbol 按 size 缩放
+                // V5.99: card 背景 + 1pt 描边——暗色可见
                 ThumbnailSizePreview(size: $settings.thumbnailSize)
-                Spacer()  // V5.95: trailing Spacer 防 slider 撑满 row
             }
         }
 
