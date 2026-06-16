@@ -139,7 +139,10 @@ enum PhotoStats {
         }
         // V5.8: 砍 filterFavorites 分支——dead
         if filterUnfiled {
-            result = result.filter { $0.folder == nil }
+            // V6.11: 加 !isInTrash——sidebar '待整理' 视图不该出现已 trash 照片
+            //   PhotoStats.unfiled 纯函数 (L35) 已正确排除 trash, PhotoStats.filtered 此处不一致
+            //   之前: trash 1 张无 folder 的照片 → '待整理' 仍显示, 跟 sidebar 数字对不上
+            result = result.filter { $0.folder == nil && !$0.isInTrash }
         }
         if filterDuplicates {
             let hashCounts = Dictionary(grouping: photos) { $0.fileHash }.mapValues { $0.count }
