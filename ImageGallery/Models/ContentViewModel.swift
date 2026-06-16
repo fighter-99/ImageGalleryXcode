@@ -679,11 +679,15 @@ final class ContentViewModel {
 
     /// V3.6.24: 实际跑导入
     /// V5.15: 接 4 参数 onProgress + 合并 summary toast
+    /// V6.10: [self] → [weak self]——importer 是 local let, 不会长留;
+    ///   但 Task 内部 await 期间 (1.5s 延迟清进度) importer 持 self, 阻 model 释放。
+    ///   改 [weak self] + guard let self 防 model 中途销毁 (view dismiss) 写 nil
     func importPhotos(urls: [URL]) {
         importProgress = ImportProgress(current: 0, total: 0, isImporting: true)
         guard let modelContext else { return }
-        let importer = ImageImporter(modelContext: modelContext, folder: currentFolder) { [self] current, total, inserted, failureCount in
+        let importer = ImageImporter(modelContext: modelContext, folder: currentFolder) { [weak self] current, total, inserted, failureCount in
             Task { @MainActor in
+                guard let self else { return }
                 self.importProgress = ImportProgress(
                     current: current, total: total,
                     inserted: inserted, failureCount: failureCount,
