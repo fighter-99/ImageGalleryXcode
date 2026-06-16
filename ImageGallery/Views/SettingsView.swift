@@ -107,8 +107,9 @@ struct SettingsView: View {
             // V5.93: 删 slide-left 动画 (.move edge: .trailing)——改 fade only (.opacity)
             //   Photos 偏好设置范式: 切 category 是 fade, 无 slide (iOS 风格)
             // V5.93: Reset 按钮从内嵌 detail 底部移到 toolbar (主操作入口)
+            // V5.94: spacing xxl(24pt) → lg(16pt)——Photos 偏好设置实际节奏, 紧凑
             ScrollView {
-                VStack(alignment: .leading, spacing: Spacing.xxl) {
+                VStack(alignment: .leading, spacing: Spacing.lg) {
                     Group {
                         switch selectedCategory.wrappedValue {
                         case .general:
@@ -424,16 +425,26 @@ private struct AboutSettingsView: View {
 //   现在: title/subtitle + content 无背景, padding 由外层 ScrollView .padding(Spacing.xl) 统一
 //   section 之间 Spacing.xxl 24pt 留白 (Photos.app 同节奏)
 // V5.92: 加 onReset 闭包——右上角 ghost button "重置本节", 调 settings.resetXxx()
+// V5.94: 加 flashTrigger 闭包——reset 后 section 闪淡黄 bg 0.5s 提示'已重置'
+//   父 sub-view 持 @State flashTrigger, 每次 onReset 时 += 1 触发 onChange
 private struct SettingsSection<Content: View>: View {
     let title: String
     let subtitle: String?
     let onReset: (() -> Void)?
+    let onResetFlash: (() -> Void)?
     @ViewBuilder let content: () -> Content
 
-    init(title: String, subtitle: String? = nil, onReset: (() -> Void)? = nil, @ViewBuilder content: @escaping () -> Content) {
+    init(
+        title: String,
+        subtitle: String? = nil,
+        onReset: (() -> Void)? = nil,
+        onResetFlash: (() -> Void)? = nil,
+        @ViewBuilder content: @escaping () -> Content
+    ) {
         self.title = title
         self.subtitle = subtitle
         self.onReset = onReset
+        self.onResetFlash = onResetFlash
         self.content = content
     }
 
