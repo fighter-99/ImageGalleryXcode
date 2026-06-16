@@ -29,6 +29,11 @@ struct MainLayoutView<PathBar: View, Split: View, StatusBarView: View>: View {
     @Binding var immersivePhoto: Photo?
     @Binding var immersiveIndex: Int
 
+    // V6.08: 沉浸式 photo 列表 snapshot——进入时 capture, 离开时清空
+    //   之前传 live visiblePhotos, 沉浸中 filter 变化会让 currentIndex 越界
+    //   现在 snapshot 一次, 沉浸期间用 snapshot, 稳定可预测
+    @State private var immersivePhotosSnapshot: [Photo] = []
+
     // 修饰需要的值
     let undoManager: ImageGalleryUndoManager
     let toastQueue: [ToastInfo]
@@ -82,7 +87,8 @@ struct MainLayoutView<PathBar: View, Split: View, StatusBarView: View>: View {
         .overlay {
             if immersivePhoto != nil {
                 ImmersivePhotoView(
-                    photos: visiblePhotos,
+                    // V6.08: 用 snapshot 不用 live visiblePhotos——避免 filter 变化时越界
+                    photos: immersivePhotosSnapshot,
                     currentIndex: $immersiveIndex,
                     onDismiss: onImmersiveDismiss
                 )
@@ -91,5 +97,16 @@ struct MainLayoutView<PathBar: View, Split: View, StatusBarView: View>: View {
             }
         }
         .animation(Animations.medium, value: immersivePhoto)
+        // V6.08: immersivePhoto 变化时 snapshot
+        //   nil → non-nil: capture 当前 visiblePhotos 给 immersive 用
+        //   non-nil → nil: 清空 snapshot (避免 retain)
+        //   non-nil → non-nil: 不重置 (沉浸中 user 翻页不应该 reset)
+        .onChange(of: immersivePhoto) { _, newValue in
+            if newValue != nil {
+                immersivePhotosSnapshot = visiblePhotos
+            } else {
+                immersivePhotosSnapshot = []
+            }
+        }
     }
 }
