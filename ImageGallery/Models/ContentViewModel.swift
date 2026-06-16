@@ -743,9 +743,22 @@ final class ContentViewModel {
 
     /// V4.49.0: 递归展开文件夹
     static func expandFolders(_ urls: [URL]) -> [URL] {
+        // V6.09: 防 symlink 循环——contentsOfDirectory + 递归无 cycle 检测
+        //   跟 ImageImporter.collectFiles 同根因 (C2), 拖入 symlink 环会无限递归
+        //   拆出 private overload 持 visited Set, 外部签名不变
+        var visited = Set<URL>()
         var result: [URL] = []
+        expandFolders(urls, into: &result, visited: &visited)
+        return result
+    }
+
+    private static func expandFolders(_ urls: [URL], into result: inout [URL], visited: inout Set<URL>) {
         let fileManager = FileManager.default
         for url in urls {
+            let canonical = url.standardizedFileURL.resolvingSymlinksInPath()
+            if visited.contains(canonical) { continue }
+            visited.insert(canonical)
+
             var isDir: ObjCBool = false
             guard fileManager.fileExists(atPath: url.path, isDirectory: &isDir) else { continue }
             if isDir.boolValue {
@@ -754,13 +767,12 @@ final class ContentViewModel {
                     includingPropertiesForKeys: [.isRegularFileKey],
                     options: [.skipsHiddenFiles]
                 ) {
-                    result.append(contentsOf: expandFolders(contents))
+                    expandFolders(contents, into: &result, visited: &visited)
                 }
             } else {
                 result.append(url)
             }
         }
-        return result
     }
 
     /// V4.1.0 l: 切换侧栏 section 时清选中
