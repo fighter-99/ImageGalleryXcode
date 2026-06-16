@@ -153,8 +153,21 @@ struct PhotoThumbnailView: View {
         // V5.39.7: 计算 draggedPhoto 的新 sortOrder
         //   - 插入到 list 头部: newSortOrder = refreshed[0].sortOrder - 1000
         //   - 插入到其他位置: newSortOrder = (prev.sortOrder + target.sortOrder) / 2
+        // V6.10: 头部插入前检查 refreshed[0].sortOrder > 1000——否则 -1000 会 ≤ 0 碰撞
+        //   (多次拖到顶部或初始 sortOrder 就小)。不满足先重排一次
         if newTargetIndex == 0 {
-            newDragged.sortOrder = refreshed[0].sortOrder - 1000
+            if refreshed[0].sortOrder > 1000 {
+                newDragged.sortOrder = refreshed[0].sortOrder - 1000
+            } else {
+                // V6.10: 强制重排使最小 sortOrder 远大于 1000, 再重 fetch 重算
+                renumberSortOrders(photos: refreshed)
+                guard let refreshed2 = try? modelContext.fetch(descriptor2),
+                      let newTargetIndex2 = refreshed2.firstIndex(where: { $0.id == photo.id }),
+                      let newDragged2 = refreshed2.first(where: { $0.id == draggedID }),
+                      newTargetIndex2 == 0,
+                      refreshed2[0].sortOrder > 1000 else { return }
+                newDragged2.sortOrder = refreshed2[0].sortOrder - 1000
+            }
         } else {
             let prev = refreshed[newTargetIndex - 1]
             let target = refreshed[newTargetIndex]
