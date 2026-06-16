@@ -22,6 +22,17 @@
 //    - TitlebarFrostedGlassController: layoutAttribute = .top (整条磨砂玻璃背景)
 //    两者都加在 titlebar 区域, z-order 互不干扰
 //
+//  V6.12.3.1: ⚠️ 上方"toolbar items 渲染在 accessory 上面"是错的, 实际不能 work
+//    V6.12.3 试图在 ContentViewModel 配置 toolbar 时挂载本 controller, 实测:
+//      layoutAttribute = .top + .titlebar material + 52pt 高 + window.titleVisibility = .hidden
+//      + window.toolbarStyle = .unified 一起用时, accessory view 压住 toolbar 区域,
+//      toolbar 按钮不可见, 整个顶部变灰色长条.
+//    本类写好了但**不要直接挂载**——除非有人找到正确的 z-order / layout 处理方式.
+//    替代方案: 依赖 macOS 系统提供的 .unified toolbar style 自动 vibrancy (本项目已在用),
+//    或重新设计 accessory 高度 / blending 关系.
+//    决定: 暂保留类不动, 加这条注释防 V6.13+ 再踩坑.
+//
+
 
 import AppKit
 
