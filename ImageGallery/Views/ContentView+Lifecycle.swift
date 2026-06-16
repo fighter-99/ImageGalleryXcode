@@ -196,3 +196,22 @@ extension View {
             .onChange(of: allTags) { _, new in model.allTags = new }
     }
 }
+
+// MARK: - V3.5.18: 设置面板 chrome helper (从 ContentView+SettingsChrome.swift 合并过来)
+//
+// V6.05: 合并到 ContentView+Lifecycle.swift——co-located with usage (line ~166 .applySettingsChrome)
+//   删独立的 ContentView+SettingsChrome.swift 文件
+//   之前 V5.51-2 抽出来是为避免 ContentView.swift body 链 type-check 超时
+//   现在 ContentView.swift 已经分段 (ContentView+Lifecycle/ToolbarSync/... 6 个文件)
+//   单独文件 27 行冗余, 合并到本文件让相关 chrome helper 集中
+//
+// V4.13.0: 撤回 onOpenSettings + showSettings 参数——⌘, 现在走 Settings scene
+//   独立 Preferences 窗口（macOS 标准），不再需要 ContentView sheet 路径
+//   简化后只应用强调色（.tint + .environment(\.appAccent)）
+extension View {
+    func applySettingsChrome(tintColor: Color) -> some View {
+        self
+            .tint(tintColor)
+            .environment(\.appAccent, tintColor)
+    }
+}
