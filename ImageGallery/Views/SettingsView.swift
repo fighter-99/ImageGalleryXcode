@@ -17,6 +17,20 @@
 
 import SwiftUI
 
+// MARK: - V6.01: 节奏统一常量
+//
+// V6.01: 统一 3 个 SettingsView 内部常量, 之前散在 7+ 处, 改一处全跟
+//   - labelColumnWidth: 80pt (label 80pt 左 + control 右 对齐 Photos 偏好设置)
+//   - 之前 LibrarySettingsView 用 60pt, 跟 General/Appearance 不齐
+//   - titleSubtitleGap: 8pt (V5.45 13 token 体系的 Spacing.sm)
+//   - 之前用字面量 4, 跨 Spacing.xs/sm 节奏跳跃
+//
+// 暂不抽到 DesignTokens.swift——只 SettingsView 用, 后续 ContentView 复用再 promote
+private enum SettingsMetrics {
+    static let labelColumnWidth: CGFloat = 80
+    static let titleSubtitleGap: CGFloat = Spacing.sm
+}
+
 // MARK: - V4.50.0: 设置类别（sidebar 项）
 // V5.57-1: 加 .about——macOS Photos.app 习惯，about 放最末
 
@@ -175,7 +189,7 @@ private struct GeneralSettingsView: View {
         ) {
             HStack(alignment: .center, spacing: Spacing.md) {
                 Text("视图模式")
-                    .frame(width: 80, alignment: .leading)
+                    .frame(width: SettingsMetrics.labelColumnWidth, alignment: .leading)
                 Picker("", selection: $settings.viewModeRaw) {
                     Text(Copy.viewModeGrid).tag(ViewMode.grid.rawValue)
                     Text(Copy.viewModeList).tag(ViewMode.list.rawValue)
@@ -192,7 +206,7 @@ private struct GeneralSettingsView: View {
         ) {
             HStack(alignment: .center, spacing: Spacing.md) {
                 Text("排序")
-                    .frame(width: 80, alignment: .leading)
+                    .frame(width: SettingsMetrics.labelColumnWidth, alignment: .leading)
                 Picker("", selection: $settings.sortOption) {
                     ForEach(defaultSortOptions) { option in
                         Text(option.label).tag(option.rawValue)
@@ -226,7 +240,7 @@ private struct AppearanceSettingsView: View {
         ) {
             HStack(alignment: .center, spacing: Spacing.md) {
                 Text("布局")
-                    .frame(width: 80, alignment: .leading)
+                    .frame(width: SettingsMetrics.labelColumnWidth, alignment: .leading)
                 Picker("", selection: $settings.thumbnailLayoutMode) {
                     ForEach(ThumbnailLayoutMode.allCases) { mode in
                         Label(mode.displayName, systemImage: mode.icon).tag(mode.rawValue)
@@ -243,7 +257,7 @@ private struct AppearanceSettingsView: View {
         ) {
             HStack(alignment: .center, spacing: Spacing.md) {
                 Text("大小")
-                    .frame(width: 80, alignment: .leading)
+                    .frame(width: SettingsMetrics.labelColumnWidth, alignment: .leading)
                 Slider(value: $settings.thumbnailSize, in: 100...250, step: 10)
                 Text(Copy.thumbnailSizeLabel(Int(settings.thumbnailSize)))
                     .font(Typography.captionMono)
@@ -261,7 +275,7 @@ private struct AppearanceSettingsView: View {
         ) {
             HStack(alignment: .center, spacing: Spacing.md) {
                 Text("外观")
-                    .frame(width: 80, alignment: .leading)
+                    .frame(width: SettingsMetrics.labelColumnWidth, alignment: .leading)
                 Picker("", selection: $settings.appearanceMode) {
                     ForEach(AppearanceMode.allCases) { mode in
                         Label(mode.displayName, systemImage: mode.icon).tag(mode.rawValue)
@@ -308,7 +322,7 @@ private struct LibrarySettingsView: View {
         ) {
             HStack(alignment: .center, spacing: Spacing.md) {
                 Text("格式")
-                    .frame(width: 60, alignment: .leading)
+                    .frame(width: SettingsMetrics.labelColumnWidth, alignment: .leading)
                 Picker("", selection: $settings.defaultExportFormat) {
                     ForEach(ExportFormat.allCases) { format in
                         Text(format.displayName).tag(format.rawValue)
@@ -320,7 +334,7 @@ private struct LibrarySettingsView: View {
 
             HStack(alignment: .center, spacing: Spacing.md) {
                 Text("质量")
-                    .frame(width: 60, alignment: .leading)
+                    .frame(width: SettingsMetrics.labelColumnWidth, alignment: .leading)
                 Slider(value: $settings.defaultExportQuality, in: 0.5...1.0, step: 0.05)
                 Text("\(Int(settings.defaultExportQuality * 100))%")
                     .font(Typography.captionMono)
@@ -337,7 +351,7 @@ private struct LibrarySettingsView: View {
         ) {
             HStack(alignment: .center, spacing: Spacing.md) {
                 Text("保留时长")
-                    .frame(width: 60, alignment: .leading)
+                    .frame(width: SettingsMetrics.labelColumnWidth, alignment: .leading)
                 Picker("", selection: $settings.trashRetentionDays) {
                     ForEach(TrashRetentionDays.allCases) { days in
                         Text(days.displayName).tag(days.rawValue)
@@ -468,7 +482,7 @@ private struct SettingsSection<Content: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
             // V5.98: 删右上角"重置本节"按钮 + onReset HStack——title/subtitle 直接左对齐
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: SettingsMetrics.titleSubtitleGap) {
                 Text(title)
                     .font(Typography.headline)
                 if let subtitle = subtitle {
