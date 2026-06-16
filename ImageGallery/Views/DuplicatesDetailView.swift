@@ -15,6 +15,9 @@ struct DuplicatesDetailView: View {
     let duplicateGroupCount: Int
     let purgeableCount: Int
     let purgeableSize: Int64
+    // V6.09: 透传 model.settings.trashRetentionDays——之前 hardcode `TrashRetentionDays.defaultValue.rawValue`
+    //   跟用户在 Settings 设的天数脱节（V6.08 #5 在 PhotoGridEmptyState 修过同类问题）
+    let retentionDays: Int
     let onKeepNewestPerGroup: () -> Void
 
     var body: some View {
@@ -55,7 +58,7 @@ struct DuplicatesDetailView: View {
                 .buttonStyle(.pressable)
                 .disabled(purgeableCount == 0)
 
-                Text(Copy.duplicatesExplanation(retentionDays: TrashRetentionDays.defaultValue.rawValue))
+                Text(Copy.duplicatesExplanation(retentionDays: retentionDays))
                     .font(Typography.caption)
                     .foregroundStyle(Surface.textTertiary)
                     .multilineTextAlignment(.center)
@@ -77,6 +80,7 @@ struct DuplicatesDetailView: View {
         duplicateGroupCount: 3,
         purgeableCount: 7,
         purgeableSize: 25_165_824,
+        retentionDays: 30,
         onKeepNewestPerGroup: {}
     )
     .frame(width: 320, height: 600)

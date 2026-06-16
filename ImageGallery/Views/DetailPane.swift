@@ -108,6 +108,7 @@ struct DetailPane: View {
                     duplicateGroupCount: count,
                     purgeableCount: count,
                     purgeableSize: totalSize,
+                    retentionDays: retentionDays,
                     onKeepNewestPerGroup: onKeepNewestPerDuplicateGroup
                 )
             } else if let photo = singleSelectedPhoto {
