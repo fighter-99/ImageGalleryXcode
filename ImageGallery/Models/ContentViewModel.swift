@@ -330,6 +330,14 @@ final class ContentViewModel {
         // 只在第一次设置
         guard window.toolbar == nil else { return }
 
+        // V6.12.6: frame autosave——保存/恢复窗口位置 + 大小
+        //   Photos.app / Finder / Safari / Preview 标准行为: 关在哪开回来还在哪
+        //   macOS 把窗口几何存到 NSUserDefaults (key: NSWindow Frame MainLibraryWindow)
+        //   ImageGalleryApp.swift:116 defaultSize 只对**首次**启动生效（无 storage 时），
+        //   后续启动按 autosave 恢复, 不再回到 defaultSize
+        //   必须在 toolbar/其他 config 之前调, 第一次 viewDidMoveToWindow 触发时生效
+        window.setFrameAutosaveName("MainLibraryWindow")
+
         let toolbar = NSToolbar(identifier: NSToolbar.Identifier("MainToolbar"))
         toolbar.delegate = ToolbarController.shared
         toolbar.displayMode = .iconOnly
