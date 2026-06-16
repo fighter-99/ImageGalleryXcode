@@ -171,7 +171,13 @@ struct PhotoThumbnailView: View {
         } else {
             let prev = refreshed[newTargetIndex - 1]
             let target = refreshed[newTargetIndex]
-            newDragged.sortOrder = (prev.sortOrder + target.sortOrder) / 2
+            // V6.11: Double 中间值——sortOrder: Int, (a+b)/2 整数截断风险
+            //   多次 reorder 后 gap 缩到 1 (如 1000/1001), (1000+1001)/2 = 1000 (truncation)
+            //     → 跟 prev 撞 sortOrder, 顺序错乱 debug assertion
+            //   改 Double + round 让 (1000+1001)/2 = 1000.5 → 1000 or 1001
+            //   needsRenumbering 仍触发重排当 gap <= 1, 这里只是更精确
+            let newOrder = Double(prev.sortOrder + target.sortOrder) / 2.0
+            newDragged.sortOrder = Int(newOrder.rounded())
         }
 
         // V5.39.7: 持久化 + 触发父视图 refresh
