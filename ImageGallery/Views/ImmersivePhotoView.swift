@@ -49,7 +49,9 @@ struct ImmersivePhotoView: View {
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .padding(40)
+                        // V6.10: 用 WindowModeMetrics.viewerImagePadding 替 hardcode 40
+                        //   DesignTokens.swift:423 已定义同名 token, 本处旁路
+                        .padding(WindowModeMetrics.viewerImagePadding)
                 } else {
                     // 加载中 + 加载失败都用同一 fallback（避免加 Shimmer 复杂度）
                     VStack(spacing: 16) {
