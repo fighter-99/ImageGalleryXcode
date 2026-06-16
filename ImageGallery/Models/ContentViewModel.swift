@@ -247,11 +247,11 @@ final class ContentViewModel {
     ///   3. group.photos 为空 → nil
     /// 时间复杂度 O(n) (group 内 photos 数量, 实际 n ≤ 几十)
     /// group.photos 已按 importedAt 降序 (PhotoStats.groupByDate 实现)
+    /// V6.11: 全 trashed 时返 nil——之前 fallback group.photos.first 返 trashed photo
+    ///   DateSectionHeader 会显示灰缩略图, UX 差。返 nil 让 DateSectionHeader 走 text-only 分支
+    ///   (line 39 init 没 representative 时不显示缩略图, label + count 清晰)
     func representativePhoto(for group: DateGroup) -> Photo? {
-        if let live = group.photos.first(where: { !$0.isInTrash }) {
-            return live
-        }
-        return group.photos.first
+        return group.photos.first(where: { !$0.isInTrash })
     }
 
     // MARK: navigation title / subtitle

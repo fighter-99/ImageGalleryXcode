@@ -381,8 +381,10 @@ struct PhotoGridView: View {
                         // 内联 representative 选取 (group.photos 已按 importedAt 降序):
                         //   1. 优先非 trashed (避免代表图指向回收站)
                         //   2. fallback group.photos.first (即使全 trashed 也显示某张)
-                        // ContentViewModel.representativePhoto(for:) 是同逻辑, 供 sidebar P0 复用
-                        let representative = group.photos.first(where: { !$0.isInTrash }) ?? group.photos.first
+                        // V6.11: 全 trashed 时返 nil (跟 ContentViewModel.representativePhoto 对齐)
+                        //   之前 ?? group.photos.first fallback 返 trashed photo 显示灰缩略图
+                        //   nil 让 DateSectionHeader 走 text-only 分支 (line 39 init)
+                        let representative = group.photos.first(where: { !$0.isInTrash })
                         DateSectionHeader(label: group.label, count: group.photos.count, representative: representative)
                             // V5.60-6: 给 header 加 id — .scrollPosition(id:) 锚定 DateGroup.id
                             .id(group.id)
