@@ -672,9 +672,8 @@ struct PhotoThumbnailView: View {
         //   原因：cell 主体 + 30+ modifier + 这两个复杂 modifier 让 Swift 编译器 type-check 超时
         //   V3.6.17/V3.6.23 教训：ContentView 110+ 行也踩过同样的坑
         //   解决：拆子 view，Swift 编译器每个 view 独立 type-check
-        .background(
-            EmptyView()
-        )
+        // V6.12: 删 .background(EmptyView())——dead modifier, no-op, 推测是早期
+        //   refactor 残留 (Q17 reviewer 验证无副作用)
         .modifier(CellContextMenuModifier(
             photo: photo,
             folders: folders,

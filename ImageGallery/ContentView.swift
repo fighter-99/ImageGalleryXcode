@@ -32,15 +32,11 @@ struct ContentView: View {
     @State private var isBoxSelecting = false
 
     // 侧边栏的选中项
-    // 侧边栏的选中项
     private var sidebarSelection: SidebarSelection? {
         get { model.sidebarSelection }
         nonmutating set { model.sidebarSelection = newValue }
     }
 
-    // V4.36.x: 工具栏筛选按钮状态（session-only，不写 UserDefaults / SwiftData）
-    //   4 维：folders / tags / shapes / minRating
-    //   与侧边栏并存补充——侧边栏选主上下文，筛选按钮叠加多选精细控制
     // V4.36.x: 工具栏筛选按钮状态（session-only，不写 UserDefaults / SwiftData）
     //   4 维：folders / tags / shapes / minRating
     //   与侧边栏并存补充——侧边栏选主上下文，筛选按钮叠加多选精细控制
@@ -50,13 +46,11 @@ struct ContentView: View {
     }
 
     // 搜索文本
-    // 搜索文本
     private var searchText: String {
         get { model.searchText }
         nonmutating set { model.searchText = newValue }
     }
 
-    // 缩略图大小
     // 缩略图大小
     private var thumbnailSize: CGFloat {
         get { model.thumbnailSize }
@@ -69,7 +63,6 @@ struct ContentView: View {
         nonmutating set { model.viewMode = newValue }
     }
 
-    // 排序方式（Eagle 化工具栏新增）
     // 排序方式（Eagle 化工具栏新增）
     private var sortOption: SortOption {
         get { model.sortOption }
