@@ -181,7 +181,10 @@ struct PhotoThumbnailView: View {
         }
 
         // V5.39.7: 持久化 + 触发父视图 refresh
-        try? modelContext.save()
+        // V6.12: saveWithLog 替 try? save——V4.9.4/V5.13 后的标准模式, V6.10/V6.11 漏
+        //   写 customOrder reorder 是关键用户操作, save 失败应走 Logger.swiftData
+        //   (28 个 saveWithLog 调中唯一遗留)
+        modelContext.saveWithLog()
         onReorder()
     }
 
