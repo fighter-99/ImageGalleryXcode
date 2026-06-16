@@ -526,19 +526,27 @@ struct AccentSwatch: View {
 //   - 零 file 依赖, 零 async load
 //   - Phase 3 推 model.settings 改造时可换真 sample photo
 //
+// V5.99: 修暗色下完全不可见问题——.quaternary 暗色 ≈ 背景, .secondary SF Symbol 也暗
+//   改 Surface.cardBackground + 1pt cardBorder 描边, icon 改 .primary
+//   Photos 范式: 预览框跟 .searchable bg 视觉重量一致, 边界明确
 
 private struct ThumbnailSizePreview: View {
     @Binding var size: Double
 
     var body: some View {
         ZStack {
-            // V5.57-2: 灰底容器——预览区视觉边界
+            // V5.99: card 背景 + 1pt 边框——暗色下视觉边界明确
+            //   之前 .quaternary 暗色 ≈ 背景色, 100x100 box 看不见
             RoundedRectangle(cornerRadius: Radius.sm, style: .continuous)
-                .fill(.quaternary)
+                .fill(Surface.cardBackground)
+                .overlay {
+                    RoundedRectangle(cornerRadius: Radius.sm, style: .continuous)
+                        .stroke(Surface.cardBorder, lineWidth: 1)
+                }
             Image(systemName: "photo")
                 .font(.system(size: 100))
                 .scaleEffect(displayScale)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.primary)  // V5.99: 暗色下也清晰可见
         }
         .frame(width: 100, height: 100)
         .help("实时预览缩略图大小")
