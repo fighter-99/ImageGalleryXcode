@@ -315,37 +315,31 @@ private struct AccentSettingsView: View {
 // macOS Photos.app 习惯——About 放最末
 // 内容：app 图标 + 名称 + 版本 + build + 版权 + 链接
 // 版本号从 AppVersion.current 读（Bundle.main.infoDictionary + fallback）
-//
+// V5.91: 重构——小图标 (96→48) + 删 card 背景 (跟其他 detail 一致 fluid rows)
 
 private struct AboutSettingsView: View {
     var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.lg) {
-            // V5.57-1: 大图标 + 名称 + 版本号——居中
-            HStack(alignment: .center, spacing: Spacing.lg) {
-                if let appIcon = NSApp.applicationIconImage {
-                    Image(nsImage: appIcon)
-                        .resizable()
-                        .frame(width: 96, height: 96)
-                        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-                        .shadow(color: .black.opacity(0.15), radius: 4, x: 0, y: 2)
+        VStack(alignment: .leading, spacing: Spacing.xxl) {
+            // V5.91: 重构——48x48 小图标 + name + version, 删 96x96 大图标 + card bg
+            SettingsSection(title: "应用信息", subtitle: nil) {
+                HStack(alignment: .center, spacing: Spacing.md) {
+                    if let appIcon = NSApp.applicationIconImage {
+                        Image(nsImage: appIcon)
+                            .resizable()
+                            .frame(width: 48, height: 48)
+                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    }
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("ImageGallery")
+                            .font(Typography.headline)
+                        Text(AppVersion.current.displayString)
+                            .font(Typography.caption)
+                            .foregroundStyle(Surface.textSecondary)
+                    }
                 }
-                VStack(alignment: .leading, spacing: Spacing.xs) {
-                    Text("ImageGallery")
-                        .font(Typography.title2)
-                    Text(AppVersion.current.displayString)
-                        .font(Typography.body)
-                        .foregroundStyle(Surface.textSecondary)
-                    Text("macOS 照片管理")
-                        .font(Typography.caption)
-                        .foregroundStyle(Surface.textSecondary)
-                }
-                Spacer()
             }
-            .padding(Spacing.lg)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Surface.panel, in: RoundedRectangle(cornerRadius: Radius.md, style: .continuous))
 
-            // V5.57-1: 链接行——占位 URL, Phase 4 可改
+            // V5.91: 链接行——占位 URL, Phase 4 可改
             SettingsSection(
                 title: "链接",
                 subtitle: nil
@@ -363,7 +357,7 @@ private struct AboutSettingsView: View {
                 }
             }
 
-            // V5.57-1: 版权 + 致谢
+            // V5.91: 版权 + 致谢
             SettingsSection(
                 title: "版权",
                 subtitle: nil
