@@ -122,14 +122,18 @@ struct PhotoThumbnailView: View {
         let draggedPhoto = allPhotos[draggedIndex]
 
         // V5.39.7: 找 self.photo 在 list 里的位置 (self 是 drop target)
-        //   list 已经移除了 draggedPhoto 后, 重新计算 target index
-        //   因为 draggedPhoto 可能在 self 之前也可能在 self 之后
+        // V6.09: 用 allPhotos 里的 target index (而非 listWithoutDragged), 跟 draggedIndex 同数组
+        //   旧代码 draggedIndex (in allPhotos) 跟 targetIndex (in listWithoutDragged) 跨数组比,
+        //   当 dragged 紧邻 target 前 (如 A,B,C,D 拖 A 到 B) 时 targetIndex=0 / draggedIndex=0 不再 <, 不返回,
+        //   误执行"插入到 B 之前"——这本身没错但跟原意(拖到 self 上 noop)反了, 应统一用 allPhotos
+        guard let targetIndex = allPhotos.firstIndex(where: { $0.id == photo.id }) else { return }
+
+        // V5.39.7: 移除 dragged 后得到 listWithoutDragged (供后面 renumbering 用)
         var listWithoutDragged = allPhotos
         listWithoutDragged.remove(at: draggedIndex)
-        guard let targetIndex = listWithoutDragged.firstIndex(where: { $0.id == photo.id }) else { return }
 
         // V5.39.7: 如果 draggedPhoto 原本就已在 self 之前, 拖到 self 上 noop
-        //   即 draggedIndex < targetIndex (在 listWithoutDragged 重算之前, draggedIndex 原始 index)
+        //   即 draggedIndex < targetIndex (两 index 都在 allPhotos 里, 同一数组)
         if draggedIndex < targetIndex {
             return  // 没移动
         }
