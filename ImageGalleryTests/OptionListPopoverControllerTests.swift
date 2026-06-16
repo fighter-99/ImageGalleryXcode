@@ -107,6 +107,19 @@ struct OptionListPopoverControllerTests {
                 "V5.80: 选中项 selectionBackgroundLayer 应有 bg color (6% accent)")
     }
 
+    // MARK: - V5.96: 点选项后 currentItem 立即更新
+
+    @Test func currentItemIsMutableFromInsideClass() {
+        // V5.96 invariant: private(set) var currentItem——外部只读, 内部可写
+        //   handleItemClick 先更新 currentItem 再 dismiss, 用户能看到新选中状态
+        let vc1 = OptionListPopoverController<ThumbnailLayoutMode>(currentItem: .square)
+        #expect(vc1.currentItem == .square)
+
+        // 不同 init 值应存不同 currentItem
+        let vc2 = OptionListPopoverController<ThumbnailLayoutMode>(currentItem: .squareFit)
+        #expect(vc2.currentItem == .squareFit, "V5.96: init(currentItem:) 应存传入值")
+    }
+
     /// V5.80: 递归搜 view 找 backgroundColor 非 nil 的 CALayer
     private func findBgLayer(in view: NSView) -> Bool {
         if let bg = view.layer?.backgroundColor, bg != nil { return true }

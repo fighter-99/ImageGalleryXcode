@@ -141,8 +141,16 @@ final class OptionListPopoverController<T: OptionListItem>: NSViewController {
 
     @objc private func handleItemClick(_ sender: NSClickGestureRecognizer) {
         guard let rowView = sender.view as? OptionItemView<T> else { return }
-        onSelect?(rowView.item)
-        view.window?.contentViewController?.dismiss(nil)
+        let selectedItem = rowView.item
+        // V5.96: 立即更新 currentItem——body 重渲染,新选项显示 6% accent bg + accent icon + ✓
+        //   之前 dismiss 在 body 重渲染前调用,用户看不到新选中(下次开 popover 才看到)
+        currentItem = selectedItem
+        onSelect?(selectedItem)
+        // V5.96: 0.15s 延迟 dismiss——让用户看到新选中状态再关闭(Photos 范式)
+        //   0.15s 视觉感知阈值: < 0.1s 用户感觉不到, 0.1-0.2s 刚好"闪过"
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak self] in
+            self?.view.window?.contentViewController?.dismiss(nil)
+        }
     }
 }
 
