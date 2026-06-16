@@ -421,13 +421,14 @@ struct SidebarView: View {
             idsToMove = draggedIDs
         }
 
-        // 拉取要移动的 photos（按 ID 查 SwiftData）
-        var photos: [Photo] = []
-        for id in idsToMove {
-            let descriptor = FetchDescriptor<Photo>(predicate: #Predicate { $0.id == id })
-            if let photo = try? context.fetch(descriptor).first {
-                photos.append(photo)
-            }
+        // 拉取要移动的 photos（V6.11: 一次 fetch 替 N+1——N 张图 = N 次 SQLite round-trip
+        //   之前 for id in idsToMove { FetchDescriptor; fetch; first } 每次拖 100 张 = 100 次
+        //   改 #Predicate { idsToMove.contains($0.id) } 一次拿所有, 跟 ContentViewModel.batchMove 模式一致
+        let photos: [Photo]
+        if let fetched = try? context.fetch(FetchDescriptor<Photo>(predicate: #Predicate { idsToMove.contains($0.id) })) {
+            photos = fetched
+        } else {
+            return
         }
         guard !photos.isEmpty else { return }
 
@@ -496,14 +497,16 @@ struct SidebarView: View {
             idsToTrash = draggedIDs
         }
 
-        // 拉取 photos（按 ID 查 SwiftData，过滤掉已在 trash 的）
-        var photos: [Photo] = []
-        for id in idsToTrash {
-            let descriptor = FetchDescriptor<Photo>(predicate: #Predicate { $0.id == id })
-            if let photo = try? context.fetch(descriptor).first, !photo.isInTrash {
-                photos.append(photo)
-            }
+        // 拉取 photos（V6.11: 一次 fetch 替 N+1, 跟 performMove 同模式）
+        //   之前 N 张 trash = N 次 fetch, 改 #Predicate { idsToTrash.contains($0.id) } 一次
+        let allPhotos: [Photo]
+        if let fetched = try? context.fetch(FetchDescriptor<Photo>(predicate: #Predicate { idsToTrash.contains($0.id) })) {
+            allPhotos = fetched
+        } else {
+            return 0
         }
+        // V6.11: 过滤掉已在 trash 的——保留原 isInTrash 过滤
+        let photos = allPhotos.filter { !$0.isInTrash }
         guard !photos.isEmpty else { return 0 }
 
         // recycle（软删）
