@@ -413,7 +413,12 @@ final class ContentViewModel {
         window.toolbar = toolbar
         window.toolbarStyle = .unified
         window.titleVisibility = .hidden
-        window.titlebarAppearsTransparent = true
+        // V6.12.5: 删 window.titlebarAppearsTransparent = true
+        //   之前设 .unified + .hidden title + transparent titlebar 三件套, 系统 vibrancy
+        //   看不到内容, 整个 toolbar 区域变成纯灰条 (toolbar 按钮还能用但视觉像未完工).
+        //   macOS .unified toolbarStyle 已经自带磨砂 vibrancy——只要 titlebar 不强行
+        //   transparent, 系统会自动显示半透背景让窗口内容透上来 (Photos.app 实际靠这个).
+        //   titleVisibility = .hidden 保留 (不要 title 文字, 只要 chrome 区域)
 
         // V4.37.4: titlebar 右上角小按钮（Photos.app ⓘ 风格）
         //   V5.52-6: titlebarAccessory 也搬过来（NSObject 引用，model 持有）
