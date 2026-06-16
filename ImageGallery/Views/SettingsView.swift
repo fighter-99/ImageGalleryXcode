@@ -143,8 +143,11 @@ struct SettingsView: View {
         .navigationTitle("设置")
         // V5.93: 加 toolbar——Reset All + Help (Photos 偏好设置主操作入口)
         //   之前 Reset All 在内嵌 detail 底部, 跟用户距离远; 现在放 toolbar 1-click
+        // V6.06: placement .primaryAction → .automatic——macOS 14+ Settings scene
+        //   .primaryAction 渲染不稳定 (用户报告 4 张截图都看不到 toolbar)
+        //   .automatic 让 SwiftUI 自动选 placement, Settings scene 兼容更好
         .toolbar {
-            ToolbarItem(placement: .primaryAction) {
+            ToolbarItem(placement: .automatic) {
                 Button {
                     settings.reset()
                 } label: {
@@ -152,7 +155,7 @@ struct SettingsView: View {
                 }
                 .help("恢复全部设置为默认")
             }
-            ToolbarItem(placement: .primaryAction) {
+            ToolbarItem(placement: .automatic) {
                 Link(destination: URL(string: "https://github.com/")!) {
                     Label("帮助", systemImage: "questionmark.circle")
                 }
