@@ -88,10 +88,16 @@ struct SidebarView: View {
     @State private var isTrashDropTargeted: Bool = false
 
     // ─── 计算重复图数量 ───
+    // V6.11: 过滤 trash 照片——sidebar 数字跟 .duplicates 视图一致
+    //   之前 allPhotos 含 trash, "重复图 (2)" 跟实际重复图视图数对不上
+    //   (trash 1 张重复仍显示 2, 但重复图视图已排除 trash 显示 1)
     private var duplicateCount: Int {
-        let groups = Dictionary(grouping: allPhotos) { $0.fileHash }
+        // V6.11 perf: Q1 deferred——libraryCounts 用 PhotoStats 纯函数
+        //   1 万图时每次 body 重算 3 次 O(n) 遍历。本处只 1 次但同样 per-render
+        let inLibrary = allPhotos.filter { !$0.isInTrash }
+        let groups = Dictionary(grouping: inLibrary) { $0.fileHash }
         let duplicateHashes = groups.compactMap { $0.key != nil && $0.value.count > 1 ? $0.key : nil }
-        return allPhotos.filter { photo in
+        return inLibrary.filter { photo in
             guard let hash = photo.fileHash else { return false }
             return duplicateHashes.contains(hash)
         }.count
