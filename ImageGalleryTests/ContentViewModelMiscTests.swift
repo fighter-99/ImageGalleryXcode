@@ -55,14 +55,16 @@ struct ContentViewModelMiscTests {
     @Test func serializeSelection_folder_returnsFolderPrefixedUUID() {
         let model = ContentViewModel()
         let folder = Folder(name: "Vacation")
-        let result = model.serializeSelection(.folder(folder))
+        // V6.08: SidebarSelection.folder(UUID) (替 V5.55-3 的 .folder(Folder) 存引用)——传 UUID
+        let result = model.serializeSelection(.folder(folder.id))
         #expect(result == "folder:\(folder.id.uuidString)")
     }
 
     @Test func serializeSelection_tag_returnsTagPrefixedUUID() {
         let model = ContentViewModel()
         let tag = Tag(name: "favorite")
-        let result = model.serializeSelection(.tag(tag))
+        // V6.08: SidebarSelection.tag(UUID) (替 V5.55-3 的 .tag(Tag) 存引用)——传 UUID
+        let result = model.serializeSelection(.tag(tag.id))
         #expect(result == "tag:\(tag.id.uuidString)")
     }
 
@@ -138,9 +140,10 @@ struct ContentViewModelMiscTests {
         context.insert(folder)
         try context.save()
 
-        let key = model.serializeSelection(.folder(folder))
+        // V6.08: SidebarSelection 改 UUID——.folder(folder.id) 替 .folder(folder)
+        let key = model.serializeSelection(.folder(folder.id))
         let restored = model.restoreSelection(key)
-        #expect(restored == .folder(folder), "serialize→restore folder 应 roundtrip")
+        #expect(restored == .folder(folder.id), "serialize→restore folder 应 roundtrip")
     }
 
     @Test func serialize_thenRestore_tag_roundtrip() throws {
@@ -156,9 +159,10 @@ struct ContentViewModelMiscTests {
         context.insert(tag)
         try context.save()
 
-        let key = model.serializeSelection(.tag(tag))
+        // V6.08: SidebarSelection 改 UUID——.tag(tag.id) 替 .tag(tag)
+        let key = model.serializeSelection(.tag(tag.id))
         let restored = model.restoreSelection(key)
-        #expect(restored == .tag(tag), "serialize→restore tag 应 roundtrip")
+        #expect(restored == .tag(tag.id), "serialize→restore tag 应 roundtrip")
     }
 
     @Test func serialize_thenRestore_folderUUIDNotInStore_fallsBackToAll() throws {

@@ -44,7 +44,9 @@ struct PhotoGridEmptyState: View {
             icon: icon,
             title: text,
             subtitle: hint,
-            iconColor: Color.accentColor.opacity(0.6),
+            // V6.12: Color.accentColor.opacity(0.6) → Surface.accentEmphasis (Q12)
+            //   0.6 是"装饰性 accent"——空状态 icon 居中时饱和度不能拉满
+            iconColor: Surface.accentEmphasis,
             primaryAction: primaryAction.map {
                 EmptyStateView.Action(
                     label: $0.label,

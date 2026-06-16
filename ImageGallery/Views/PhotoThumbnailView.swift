@@ -638,7 +638,9 @@ struct PhotoThumbnailView: View {
                     .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
                     .overlay(
                         RoundedRectangle(cornerRadius: Radius.thumb)
-                            .strokeBorder(Color.accentColor.opacity(0.6), lineWidth: 1.5)
+                            // V6.12: Color.accentColor.opacity(0.6) → Surface.accentEmphasis (Q12)
+                            //   拖拽预览描边——0.6 accent 在浅色阴影拖拽时仍清晰可见
+                            .strokeBorder(Surface.accentEmphasis, lineWidth: 1.5)
                     )
                 if let nsImage = capturedPreviewImage {
                     Image(nsImage: nsImage)

@@ -9,6 +9,7 @@
 
 import Testing
 import Foundation
+import SwiftData  // V6.12 收尾: sidebarSelection_canBeSetToFolder / affectsCurrentFolder / affectsCurrentTag 3 test 加 ModelContainer fetch——currentFolder/currentTag V6.08 改 UUID 后需要 context
 @testable import ImageGallery
 
 @MainActor
@@ -25,11 +26,20 @@ struct ContentViewModelStateTests {
         #expect(model.selection.isEmpty)
     }
 
-    @Test func sidebarSelection_canBeSetToFolder() {
+    @Test func sidebarSelection_canBeSetToFolder() throws {
+        // V6.08: currentFolder 改 UUID fetch——需要 ModelContainer 才有 context
+        let container = try ModelContainer(
+            for: Photo.self, Folder.self, Tag.self,
+            configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+        )
         let model = ContentViewModel()
+        model.modelContext = container.mainContext
         let folder = Folder(name: "Vacation")
-        model.sidebarSelection = .folder(folder)
-        #expect(model.sidebarSelection == .folder(folder))
+        container.mainContext.insert(folder)
+        try container.mainContext.save()
+        // V6.08: SidebarSelection 改 UUID——.folder(folder.id) 替 .folder(folder)
+        model.sidebarSelection = .folder(folder.id)
+        #expect(model.sidebarSelection == .folder(folder.id))
         #expect(model.currentFolder?.id == folder.id)
     }
 
@@ -119,6 +129,10 @@ struct ContentViewModelStateTests {
     // MARK: - Computed properties (不需要 mutation)
 
     @Test func viewMode_defaultIsGrid() {
+        // V6.12 收尾: 清 UserDefaults viewModeRaw——测试间不隔离会污染上次 .list/.timeline
+        //   ContentViewModel.init 走 UserSettings.init() 从 UserDefaults 读, 上次测试写
+        //   "list" 后本次 init() 拿到 "list", 默认断言 .grid 失败
+        UserDefaults.standard.removeObject(forKey: "viewModeRaw")
         let model = ContentViewModel()
         #expect(model.viewMode == .grid)
     }
@@ -186,19 +200,37 @@ struct ContentViewModelStateTests {
         #expect(model.filterInTrash == false)
     }
 
-    @Test func sidebarSelection_affectsCurrentFolder() {
+    @Test func sidebarSelection_affectsCurrentFolder() throws {
+        // V6.08: currentFolder 改 UUID fetch——需要 ModelContainer 才有 context
+        let container = try ModelContainer(
+            for: Photo.self, Folder.self, Tag.self,
+            configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+        )
         let model = ContentViewModel()
+        model.modelContext = container.mainContext
         let folder = Folder(name: "Beach")
-        model.sidebarSelection = .folder(folder)
+        container.mainContext.insert(folder)
+        try container.mainContext.save()
+        // V6.08: SidebarSelection 改 UUID——.folder(folder.id) 替 .folder(folder)
+        model.sidebarSelection = .folder(folder.id)
         #expect(model.currentFolder?.id == folder.id)
         model.sidebarSelection = .all
         #expect(model.currentFolder == nil)
     }
 
-    @Test func sidebarSelection_affectsCurrentTag() {
+    @Test func sidebarSelection_affectsCurrentTag() throws {
+        // V6.08: currentTag 改 UUID fetch——需要 ModelContainer 才有 context
+        let container = try ModelContainer(
+            for: Photo.self, Folder.self, Tag.self,
+            configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+        )
         let model = ContentViewModel()
+        model.modelContext = container.mainContext
         let tag = Tag(name: "favorite")
-        model.sidebarSelection = .tag(tag)
+        container.mainContext.insert(tag)
+        try container.mainContext.save()
+        // V6.08: SidebarSelection 改 UUID——.tag(tag.id) 替 .tag(tag)
+        model.sidebarSelection = .tag(tag.id)
         #expect(model.currentTag?.id == tag.id)
         model.sidebarSelection = .all
         #expect(model.currentTag == nil)

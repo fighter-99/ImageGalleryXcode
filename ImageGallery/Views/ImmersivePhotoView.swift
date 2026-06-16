@@ -137,7 +137,9 @@ struct ImmersivePhotoView: View {
                         .lineLimit(1)
                         .truncationMode(.middle)
                 }
-                .font(.callout)
+                // V6.12: .callout → Typography.body (13pt) (Q11)
+                //   16→13pt 1 调整——chrome 内文字跟 body 层级一致, 不与 detail panel 标题争视觉重量
+                .font(Typography.body)
             }
             Spacer()
             // 关闭按钮
@@ -145,7 +147,9 @@ struct ImmersivePhotoView: View {
                 onDismiss()
             } label: {
                 Image(systemName: "xmark.circle.fill")
-                    .font(.title2)
+                    // V6.12: .title2 → Typography.detailCount (22pt medium) (Q11)
+                    //   22pt 跟 close 按钮点击区视觉匹配——比 detail panel 标题略大, 突出"可关闭"
+                    .font(Typography.detailCount)
                     .foregroundStyle(.white.opacity(0.9))
                     // V4.57.0: 删 .background(Circle().fill(.black.opacity(0.3)))
                     //   transl material pill 已经有底色——内嵌黑色圆形底是冗余
@@ -153,8 +157,10 @@ struct ImmersivePhotoView: View {
             .buttonStyle(.plain)
             .keyboardShortcut(.escape, modifiers: [])
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
+        // V6.12: chrome padding 旁路全 token 化 (Q11)
+        //   16/10 → Spacing.lg / WindowModeMetrics.immersiveTopVerticalPadding
+        .padding(.horizontal, WindowModeMetrics.immersiveTopHorizontalPadding)
+        .padding(.vertical, WindowModeMetrics.immersiveTopVerticalPadding)
         // V4.57.0: transl material pill——macOS Photos 风格
         //   仿 V4.45.0 + V4.47.0 popover transl material 范式
         //   之前是 LinearGradient 黑色 60% → 透明 80pt 高渐变带
@@ -163,8 +169,8 @@ struct ImmersivePhotoView: View {
         //   不能用 .background(_, in: Capsule()) 模式——改用 .background() + .clipShape() 标准模式
         .background(VisualEffectMaterial())
         .clipShape(Capsule())
-        .padding(.horizontal, 24)
-        .padding(.top, 16)
+        .padding(.horizontal, WindowModeMetrics.immersiveTopOuterHorizontal)
+        .padding(.top, WindowModeMetrics.immersiveTopOuterTop)
     }
 
     private var bottomChrome: some View {
@@ -186,7 +192,10 @@ struct ImmersivePhotoView: View {
             // 索引
             VStack(spacing: 2) {
                 Text(Copy.photoPosition1Indexed(current: currentIndex + 1, total: photos.count))
-                    .font(.title3.monospacedDigit())
+                    // V6.12: .title3.monospacedDigit() → Typography.immersiveIndexMono (Q11)
+                    //   20pt monospaced——"1/5"翻页时数字宽度不抖
+                    //   区别于 immersiveCount (44pt) 给翻页箭头图标, 这里给小一号索引数字
+                    .font(Typography.immersiveIndexMono)
                     .foregroundStyle(.white)
                 if photos.count > 0 && photos.count <= 100 {
                     ProgressView(value: Double(currentIndex + 1), total: Double(photos.count))
@@ -210,8 +219,9 @@ struct ImmersivePhotoView: View {
             .disabled(!canNext)
             .opacity(canNext ? 1 : 0.3)
         }
-        .padding(.horizontal, 32)
-        .padding(.vertical, 12)
+        // V6.12: chrome padding 旁路全 token 化 (Q11) — 32/12 → WindowModeMetrics / Spacing.md
+        .padding(.horizontal, WindowModeMetrics.immersiveBottomHorizontalPadding)
+        .padding(.vertical, WindowModeMetrics.immersiveBottomVerticalPadding)
         // V4.57.0: transl material pill——macOS Photos 风格
         //   仿 V4.45.0 + V4.47.0 popover transl material 范式
         //   之前是 LinearGradient 透明 → 黑色 60% 120pt 高渐变带
@@ -220,8 +230,8 @@ struct ImmersivePhotoView: View {
         //   不能用 .background(_, in: Capsule()) 模式——改用 .background() + .clipShape() 标准模式
         .background(VisualEffectMaterial())
         .clipShape(Capsule())
-        .padding(.horizontal, 60)
-        .padding(.bottom, 24)
+        .padding(.horizontal, WindowModeMetrics.immersiveBottomOuterHorizontal)
+        .padding(.bottom, WindowModeMetrics.immersiveBottomOuterBottom)
     }
 
     // MARK: - 翻页

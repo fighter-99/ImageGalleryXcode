@@ -52,6 +52,10 @@ enum Radius {
     ///     圆角视觉一致, 不再有"square 无圆角 / masonry 有圆角"的割裂感
     ///   - 8pt 仍在 macOS Photos / Finder 缩略图圆角范围 (4-8pt) 内
     static let thumb: CGFloat = 8
+    /// V6.12: SettingsView About 页 app icon 圆角 (Q13)
+    ///   - 48x48 app icon 用 10pt 圆角 (21% 比例) — 比 Radius.lg (12) 略小, 视觉更"紧致"
+    ///   - 与 Radius.lg/md 区别: 介于两者之间, 专用于 macOS app icon 风格 (Photos.app 偏好设置风格)
+    static let appIcon: CGFloat = 10
 }
 
 // MARK: - 表面色（V3.1 NEW：Photos.app 风格语义化）
@@ -75,6 +79,11 @@ enum Surface {
     static let selected = Color.accentColor.opacity(0.12)
     /// 多选/强选中态
     static let selectedStrong = Color.accentColor.opacity(0.16)
+    /// V6.12: 半饱和 accent——空状态 icon / 拖拽预览描边 (Q12)
+    ///   - 0.6 opacity 让 accent 在装饰性场景"说话"但不抢戏
+    ///   - 比 selected (0.12) / selectedStrong (0.16) 强得多, 但仍低于 1.0 全饱和
+    ///   - 用法: PhotoGridEmptyState iconColor, PhotoThumbnailView 拖拽预览 strokeBorder
+    static let accentEmphasis = Color.accentColor.opacity(0.6)
 
     // ─── 分隔线 ───
     static let separator = Color.primary.opacity(0.08)
@@ -175,6 +184,16 @@ enum Typography {
     /// V5.45 NEW: 详情面板计数 (DetailView "1 / 5" 切换计数)
     ///   - 同 title2 (22pt) 但 weight: medium——大但比 title 略轻
     static let detailCount = Font.system(size: 22, weight: .medium)
+
+    /// V6.12: 沉浸式视图索引计数 (ImmersivePhotoView "1 / 5") (Q11)
+    ///   - 20pt (title3) + monospacedDigit()——翻页时数字宽度不抖
+    ///   - 区别于 immersiveCount (44pt) 的"翻页箭头"图标——这里专用于小一号索引数字
+    static let immersiveIndexMono = Font.system(size: 20).monospacedDigit()
+
+    /// V6.12: SettingsView 缩略图大小 slider 实时预览图标 (Q13)
+    ///   - 100pt SF Symbol "photo" + scaleEffect 0.3..1.0 模拟缩略图大小
+    ///   - 跟 emptyStateIconLarge (80) / emptyStateIcon (60) 同族但更大, 专用于"预览整张图"的场景
+    static let thumbnailPreview = Font.system(size: 100)
 }
 
 // MARK: - 旧 Palette 兼容层（V3.1 保留，Phase 2+ 逐步替换）
@@ -421,6 +440,28 @@ enum WindowModeMetrics {
     static let viewerToolbarHeight: CGFloat = 32
     /// viewerOnly 模式下的图片 padding
     static let viewerImagePadding: CGFloat = 40
+
+    // V6.12: 沉浸式 chrome padding (Q11) — ImmersivePhotoView 的 top/bottom chrome
+    //   transl material pill 浮动在大图上方/下方, padding 既要"远离大图边缘"又要"不超屏幕"
+    //   top/bottom chrome 用不同 padding——top 紧凑 (10V/24H), bottom 舒展 (12V/60H)
+    //   因为 bottom chrome 含翻页箭头 + 索引 + 进度条, 需要更宽水平空间避免拥挤
+
+    /// 顶部 chrome 内距——上下 (文件名 + 关闭按钮)
+    static let immersiveTopVerticalPadding: CGFloat = 10
+    /// 顶部 chrome 内距——左右
+    static let immersiveTopHorizontalPadding: CGFloat = Spacing.lg
+    /// 底部 chrome 内距——上下 (翻页箭头 + 索引 + 进度条)
+    static let immersiveBottomVerticalPadding: CGFloat = Spacing.md
+    /// 底部 chrome 内距——左右 (宽于顶部, 因为有 3 段内容)
+    static let immersiveBottomHorizontalPadding: CGFloat = 32
+    /// 顶部 chrome 外距——左右 (屏幕边缘到 pill 的距离)
+    static let immersiveTopOuterHorizontal: CGFloat = Spacing.xxl
+    /// 顶部 chrome 外距——上 (贴近状态栏, 不被遮)
+    static let immersiveTopOuterTop: CGFloat = Spacing.lg
+    /// 底部 chrome 外距——左右
+    static let immersiveBottomOuterHorizontal: CGFloat = 60
+    /// 底部 chrome 外距——下
+    static let immersiveBottomOuterBottom: CGFloat = Spacing.xxl
 }
 
 // MARK: - V4.41.0 NEW: Popover 视觉 token

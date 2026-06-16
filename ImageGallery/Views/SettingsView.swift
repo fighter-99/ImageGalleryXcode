@@ -455,7 +455,9 @@ private struct AboutSettingsView: View {
                         Image(nsImage: appIcon)
                             .resizable()
                             .frame(width: 48, height: 48)
-                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                            // V6.12: cornerRadius(10) → Radius.appIcon (Q13)
+                            //   48x48 app icon 用 10pt (21% 比例) 圆角, 仿 macOS Photos 偏好设置风格
+                            .clipShape(RoundedRectangle(cornerRadius: Radius.appIcon, style: .continuous))
                     }
                     VStack(alignment: .leading, spacing: 2) {
                         Text("ImageGallery")
@@ -612,7 +614,9 @@ private struct ThumbnailSizePreview: View {
                         .stroke(Surface.cardBorder, lineWidth: 1)
                 }
             Image(systemName: "photo")
-                .font(.system(size: 100))
+                // V6.12: .system(size: 100) → Typography.thumbnailPreview (Q13)
+                //   100pt SF Symbol + scaleEffect 0.3..1.0 模拟 100..250pt 缩略图
+                .font(Typography.thumbnailPreview)
                 .scaleEffect(displayScale)
                 .foregroundStyle(.primary)  // V5.99: 暗色下也清晰可见
         }
