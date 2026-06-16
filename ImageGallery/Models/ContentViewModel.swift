@@ -129,15 +129,16 @@ final class ContentViewModel {
     /// V6.08: 当前侧栏选中的 folder——从 modelContext 按 UUID fetch
     ///   之前 .folder(Folder) 直接返回 @Model 引用, folder 被删后引用悬挂
     ///   现在存 UUID 每次 fetch, 删 folder 自动 nil → UI 自动切回 .all
+    /// V6.10: try? modelContext.fetch(...)——fetch throws, 失败返 nil 走 .all
     var currentFolder: Folder? {
         guard case .folder(let id) = sidebarSelection, let modelContext else { return nil }
-        return modelContext.fetch(FetchDescriptor<Folder>(predicate: #Predicate { $0.id == id })).first
+        return (try? modelContext.fetch(FetchDescriptor<Folder>(predicate: #Predicate { $0.id == id })))?.first
     }
 
     /// V6.08: 当前侧栏选中的 tag——同 currentFolder 模式
     var currentTag: Tag? {
         guard case .tag(let id) = sidebarSelection, let modelContext else { return nil }
-        return modelContext.fetch(FetchDescriptor<Tag>(predicate: #Predicate { $0.id == id })).first
+        return (try? modelContext.fetch(FetchDescriptor<Tag>(predicate: #Predicate { $0.id == id })))?.first
     }
 
     var filterUnfiled: Bool {

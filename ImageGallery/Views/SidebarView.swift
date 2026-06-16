@@ -35,7 +35,24 @@ struct SidebarView: View {
 
     // V6.10: 拖到 folder 注册 undo (跟 batchMove 模式一致)
     //   nil = 不注册 (测试 seam + 早期 init 容错 + Preview 兼容)
-    let undoManager: ImageGalleryUndoManager? = nil
+    //   V6.10.1: 去掉 = nil 默认值——显式 init 里必须初始化, 不然 immutable 双初始化
+    let undoManager: ImageGalleryUndoManager?
+
+    // V6.10: 显式 init——synthesized memberwise init 在 @Query / @Environment 存在时
+    //   行为不一致, 不接受 `undoManager` 参数。显式列出 4 个 @Binding + undoManager
+    init(
+        selection: Binding<SidebarSelection?>,
+        photoSelection: Binding<SelectionState>,
+        thumbnailSize: Binding<CGFloat>,
+        sortOption: Binding<SortOption>,
+        undoManager: ImageGalleryUndoManager? = nil
+    ) {
+        self._selection = selection
+        self._photoSelection = photoSelection
+        self._thumbnailSize = thumbnailSize
+        self._sortOption = sortOption
+        self.undoManager = undoManager
+    }
 
     // 选中项（双向绑定）
     @Binding var selection: SidebarSelection?
