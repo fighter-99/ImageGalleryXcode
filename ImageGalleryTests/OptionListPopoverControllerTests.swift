@@ -107,17 +107,82 @@ struct OptionListPopoverControllerTests {
                 "V5.80: 选中项 selectionBackgroundLayer 应有 bg color (6% accent)")
     }
 
-    // MARK: - V5.96: 点选项后 currentItem 立即更新
+    // MARK: - V5.96 → V5.97: 点选项后 currentItem 立即更新 + row 视觉同步刷新
 
     @Test func currentItemIsMutableFromInsideClass() {
-        // V5.96 invariant: private(set) var currentItem——外部只读, 内部可写
-        //   handleItemClick 先更新 currentItem 再 dismiss, 用户能看到新选中状态
+        // V5.97 invariant: internal(set) var currentItem——同 module 可写 (handleItemClick + 测试)
+        //   V5.96 之前是 private(set), 外部 setter 不可达, 测试无法验证刷新逻辑
+        //   (V5.96 注释说"用户能看到新选中状态"实际是错的——stored property 赋值不触发重绘)
         let vc1 = OptionListPopoverController<ThumbnailLayoutMode>(currentItem: .square)
         #expect(vc1.currentItem == .square)
 
         // 不同 init 值应存不同 currentItem
         let vc2 = OptionListPopoverController<ThumbnailLayoutMode>(currentItem: .squareFit)
-        #expect(vc2.currentItem == .squareFit, "V5.96: init(currentItem:) 应存传入值")
+        #expect(vc2.currentItem == .squareFit, "V5.97: init(currentItem:) 应存传入值")
+    }
+
+    // V5.97 invariant: 切 currentItem → 所有 row 视觉立即同步
+    //   V5.96 stored property 赋值不触发 AppKit 重绘——用户报告: 工具栏更新, popover 视觉冻结
+    //   V5.97 didSet → refreshSelectionVisuals() 立即遍历 stackView 子视图
+    @Test func settingCurrentItemRefreshesRowVisuals() {
+        let vc = OptionListPopoverController<ThumbnailLayoutMode>(currentItem: .square)
+        _ = vc.view  // 强制 loadView 跑, 才有 stackView 跟 subviews
+
+        // 初始: .square 选中, .squareFit 取消
+        let initialStates = vc._rowStatesForTesting
+        let initSquare = try? #require(initialStates.first { $0.item == .square })
+        let initFit = try? #require(initialStates.first { $0.item == .squareFit })
+        #expect(initSquare?.isCheckmarkHidden == false, "V5.97: 初始 .square ✓ 应显示")
+        #expect(initSquare?.hasSelectionBackground == true, "V5.97: 初始 .square bg 应有 accent")
+        #expect(initSquare?.iconTintIsAccent == true, "V5.97: 初始 .square icon 应 accent")
+        #expect(initFit?.isCheckmarkHidden == true, "V5.97: 初始 .squareFit ✓ 应隐藏")
+        #expect(initFit?.hasSelectionBackground == false, "V5.97: 初始 .squareFit bg 应为空")
+        #expect(initFit?.iconTintIsAccent == false, "V5.97: 初始 .squareFit icon 应 labelColor")
+
+        // 切到 .squareFit——didSet → refreshSelectionVisuals() 同步刷新
+        vc.currentItem = .squareFit
+
+        #expect(vc.currentItem == .squareFit, "V5.97: setter 应存新值")
+        let updatedStates = vc._rowStatesForTesting
+        let afterSquare = try? #require(updatedStates.first { $0.item == .square })
+        let afterFit = try? #require(updatedStates.first { $0.item == .squareFit })
+        #expect(afterSquare?.isCheckmarkHidden == true, "V5.97: 旧选中 ✓ 应隐藏")
+        #expect(afterSquare?.hasSelectionBackground == false, "V5.97: 旧选中 bg 应清空")
+        #expect(afterSquare?.iconTintIsAccent == false, "V5.97: 旧选中 icon 应变 labelColor")
+        #expect(afterFit?.isCheckmarkHidden == false, "V5.97: 新选中 ✓ 应显示")
+        #expect(afterFit?.hasSelectionBackground == true, "V5.97: 新选中 bg 应有 accent")
+        #expect(afterFit?.iconTintIsAccent == true, "V5.97: 新选中 icon 应变 accent")
+    }
+
+    // V5.97 invariant: 4 档 density 刷新也工作——验证 for 循环对多 row 正确
+    @Test func settingCurrentItemRefreshesDensityRows() {
+        // ThumbnailDensity 4 档 (V5.39.3 4 档)——比 layoutMode 2 档更彻底验证遍历
+        let vc = OptionListPopoverController<ThumbnailDensity>(currentItem: .compact)
+        _ = vc.view
+
+        // 初始: .compact 选中
+        let initialStates = vc._rowStatesForTesting
+        #expect(initialStates.count == 4, "V5.97: 4 档 density 应出 4 row")
+        let initCompact = try? #require(initialStates.first { $0.item == .compact })
+        #expect(initCompact?.isCheckmarkHidden == false, "V5.97: 初始 .compact ✓ 应显示")
+        #expect(initCompact?.iconTintIsAccent == true, "V5.97: 初始 .compact icon 应 accent")
+
+        // 切到 .large——其他 3 档应都取消, .large 应选中
+        vc.currentItem = .large
+
+        let updated = vc._rowStatesForTesting
+        let afterLarge = try? #require(updated.first { $0.item == .large })
+        #expect(afterLarge?.isCheckmarkHidden == false, "V5.97: 切到 .large 后 ✓ 应显示")
+        #expect(afterLarge?.iconTintIsAccent == true, "V5.97: 切到 .large 后 icon 应 accent")
+        #expect(afterLarge?.hasSelectionBackground == true, "V5.97: 切到 .large 后 bg 应有 accent")
+
+        // 其他 3 档 (compact/medium/extraLarge) 视觉应回到 unselected
+        for item in ThumbnailDensity.allCases where item != .large {
+            let row = try? #require(updated.first { $0.item == item })
+            #expect(row?.isCheckmarkHidden == true, "V5.97: 切到 .large 后 \(item) ✓ 应隐藏")
+            #expect(row?.iconTintIsAccent == false, "V5.97: 切到 .large 后 \(item) icon 应 labelColor")
+            #expect(row?.hasSelectionBackground == false, "V5.97: 切到 .large 后 \(item) bg 应清空")
+        }
     }
 
     /// V5.80: 递归搜 view 找 backgroundColor 非 nil 的 CALayer

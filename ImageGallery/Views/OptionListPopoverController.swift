@@ -20,7 +20,16 @@ final class OptionListPopoverController<T: OptionListItem>: NSViewController {
     var onSelect: ((T) -> Void)?
 
     /// V5.77: 当前选中的 item——画 ✓ + accent 前景
-    private(set) var currentItem: T
+    /// V5.97: internal(set) + didSet → refreshSelectionVisuals()——保证 row 视觉跟 currentItem 同步
+    ///   V5.96 stored property 赋值不触发 AppKit 重绘, row 视觉冻结到下次 loadView()
+    ///   (用户报告: 工具栏立即更新, popover 下次开才显示新选中)
+    ///   internal(set) 让测试可写——锁住"setter 触发视觉刷新" invariant
+    internal(set) var currentItem: T {
+        didSet {
+            guard oldValue != currentItem else { return }
+            refreshSelectionVisuals()
+        }
+    }
 
     /// V5.77: popover 最小宽度 (默认 140, sort 用 160 因 7 选项 label 较长)
     private let minWidth: CGFloat
@@ -85,22 +94,17 @@ final class OptionListPopoverController<T: OptionListItem>: NSViewController {
         //   加在 rowView 底层 (icon/label/checkmark 上层), 选中时才显示
         let bgLayer = CALayer()
         bgLayer.cornerRadius = 4
-        bgLayer.backgroundColor = isSelected
-            ? NSColor.controlAccentColor.withAlphaComponent(0.06).cgColor
-            : nil
         rowView.layer?.addSublayer(bgLayer)
         // 存 bgLayer 到 rowView, layout 时更新 frame
         rowView.selectionBackgroundLayer = bgLayer
 
         let icon = NSImageView(image: NSImage(systemSymbolName: item.iconName, accessibilityDescription: nil) ?? NSImage())
         icon.imageScaling = .scaleProportionallyDown
-        icon.contentTintColor = isSelected ? .controlAccentColor : .labelColor
         icon.translatesAutoresizingMaskIntoConstraints = false
         icon.setContentHuggingPriority(.required, for: .horizontal)
 
         let label = NSTextField(labelWithString: item.displayName)
         label.font = NSFont.systemFont(ofSize: 13)
-        label.textColor = isSelected ? .controlAccentColor : .labelColor
         label.translatesAutoresizingMaskIntoConstraints = false
 
         let checkmark = NSTextField(labelWithString: "✓")
@@ -110,7 +114,16 @@ final class OptionListPopoverController<T: OptionListItem>: NSViewController {
         checkmark.font = NSFont.systemFont(ofSize: 16, weight: .semibold)
         checkmark.textColor = .controlAccentColor
         checkmark.translatesAutoresizingMaskIntoConstraints = false
-        checkmark.isHidden = !isSelected
+
+        // V5.97: 把视觉引用挂到 rowView, refreshSelectionVisuals() 后续能更新
+        //   之前这些是 let 局部变量, handleItemClick 改 currentItem 后没人通知重绘
+        rowView.iconView = icon
+        rowView.labelView = label
+        rowView.checkmarkView = checkmark
+
+        // V5.97: 统一入口——初始创建 + 后续刷新走同一函数, 锁住视觉一致性
+        applySelectionVisuals(isSelected: isSelected, bgLayer: bgLayer,
+                              icon: icon, label: label, checkmark: checkmark)
 
         rowView.addSubview(icon)
         rowView.addSubview(label)
@@ -142,24 +155,69 @@ final class OptionListPopoverController<T: OptionListItem>: NSViewController {
     @objc private func handleItemClick(_ sender: NSClickGestureRecognizer) {
         guard let rowView = sender.view as? OptionItemView<T> else { return }
         let selectedItem = rowView.item
-        // V5.96: 立即更新 currentItem——body 重渲染,新选项显示 6% accent bg + accent icon + ✓
-        //   之前 dismiss 在 body 重渲染前调用,用户看不到新选中(下次开 popover 才看到)
+        // V5.97: setter 触发 didSet → refreshSelectionVisuals()——row 视觉立刻同步
+        //   V5.96 注释承诺"body 重渲染", 但 stored property 赋值不触发 AppKit 重绘
+        //   (V5.96 实际只延后了 dismiss, 让 popover 多停留 0.15s——并不能修原 bug)
         currentItem = selectedItem
         onSelect?(selectedItem)
         // V5.96: 0.15s 延迟 dismiss——让用户看到新选中状态再关闭(Photos 范式)
         //   0.15s 视觉感知阈值: < 0.1s 用户感觉不到, 0.1-0.2s 刚好"闪过"
+        // V5.97: 视觉刷新现在是 0ms (didSet 同步触发), 0.15s 留作"确认感"——点完看一眼再收
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak self] in
             self?.view.window?.contentViewController?.dismiss(nil)
+        }
+    }
+
+    /// V5.97: 共享视觉更新逻辑——makeOptionItem 初始化 + refreshSelectionVisuals 复用
+    ///   锁住 4 个视觉 (bg / icon tint / label color / checkmark hidden) 跟 isSelected 一致
+    private func applySelectionVisuals(isSelected: Bool,
+                                       bgLayer: CALayer,
+                                       icon: NSImageView,
+                                       label: NSTextField,
+                                       checkmark: NSTextField) {
+        bgLayer.backgroundColor = isSelected
+            ? NSColor.controlAccentColor.withAlphaComponent(0.06).cgColor
+            : nil
+        icon.contentTintColor = isSelected ? .controlAccentColor : .labelColor
+        label.textColor = isSelected ? .controlAccentColor : .labelColor
+        checkmark.isHidden = !isSelected
+    }
+
+    /// V5.97: currentItem 改变时遍历所有 row, 同步选中视觉
+    ///   替代 V5.96 注释承诺但未实现的"body 重渲染"——NSView 子树没有 KVO,
+    ///   必须手动遍历 stackView.arrangedSubviews 重画
+    private func refreshSelectionVisuals() {
+        for row in stackView.arrangedSubviews {
+            // OptionItemView<T> 私有类——同文件 cast 安全
+            // 用 perform(#selector) 太绕, 直接 as? + force-unwrap 视觉引用 (makeOptionItem 必填)
+            guard let typed = row as? OptionItemView<T>,
+                  let bgLayer = typed.selectionBackgroundLayer,
+                  let icon = typed.iconView,
+                  let label = typed.labelView,
+                  let checkmark = typed.checkmarkView else { continue }
+            applySelectionVisuals(
+                isSelected: typed.item == currentItem,
+                bgLayer: bgLayer,
+                icon: icon,
+                label: label,
+                checkmark: checkmark
+            )
         }
     }
 }
 
 /// V5.77: 内部 generic NSView subclass 存 item (NSView.tag 是 readonly)
 /// V5.80: 加 selectionBackgroundLayer 引用 + layout override 更新 bg frame
+/// V5.97: 加 iconView/labelView/checkmarkView 引用——refreshSelectionVisuals() 需更新视觉
+///   之前 makeOptionItem 里这些是 let 局部变量, handleItemClick 改 currentItem 后没人通知重绘
 private final class OptionItemView<T: OptionListItem>: NSView {
     let item: T
     /// V5.80: 选中背景层 (6% accent bg) 引用——在 layout() 时更新 frame
     var selectionBackgroundLayer: CALayer?
+    /// V5.97: 视觉引用——让 refreshSelectionVisuals() 能即时切换 4 个视觉 (bg/icon/label/checkmark)
+    var iconView: NSImageView?
+    var labelView: NSTextField?
+    var checkmarkView: NSTextField?
 
     init(item: T) {
         self.item = item
@@ -171,5 +229,31 @@ private final class OptionItemView<T: OptionListItem>: NSView {
     override func layout() {
         super.layout()
         selectionBackgroundLayer?.frame = bounds.insetBy(dx: 2, dy: 2)
+    }
+}
+
+// MARK: - V5.97: 测试 hook——返回 row 视觉状态快照
+extension OptionListPopoverController {
+    /// V5.97: 测试用——单一 row 的视觉状态
+    ///   锁住 invariant: 切换 currentItem 后, 4 个视觉 (✓/bg/icon tint) 立即同步
+    struct RowState {
+        let item: T
+        let isCheckmarkHidden: Bool
+        let hasSelectionBackground: Bool
+        let iconTintIsAccent: Bool
+    }
+
+    /// V5.97: 测试用——返回当前所有 row 的视觉状态
+    ///   内部访问 private OptionItemView<T>——同文件 cast 安全
+    var _rowStatesForTesting: [RowState] {
+        stackView.arrangedSubviews.compactMap { row -> RowState? in
+            guard let typed = row as? OptionItemView<T> else { return nil }
+            return RowState(
+                item: typed.item,
+                isCheckmarkHidden: typed.checkmarkView?.isHidden ?? true,
+                hasSelectionBackground: typed.selectionBackgroundLayer?.backgroundColor != nil,
+                iconTintIsAccent: typed.iconView?.contentTintColor == .controlAccentColor
+            )
+        }
     }
 }
