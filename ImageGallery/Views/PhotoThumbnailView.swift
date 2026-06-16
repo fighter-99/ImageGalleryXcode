@@ -227,19 +227,9 @@ struct PhotoThumbnailView: View {
     ///   收敛视觉锤：border=0（砍）+ tint 0.10/0.15（1 锤）+ ✓ 角标（多选时 1 锤）= 1-2 锤
     /// V5.19: 内 cell 2pt padding——Photos.app "framed photo" 风格
     /// V5.20: 2pt → 4pt padding——用户反馈"图片没被抱着"，4pt 留白更明显
-    /// V5.19: 2pt——"framed photo" 风格, image 周围 2pt 窗口背景呼吸感
     /// V5.27: 4pt → 0pt——macOS Photos.app Library 实际无 inner padding
     /// V5.28: 0pt 保持——letterbox 透窗口色 + aspect-fill 裁切
-    /// V6.12.8: 0pt → 2pt——用户反馈 .square 模式圆角消失 + 选中框 top/bottom 不可见
-    ///   根因: .squareFit 模式 image letterbox 跟 cell 边缘之间天然有缓冲区 (窗口背景)
-    ///         → image 圆角处跟 cell 边缘有对比, 圆角 + 选中框可见
-    ///         但 .square 模式 image .fill 贴 cell 边缘, 没有任何缓冲区
-    ///         → 即使 cell bg 透明 (V6.12.7), image 圆角"消失"在 cell 边缘
-    ///         → 选中框 stroke 在 cell 边缘附近, 视觉"被切"
-    ///   Photos.app 真版无 padding 但它走 AppKit 原生渲染, SwiftUI 跟 AppKit 渲染差异
-    ///   需要 2pt 缓冲区让圆角跟选中框在 .square 模式也清晰可见
-    ///   2pt 视觉变化很 subtle, 但圆角+选中框行为从"消失"变"清晰", 值得
-    static let innerCellPadding: CGFloat = 2
+    static let innerCellPadding: CGFloat = 0
     enum CellSelectionState {
         case none       // 默认
         case single     // isActive 单选
@@ -273,8 +263,8 @@ struct PhotoThumbnailView: View {
         var tintOpacity: Double {
             switch self {
             case .none:   return 0
-            case .single: return 0.15 // V5.99.2: 0 → 0.06 → V6.12.9: 0.06 → 0.15 (深色图片 top/bottom 更明显)
-            case .multi:  return 0.22 // V5.99.2: 0 → 0.10 → V6.12.9: 0.10 → 0.22 (multi 加重)
+            case .single: return 0.06 // V5.99.2: 0 → 0.06 (visibility, 深色图片补强)
+            case .multi:  return 0.10 // V5.99.2: 0 → 0.10 (multi 加重)
             }
         }
 
@@ -399,25 +389,20 @@ struct PhotoThumbnailView: View {
                         //   - 1:1 方格, image 顶满长边 (横屏顶满宽, 竖屏顶满高)
                         //   - 短边 letterbox (cell 背景色透出来)
                         //   - 永远不裁切——产品图/截图/文档场景信息完整
+                        // V6.12.10: .square 也走 .fit——按 .squareFit 实现逻辑统一两种 mode
+                        //   之前 .square 走 .fill (image 贴 cell 边缘) → 圆角消失 + 选中框 top/bottom 不可见
+                        //   V6.12.7 + V6.12.8 + V6.12.9 3 commit 都尝试修, 全部失败
+                        //   用户判断: "按 .squareFit 的实现逻辑做 .square"——直接统一 contentMode
+                        //   .fill → .fit 后 image letterbox, 圆角跟 .squareFit 视觉完全一致
                         // V5.30: 加 .transition(.opacity) + .animation——image 加载完淡入
-                        let contentMode: ContentMode = layoutMode == .squareFit ? .fit : .fill
+                        let contentMode: ContentMode = .fit  // V6.12.10: 统一走 .fit
                         Image(nsImage: nsImage)
                             .resizable()
-                            .aspectRatio(aspectRatio, contentMode: contentMode)  // V5.46: .squareFit → .fit (letterbox)
+                            .aspectRatio(aspectRatio, contentMode: contentMode)  // V5.46: .fit (letterbox)
                             // V5.99: 8pt → 12pt 圆角——用户反馈"缩略图没有圆角"
                             //   之前 Radius.thumb (8pt) 在 200pt cell 上 = 4%, 几乎看不到圆角
                             //   Radius.lg (12pt) = 6%, 视觉上明显是圆角
                             .clipShape(RoundedRectangle(cornerRadius: Radius.lg))
-                            // V6.12.9: 1pt 半透描边——保证 .square 模式圆角可见
-                            //   之前 V6.12.7 (cell bg 透明) + V6.12.8 (innerCellPadding 2) 仍不够:
-                            //   .square 模式 image .fill 贴 cell 边缘, image 内容跟 cell 边缘紧邻
-                            //   即使有 2pt buffer, 圆角仍可能跟 image 内容颜色撞色 (低对比)
-                            //   Photos.app 真版用 subtle 1pt 描边强制圆角边界可见
-                            //   Color.primary 8% opacity——亮/暗模式自适应, 不抢戏
-                            .overlay(
-                                RoundedRectangle(cornerRadius: Radius.lg)
-                                    .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-                            )
                             .saturation(photo.isInTrash ? 0.05 : 1)
                             .opacity(photo.isInTrash ? (colorScheme == .dark ? 0.65 : 0.55) : 1)
                             // V5.30: image 加载完淡入——镜像 Photos.app Library cell 行为
