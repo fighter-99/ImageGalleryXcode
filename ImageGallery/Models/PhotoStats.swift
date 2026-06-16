@@ -145,7 +145,11 @@ enum PhotoStats {
             result = result.filter { $0.folder == nil && !$0.isInTrash }
         }
         if filterDuplicates {
-            let hashCounts = Dictionary(grouping: photos) { $0.fileHash }.mapValues { $0.count }
+            // V6.12: 用 result 而非 photos 算 hashCounts——sidebar 数字 跟 视图数字 一致
+            //   V6.11 C6+C7 教训: PhotoStats 纯函数 跟 PhotoStats.filtered 语义对齐
+            //   之前用 photos (input) 算 hashCounts 会让 hash 数包含上游已过滤掉的照片
+            //   → 视图显示 0 但 sidebar (也用 photos 全集) 显示 N, 不一致
+            let hashCounts = Dictionary(grouping: result) { $0.fileHash }.mapValues { $0.count }
             result = result.filter { photo in
                 guard let hash = photo.fileHash else { return false }
                 return (hashCounts[hash] ?? 0) > 1
