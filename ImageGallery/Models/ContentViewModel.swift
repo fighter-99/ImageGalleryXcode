@@ -639,14 +639,18 @@ final class ContentViewModel {
 
     /// V3.6.24: 扫现有 photo + 算新 url fileHash
     /// V3.6.27: 改用 async 版本
+    /// V6.11: [weak self] + guard let self——V6.10 C4 修了 importPhotos, runImportWithDuplicateCheck 同 pattern 漏
+    ///   SHA256 计算期间 (成百文件) 强 capture 阻 ContentViewModel 释放。view dismiss 后 model 残留
+    ///   直到 hash 跑完, 用户体验: 关闭设置窗 立即打开 → 旧 model 还在 → 新 model 跟旧重叠
     func runImportWithDuplicateCheck(urls: [URL]) {
-        Task { @MainActor in
+        Task { @MainActor [weak self] in
+            guard let self else { return }
             guard let modelContext else { return }
             let check = await ImageImporter.checkDuplicatesAsync(
                 newURLs: urls,
                 in: modelContext
-            ) { [self] current, total in
-                self.importProgress = ImportProgress(current: current, total: total, isImporting: true)
+            ) { [weak self] current, total in
+                self?.importProgress = ImportProgress(current: current, total: total, isImporting: true)
             }
             importProgress = nil
             if check.hasDuplicates {
