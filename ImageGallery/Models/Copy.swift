@@ -201,4 +201,35 @@ enum Copy {
     // MARK: - V6.08: 详情面板错误 toast
     /// 文件重命名失败 (DetailView.renamePhoto 磁盘 moveItem 失败)
     static func renameFailed(_ filename: String) -> String { "重命名失败：\(filename)" }
+
+    // MARK: - V6.08: PhotoGridEmptyState 文案 (整个文件 hardcoded → Copy 字典)
+    /// CTA 主/次按钮
+    static let clearSearch = "清除搜索"
+    /// 跟 toolbarImport("导入") 区别——空状态 CTA 是完整短语
+    static let importAction = "导入图片"
+    static let viewAll = "查看全部"
+    /// 空状态标题——按 empty 场景分类
+    static let emptyNoMatchFilter = "没有匹配筛选的图片"
+    static let emptyNoMatchSearch = "没有匹配的图片"
+    static let emptyUnfiled = "没有待整理的图片"
+    static let emptyFolder = "这个文件夹是空的"
+    static let emptyTag = "没有带此标签的图片"
+    static let emptyDuplicates = "没有重复的图片"
+    static let emptyRecent7Days = "最近 7 天没有新图"
+    static let emptyLargeFiles = "没有大于 5 MB 的图"
+    static let emptyNoPhotosYet = "还没有图片"
+    /// 空状态副提示
+    static let hintFilterAdjust = "尝试减少筛选条件或调整侧边栏"
+    static let hintSearchOther = "试试其他关键词"
+    static let hintMoveToFolder = "把图片移动到文件夹来整理"
+    static let hintAutoImportToFolder = "导入图片后会自动放到此文件夹"
+    static let hintAddTagInDetail = "在详情中添加此标签"
+    static let hintDuplicatesAuto = "重复图会自动出现在这里"
+    /// 回收站空状态副提示——带 retentionDays 参数
+    /// 之前 hardcoded \(TrashRetentionDays.defaultValue.rawValue) (永远 30)
+    /// 现在接受 retentionDays, 跟 settings 同步——V6.08 bug 修
+    static func hintTrashAutoPurge(days: Int) -> String {
+        "删除的图片会出现在这里，\(days) 天后自动永久清除"
+    }
+    static let hintStartImport = "拖入图片，或点击“导入图片”开始添加"
 }

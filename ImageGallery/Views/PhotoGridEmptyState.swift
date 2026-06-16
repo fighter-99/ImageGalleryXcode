@@ -36,6 +36,8 @@ struct PhotoGridEmptyState: View {
     let isFilterActive: Bool
     let onImport: () -> Void
     let onClearFilters: () -> Void
+    // V6.08: 回收站空状态副提示需要 retentionDays (之前写死 defaultValue=30)
+    let retentionDays: Int
 
     var body: some View {
         EmptyStateView(
@@ -66,7 +68,7 @@ struct PhotoGridEmptyState: View {
         // 无搜索结果 → "清除搜索" (通过 onClearFilters 触发: 清 searchText + 切回全部)
         if !searchText.trimmingCharacters(in: .whitespaces).isEmpty {
             return PhotoGridEmptyCTA(
-                label: "清除搜索",
+                label: Copy.clearSearch,
                 systemImage: "xmark.circle",
                 onTap: { onClearFilters() }
             )
@@ -74,7 +76,7 @@ struct PhotoGridEmptyState: View {
         // 首次启动 (无任何 filter) → "导入图片"
         if showImport {
             return PhotoGridEmptyCTA(
-                label: "导入图片",
+                label: Copy.importAction,
                 systemImage: "square.and.arrow.down",
                 onTap: onImport
             )
@@ -86,14 +88,14 @@ struct PhotoGridEmptyState: View {
         // 无搜索结果 → "查看全部" (回到全部视图)
         if !searchText.trimmingCharacters(in: .whitespaces).isEmpty {
             return PhotoGridEmptyCTA(
-                label: "查看全部",
+                label: Copy.viewAll,
                 onTap: { onClearFilters() }
             )
         }
         // folder/tag 模式空 → "查看全部"
         if folder != nil || tag != nil {
             return PhotoGridEmptyCTA(
-                label: "查看全部",
+                label: Copy.viewAll,
                 onTap: { onClearFilters() }
             )
         }
@@ -126,29 +128,29 @@ struct PhotoGridEmptyState: View {
 
     private var text: String {
         // V4.36.x: 工具栏筛选激活但无匹配
-        if isFilterActive { return "没有匹配筛选的图片" }
-        if !searchText.trimmingCharacters(in: .whitespaces).isEmpty { return "没有匹配的图片" }
+        if isFilterActive { return Copy.emptyNoMatchFilter }
+        if !searchText.trimmingCharacters(in: .whitespaces).isEmpty { return Copy.emptyNoMatchSearch }
         // V5.8: 砍"收藏"空状态文本
-        if filterUnfiled { return "没有待整理的图片" }
-        if folder != nil { return "这个文件夹是空的" }
-        if tag != nil { return "没有带此标签的图片" }
-        if filterDuplicates { return "没有重复的图片" }
-        if filterRecent7Days { return "最近 7 天没有新图" }
-        if filterLargeFiles { return "没有大于 5 MB 的图" }
-        if filterInTrash { return "回收站是空的" }  // V3.6 NEW
-        return "还没有图片"
+        if filterUnfiled { return Copy.emptyUnfiled }
+        if folder != nil { return Copy.emptyFolder }
+        if tag != nil { return Copy.emptyTag }
+        if filterDuplicates { return Copy.emptyDuplicates }
+        if filterRecent7Days { return Copy.emptyRecent7Days }
+        if filterLargeFiles { return Copy.emptyLargeFiles }
+        if filterInTrash { return Copy.emptyRecycleBin }  // V3.6 NEW (Copy 已有)
+        return Copy.emptyNoPhotosYet
     }
 
     private var hint: String {
         // V4.36.x: 提示调整筛选条件
-        if isFilterActive { return "尝试减少筛选条件或调整侧边栏" }
-        if !searchText.trimmingCharacters(in: .whitespaces).isEmpty { return "试试其他关键词" }
+        if isFilterActive { return Copy.hintFilterAdjust }
+        if !searchText.trimmingCharacters(in: .whitespaces).isEmpty { return Copy.hintSearchOther }
         // V5.8: 砍"收藏"空状态提示
-        if filterUnfiled { return "把图片移动到文件夹来整理" }
-        if folder != nil { return "导入图片后会自动放到此文件夹" }
-        if tag != nil { return "在详情中添加此标签" }
-        if filterDuplicates { return "重复图会自动出现在这里" }
-        if filterInTrash { return "删除的图片会出现在这里，\(TrashRetentionDays.defaultValue.rawValue) 天后自动永久清除" }  // V3.6 NEW
-        return "拖入图片，或点击“导入图片”开始添加"
+        if filterUnfiled { return Copy.hintMoveToFolder }
+        if folder != nil { return Copy.hintAutoImportToFolder }
+        if tag != nil { return Copy.hintAddTagInDetail }
+        if filterDuplicates { return Copy.hintDuplicatesAuto }
+        if filterInTrash { return Copy.hintTrashAutoPurge(days: retentionDays) }  // V6.08: 不用 defaultValue
+        return Copy.hintStartImport
     }
 }

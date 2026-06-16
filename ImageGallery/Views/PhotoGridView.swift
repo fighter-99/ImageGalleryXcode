@@ -191,7 +191,9 @@ struct PhotoGridView: View {
                     filterInTrash: filterInTrash,
                     isFilterActive: isFilterActive,
                     onImport: onImport,
-                    onClearFilters: onClearFilters
+                    onClearFilters: onClearFilters,
+                    // V6.08: 回收站空状态副提示用 live retentionDays (之前写死 30)
+                    retentionDays: retentionDays
                 )
                 .transition(.opacity)
             } else {
