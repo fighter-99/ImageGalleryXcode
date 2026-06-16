@@ -124,7 +124,7 @@ struct DetailView: View {
             Button(Copy.create) { createAndAddTag() }
         }
         .alert(Copy.renamePhotoTitle, isPresented: $showingRenameAlert) {
-            TextField("新文件名", text: $newFileName)
+            TextField(Copy.newFileNamePlaceholder, text: $newFileName)
             Button(Copy.cancel, role: .cancel) {}
             Button(Copy.confirm) { renamePhoto() }
         } message: {
@@ -326,7 +326,7 @@ struct DetailView: View {
                             .font(.callout)
                     }
                     .buttonStyle(.borderless)
-                    .help("重命名")
+                    .help(Copy.renamePhotoTitle)
                     .fixedSize()  // 不被 Spacer 挤压
                 }
 
@@ -392,7 +392,7 @@ struct DetailView: View {
                             .foregroundStyle(.tint)
                     }
                     .buttonStyle(.borderless)
-                    .help("添加标签")
+                    .help(Copy.addTag)
                 }
 
                 if photo.tags.isEmpty {

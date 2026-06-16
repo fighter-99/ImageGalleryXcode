@@ -35,7 +35,7 @@ struct TrashDetailView: View {
                 subtitle: Copy.hintTrashAutoPurge(days: retentionDays),
                 iconColor: Surface.textTertiary,
                 primaryAction: EmptyStateView.Action(
-                    label: "查看全部",
+                    label: Copy.viewAll,
                     systemImage: "photo.on.rectangle.angled",
                     onTap: onExitTrash
                 )

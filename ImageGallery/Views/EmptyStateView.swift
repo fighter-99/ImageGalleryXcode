@@ -140,7 +140,7 @@ struct EmptyStateView: View {
             systemImage: "xmark.circle"
         ) {},
         secondaryAction: EmptyStateView.Action(
-            label: "查看全部"
+            label: Copy.viewAll
         ) {}
     )
     .frame(width: 600, height: 400)

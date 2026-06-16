@@ -45,7 +45,7 @@ struct ActiveFiltersBar: View {
                                     filterState.remove(.folder(id))
                                 } label: {
                                     Label(
-                                        folderName(for: id) ?? "未知文件夹",
+                                        folderName(for: id) ?? Copy.unknownFolder,
                                         systemImage: "folder"
                                     )
                                 }
@@ -64,7 +64,7 @@ struct ActiveFiltersBar: View {
                                     filterState.remove(.tag(id))
                                 } label: {
                                     Label(
-                                        "#\(tagName(for: id) ?? "未知标签")",
+                                        "#\(tagName(for: id) ?? Copy.unknownTag)",
                                         systemImage: "tag"
                                     )
                                 }

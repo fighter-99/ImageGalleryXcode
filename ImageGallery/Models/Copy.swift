@@ -134,6 +134,10 @@ enum Copy {
 
     // MARK: - 输入框 (V5.50-4 扩展)
     static let tagNamePlaceholder = "标签名称"
+    // V6.11: DetailView:127 新文件名 placeholder 入库
+    static let newFileNamePlaceholder = "新文件名"
+    // V6.11: DetailView:395 .help 文案入库
+    static let addTag = "添加标签"
 
     // MARK: - 排序 (V5.50-5 扩展)
     /// 7 个 label (含方向箭头) —— SortOption.label
@@ -212,6 +216,9 @@ enum Copy {
     /// 跟 toolbarImport("导入") 区别——空状态 CTA 是完整短语
     static let importAction = "导入图片"
     static let viewAll = "查看全部"
+    // V6.11: ActiveFiltersBar fallback 文案入库 (folderName 查不到 / tagName 查不到时)
+    static let unknownFolder = "未知文件夹"
+    static let unknownTag = "未知标签"
     /// 空状态标题——按 empty 场景分类
     static let emptyNoMatchFilter = "没有匹配筛选的图片"
     static let emptyNoMatchSearch = "没有匹配的图片"
