@@ -83,51 +83,47 @@ struct SettingsView: View {
             }
             .navigationSplitViewColumnWidth(min: 160, ideal: 180, max: 220)
         } detail: {
-            // Detail: 选中类别的设置内容
-            //   NavigationSplitView 自动提供 sidebar/detail 切换
-            //   Photos.app 标准：sidebar 选中高亮 + detail 切换
-            //   V4.55.0: 加 .id + .transition + .animation——切换时 detail 内容淡入+右移
-            //     仿 V3.6.44 DetailPane 模式（.id(viewKind) 强制 SwiftUI 视为不同视图触发 transition）
-            //   V5.57-1: 包 VStack(spacing: Spacing.lg)——多卡片间自动有间距
-            //     + 底部"恢复全部为默认"按钮（macOS 偏好无 undo/确认，Photos.app 同模式）
-            //   V5.58-1: 4 子 View 接收 settings 参数, 改用 @Bindable 直接绑 UserSettings
-            VStack(alignment: .leading, spacing: Spacing.lg) {
-                Group {
-                    switch selectedCategory.wrappedValue {
-                    case .general:
-                        GeneralSettingsView(settings: settings)
-                    case .appearance:
-                        AppearanceSettingsView(settings: settings)
-                    case .library:
-                        LibrarySettingsView(settings: settings)
-                    case .accent:
-                        AccentSettingsView(settings: settings)
-                    case .about:
-                        AboutSettingsView()
+            // V5.89: 拆 cards → fluid rows——detail 改 ScrollView 包 VStack(spacing: Spacing.xxl)
+            //   之前每个 section 是大卡片 (背景 + padding + 圆角),看着像表单
+            //   改成 fluid rows (无 card 背景, photos.app 偏好设置风格)
+            //   padding 统一在外层 (Spacing.xl),section 之间 Spacing.xxl 24pt 留白
+            ScrollView {
+                VStack(alignment: .leading, spacing: Spacing.xxl) {
+                    Group {
+                        switch selectedCategory.wrappedValue {
+                        case .general:
+                            GeneralSettingsView(settings: settings)
+                        case .appearance:
+                            AppearanceSettingsView(settings: settings)
+                        case .library:
+                            LibrarySettingsView(settings: settings)
+                        case .accent:
+                            AccentSettingsView(settings: settings)
+                        case .about:
+                            AboutSettingsView()
+                        }
                     }
-                }
-                .id(selectedCategory.wrappedValue)  // V4.55.0: 强制 SwiftUI 视为不同视图（transition 关键）
-                .transition(.opacity.combined(with: .move(edge: .trailing)))  // V4.55.0: 渐入+右移——Photos 风格
-                .animation(Animations.standard, value: selectedCategory.wrappedValue)  // V4.55.0: 驱动 transition
+                    .id(selectedCategory.wrappedValue)  // V4.55.0: 强制 SwiftUI 视为不同视图（transition 关键）
+                    .transition(.opacity.combined(with: .move(edge: .trailing)))  // V4.55.0: 渐入+右移——Photos 风格
+                    .animation(Animations.standard, value: selectedCategory.wrappedValue)  // V4.55.0: 驱动 transition
 
-                // V5.57-1: 恢复全部为默认——不挂确认弹窗（macOS Photos.app 偏好无确认）
-                // V5.58-2: 调 settings.reset() 单一入口 (UserSettings 自己处理 12 字段 + UserDefaults 同步)
-                Spacer(minLength: Spacing.md)
-                HStack {
-                    Spacer()
-                    Button("恢复全部为默认") {
-                        settings.reset()
+                    // V5.89: Reset 按钮从内嵌移到 ScrollView 底部外层, 加 top padding 跟 sections 区分
+                    Spacer(minLength: Spacing.md)
+                    HStack {
+                        Spacer()
+                        Button("恢复全部为默认") {
+                            settings.reset()
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.regular)
                     }
-                    .buttonStyle(.bordered)
-                    .controlSize(.regular)
                 }
+                .padding(Spacing.xl)  // V5.89: 统一外层 padding
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .frame(minWidth: 420, minHeight: 320)
+            .frame(minWidth: 480, minHeight: 360)  // V5.89: 略放大 (480 跟 Photos 接近)
         }
         .navigationTitle("设置")
-        // V4.50.0: 删 .padding(Spacing.xl) 和固定 width 480 height 700
-        //   NavigationSplitView 自动撑开——macOS 标准偏好设置窗口自适应
-        //   Photos.app 偏好窗口也是自适应大小
     }
 }
 
@@ -356,9 +352,10 @@ private struct AboutSettingsView: View {
 }
 
 // MARK: - V4.50.0: 通用 settings section 容器
-
-/// Photos.app 偏好设置 panel 风格——每类设置有标题 + 副标题 + 内容
-/// 抽到统一组件减少 4 个子 View 重复
+// V5.89: 改 fluid rows——删 card 背景 + padding, 仿 macOS Photos 偏好设置风格
+//   之前: title/subtitle + content 在 Surface.panel 卡片里 (padding.lg + Radius.md 圆角)
+//   现在: title/subtitle + content 无背景, padding 由外层 ScrollView .padding(Spacing.xl) 统一
+//   section 之间 Spacing.xxl 24pt 留白 (Photos.app 同节奏)
 private struct SettingsSection<Content: View>: View {
     let title: String
     let subtitle: String?
@@ -384,9 +381,8 @@ private struct SettingsSection<Content: View>: View {
             }
             content()
         }
-        .padding(Spacing.lg)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Surface.panel, in: RoundedRectangle(cornerRadius: Radius.md, style: .continuous))
+        // V5.89: 删 .padding(Spacing.lg) 和 .background(Surface.panel, ...)——fluid rows
     }
 }
 
