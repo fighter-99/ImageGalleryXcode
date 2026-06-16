@@ -117,7 +117,14 @@ struct SettingsView: View {
                 .padding(Spacing.xl)  // V5.89: 统一外层 padding
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .frame(minWidth: 480, minHeight: 360)  // V5.89: 略放大 (480 跟 Photos 接近)
+            // V6.00: 改 minWidth/Height → idealWidth/Height + maxHeight——给 Settings 窗口合理默认尺寸
+            //   之前 minWidth: 480, minHeight: 360 让窗口能拉到 1500+pt 高 (用户报告), 大量空白
+            //   改 idealHeight: 580, maxHeight: 720——窗口自动 size-to-content
+            //   跟 macOS Photos 偏好设置范式一致 (Photos 也是固定 ~580pt 高)
+            .frame(
+                minWidth: 640, idealWidth: 760,
+                minHeight: 480, idealHeight: 580, maxHeight: 720
+            )
         }
         .navigationTitle("设置")
         // V5.93: 加 toolbar——Reset All + Help (Photos 偏好设置主操作入口)
