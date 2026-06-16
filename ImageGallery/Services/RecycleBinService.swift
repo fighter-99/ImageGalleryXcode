@@ -49,11 +49,15 @@ final class RecycleBinService {
     /// 永久删除一个 photo（文件 + SwiftData 记录）
     /// V5.13: 文件删失败 → onError；SwiftData save 失败 → onError
     ///   （之前 try? + silent saveWithLog——数据丢失风险）
+    /// V6.08: 文件删失败后提前 return——不删 SwiftData 记录, 保留 photo 让用户能重试
+    ///   之前 catch 后继续 delete(photo) → 文件还在盘上但 DB 记录没了 = 孤儿文件
+    ///   重试也找不到这条 photo (UI 看不到), 永久占空间
     func purge(_ photo: Photo) {
         do {
             try storage.delete(photoURL: photo.fileURL)
         } catch {
             onError(error)
+            return  // V6.08: 文件没删成, 保留 DB 记录等下次重试
         }
         modelContext.delete(photo)
         modelContext.saveWithLog(onError: onError)
