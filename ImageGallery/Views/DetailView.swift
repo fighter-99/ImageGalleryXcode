@@ -116,7 +116,9 @@ struct DetailView: View {
         //   macOS 26 单 view glassEffect 视觉副作用未消除
         // V4.35.x 修复: idealWidth 320 + maxWidth 400——和 columnLayout detailMin 340 协调
         //   旧仅 minWidth: 280 → 列宽可能扩到 480 但 detail panel 自身没边界 → 内容溢出
-        .background(.regularMaterial)
+        // V6.12.4: .regularMaterial → .bar——跟 sidebar / statusBar 统一 chrome 强度
+        //   4 种强度混用 (.bar/.regularMaterial/.popover/.titlebar) → 现在 3 种 (持久 chrome 全 .bar)
+        .background(.bar)
         .frame(minWidth: 280, idealWidth: 340, maxWidth: 480)
         .alert(Copy.newTag, isPresented: $showingAddTagAlert) {
             TextField("标签名称", text: $newTagName)

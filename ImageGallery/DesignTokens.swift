@@ -402,12 +402,16 @@ enum SidebarStyle {
 
 enum Material {
     /// drop overlay 背景（半透明 + blur）
+    ///   .regularMaterial: 全屏 overlay 需要视觉重量抢眼, 不调 .bar
     static let dropOverlay: AnyShapeStyle = AnyShapeStyle(.regularMaterial)
     /// status bar 背景（半透明 + blur，自动适配暗色）
-    static let statusBar: AnyShapeStyle = AnyShapeStyle(.regularMaterial)
+    /// V6.12.4: .regularMaterial → .bar——跟 sidebar / titlebar 统一 chrome 强度
+    ///   之前用 .regularMaterial 比 sidebar 的 .bar 重一档, 视觉 4 种强度混用不统一
+    static let statusBar: AnyShapeStyle = AnyShapeStyle(.bar)
     /// toolbar segmented 容器（替代旧 Surface.toolbarControl 的实心色）
     static let toolbarControl: AnyShapeStyle = AnyShapeStyle(.quaternary)
     /// confirmation dialog 卡片
+    ///   .regularMaterial: 对话框需要视觉重量让用户聚焦, 不调 .bar
     static let dialog: AnyShapeStyle = AnyShapeStyle(.regularMaterial)
 }
 
