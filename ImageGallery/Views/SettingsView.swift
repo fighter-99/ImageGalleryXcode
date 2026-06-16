@@ -31,6 +31,31 @@ private enum SettingsMetrics {
     static let titleSubtitleGap: CGFloat = Spacing.sm
 }
 
+// MARK: - V6.08: 外部链接（占位 URL，Phase 4 改）
+//
+//   之前 4 处 Link(destination: URL(string: "...")!) force-unwrap
+//   "https://github.com/" 现在合法, 但改 URL 时加 # anchor 带空格 / 含百分号 / 中文
+//   都会让 URL(string:) 返回 nil → 崩溃. 改 if let 守卫.
+private enum SettingsLinks {
+    static let projectHomepage = "https://github.com/"
+    static let helpDocs = "https://github.com/"
+    static let issueTracker = "https://github.com/"
+}
+
+/// V6.08: 安全的 Link——URL 解析失败时回退到红字提示, 永不崩溃
+@ViewBuilder
+private func safeExternalLink(_ urlString: String, label: some View) -> some View {
+    if let url = URL(string: urlString) {
+        Link(destination: url) { label }
+    } else {
+        // 开发者错误: 改 SettingsLinks 时 URL 写错, 编译/运行期都不报警
+        // 提示 + 禁用状态让 bug 可见
+        label
+            .foregroundStyle(.red)
+            .accessibilityLabel("链接配置错误: \(urlString)")
+    }
+}
+
 // MARK: - V4.50.0: 设置类别（sidebar 项）
 // V5.57-1: 加 .about——macOS Photos.app 习惯，about 放最末
 
@@ -161,7 +186,7 @@ struct SettingsView: View {
                 .help("恢复全部设置为默认")
             }
             ToolbarItem(placement: .automatic) {
-                Link(destination: URL(string: "https://github.com/")!) {
+                safeExternalLink(SettingsLinks.helpDocs) {
                     Label("帮助", systemImage: "questionmark.circle")
                 }
                 .help("使用帮助")
@@ -443,18 +468,19 @@ private struct AboutSettingsView: View {
             }
 
             // V5.91: 链接行——占位 URL, Phase 4 可改
+            // V6.08: safeExternalLink 替代 force-unwrap——URL 写错永不崩溃
             SettingsSection(
                 title: "链接",
                 subtitle: nil
             ) {
                 VStack(alignment: .leading, spacing: Spacing.sm) {
-                    Link(destination: URL(string: "https://github.com/")!) {
+                    safeExternalLink(SettingsLinks.projectHomepage) {
                         Label("项目主页", systemImage: "arrow.up.right.square")
                     }
-                    Link(destination: URL(string: "https://github.com/")!) {
+                    safeExternalLink(SettingsLinks.helpDocs) {
                         Label("使用帮助", systemImage: "book")
                     }
-                    Link(destination: URL(string: "https://github.com/")!) {
+                    safeExternalLink(SettingsLinks.issueTracker) {
                         Label("问题反馈", systemImage: "exclamationmark.bubble")
                     }
                 }
