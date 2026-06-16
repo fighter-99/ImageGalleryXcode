@@ -91,9 +91,6 @@ struct ContentView: View {
     // 拖拽状态
     @State private var isDropTargeted = false
 
-    // 导入进度
-    @State private var importProgress: ImportProgress?
-
     // 批量删除确认
     // 批量删除确认
     private var showingBatchDeleteConfirm: Bool {
@@ -723,8 +720,9 @@ struct ContentView: View {
             totalSize: model.totalSizeFormatted,
             // V3.6.52: 用 selection.selectedIDs.count 替直接字段
             selectedCount: selection.selectedIDs.count,
-            // V5.15: 导入进度——StatusBar 右侧显示"导入中 X/Y · N 失败"
-            importProgress: importProgress,
+            // V6.09: 导入进度从 model.importProgress 读——@State importProgress 是 dead code
+            //   从未写入, StatusBar 永远收 nil, 进度条不显示
+            importProgress: model.importProgress,
             // V5.60-7: status bar 增强——缩略图档位 + active filter count
             thumbnailSize: thumbnailSize,
             activeFilterCount: model.filterState.activeCount
