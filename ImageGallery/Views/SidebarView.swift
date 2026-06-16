@@ -184,7 +184,8 @@ struct SidebarView: View {
                                 icon: "tag",
                                 label: tag.name,
                                 count: PhotoStats.inLibraryCount(tag),
-                                target: .tag(tag),
+                                // V6.08: 传 UUID 而非 @Model 引用
+                                target: .tag(tag.id),
                                 iconColor: Color(hex: tag.colorHex)  // 标签用 tag 颜色
                             )
                             .contextMenu {
@@ -298,13 +299,15 @@ struct SidebarView: View {
         let folder = Folder(name: trimmed)
         modelContext.insert(folder)
         modelContext.saveWithLog()
-        selection = .folder(folder)
+        // V6.08: 存 UUID 而非 @Model 引用
+        selection = .folder(folder.id)
     }
 
     private func deleteFolder(_ folder: Folder) {
         modelContext.delete(folder)
         modelContext.saveWithLog()
-        if case .folder(let current) = selection, current.id == folder.id {
+        // V6.08: UUID 比较, 不再 .folder(Folder) .id 比较
+        if case .folder(let id) = selection, id == folder.id {
             selection = .all
         }
     }
@@ -316,13 +319,15 @@ struct SidebarView: View {
         let tag = Tag(name: trimmed, colorHex: randomColor)
         modelContext.insert(tag)
         modelContext.saveWithLog()
-        selection = .tag(tag)
+        // V6.08: 存 UUID 而非 @Model 引用
+        selection = .tag(tag.id)
     }
 
     private func deleteTag(_ tag: Tag) {
         modelContext.delete(tag)
         modelContext.saveWithLog()
-        if case .tag(let current) = selection, current.id == tag.id {
+        // V6.08: UUID 比较
+        if case .tag(let id) = selection, id == tag.id {
             selection = .all
         }
     }
@@ -485,7 +490,8 @@ struct SidebarView: View {
             // V3.6.4：用 PhotoStats 排除 trashed 的（之前 folder.photos.count 包含 trashed，
             // 跟 grid 在 .folder 视图下显示的图数不一致）
             count: PhotoStats.inLibraryCount(folder),
-            target: .folder(folder)
+            // V6.08: 传 UUID 而非 @Model 引用
+            target: .folder(folder.id)
         )
         .background(folderDropHighlight(folder))
         // V3.6.33: .onDrop(of: [.text]) → .dropDestination(for: URL.self)

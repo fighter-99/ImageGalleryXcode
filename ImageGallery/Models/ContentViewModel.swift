@@ -126,16 +126,18 @@ final class ContentViewModel {
 
     // MARK: 侧栏派生 flag
 
-    /// 当前侧栏选中的 folder (from sidebarSelection .folder case)
+    /// V6.08: 当前侧栏选中的 folder——从 modelContext 按 UUID fetch
+    ///   之前 .folder(Folder) 直接返回 @Model 引用, folder 被删后引用悬挂
+    ///   现在存 UUID 每次 fetch, 删 folder 自动 nil → UI 自动切回 .all
     var currentFolder: Folder? {
-        if case .folder(let folder) = sidebarSelection { return folder }
-        return nil
+        guard case .folder(let id) = sidebarSelection, let modelContext else { return nil }
+        return modelContext.fetch(FetchDescriptor<Folder>(predicate: #Predicate { $0.id == id })).first
     }
 
-    /// 当前侧栏选中的 tag
+    /// V6.08: 当前侧栏选中的 tag——同 currentFolder 模式
     var currentTag: Tag? {
-        if case .tag(let tag) = sidebarSelection { return tag }
-        return nil
+        guard case .tag(let id) = sidebarSelection, let modelContext else { return nil }
+        return modelContext.fetch(FetchDescriptor<Tag>(predicate: #Predicate { $0.id == id })).first
     }
 
     var filterUnfiled: Bool {
@@ -254,6 +256,7 @@ final class ContentViewModel {
     // MARK: navigation title / subtitle
 
     /// V4.2.0 P0❸: navigationTitle——给 Dock / ⌘⇥ / Mission Control / VoiceOver 用
+    /// V6.08: .folder/.tag 改 UUID 存储, 名字从 modelContext fetch
     var currentViewTitle: String {
         switch sidebarSelection {
         case .all, .none:           return "全部照片"
@@ -262,8 +265,8 @@ final class ContentViewModel {
         case .recent7Days:          return "最近 7 天"
         case .largeFiles:           return "大图（>5MB）"
         case .recentlyDeleted:      return Term.recycleBin
-        case .folder(let f):        return f.name
-        case .tag(let t):           return "#\(t.name)"
+        case .folder:               return currentFolder?.name ?? "全部照片"
+        case .tag:                  return currentTag.map { "#\($0.name)" } ?? "全部照片"
         }
     }
 
@@ -457,7 +460,8 @@ final class ContentViewModel {
         let folder = Folder(name: trimmed)
         modelContext.insert(folder)
         modelContext.saveWithLog()
-        sidebarSelection = .folder(folder)
+        // V6.08: 存 UUID 而非 @Model 引用
+        sidebarSelection = .folder(folder.id)
     }
 
     /// 切换当前排序方向
@@ -971,8 +975,9 @@ final class ContentViewModel {
         case .duplicates: return "duplicates"
         case .recent7Days: return "recent7Days"
         case .largeFiles: return "largeFiles"
-        case .folder(let f): return "folder:\(f.id.uuidString)"
-        case .tag(let t): return "tag:\(t.id.uuidString)"
+        // V6.08: UUID 字符串 (之前 .folder(Folder) 序列化为 f.id.uuidString)
+        case .folder(let id): return "folder:\(id.uuidString)"
+        case .tag(let id): return "tag:\(id.uuidString)"
         case .recentlyDeleted: return "recentlyDeleted"
         }
     }
@@ -991,19 +996,16 @@ final class ContentViewModel {
             if key.hasPrefix("folder:") {
                 let uuidStr = String(key.dropFirst(7))
                 if let uuid = UUID(uuidString: uuidStr) {
-                    let descriptor = FetchDescriptor<Folder>(predicate: #Predicate { $0.id == uuid })
-                    if let folder = try? modelContext.fetch(descriptor).first {
-                        return .folder(folder)
-                    }
+                    // V6.08: 存 UUID 而非 @Model 引用——folder 不存在时 sidebarSelection 失效
+                    // (下次访问 currentFolder 返回 nil, UI 自动切 .all)
+                    // 这里不 fetch——避免无谓 IO, 访问时才 fetch
+                    return .folder(uuid)
                 }
             }
             if key.hasPrefix("tag:") {
                 let uuidStr = String(key.dropFirst(4))
                 if let uuid = UUID(uuidString: uuidStr) {
-                    let descriptor = FetchDescriptor<Tag>(predicate: #Predicate { $0.id == uuid })
-                    if let tag = try? modelContext.fetch(descriptor).first {
-                        return .tag(tag)
-                    }
+                    return .tag(uuid)
                 }
             }
             return .all
