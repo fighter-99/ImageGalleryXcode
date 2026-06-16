@@ -29,17 +29,22 @@ import SwiftUI
 @MainActor
 @Observable
 final class UserSettings {
+    // V6.12 收尾 ②: UserDefaults 实例注入——测试传 isolated suite 防污染
+    //   默认 .standard (生产), 测试 `UserSettings(defaults: isolatedSuite)` 自隔离
+    //   didSet 通过 self.defaults 写回, 不再硬编码 UserDefaults.standard
+    private let defaults: UserDefaults
+
     // MARK: - 12 个 @AppStorage 镜像 (key 跟 ContentView 对齐, 防止脱节)
 
     /// V3.6.13: viewMode 改用 @AppStorage 持久化 (SettingsView 可设默认)
     /// ContentView @AppStorage("viewModeRaw") = ViewMode.grid.rawValue
     var viewModeRaw: String = ViewMode.grid.rawValue {
-        didSet { UserDefaults.standard.set(viewModeRaw, forKey: "viewModeRaw") }
+        didSet { defaults.set(viewModeRaw, forKey: "viewModeRaw") }
     }
 
     /// V3.6.13: 侧栏可见性 (ImageGalleryApp 菜单 ⌃⌘S 写)
     var showSidebar: Bool = true {
-        didSet { UserDefaults.standard.set(showSidebar, forKey: "showSidebar") }
+        didSet { defaults.set(showSidebar, forKey: "showSidebar") }
     }
 
     /// V3.6.13: 详情面板可见性 (ImageGalleryApp 菜单 ⌃⌘D / ⌘I 写)
@@ -47,81 +52,81 @@ final class UserSettings {
     ///   老用户 @AppStorage 已有 stored showDetail=false 不动 (仅新装/重置生效)
     ///   手动 ⌘I / ⌘⌃D / titlebar 按钮仍可 toggle——不锁死
     var showDetail: Bool = true {
-        didSet { UserDefaults.standard.set(showDetail, forKey: "showDetail") }
+        didSet { defaults.set(showDetail, forKey: "showDetail") }
     }
 
     /// V3.6.13: 强调色 (SettingsView AccentSettingsView 写)
     var accentColorID: String = AccentColor.system.rawValue {
-        didSet { UserDefaults.standard.set(accentColorID, forKey: "accentColorID") }
+        didSet { defaults.set(accentColorID, forKey: "accentColorID") }
     }
 
     /// V3.6.13: 回收站保留天数 (SettingsView LibrarySettingsView 写)
     var trashRetentionDays: Int = TrashRetentionDays.defaultValue.rawValue {
-        didSet { UserDefaults.standard.set(trashRetentionDays, forKey: "trashRetentionDays") }
+        didSet { defaults.set(trashRetentionDays, forKey: "trashRetentionDays") }
     }
 
     /// V3.6.22: 外观模式 (SettingsView AppearanceSettingsView 写)
     var appearanceMode: Int = AppearanceMode.defaultValue.rawValue {
-        didSet { UserDefaults.standard.set(appearanceMode, forKey: "appearanceMode") }
+        didSet { defaults.set(appearanceMode, forKey: "appearanceMode") }
     }
 
     /// V5.30: 240 → 200 默认 (Photos 真版密度); SettingsView slider 写
     var thumbnailSize: Double = 200 {
-        didSet { UserDefaults.standard.set(thumbnailSize, forKey: "thumbnailSize") }
+        didSet { defaults.set(thumbnailSize, forKey: "thumbnailSize") }
     }
 
     /// V3.6.13: 侧栏选中项 (跟 sidebarSelection @AppStorage 同步)
     var sidebarSelection: String = "all" {
-        didSet { UserDefaults.standard.set(sidebarSelection, forKey: "sidebarSelection") }
+        didSet { defaults.set(sidebarSelection, forKey: "sidebarSelection") }
     }
 
     /// V5.31: importedAtDesc → filenameAsc 默认
     var sortOption: String = SortOption.filenameAsc.rawValue {
-        didSet { UserDefaults.standard.set(sortOption, forKey: "sortOption") }
+        didSet { defaults.set(sortOption, forKey: "sortOption") }
     }
 
     /// V5.17: 缩略图布局模式 (方格/按比例)
     var thumbnailLayoutMode: Int = ThumbnailLayoutMode.defaultValue.rawValue {
-        didSet { UserDefaults.standard.set(thumbnailLayoutMode, forKey: "thumbnailLayoutMode") }
+        didSet { defaults.set(thumbnailLayoutMode, forKey: "thumbnailLayoutMode") }
     }
 
     /// 侧栏列宽持久化
     var sidebarColumnWidth: Double = 220 {
-        didSet { UserDefaults.standard.set(sidebarColumnWidth, forKey: "sidebarColumnWidth") }
+        didSet { defaults.set(sidebarColumnWidth, forKey: "sidebarColumnWidth") }
     }
 
     // MARK: - V5.90: 导入/导出偏好 (平衡 LibrarySettingsView IA)
 
     /// V5.90: 导入时自动去重 (跳过已存在的图片, 跟导入流程 import 钩子用)
     var autoDeduplicate: Bool = true {
-        didSet { UserDefaults.standard.set(autoDeduplicate, forKey: "autoDeduplicate") }
+        didSet { defaults.set(autoDeduplicate, forKey: "autoDeduplicate") }
     }
 
     /// V5.90: 导入时生成缩略图
     var autoGenerateThumbnails: Bool = true {
-        didSet { UserDefaults.standard.set(autoGenerateThumbnails, forKey: "autoGenerateThumbnails") }
+        didSet { defaults.set(autoGenerateThumbnails, forKey: "autoGenerateThumbnails") }
     }
 
     /// V5.90: 默认导出格式 (jpg/png/heic)
     var defaultExportFormat: String = ExportFormat.defaultValue.rawValue {
-        didSet { UserDefaults.standard.set(defaultExportFormat, forKey: "defaultExportFormat") }
+        didSet { defaults.set(defaultExportFormat, forKey: "defaultExportFormat") }
     }
 
     /// V5.90: 默认导出质量 (0.5..1.0)
     var defaultExportQuality: Double = 0.9 {
-        didSet { UserDefaults.standard.set(defaultExportQuality, forKey: "defaultExportQuality") }
+        didSet { defaults.set(defaultExportQuality, forKey: "defaultExportQuality") }
     }
 
     /// 详情列宽持久化
     var detailColumnWidth: Double = 360 {
-        didSet { UserDefaults.standard.set(detailColumnWidth, forKey: "detailColumnWidth") }
+        didSet { defaults.set(detailColumnWidth, forKey: "detailColumnWidth") }
     }
 
     // MARK: - V5.55-2: P0 滚动位置保留
     // 存当前 ScrollView 顶部可见 photo 的 UUID——下次启动恢复
     // macOS Photos.app 标准行为:重新打开图库后保留滚动位置
     var scrollAnchorPhotoID: String? = nil {
-        didSet { UserDefaults.standard.set(scrollAnchorPhotoID, forKey: "scrollAnchorPhotoID") }
+        didSet { defaults.set(scrollAnchorPhotoID, forKey: "scrollAnchorPhotoID") }
     }
 
     // MARK: - V5.58-1: init() 从 UserDefaults 读 13 字段
@@ -134,8 +139,8 @@ final class UserSettings {
     //
     // scrollAnchorPhotoID 是 String? —— 空字符串当 nil 处理避免脏数据
     //
-    init() {
-        let defaults = UserDefaults.standard
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
 
         // 12 个键值——用 object(forKey:) + 类型转换, 缺字段或类型不匹配 fallback 到 field 默认
         if let stored = defaults.string(forKey: "viewModeRaw") {

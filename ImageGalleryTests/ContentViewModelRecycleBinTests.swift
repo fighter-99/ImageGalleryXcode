@@ -197,8 +197,8 @@ struct ContentViewModelRecycleBinTests {
         model.permanentDeleteSelected()
 
         // photo 应从 context 中 hard delete
-        let descriptor = FetchDescriptor<Photo>(predicate: #Predicate { $0.id == photoID })
-        let remaining = try context.fetch(descriptor)
+        let allPhotos = try context.fetch(FetchDescriptor<Photo>())
+        let remaining = allPhotos.filter { $0.id == photoID }
         #expect(remaining.isEmpty, "permanentDeleteSelected 应硬删 photo")
     }
 }

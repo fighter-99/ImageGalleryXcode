@@ -1,0 +1,50 @@
+name: test
+
+# V6.12 收尾 ①: CI 门禁——xcodebuild test 跑全 suite, 任何 PR 不能合并
+#   之前 177 stale test 在本地断断续续沉淀 4+ 版本, 因为没强制门禁
+#   现在 GitHub Actions macos-14 runner 每次 push 自动跑——
+#   任何 future V6.x PR 都得先过这关, 防 debt 复发
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  test:
+    runs-on: macos-14
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        # macos-14 默认 Xcode 15.x, 项目用 macOS 26 SDK
+        # 如果 runner 升级 Xcode 后 build 失败, 在这里 pin 具体版本
+        run: sudo xcode-select -s /Applications/Xcode_15.4.app/Contents/Developer
+
+      - name: Build
+        run: |
+          xcodebuild \
+            -project ImageGallery.xcodeproj \
+            -scheme ImageGallery \
+            -destination 'platform=macOS' \
+            build
+
+      - name: Test
+        run: |
+          xcodebuild \
+            -project ImageGallery.xcodeproj \
+            -scheme ImageGallery \
+            -destination 'platform=macOS' \
+            test
+
+      - name: Upload xcresult on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcresult-${{ github.run_id }}
+          path: ~/Library/Developer/Xcode/DerivedData/ImageGallery-*/Logs/Test/*.xcresult
+          retention-days: 7

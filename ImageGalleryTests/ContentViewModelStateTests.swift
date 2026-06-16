@@ -15,6 +15,27 @@ import SwiftData  // V6.12 收尾: sidebarSelection_canBeSetToFolder / affectsCu
 @MainActor
 struct ContentViewModelStateTests {
 
+    // V6.12 收尾 ②: 测试隔离——每个 test 用 fresh UserDefaults suite 避免污染
+    //   之前 ContentViewModel() → UserSettings() → UserDefaults.standard
+    //   跨测试共享导致 default value 测试 flaky (viewMode/appearanceMode/accentColor 等)
+    //   现在 isolated() 给新 suite, init() 一次性清空所有 UserSettings 读过的 key
+    private static func isolatedModel() -> ContentViewModel {
+        let suiteName = "test-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        // 清 V6.12 收尾 17 key——任何被 UserSettings 读过的 key 都得清, 防漏
+        for key in [
+            "viewModeRaw", "showSidebar", "showDetail", "accentColorID",
+            "trashRetentionDays", "appearanceMode", "thumbnailSize",
+            "sidebarSelection", "sortOption", "thumbnailLayoutMode",
+            "sidebarColumnWidth", "detailColumnWidth", "autoDeduplicate",
+            "autoGenerateThumbnails", "defaultExportFormat",
+            "defaultExportQuality", "scrollAnchorPhotoID"
+        ] {
+            defaults.removeObject(forKey: key)
+        }
+        return ContentViewModel(settings: UserSettings(defaults: defaults))
+    }
+
     // MARK: - @State 字段 mutation
 
     @Test func selection_canBeReplaced() {
@@ -129,10 +150,6 @@ struct ContentViewModelStateTests {
     // MARK: - Computed properties (不需要 mutation)
 
     @Test func viewMode_defaultIsGrid() {
-        // V6.12 收尾: 清 UserDefaults viewModeRaw——测试间不隔离会污染上次 .list/.timeline
-        //   ContentViewModel.init 走 UserSettings.init() 从 UserDefaults 读, 上次测试写
-        //   "list" 后本次 init() 拿到 "list", 默认断言 .grid 失败
-        UserDefaults.standard.removeObject(forKey: "viewModeRaw")
         let model = ContentViewModel()
         #expect(model.viewMode == .grid)
     }

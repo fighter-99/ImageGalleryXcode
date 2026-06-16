@@ -43,8 +43,8 @@ struct RecycleBinServiceIntegrationTests {
         #expect(photo.trashedAt != nil, "recycle 后 photo.trashedAt 应非 nil")
 
         // 4. 重新 fetch（模拟 @Query 重新拉数据）
-        let descriptor = FetchDescriptor<Photo>(predicate: #Predicate { $0.id == photoID })
-        let fetched = try context.fetch(descriptor)
+        let allPhotos = try context.fetch(FetchDescriptor<Photo>())
+        let fetched = allPhotos.filter { $0.id == photoID }
         #expect(fetched.count == 1)
         #expect(fetched.first?.trashedAt != nil, "recycle 后 fetch 出来的 photo.trashedAt 应非 nil")
 
@@ -101,8 +101,8 @@ struct RecycleBinServiceIntegrationTests {
         service.recycle(photo)
         service.purge(photo)
 
-        let descriptor = FetchDescriptor<Photo>(predicate: #Predicate { $0.id == photoID })
-        let fetched = try context.fetch(descriptor)
+        let allPhotos = try context.fetch(FetchDescriptor<Photo>())
+        let fetched = allPhotos.filter { $0.id == photoID }
         #expect(fetched.isEmpty, "purge 后 SwiftData 应找不到该 photo")
     }
 
@@ -130,8 +130,8 @@ struct RecycleBinServiceIntegrationTests {
         let service = RecycleBinService(storage: .shared, modelContext: context)
         for p in photos { service.recycle(p) }
 
-        let descriptor = FetchDescriptor<Photo>(predicate: #Predicate { $0.trashedAt != nil })
-        let trashed = try context.fetch(descriptor)
+        let allPhotos = try context.fetch(FetchDescriptor<Photo>())
+        let trashed = allPhotos.filter { $0.trashedAt != nil }
         #expect(trashed.count == 3, "应有 3 张 trashed photo")
     }
 }
