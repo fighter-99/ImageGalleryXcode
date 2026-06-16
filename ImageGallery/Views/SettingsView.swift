@@ -44,13 +44,13 @@ private enum SettingsLinks {
 
 /// V6.08: 安全的 Link——URL 解析失败时回退到红字提示, 永不崩溃
 @ViewBuilder
-private func safeExternalLink(_ urlString: String, label: some View) -> some View {
+private func safeExternalLink(_ urlString: String, @ViewBuilder label: () -> some View) -> some View {
     if let url = URL(string: urlString) {
-        Link(destination: url) { label }
+        Link(destination: url, label: label)
     } else {
         // 开发者错误: 改 SettingsLinks 时 URL 写错, 编译/运行期都不报警
-        // 提示 + 禁用状态让 bug 可见
-        label
+        // 提示让 bug 可见 (Label + 红字), 不崩溃
+        label()
             .foregroundStyle(.red)
             .accessibilityLabel("链接配置错误: \(urlString)")
     }
