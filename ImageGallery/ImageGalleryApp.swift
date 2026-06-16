@@ -57,7 +57,16 @@ struct ImageGalleryApp: App {
             )
         } catch {
             Self.logger.error("ModelContainer 启动失败, 尝试重置 store: \(String(describing: error))")
-            try? FileManager.default.removeItem(at: config.url)
+            // V6.12: do/catch 替 try? removeItem——sandbox 权限 / 文件占用 / ACL 时
+            //   删除静默失败, 下次 try ModelContainer 撞同一个 corrupt 文件, fatalError
+            //   V6.08 commit 当时吞错 (OS-level 完全不可用就走 fatalError 提示用 terminal),
+            //   实际 silent 失败让用户/开发者失去诊断线索。Logger.error 至少留线索
+            do {
+                try FileManager.default.removeItem(at: config.url)
+                Self.logger.info("旧 store 删除成功: \(config.url.lastPathComponent, privacy: .public)")
+            } catch {
+                Self.logger.error("旧 store 删除失败: \(error.localizedDescription, privacy: .public) — 重试 ModelContainer 仍可能撞同文件")
+            }
             do {
                 modelContainer = try ModelContainer(
                     for: schema,
