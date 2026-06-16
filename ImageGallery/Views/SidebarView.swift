@@ -418,22 +418,26 @@ struct SidebarView: View {
 
         let draggedFileURLs = Set(urls)
         let draggedPhotos = capturedAllPhotos.filter { draggedFileURLs.contains($0.fileURL) }
+        // V6.10: 拖入 Finder 外部文件 (在 allPhotos 里查不到) → false 让 SwiftUI 走 no-drop 光标
         guard !draggedPhotos.isEmpty else { return false }
 
-        performTrash(
+        // V6.10: 拿 trashed 数量, 0 时返 false (不消费 drop). 之前 return true 无条件,
+        //   即便 photo 全部已在 trash 没真删也消费, 视觉/光标反馈错
+        let trashedCount = performTrash(
             draggedPhotos: draggedPhotos,
             selectedIDs: capturedSelectedIDs,
             context: capturedContext
         )
-        return true
+        return trashedCount > 0
     }
 
     /// 实际执行 recycle（trash drop 用）
+    /// - Returns: 实际 trash 的照片数 (过滤已在 trash / 找不到的)
     private func performTrash(
         draggedPhotos: [Photo],
         selectedIDs: Set<UUID>,
         context: ModelContext
-    ) {
+    ) -> Int {
         // 多选时整组 trash：拖动的是被选中的图，就 trash 整组
         let draggedIDs = Set(draggedPhotos.map { $0.id })
         let idsToTrash: Set<UUID>
@@ -451,11 +455,12 @@ struct SidebarView: View {
                 photos.append(photo)
             }
         }
-        guard !photos.isEmpty else { return }
+        guard !photos.isEmpty else { return 0 }
 
         // recycle（软删）
         let service = RecycleBinService(storage: .shared, modelContext: context)
         for photo in photos { service.recycle(photo) }
+        return photos.count
     }
 
     // 拖拽高亮背景（V3.5.17：fill + border，Photos.app 风格）
