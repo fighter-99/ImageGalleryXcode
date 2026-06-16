@@ -24,6 +24,11 @@ struct DetailPane: View {
     let isMultiSelect: Bool
     let count: Int
     let totalSize: Int64
+    // V6.12: 重复图模式单独传 duplicateGroupCount——之前 DetailPane:107 传 count
+    //   同一值 (purgeable) 给 duplicateGroupCount + purgeableCount, header 错显示
+    //   '发现 N 组重复, 可清理 N 张' (本应 '发现 M 组, 可清理 N 张', M < N)
+    //   .duplicates 模式才用, 其他模式 (single/trash) 不传——显式 init 默认 nil
+    let duplicateGroupCount: Int?
     let folders: [Folder]
     let allTags: [Tag]
     // 单图操作
@@ -62,6 +67,73 @@ struct DetailPane: View {
     let onRetryStorage: () -> Void
     // V6.08: 详情面板错误回调（rename 失败等）—— 父视图 show toast
     var onError: (String) -> Void = { _ in }
+
+    // V6.12: 显式 init——synthesized init 在多种 closure properties 共存 + 部分带默认值
+    //   时不接受新 let 字段 ('extra argument duplicateGroupCount in call')。
+    //   跟 V6.10.1 SidebarView undoManager 教训一致, 显式列全部参数
+    init(
+        singleSelectedPhoto: Photo?,
+        isMultiSelect: Bool,
+        count: Int,
+        totalSize: Int64,
+        duplicateGroupCount: Int? = nil,
+        folders: [Folder],
+        allTags: [Tag],
+        onDelete: @escaping () -> Void,
+        onPrev: @escaping () -> Void,
+        onNext: @escaping () -> Void,
+        canPrev: Bool,
+        canNext: Bool,
+        currentIndex: Int,
+        totalCount: Int,
+        onBatchMove: @escaping (Folder?) -> Void,
+        onBatchAddTag: @escaping (Tag) -> Void,
+        onBatchSetRating: @escaping (Int) -> Void,
+        onBatchExport: @escaping () -> Void,
+        onBatchDelete: @escaping () -> Void,
+        onClearSelection: @escaping () -> Void,
+        sidebarSelection: SidebarSelection?,
+        retentionDays: Int,
+        onTrashRestore: @escaping () -> Void,
+        onTrashPermanentDelete: @escaping () -> Void,
+        onEmptyTrash: @escaping () -> Void,
+        onExitTrash: @escaping () -> Void,
+        onKeepNewestPerDuplicateGroup: @escaping () -> Void,
+        storageError: String?,
+        onRetryStorage: @escaping () -> Void,
+        onError: @escaping (String) -> Void = { _ in }
+    ) {
+        self.singleSelectedPhoto = singleSelectedPhoto
+        self.isMultiSelect = isMultiSelect
+        self.count = count
+        self.totalSize = totalSize
+        self.duplicateGroupCount = duplicateGroupCount
+        self.folders = folders
+        self.allTags = allTags
+        self.onDelete = onDelete
+        self.onPrev = onPrev
+        self.onNext = onNext
+        self.canPrev = canPrev
+        self.canNext = canNext
+        self.currentIndex = currentIndex
+        self.totalCount = totalCount
+        self.onBatchMove = onBatchMove
+        self.onBatchAddTag = onBatchAddTag
+        self.onBatchSetRating = onBatchSetRating
+        self.onBatchExport = onBatchExport
+        self.onBatchDelete = onBatchDelete
+        self.onClearSelection = onClearSelection
+        self.sidebarSelection = sidebarSelection
+        self.retentionDays = retentionDays
+        self.onTrashRestore = onTrashRestore
+        self.onTrashPermanentDelete = onTrashPermanentDelete
+        self.onEmptyTrash = onEmptyTrash
+        self.onExitTrash = onExitTrash
+        self.onKeepNewestPerDuplicateGroup = onKeepNewestPerDuplicateGroup
+        self.storageError = storageError
+        self.onRetryStorage = onRetryStorage
+        self.onError = onError
+    }
 
     var body: some View {
         // V3.6.44: 加 .id(viewKind) 让 SwiftUI 知道是"不同视图"（不是同一 view 内部状态变化）
@@ -105,7 +177,8 @@ struct DetailPane: View {
             // V3.6.15: 重复图模式（仿 TrashDetailView 的"操作中心"模式）
             } else if sidebarSelection == .duplicates {
                 DuplicatesDetailView(
-                    duplicateGroupCount: count,
+                    // V6.12: 用独立 duplicateGroupCount 跟 purgeableCount 区分
+                    duplicateGroupCount: duplicateGroupCount ?? count,
                     purgeableCount: count,
                     purgeableSize: totalSize,
                     retentionDays: retentionDays,

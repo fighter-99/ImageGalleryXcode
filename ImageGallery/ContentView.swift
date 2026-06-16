@@ -677,6 +677,10 @@ struct ContentView: View {
             // V3.6.52: 用 selection.selectedIDs.count 替直接字段
             count: model.filterInTrash ? model.trashedCount : (model.filterInDuplicates ? model.duplicatePurgeableCount : selection.selectedIDs.count),
             totalSize: model.filterInTrash ? model.trashedTotalSize : (model.filterInDuplicates ? model.duplicatePurgeableSize : model.selectedTotalSize),
+            // V6.12: 重复图模式传 duplicateGroupCount 跟 count (purgeable) 区分
+            //   ContentViewModel.duplicateGroupCount 跟 .duplicatePurgeableCount 是不同语义
+            //   (groups vs 可清理照片), 之前 DetailPane:107 同一 count 传 2 次是 bug
+            duplicateGroupCount: model.filterInDuplicates ? model.duplicateGroupCount : nil,
             folders: folders,
             allTags: allTags,
             onDelete: deleteSinglePhoto,
