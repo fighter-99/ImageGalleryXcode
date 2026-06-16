@@ -227,9 +227,19 @@ struct PhotoThumbnailView: View {
     ///   收敛视觉锤：border=0（砍）+ tint 0.10/0.15（1 锤）+ ✓ 角标（多选时 1 锤）= 1-2 锤
     /// V5.19: 内 cell 2pt padding——Photos.app "framed photo" 风格
     /// V5.20: 2pt → 4pt padding——用户反馈"图片没被抱着"，4pt 留白更明显
+    /// V5.19: 2pt——"framed photo" 风格, image 周围 2pt 窗口背景呼吸感
     /// V5.27: 4pt → 0pt——macOS Photos.app Library 实际无 inner padding
     /// V5.28: 0pt 保持——letterbox 透窗口色 + aspect-fill 裁切
-    static let innerCellPadding: CGFloat = 0
+    /// V6.12.8: 0pt → 2pt——用户反馈 .square 模式圆角消失 + 选中框 top/bottom 不可见
+    ///   根因: .squareFit 模式 image letterbox 跟 cell 边缘之间天然有缓冲区 (窗口背景)
+    ///         → image 圆角处跟 cell 边缘有对比, 圆角 + 选中框可见
+    ///         但 .square 模式 image .fill 贴 cell 边缘, 没有任何缓冲区
+    ///         → 即使 cell bg 透明 (V6.12.7), image 圆角"消失"在 cell 边缘
+    ///         → 选中框 stroke 在 cell 边缘附近, 视觉"被切"
+    ///   Photos.app 真版无 padding 但它走 AppKit 原生渲染, SwiftUI 跟 AppKit 渲染差异
+    ///   需要 2pt 缓冲区让圆角跟选中框在 .square 模式也清晰可见
+    ///   2pt 视觉变化很 subtle, 但圆角+选中框行为从"消失"变"清晰", 值得
+    static let innerCellPadding: CGFloat = 2
     enum CellSelectionState {
         case none       // 默认
         case single     // isActive 单选
