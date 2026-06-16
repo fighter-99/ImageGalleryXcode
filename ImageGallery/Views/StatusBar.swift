@@ -60,7 +60,7 @@ struct StatusBar: View {
                     Image(systemName: "line.3.horizontal.decrease.circle.fill")
                         .font(.caption2)
                         .foregroundStyle(Color.accentColor)
-                    Text("\(activeFilterCount) 项筛选")
+                    Text(Copy.activeFilterBadge(activeFilterCount))
                         .foregroundStyle(Color.accentColor)
                 }
             }
@@ -95,11 +95,12 @@ struct StatusBar: View {
     /// V5.60-7: 缩略图档位 label——4 档 (compact/small/medium/large) 映射中文
     ///   70 → 特小, 110 → 小, 200 → 中 (default), 250 → 大
     private var thumbnailSizeLabel: String {
+        // V6.12: 走 Copy 字典 (4 档)——之前 hardcoded, i18n 漏改风险
         switch thumbnailSize {
-        case ..<80:    return "特小 70pt"
-        case ..<150:   return "小 110pt"
-        case ..<220:   return "中 200pt"
-        default:       return "大 250pt"
+        case ..<80:    return Copy.thumbnailSizeCompact
+        case ..<150:   return Copy.thumbnailSizeSmall
+        case ..<220:   return Copy.thumbnailSizeMedium
+        default:       return Copy.thumbnailSizeLarge
         }
     }
 

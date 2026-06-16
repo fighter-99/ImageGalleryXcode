@@ -83,7 +83,7 @@ struct ActiveFiltersBar: View {
                     if filterState.minRating > 0 {
                         chip(
                             icon: "star.fill",
-                            label: "≥ \(filterState.minRating) 星",
+                            label: Copy.minRatingStars(filterState.minRating),
                             onRemove: { filterState.remove(.rating) }
                         )
                     }

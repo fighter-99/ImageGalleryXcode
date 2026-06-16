@@ -219,6 +219,20 @@ enum Copy {
     // V6.11: ActiveFiltersBar fallback 文案入库 (folderName 查不到 / tagName 查不到时)
     static let unknownFolder = "未知文件夹"
     static let unknownTag = "未知标签"
+    // V6.12: ActiveFiltersBar '≥ N 星' 旁路 (Q14)
+    static func minRatingStars(_ n: Int) -> String { "≥ \(n) 星" }
+    // V6.12: StatusBar 'X 项筛选' 旁路 (Q7)
+    static func activeFilterBadge(_ n: Int) -> String { "\(n) 项筛选" }
+    // V6.12: StatusBar thumbnailSizeLabel 4 档旁路 (Q7)
+    static let thumbnailSizeCompact = "特小 70pt"
+    static let thumbnailSizeSmall = "小 110pt"
+    static let thumbnailSizeMedium = "中 200pt"
+    static let thumbnailSizeLarge = "大 250pt"
+    // V6.12: DetailPane 存储错误 (Q9)
+    static let storageUnavailableTitle = "存储不可用"
+    static let storageRetry = "重试"
+    // V6.12: TrashDetailView help tooltip (Q10)
+    static let emptyRecycleBinHelp = "永久删除回收站里所有照片（无法恢复）"
     /// 空状态标题——按 empty 场景分类
     static let emptyNoMatchFilter = "没有匹配筛选的图片"
     static let emptyNoMatchSearch = "没有匹配的图片"

@@ -154,11 +154,11 @@ struct DetailPane: View {
             if let storageError {
                 EmptyStateView(
                     icon: "exclamationmark.triangle",
-                    title: "存储不可用",
+                    title: Copy.storageUnavailableTitle,
                     subtitle: storageError,
                     iconColor: .red,
                     primaryAction: EmptyStateView.Action(
-                        label: "重试",
+                        label: Copy.storageRetry,
                         systemImage: "arrow.clockwise",
                         onTap: onRetryStorage
                     )

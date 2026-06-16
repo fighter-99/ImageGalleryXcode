@@ -104,7 +104,7 @@ struct TrashDetailView: View {
                 .tint(Palette.destructive)
                 .disabled(count == 0)
                 // V3.6.6: 危险操作加 help tooltip 提醒
-                .help("永久删除回收站里所有照片（无法恢复）")
+                .help(Copy.emptyRecycleBinHelp)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
