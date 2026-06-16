@@ -257,19 +257,8 @@ private struct AppearanceSettingsView: View {
         //   概念都是 '启动时的图片显示', 合并更紧凑
         SettingsSection(
             title: "默认视图",
-            subtitle: "启动应用时的图片排列方式和缩略图形状。视图模式决定整体布局, 布局决定单个 cell 形状。"
+            subtitle: "启动应用时的缩略图布局形状。视图模式 (网格/列表/时间线) 仍可通过 View 菜单或 ⌥1/⌥2/⌥3 快捷键切换。"
         ) {
-            HStack(alignment: .center, spacing: Spacing.md) {
-                Text("视图模式")
-                    .frame(width: SettingsMetrics.labelColumnWidth, alignment: .leading)
-                Picker("", selection: $settings.viewModeRaw) {
-                    Text(Copy.viewModeGrid).tag(ViewMode.grid.rawValue)
-                    Text(Copy.viewModeList).tag(ViewMode.list.rawValue)
-                    Text(Copy.viewModeTimeline).tag(ViewMode.timeline.rawValue)
-                }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-            }
             HStack(alignment: .center, spacing: Spacing.md) {
                 Text("布局")
                     .frame(width: SettingsMetrics.labelColumnWidth, alignment: .leading)

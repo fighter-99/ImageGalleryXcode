@@ -47,10 +47,12 @@ enum ThumbnailLayoutMode: Int, CaseIterable, Identifiable {
 
     var displayName: String {
         switch self {
-        // V5.47: 原 '方格 (完整)' 改成 '按比例'——用户决定 .squareFit 才是 macOS Photos 真版
-        //   之前 .masonry (justified row) 占用了 '按比例' 名字——V5.47 砍 .masonry 后名字空出来
-        //   现在 '按比例' 语义更准确: image 按原比例 letterbox 进 1:1 cell
-        case .squareFit: return "按比例"
+        // V6.12.13: "按比例" → "网格"——更准确
+        //   当前 .squareFit 渲染 = 1:1 方格 (letterbox)——视觉上是"网格"布局
+        //   "按比例" 名字误导 (用户以为是按 image 原比例渲染, 实际是按 1:1 网格 letterbox)
+        //   跟 Photos.app / Finder / ViewMode.grid 命名一致
+        //   之前 V5.47 '按比例' 是相对 .masonry '按比例满行'——V5.47 砍了 .masonry 后名字失去对比
+        case .squareFit: return "网格"
         }
     }
 
