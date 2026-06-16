@@ -60,6 +60,8 @@ struct DetailPane: View {
     //   重试按钮触发 onRetryStorage 重新检测
     let storageError: String?
     let onRetryStorage: () -> Void
+    // V6.08: 详情面板错误回调（rename 失败等）—— 父视图 show toast
+    var onError: (String) -> Void = { _ in }
 
     var body: some View {
         // V3.6.44: 加 .id(viewKind) 让 SwiftUI 知道是"不同视图"（不是同一 view 内部状态变化）
@@ -117,7 +119,8 @@ struct DetailPane: View {
                     canPrev: canPrev,
                     canNext: canNext,
                     currentIndex: currentIndex,
-                    totalCount: totalCount
+                    totalCount: totalCount,
+                    onError: onError
                 )
             } else if isMultiSelect {
                 MultiSelectDetailView(

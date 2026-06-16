@@ -30,6 +30,8 @@ struct DetailView: View {
     let canNext: Bool
     let currentIndex: Int    // 1-based, 0 表示无
     let totalCount: Int
+    // V6.08: 错误回调 (rename 失败等) — 父视图负责 show toast
+    var onError: (String) -> Void = { _ in }
 
     // 弹窗控制
     @State private var showingAddTagAlert = false
@@ -505,17 +507,27 @@ struct DetailView: View {
         undoManager?.registerAction(
             description: "重命名为 \(trimmed)"
         ) {
-            // 执行：磁盘重命名 + SwiftData 更新
-            try? FileManager.default.moveItem(at: oldURL, to: newURL)
-            photo.filename = trimmed
-            photo.fileURL = newURL
-            modelContext.saveWithLog()
+            // V6.08: 文件 rename 失败不能静默——之前 try? + 写 SwiftData → 孤儿文件
+            //   失败: 不更新 photo.filename/fileURL, 弹 toast 通知用户
+            do {
+                try FileManager.default.moveItem(at: oldURL, to: newURL)
+                photo.filename = trimmed
+                photo.fileURL = newURL
+                modelContext.saveWithLog()
+            } catch {
+                onError(Copy.renameFailed(trimmed))
+            }
         } undo: {
             // 撤销：磁盘重命名回 + SwiftData 回滚
-            try? FileManager.default.moveItem(at: newURL, to: oldURL)
-            photo.filename = oldFilename
-            photo.fileURL = oldURL
-            modelContext.saveWithLog()
+            do {
+                try FileManager.default.moveItem(at: newURL, to: oldURL)
+                photo.filename = oldFilename
+                photo.fileURL = oldURL
+                modelContext.saveWithLog()
+            } catch {
+                // 撤销失败: 文件状态跟 SwiftData 不一致——只能提示用户
+                onError(Copy.renameFailed(oldFilename))
+            }
         }
     }
 

@@ -198,4 +198,7 @@ enum Copy {
     /// "清空回收站"——区别于 Copy.empty = "清空" (按钮短名)
     static let emptyRecycleBinAction = "清空回收站"
     static let keepNewestPerGroup = "保留每组最新"
+    // MARK: - V6.08: 详情面板错误 toast
+    /// 文件重命名失败 (DetailView.renamePhoto 磁盘 moveItem 失败)
+    static func renameFailed(_ filename: String) -> String { "重命名失败：\(filename)" }
 }

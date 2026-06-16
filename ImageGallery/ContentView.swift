@@ -710,7 +710,9 @@ struct ContentView: View {
             onKeepNewestPerDuplicateGroup: keepNewestPerDuplicateGroup,
             // V4.11.0: 存储不可写错误（nil = OK）
             storageError: storageErrorMessage,
-            onRetryStorage: checkStorage
+            onRetryStorage: checkStorage,
+            // V6.08: 详情面板错误回调 (rename 失败等) — show toast
+            onError: { message in showToast(message, type: .error) }
         )
     }
 
