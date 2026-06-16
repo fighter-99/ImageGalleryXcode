@@ -161,7 +161,8 @@ struct ContentViewModelStateTests {
         #expect(model.viewMode == .list)
     }
 
-    @Test func layoutMode_defaultIsSquare() {
+    @Test func layoutMode_defaultIsSquareFit() {
+        // V6.12.12: 砍 .square 后 defaultValue = .squareFit
         let model = ContentViewModel()
         #expect(model.layoutMode == .defaultValue)
     }

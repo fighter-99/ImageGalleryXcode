@@ -57,15 +57,12 @@ struct GridLayout: Equatable {
     /// 纯函数: 输入 items, 输出 rows
     /// V5.29-3: 测试入口——不依赖 SwiftData, 可独立单测
     /// V5.36 → V5.39 → V5.39.5: 按 layoutMode 分发到不同算法
-    ///   - .square:    V5.35 算法 (cellSize 动态算填满宽, 所有 cell 1:1, .fill 渲染)
-    ///   - .squareFit: V5.35 算法 (1:1 cell 同 .square, 但 .fit letterbox 渲染——V5.46 路由同 .square)
-    /// V5.39.5: 删 .masonryStretch case——用户删"按比例（满行）"模式
-    /// V5.47: 删 .masonry case + computeJustifiedMasonryRows 整段——用户决定不再保留 justified row
-    ///   现在所有模式都走 V5.35 算法 (1:1 方格 + dynamic cellSize 填满)
-    ///   .square vs .squareFit 差异在 PhotoThumbnailView 渲染分支 (.fill vs .fit) + cell card (.square 有, .squareFit 无)
+    /// V6.12.12: 砍 .square 后 switch 简化——只剩 .squareFit, 1 个 case
+    ///   V5.35 算法 1:1 方格 + dynamic cellSize 填满 + .fit letterbox 渲染
+    ///   (旧 .square 跟 .squareFit 走同一路径, 砍后无差别)
     func computeRows(from items: [PhotoGridItem]) -> [GridRow] {
         switch layoutMode {
-        case .square, .squareFit:
+        case .squareFit:
             return computeUniformSquareRows(items: items)
         }
     }

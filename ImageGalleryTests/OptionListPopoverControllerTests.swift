@@ -26,16 +26,16 @@ struct OptionListPopoverControllerTests {
     }
 
     @Test func layoutModeOnSelectFires() {
-        let vc = OptionListPopoverController<ThumbnailLayoutMode>(currentItem: .square)
+        let vc = OptionListPopoverController<ThumbnailLayoutMode>(currentItem: .squareFit)
         var captured: ThumbnailLayoutMode?
         vc.onSelect = { captured = $0 }
         vc.onSelect?(.squareFit)
         #expect(captured == .squareFit)
     }
 
-    @Test func layoutModeAllCasesCountIs2() {
-        // V5.39.5 删 .masonryStretch 后剩 2 选项
-        #expect(ThumbnailLayoutMode.allCases.count == 2)
+    @Test func layoutModeAllCasesCountIs1() {
+        // V6.12.12: 砍 .square 后剩 1 选项 (.squareFit only)
+        #expect(ThumbnailLayoutMode.allCases.count == 1)
     }
 
     // MARK: - ThumbnailDensity (V5.74 替代)
@@ -99,7 +99,7 @@ struct OptionListPopoverControllerTests {
 
     @Test func selectedItemHasVisibleBackgroundLayer() {
         // V5.80: 选中项应加 6% accent bg——找 view hierarchy 中 bg color 非 nil 的 CALayer
-        let vc = OptionListPopoverController<ThumbnailLayoutMode>(currentItem: .square)
+        let vc = OptionListPopoverController<ThumbnailLayoutMode>(currentItem: .squareFit)
         vc.loadView()
         // 递归搜: 找有 backgroundColor 的 CALayer
         let hasBgLayer = findBgLayer(in: vc.view)
@@ -113,8 +113,8 @@ struct OptionListPopoverControllerTests {
         // V5.97 invariant: internal(set) var currentItem——同 module 可写 (handleItemClick + 测试)
         //   V5.96 之前是 private(set), 外部 setter 不可达, 测试无法验证刷新逻辑
         //   (V5.96 注释说"用户能看到新选中状态"实际是错的——stored property 赋值不触发重绘)
-        let vc1 = OptionListPopoverController<ThumbnailLayoutMode>(currentItem: .square)
-        #expect(vc1.currentItem == .square)
+        let vc1 = OptionListPopoverController<ThumbnailLayoutMode>(currentItem: .squareFit)
+        #expect(vc1.currentItem == .squareFit)
 
         // 不同 init 值应存不同 currentItem
         let vc2 = OptionListPopoverController<ThumbnailLayoutMode>(currentItem: .squareFit)
@@ -125,12 +125,12 @@ struct OptionListPopoverControllerTests {
     //   V5.96 stored property 赋值不触发 AppKit 重绘——用户报告: 工具栏更新, popover 视觉冻结
     //   V5.97 didSet → refreshSelectionVisuals() 立即遍历 stackView 子视图
     @Test func settingCurrentItemRefreshesRowVisuals() {
-        let vc = OptionListPopoverController<ThumbnailLayoutMode>(currentItem: .square)
+        let vc = OptionListPopoverController<ThumbnailLayoutMode>(currentItem: .squareFit)
         _ = vc.view  // 强制 loadView 跑, 才有 stackView 跟 subviews
 
         // 初始: .square 选中, .squareFit 取消
         let initialStates = vc._rowStatesForTesting
-        let initSquare = try? #require(initialStates.first { $0.item == .square })
+        let initSquare = try? #require(initialStates.first { $0.item == .squareFit })
         let initFit = try? #require(initialStates.first { $0.item == .squareFit })
         #expect(initSquare?.isCheckmarkHidden == false, "V5.97: 初始 .square ✓ 应显示")
         #expect(initSquare?.hasSelectionBackground == true, "V5.97: 初始 .square bg 应有 accent")
@@ -144,7 +144,7 @@ struct OptionListPopoverControllerTests {
 
         #expect(vc.currentItem == .squareFit, "V5.97: setter 应存新值")
         let updatedStates = vc._rowStatesForTesting
-        let afterSquare = try? #require(updatedStates.first { $0.item == .square })
+        let afterSquare = try? #require(updatedStates.first { $0.item == .squareFit })
         let afterFit = try? #require(updatedStates.first { $0.item == .squareFit })
         #expect(afterSquare?.isCheckmarkHidden == true, "V5.97: 旧选中 ✓ 应隐藏")
         #expect(afterSquare?.hasSelectionBackground == false, "V5.97: 旧选中 bg 应清空")

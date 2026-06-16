@@ -367,10 +367,10 @@ struct PhotoGridView: View {
                             rowHeight: rowHeight,
                             rowSpacing: rowSpacing,
                             cellSpacing: cellSpacing,
-                            // V5.18: 日期分组视图显示拍摄日期 caption
-                            // V5.25: 改为 layoutMode != .square——.square (iOS Photos Library 风格) 无 caption
-                            // V5.41 修正: .square 是 iOS Photos.app Library 风格, 不是 macOS Photos 真版
-                            showDateCaption: layoutMode != .square,
+                            // V6.12.12: 砍 .square 后只剩 .squareFit
+                            //   现在 always true (所有 mode 都显示 caption)
+                            //   保留判断形式方便未来加 mode 时直接改这里
+                            showDateCaption: layoutMode != .squareFit,
                             // V5.39.7: 透传排序 + 重排回调 (拖拽重排依赖)
                             sortOption: sortOption,
                             onReorder: onReorder
@@ -482,11 +482,13 @@ struct PhotoGridView: View {
         sortOption: SortOption,
         onReorder: @escaping () -> Void
     ) -> some View {
-        // V5.35: .square 模式 cell 动态计算填满宽
-        //   三元表达式避免 @ViewBuilder 内的 if/else 限制
-        let actualRowHeight: CGFloat = (layoutMode == .square)
-            ? SquareLayout.cellSize(availableWidth: availableWidth, rowHeight: rowHeight, cellSpacing: cellSpacing)
-            : rowHeight  // .masonry: 固定 rowHeight (aspect-based 宽度)
+        // V6.12.12: 砍 .square 后只剩 .squareFit, actualRowHeight 永远是 SquareLayout.cellSize
+        //   (V5.35 动态算填满宽, 之前 .masonry 才用 rowHeight 直接传)
+        let actualRowHeight: CGFloat = SquareLayout.cellSize(
+            availableWidth: availableWidth,
+            rowHeight: rowHeight,
+            cellSpacing: cellSpacing
+        )
         let layout = GridLayout(
             availableWidth: availableWidth,
             rowHeight: actualRowHeight,  // V5.35: 动态算的 cellSize
@@ -610,7 +612,7 @@ struct PhotoGridView: View {
         filterMinRating: 0,
         retentionDays: 30,
         thumbnailSize: 170,
-        layoutMode: .square,
+        layoutMode: .squareFit,  // V6.12.12: .square 砍了, Preview 默认 .squareFit
         sortOption: .importedAtDesc,
         scrollAnchorPhotoID: nil,  // V5.60-6: Preview 不需要 anchor
         onScrollAnchorChange: { _ in },  // V5.61-1: Preview no-op

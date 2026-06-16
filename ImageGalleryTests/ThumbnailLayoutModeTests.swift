@@ -2,46 +2,36 @@
 //  ThumbnailLayoutModeTests.swift
 //  ImageGalleryTests
 //
-//  V5.17 → V5.47: ThumbnailLayoutMode 单元测试
-//  验证：
-//  - 2 个 case 完整 (.square / .squareFit) (V5.47 删 .masonry)
-//  - rawValue 稳定（@AppStorage("thumbnailLayoutMode") 持久化契约）
-//  - displayName / icon 非空 + 唯一
-//  - defaultValue = .square（V5.20 改 iOS Photos.app Library 风格）
-//  - masonryParams(rowHeight:) 返 CGFloat? (V5.39.5 简化——只返 uniformWidth, 不再返 stretchLastRow)
-//  - id 唯一（ForEach Identifiable 依赖）
-//
-//  V5.39.5: 删 .masonryStretch case + 删对应测试
-//  - allCasesCount: 3 → 2
-//  - rawValue 范围: 0, 1 (2 已被删, 老用户 storedLayoutModeRaw=2 ?? .square 平滑回退)
-//
-//  V5.46: 增 .squareFit case + 对应测试
-//  - allCasesCount: 2 → 3
-//  - rawValue 范围: 0, 1, 2 (.squareFit 复用之前 .masonryStretch 的 rawValue=2)
-//  - 老用户 storedLayoutModeRaw=2 现在会走到 .squareFit (而不是 fallback 到 .square)——更合理
-//
-//  V5.47: 删 .masonry case + 删对应测试
-//  - allCasesCount: 3 → 2
-//  - rawValue 范围: 0, 2 (1 已被删, 老用户 storedLayoutModeRaw=1 ?? .square 平滑回退)
-//  - rawValue=2 (.squareFit) 保留——V5.46 兼容路径不变
-//
-//  镜像 AppearanceModeTests pattern
+//  V6.12.12: 砍 .square 后——单 case (.squareFit) 单元测试
+//  V5.17 → V5.47: ThumbnailLayoutMode 单元测试历史
+//  - V5.17: .square (.fill, iOS Photos Library 风格)
+//  - V5.46: + .squareFit (.fit letterbox, macOS Photos 真版)
+//  - V5.47: - .masonry (justified row)
+//  - V6.12.12: - .square (5 commit 修不了 bug, 用户决定砍掉, 只留 macOS Photos 真版)
+//  验证:
+//  - 1 个 case (.squareFit) 完整 (V6.12.12 砍 .square 后)
+//  - rawValue 稳定（@AppStorage("thumbnailLayoutMode") 持久化契约, 仍 2 不变）
+//  - displayName / icon 非空 (单 case 不用测唯一)
+//  - defaultValue = .squareFit
+//  - masonryParams(rowHeight:) 返 rowHeight
+//  - id 唯一（虽然只有 1 个 case, 仍验证 id 不变 rawValue）
 //
 
 import Testing
-import CoreGraphics  // CGFloat 在 for-in 循环 type annotation 显式用
+import CoreGraphics
 @testable import ImageGallery
 
 struct ThumbnailLayoutModeTests {
 
     // MARK: - 完整性
 
-    @Test func allCasesCountIsTwo() {
+    @Test func allCasesCountIsOne() {
+        // V6.12.12: 2 → 1 (.square 砍)
         // V5.47: 3 → 2 (.masonry 删)
         // V5.46: 2 → 3 (.squareFit 加)
         // V5.39.5: 3 → 2 (.masonryStretch 删)
-        // 防止以后误删/加 case 而忘更新 Toolbar 布局模式菜单 + masonryParams switch
-        #expect(ThumbnailLayoutMode.allCases.count == 2)
+        // 防止以后误加 case 而忘更新 Toolbar 布局模式菜单 + masonryParams switch
+        #expect(ThumbnailLayoutMode.allCases.count == 1)
     }
 
     @Test func idsAreUnique() {
@@ -55,9 +45,8 @@ struct ThumbnailLayoutModeTests {
     @Test func rawValuesAreStable() {
         // @AppStorage("thumbnailLayoutMode") 用 rawValue 持久化
         // rawValue 改了就破坏老用户偏好——必须锁死
-        // V5.47: .masonry rawValue=1 删, 老用户 storedLayoutModeRaw=1 ?? .square
-        // V5.46: .squareFit 复用 rawValue=2——V5.46+ 老用户 ?? .squareFit (更接近 masonryStretch 原始意图)
-        #expect(ThumbnailLayoutMode.square.rawValue == 0)
+        // V6.12.12: .square (rawValue=0) 砍, 老用户 storedLayoutModeRaw=0 ?? defaultValue (.squareFit) 平滑回退
+        // V5.46: .squareFit 复用 rawValue=2——V5.46+ 老用户 ?? .squareFit
         #expect(ThumbnailLayoutMode.squareFit.rawValue == 2)
     }
 
@@ -83,59 +72,30 @@ struct ThumbnailLayoutModeTests {
         }
     }
 
-    @Test func displayNamesAreUnique() {
-        // 工具栏菜单内显示——重复会让用户困惑（"两个一样的选项？"）
-        let names = ThumbnailLayoutMode.allCases.map(\.displayName)
-        #expect(Set(names).count == names.count, "displayName 必须唯一")
-    }
-
-    @Test func iconsAreUnique() {
-        // 工具栏按钮 + 菜单都用同一 icon——重复会视觉混淆
-        let icons = ThumbnailLayoutMode.allCases.map(\.icon)
-        #expect(Set(icons).count == icons.count, "icon 必须唯一")
-    }
-
     // MARK: - 默认值
 
-    @Test func defaultValueIsSquare() {
-        // V5.20: 默认改 .square（iOS Photos.app Library 视图——统一方形 grid，无 ragged right edge）
-        // V5.41 修正：macOS Photos.app Library 实际是 Justified Row（= .masonry），不是 .square
-        // V5.19 默认 .masonry 被反馈"右边缘空缺 + 不对齐"
-        // 截图 27 vs 截图 28 对比：iOS Photos Library 是统一方形——column 完美对齐
+    @Test func defaultValueIsSquareFit() {
+        // V6.12.12: 砍 .square 后 defaultValue = .squareFit
+        //   .squareFit = macOS Photos.app Library 真版 (1:1 方格 + .fit letterbox)
+        //   之前 defaultValue = .square, 改后 = .squareFit
         // 老用户 @AppStorage 有 storedLayoutModeRaw 不受影响（仅新装/重置生效）
-        #expect(ThumbnailLayoutMode.defaultValue == .square)
+        #expect(ThumbnailLayoutMode.defaultValue == .squareFit)
     }
 
-    // MARK: - masonryParams 映射（关键：决定 PhotoGridView 调 MasonryMath 的参数）
-
-    @Test func squareMapsToUniformWidth() {
-        // V5.39.5: masonryParams 简化, 只返 uniformWidth (CGFloat?)
-        //   stretchLastRow 字段已删——所有模式末行都保持 targetRowHeight
-        //   .square: 返 rowHeight (方形 cell, MasonryMath 用)
-        //   .masonry: 返 nil (JustifiedRowLayout 不读此字段, 仍返以保持 API 兼容)
-        let uniformWidth = ThumbnailLayoutMode.square.masonryParams(rowHeight: 200)
-        #expect(uniformWidth == 200)
-    }
-
-    @Test func masonryMapsToNilUniformWidth() {
-        // V5.47: .masonry 已删——这个测试需要删除或修改
-        // 保留函数名仅作占位, 实际不再调用
-        // 替代测试: 见 rawValuesAreStable (锁定 .masonry rawValue=1 已删, 老用户 fallback)
-    }
+    // MARK: - masonryParams 映射
 
     @Test func squareFitMapsToUniformWidth() {
-        // V5.46 NEW: .squareFit masonryParams 跟 .square 一样 (返 rowHeight)
-        //   区别在 PhotoThumbnailView 渲染分支 (.fill vs .fit) + V5.47 无 cell card
-        //   1:1 方格 + .fit letterbox + 无 cell card = macOS Photos.app 按比例真版
+        // V6.12.12: 单 case 后 masonryParams 简化——只 .squareFit
+        //   返 rowHeight (1:1 方格, MasonryMath 用)
         let uniformWidth = ThumbnailLayoutMode.squareFit.masonryParams(rowHeight: 200)
         #expect(uniformWidth == 200)
     }
 
-    @Test func squareUniformWidthScalesWithRowHeight() {
+    @Test func squareFitUniformWidthScalesWithRowHeight() {
         // uniformWidth 必须 = rowHeight（不同密度下保持方形）
         // 用户切到 120pt 密度 → 方格也是 120×120
         for rowHeight: CGFloat in [80, 120, 170, 200, 280] {
-            let uniformWidth = ThumbnailLayoutMode.square.masonryParams(rowHeight: rowHeight)
+            let uniformWidth = ThumbnailLayoutMode.squareFit.masonryParams(rowHeight: rowHeight)
             #expect(uniformWidth == rowHeight, "rowHeight \(rowHeight) → uniformWidth \(rowHeight)")
         }
     }

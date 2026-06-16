@@ -397,15 +397,14 @@ struct PhotoThumbnailView: View {
                         //   - landscape 16:9 中心裁切: 主体居中, 左右被裁
                         //   - V5.33 误判 Photos 是 justified (实际是 Pinterest/Flickr 风格), 改回
                         //   - "智能主体识别" 留 V5.35+ (Vision framework saliency)
-                        // V5.46: .squareFit 走 .fit——macOS Photos.app 按比例真版
-                        //   - 1:1 方格, image 顶满长边 (横屏顶满宽, 竖屏顶满高)
-                        //   - 短边 letterbox (cell 背景色透出来)
-                        //   - 永远不裁切——产品图/截图/文档场景信息完整
+                        // V6.12.12: 砍 .square 模式后只剩 .squareFit——永远 .fit (letterbox 不裁切)
+                        //   1:1 方格, image 顶满长边, 短边 letterbox (透窗口色)
+                        //   永远不裁切——产品图/截图/文档场景信息完整
+                        //   macOS Photos.app Library 真版风格
                         // V5.30: 加 .transition(.opacity) + .animation——image 加载完淡入
-                        let contentMode: ContentMode = layoutMode == .squareFit ? .fit : .fill
                         Image(nsImage: nsImage)
                             .resizable()
-                            .aspectRatio(aspectRatio, contentMode: contentMode)  // V5.46: .squareFit → .fit (letterbox)
+                            .aspectRatio(aspectRatio, contentMode: .fit)  // V6.12.12: 永远 .fit
                             // V5.99: 8pt → 12pt 圆角——用户反馈"缩略图没有圆角"
                             //   之前 Radius.thumb (8pt) 在 200pt cell 上 = 4%, 几乎看不到圆角
                             //   Radius.lg (12pt) = 6%, 视觉上明显是圆角

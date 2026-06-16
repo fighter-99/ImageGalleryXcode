@@ -58,7 +58,7 @@ struct GridLayoutTests {
 
     @Test func emptyItemsReturnsNoRows() {
         let layout = GridLayout(
-            availableWidth: 1000, rowHeight: 200, cellSpacing: 8, layoutMode: .square
+            availableWidth: 1000, rowHeight: 200, cellSpacing: 8, layoutMode: .squareFit
         )
         #expect(layout.computeRows(from: [PhotoGridItem]()).isEmpty)
     }
@@ -68,7 +68,7 @@ struct GridLayoutTests {
         //   n=floor((1000+8)/(200+8))=4, cellSize=(1000-3*8)/4=244
         //   即使只 1 item, cellSize 仍按"按 rowHeight 能放几个 cell"算 (V5.35 Photos 真版)
         let layout = GridLayout(
-            availableWidth: 1000, rowHeight: 200, cellSpacing: 8, layoutMode: .square
+            availableWidth: 1000, rowHeight: 200, cellSpacing: 8, layoutMode: .squareFit
         )
         let rows = layout.computeRows(from: [makeItem(aspect: 1.0, seed: 1)])
         #expect(rows.count == 1)
@@ -80,7 +80,7 @@ struct GridLayoutTests {
     @Test func manyItemsProducesMultipleRows() {
         // 100 张 1:1 photo, 240pt cell + 8pt spacing, available 1000pt → 4 cell/row → 25 row
         let layout = GridLayout(
-            availableWidth: 1000, rowHeight: 240, cellSpacing: 8, layoutMode: .square
+            availableWidth: 1000, rowHeight: 240, cellSpacing: 8, layoutMode: .squareFit
         )
         let rows = layout.computeRows(from: makeItems(count: 100, aspect: 1.0))
         // n = floor((1000+8)/(240+8)) = 4 cell/row
@@ -94,7 +94,7 @@ struct GridLayoutTests {
         //   与 V5.16.1 (cell 宽 = rowHeight) 不同——V5.35 取消固定方形
         //   cellSize = (1000 - 3*8) / 4 = 244 (n=4 cells/row)
         let layout = GridLayout(
-            availableWidth: 1000, rowHeight: 240, cellSpacing: 8, layoutMode: .square
+            availableWidth: 1000, rowHeight: 240, cellSpacing: 8, layoutMode: .squareFit
         )
         let rows = layout.computeRows(from: makeItems(count: 10, aspect: 1.0))
         for row in rows {
@@ -108,7 +108,7 @@ struct GridLayoutTests {
         // V5.35+ 黄金不变量: 满 row 累计宽 + 间距 = availableWidth (精确填满)
         //   n=4 cell/row, cellSize=244 → 总宽 = 4*244 + 3*8 = 1000
         let layout = GridLayout(
-            availableWidth: 1000, rowHeight: 240, cellSpacing: 8, layoutMode: .square
+            availableWidth: 1000, rowHeight: 240, cellSpacing: 8, layoutMode: .squareFit
         )
         let rows = layout.computeRows(from: makeItems(count: 10, aspect: 1.0))
         let firstRowWidth = rows[0].renderedWidth(spacing: 8)
@@ -118,7 +118,7 @@ struct GridLayoutTests {
     @Test func squareModeLastRowMayNotFill() {
         // 末行 3 张, 不拉伸 (V5.27 行为: macOS Photos 末行不拉满)
         let layout = GridLayout(
-            availableWidth: 1000, rowHeight: 240, cellSpacing: 8, layoutMode: .square
+            availableWidth: 1000, rowHeight: 240, cellSpacing: 8, layoutMode: .squareFit
         )
         let rows = layout.computeRows(from: makeItems(count: 7, aspect: 1.0))
         // 4 + 3 row, 末 row 3 cell
@@ -139,7 +139,7 @@ struct GridLayoutTests {
         // 极窄窗口: 1 cell / row
         let items = makeItems(count: 5, aspect: 1.0)
         let layout = GridLayout(
-            availableWidth: 100, rowHeight: 200, cellSpacing: 8, layoutMode: .square
+            availableWidth: 100, rowHeight: 200, cellSpacing: 8, layoutMode: .squareFit
         )
         let rows = layout.computeRows(from: items)
         // 100 / 200 < 1 → 1 cell / row → 5 row
@@ -150,7 +150,7 @@ struct GridLayoutTests {
         // 极宽窗口: 8 cell / row
         let items = makeItems(count: 20, aspect: 1.0)
         let layout = GridLayout(
-            availableWidth: 2000, rowHeight: 200, cellSpacing: 8, layoutMode: .square
+            availableWidth: 2000, rowHeight: 200, cellSpacing: 8, layoutMode: .squareFit
         )
         let rows = layout.computeRows(from: items)
         // 2000 / 208 = 9.6 → 9 cell / row → 20 / 9 = 3 row (9, 9, 2)
@@ -174,7 +174,7 @@ struct GridLayoutTests {
             makeItem(aspect: 1.0, seed: 20),
         ]
         let layout = GridLayout(
-            availableWidth: 1000, rowHeight: 200, cellSpacing: 8, layoutMode: .square
+            availableWidth: 1000, rowHeight: 200, cellSpacing: 8, layoutMode: .squareFit
         )
         let rows = layout.computeRows(from: items)
         #expect(rows[0].id == items[0].id)
@@ -187,7 +187,7 @@ struct GridLayoutTests {
             makeItem(aspect: 1.5, seed: 2),
         ]
         let layout = GridLayout(
-            availableWidth: 1000, rowHeight: 200, cellSpacing: 8, layoutMode: .square
+            availableWidth: 1000, rowHeight: 200, cellSpacing: 8, layoutMode: .squareFit
         )
         let rows = layout.computeRows(from: items)
         #expect(rows[0].items[0].aspectRatio == 0.75)
@@ -200,7 +200,7 @@ struct GridLayoutTests {
         // 纯函数: 同样输入应产生同样输出
         let items = makeItems(count: 5, aspect: 1.0)
         let layout = GridLayout(
-            availableWidth: 1000, rowHeight: 200, cellSpacing: 8, layoutMode: .square
+            availableWidth: 1000, rowHeight: 200, cellSpacing: 8, layoutMode: .squareFit
         )
         let rows1 = layout.computeRows(from: items)
         let rows2 = layout.computeRows(from: items)
@@ -224,7 +224,7 @@ struct GridLayoutTests {
             let n = max(1, Int(floor((1000 + 8) / (rowHeight + 8))))
             let cellSize = (1000 - CGFloat(n - 1) * 8) / CGFloat(n)
             let layout = GridLayout(
-                availableWidth: 1000, rowHeight: rowHeight, cellSpacing: 8, layoutMode: .square
+                availableWidth: 1000, rowHeight: rowHeight, cellSpacing: 8, layoutMode: .squareFit
             )
             let rows = layout.computeRows(from: makeItems(count: 3, aspect: 1.0))
             for row in rows {
