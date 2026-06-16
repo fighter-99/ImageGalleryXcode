@@ -236,10 +236,12 @@ struct PhotoThumbnailView: View {
     ///         但 .square 模式 image .fill 贴 cell 边缘, 没有任何缓冲区
     ///         → 即使 cell bg 透明 (V6.12.7), image 圆角"消失"在 cell 边缘
     ///         → 选中框 stroke 在 cell 边缘附近, 视觉"被切"
-    ///   Photos.app 真版无 padding 但它走 AppKit 原生渲染, SwiftUI 跟 AppKit 渲染差异
-    ///   需要 2pt 缓冲区让圆角跟选中框在 .square 模式也清晰可见
-    ///   2pt 视觉变化很 subtle, 但圆角+选中框行为从"消失"变"清晰", 值得
-    static let innerCellPadding: CGFloat = 2
+    /// V6.12.11: 2pt → 4pt——V6.12.8 2pt 用户实测仍看不见圆角/选中
+    ///   2pt 缓冲区在某些图片内容下跟 image 同色, 边界不清晰
+    ///   4pt 给 .squareFit letterbox 类似视觉——image 明显跟 cell 边缘有间距
+    ///   视觉上不再是'贴 cell 边缘的圆角图', 而是'cell 内浮起的 tile'
+    ///   跟 macOS Photos 真版比较, 4pt 是 Photos.app 类似尺寸 (缩略图边框 padding)
+    static let innerCellPadding: CGFloat = 4
     enum CellSelectionState {
         case none       // 默认
         case single     // isActive 单选
@@ -409,14 +411,13 @@ struct PhotoThumbnailView: View {
                             //   Radius.lg (12pt) = 6%, 视觉上明显是圆角
                             .clipShape(RoundedRectangle(cornerRadius: Radius.lg))
                             // V6.12.9: 1pt 半透描边——保证 .square 模式圆角可见
-                            //   之前 V6.12.7 (cell bg 透明) + V6.12.8 (innerCellPadding 2) 仍不够:
-                            //   .square 模式 image .fill 贴 cell 边缘, image 内容跟 cell 边缘紧邻
-                            //   即使有 2pt buffer, 圆角仍可能跟 image 内容颜色撞色 (低对比)
-                            //   Photos.app 真版用 subtle 1pt 描边强制圆角边界可见
-                            //   Color.primary 8% opacity——亮/暗模式自适应, 不抢戏
+                            // V6.12.11: 1pt → 2pt @ 15% opacity (V6.12.9 用户实测仍太 subtle)
+                            //   1pt @ 8% 在某些屏幕/缩放下肉眼难分辨
+                            //   2pt @ 15% 强制圆角边界清晰可见, 类似 Photos.app 缩略图描边
+                            //   仍 Color.primary 自动适配亮/暗模式, 不抢戏
                             .overlay(
                                 RoundedRectangle(cornerRadius: Radius.lg)
-                                    .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+                                    .stroke(Color.primary.opacity(0.15), lineWidth: 2)
                             )
                             .saturation(photo.isInTrash ? 0.05 : 1)
                             .opacity(photo.isInTrash ? (colorScheme == .dark ? 0.65 : 0.55) : 1)
