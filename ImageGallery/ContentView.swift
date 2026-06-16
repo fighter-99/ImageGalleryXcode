@@ -558,7 +558,9 @@ struct ContentView: View {
             photoSelection: bindableModel.selection,
             // V4.0.0.6: 缩放 + 排序搬到侧栏顶部（"视图控制中心"）
             thumbnailSize: bindableModel.thumbnailSize,
-            sortOption: bindableModel.sortOption
+            sortOption: bindableModel.sortOption,
+            // V6.10: 注入 undoManager 让拖到 folder 注册 undo (跟 batchMove 模式一致)
+            undoManager: model.undoManager
             // V4.1.0f: 移除 showSidebar binding（hide 按钮完全搬回主工具栏）
         )
     }

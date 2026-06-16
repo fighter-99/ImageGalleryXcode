@@ -33,6 +33,10 @@ struct SidebarView: View {
     // SwiftData 上下文
     @Environment(\.modelContext) private var modelContext
 
+    // V6.10: 拖到 folder 注册 undo (跟 batchMove 模式一致)
+    //   nil = 不注册 (测试 seam + 早期 init 容错 + Preview 兼容)
+    let undoManager: ImageGalleryUndoManager? = nil
+
     // 选中项（双向绑定）
     @Binding var selection: SidebarSelection?
 
@@ -375,6 +379,9 @@ struct SidebarView: View {
     ) {
         // V3.5.20 修复崩溃：performMove 不再走 ImageGalleryUndoManager.registerAction
         // V3.6.33: 多选时整组移动：拖动的是被选中的图，就移动整个 selectedIDs
+        // V6.10: undo 恢复——undoManager 从 ContentView 注入 (init let)
+        //   跟 ContentViewModel.batchMove (L803) 模式一致:
+        //   action 闭包做实际 move + save, undo 闭包回滚 folder + save
 
         // 重新获取 folder（如果原对象已删除，这里会返回 nil）
         guard let folder = context.model(for: folderID) as? Folder else { return }
@@ -398,14 +405,30 @@ struct SidebarView: View {
         }
         guard !photos.isEmpty else { return }
 
-        // 直接修改 + 保存（不走 undoManager）
-        // V6.09: 用 saveWithLog 替 try? context.save()——后者吞掉所有持久化错误
-        //   (磁盘满、schema 冲突) 用户无感知; 跟同文件 line 301/308/321/328 模式一致
-        // V6.10+: undo 注册待 plumbing (SidebarView 需从 ContentView 注入 onMove 回调访问 model.undoManager)
-        for photo in photos {
-            photo.folder = folder
+        // V6.10: 捕获原 folder 引用, 注册 undo 后再做实际移动
+        let oldFolders = photos.map { $0.folder }
+        let count = photos.count
+        if let undoManager {
+            undoManager.registerAction(
+                description: "移动 \(count) 张照片到 \(folderName)"
+            ) {
+                for photo in photos {
+                    photo.folder = folder
+                }
+                context.saveWithLog()
+            } undo: {
+                for (photo, oldFolder) in zip(photos, oldFolders) {
+                    photo.folder = oldFolder
+                }
+                context.saveWithLog()
+            }
+        } else {
+            // V6.10: undoManager 不可用 (测试 seam) — 退化为直接执行, 不注册 undo
+            for photo in photos {
+                photo.folder = folder
+            }
+            context.saveWithLog()
         }
-        context.saveWithLog()
     }
 
     // V3.6.12 + V3.6.33: 拖到 trash 行的处理器
