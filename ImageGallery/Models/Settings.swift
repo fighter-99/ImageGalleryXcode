@@ -90,6 +90,28 @@ final class UserSettings {
         didSet { UserDefaults.standard.set(sidebarColumnWidth, forKey: "sidebarColumnWidth") }
     }
 
+    // MARK: - V5.90: 导入/导出偏好 (平衡 LibrarySettingsView IA)
+
+    /// V5.90: 导入时自动去重 (跳过已存在的图片, 跟导入流程 import 钩子用)
+    var autoDeduplicate: Bool = true {
+        didSet { UserDefaults.standard.set(autoDeduplicate, forKey: "autoDeduplicate") }
+    }
+
+    /// V5.90: 导入时生成缩略图
+    var autoGenerateThumbnails: Bool = true {
+        didSet { UserDefaults.standard.set(autoGenerateThumbnails, forKey: "autoGenerateThumbnails") }
+    }
+
+    /// V5.90: 默认导出格式 (jpg/png/heic)
+    var defaultExportFormat: String = ExportFormat.defaultValue.rawValue {
+        didSet { UserDefaults.standard.set(defaultExportFormat, forKey: "defaultExportFormat") }
+    }
+
+    /// V5.90: 默认导出质量 (0.5..1.0)
+    var defaultExportQuality: Double = 0.9 {
+        didSet { UserDefaults.standard.set(defaultExportQuality, forKey: "defaultExportQuality") }
+    }
+
     /// 详情列宽持久化
     var detailColumnWidth: Double = 360 {
         didSet { UserDefaults.standard.set(detailColumnWidth, forKey: "detailColumnWidth") }
@@ -152,6 +174,19 @@ final class UserSettings {
         if defaults.object(forKey: "detailColumnWidth") != nil {
             self.detailColumnWidth = defaults.double(forKey: "detailColumnWidth")
         }
+        // V5.90: 4 个导入/导出偏好
+        if defaults.object(forKey: "autoDeduplicate") != nil {
+            self.autoDeduplicate = defaults.bool(forKey: "autoDeduplicate")
+        }
+        if defaults.object(forKey: "autoGenerateThumbnails") != nil {
+            self.autoGenerateThumbnails = defaults.bool(forKey: "autoGenerateThumbnails")
+        }
+        if let stored = defaults.string(forKey: "defaultExportFormat") {
+            self.defaultExportFormat = stored
+        }
+        if defaults.object(forKey: "defaultExportQuality") != nil {
+            self.defaultExportQuality = defaults.double(forKey: "defaultExportQuality")
+        }
 
         // V5.55-2 scrollAnchorPhotoID: 空字符串当 nil 处理
         if let stored = defaults.string(forKey: "scrollAnchorPhotoID"), !stored.isEmpty {
@@ -181,6 +216,11 @@ final class UserSettings {
         thumbnailLayoutMode = ThumbnailLayoutMode.defaultValue.rawValue
         sidebarColumnWidth = 220.0
         detailColumnWidth = 360.0
+        // V5.90: 4 个导入/导出偏好也 reset
+        autoDeduplicate = true
+        autoGenerateThumbnails = true
+        defaultExportFormat = ExportFormat.defaultValue.rawValue
+        defaultExportQuality = 0.9
         // scrollAnchorPhotoID 不在 reset 范围——是 per-window 状态
     }
 }

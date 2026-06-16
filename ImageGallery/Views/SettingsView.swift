@@ -133,8 +133,9 @@ struct SettingsView: View {
 //   优势：每类独立测试 + 维护，SettingsView 仅做 sidebar/detail 路由
 //
 
-// MARK: 通用（默认视图/排序/窗口）
+// MARK: 通用（默认视图/排序）
 // V5.57-1: 加"窗口"区 (2 toggle)——与菜单 ⌃⌘S/⌘I 同源, 设置文档化统一入口
+// V5.90: 删"窗口"区——跟 菜单"显示"重复, 改用菜单 ⌃⌘S / ⌘I 切换即可
 // V5.58-1: 改用 @Bindable UserSettings——去 4 个 @AppStorage 双写
 
 private struct GeneralSettingsView: View {
@@ -164,17 +165,8 @@ private struct GeneralSettingsView: View {
             .pickerStyle(.menu)
             .labelsHidden()
         }
-
-        // V5.57-1: 窗口 toggle——与菜单 ⌃⌘S / ⌘I 写同一 key, 即时生效
-        SettingsSection(
-            title: "窗口",
-            subtitle: "控制侧栏和详情面板的显示。也可在「显示」菜单用 ⌃⌘S / ⌘I 切换。"
-        ) {
-            VStack(alignment: .leading, spacing: Spacing.sm) {
-                Toggle("显示侧栏", isOn: $settings.showSidebar)
-                Toggle("显示详情面板", isOn: $settings.showDetail)
-            }
-        }
+        // V5.90: 删"窗口"section——showSidebar/showDetail toggle 跟菜单"显示"重复
+        //   设置里只放"启动时"的偏好, 不放"当前"的窗口状态
     }
 }
 
@@ -232,13 +224,50 @@ private struct AppearanceSettingsView: View {
     }
 }
 
-// MARK: 图库（回收站保留时长）
+// MARK: 图库（导入/导出/自动清理）
 // V5.58-1: 改用 @Bindable UserSettings——去 @AppStorage("trashRetentionDays")
+// V5.90: 加"导入" + "导出"区——平衡 IA (单 section 类别显得空)
 
 private struct LibrarySettingsView: View {
     @Bindable var settings: UserSettings
 
     var body: some View {
+        // V5.90: 导入——默认从哪个文件夹导入
+        SettingsSection(
+            title: "导入",
+            subtitle: "拖入或选择文件夹导入图片时的默认行为。"
+        ) {
+            VStack(alignment: .leading, spacing: Spacing.sm) {
+                Toggle("导入时自动去重", isOn: $settings.autoDeduplicate)
+                Toggle("导入时生成缩略图", isOn: $settings.autoGenerateThumbnails)
+            }
+        }
+
+        // V5.90: 导出——默认导出格式/质量
+        SettingsSection(
+            title: "导出",
+            subtitle: "导出图片时的默认格式和质量。"
+        ) {
+            Picker("格式", selection: $settings.defaultExportFormat) {
+                ForEach(ExportFormat.allCases) { format in
+                    Text(format.displayName).tag(format.rawValue)
+                }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+
+            HStack(alignment: .center, spacing: Spacing.md) {
+                Text("质量")
+                    .frame(width: 60, alignment: .leading)
+                Slider(value: $settings.defaultExportQuality, in: 0.5...1.0, step: 0.05)
+                Text("\(Int(settings.defaultExportQuality * 100))%")
+                    .font(Typography.captionMono)
+                    .foregroundStyle(Surface.textSecondary)
+                    .frame(width: 40, alignment: .trailing)
+            }
+        }
+
+        // V5.58-1: 自动清理——回收站保留时长
         SettingsSection(
             title: "自动清理",
             subtitle: "删除的图片会先进入回收站，超过下面设置的天数后会被自动永久删除。"
