@@ -216,22 +216,29 @@ struct PhotoThumbnailView: View {
         ///   - V5.28: 加回 border, 单选/multi 都显示 (multi 还多 ✓ 角标)
         ///   - 单选/multi 1 锤 (border) / multi 2 锤 (border + ✓)
         /// V5.28: 砍 tint (0.10/0.15)——只 border + (multi 加 ✓), 极简
+        /// V5.99.2: 2pt → 3pt——用户反馈"top/bottom border 几乎看不见"
+        ///   2pt 在深色图片边缘对比度太低, 4 边看起来不均匀 (vertical 清晰, horizontal 模糊)
+        ///   3pt 跟 macOS Photos 真版接近, 4 边都明显
         var borderWidth: CGFloat {
             switch self {
             case .none:   return 0
-            case .single: return 2   // V5.31: 3 → 2 (subtle, Photos 真版细线)
-            case .multi:  return 2   // V5.31: 多选也 2pt (subtle, 加 ✓ 角标变 2 锤)
+            case .single: return 3   // V5.99.2: 2 → 3 (visibility, 跟 Photos 真版对齐)
+            case .multi:  return 3   // V5.99.2: 2 → 3
             }
         }
 
         /// V5.28: 砍 tint (V5.17 0.10, V5.27 0.10)——只 border, 无 tint
         ///   - Photos.app 真版: 选中态仅 border, 无 tint 蒙层
         ///   - 1 锤总视觉 (border 或 border+✓)
+        /// V5.99.2: 0 → 0.06 (single) / 0.10 (multi)——深色图片边框对比度补强
+        ///   3pt border 在浅色图片上够, 但深色图片上 4 边还是不够明显
+        ///   0.06 accent 蒙层给整个 cell 一个"被选中"的轻底色, 不管图片什么颜色都能看到
+        ///   跟 V5.28 "砍 tint" 妥协: tint 比 0 大一点点, border 也加粗, 视觉锤 2 锤 (tint + border)
         var tintOpacity: Double {
             switch self {
             case .none:   return 0
-            case .single: return 0    // V5.28: 砍 tint, 只留 border
-            case .multi:  return 0    // V5.28: 砍 tint, 只留 border + ✓
+            case .single: return 0.06 // V5.99.2: 0 → 0.06 (visibility, 深色图片补强)
+            case .multi:  return 0.10 // V5.99.2: 0 → 0.10 (multi 加重)
             }
         }
 
@@ -276,10 +283,10 @@ struct PhotoThumbnailView: View {
     @ViewBuilder
     private var cellSelectionOverlay: some View {
         let state = selectionState
-        // V5.99: inset 1pt 让 2pt stroke 完全落在 cell 内
+        // V5.99: inset = borderWidth/2 让 stroke 完全落在 cell 内
         //   - 之前 .strokeBorder() 居中 path, half-outside 被 cell.clipped() 切掉
         //   - 实际可见只有 1pt, top/bottom 几乎看不见, 误以为"border 不完整"
-        //   - inset 1pt 后, 2pt stroke 全在 cell 内, 4 边同样 2pt 粗
+        //   - inset = borderWidth/2 后, stroke 全在 cell 内, 4 边同样粗
         let inset = state.borderWidth / 2
         // V5.99.1: 跟 image clip 一致用 Radius.lg (12pt), 之前 thumb (8pt) 跟 12pt clip 不对齐
         let overlayRadius = max(0, Radius.lg - inset)
