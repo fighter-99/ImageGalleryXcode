@@ -89,12 +89,14 @@ struct SettingsView: View {
         NavigationSplitView {
             // V5.92: sidebar 顶部加 search field——过滤 categories
             //   输入文字时实时过滤, 清空恢复全部
+            // V5.93: 侧边栏始终可见——删窗口可隐藏功能 (Photos 偏好设置范式)
+            //   .navigationSplitViewColumnWidth 加 fixed 240pt (跟 Photos 接近, 紧凑)
             VStack(spacing: 0) {
                 List(filteredCategories, selection: selectedCategory) { category in
                     Label(category.title, systemImage: category.icon)
                         .tag(category)
                 }
-                .navigationSplitViewColumnWidth(min: 160, ideal: 180, max: 220)
+                .navigationSplitViewColumnWidth(min: 180, ideal: 200, max: 240)
             }
             .searchable(text: $searchText, placement: .sidebar, prompt: "搜索设置")
         } detail: {
@@ -102,6 +104,9 @@ struct SettingsView: View {
             //   之前每个 section 是大卡片 (背景 + padding + 圆角),看着像表单
             //   改成 fluid rows (无 card 背景, photos.app 偏好设置风格)
             //   padding 统一在外层 (Spacing.xl),section 之间 Spacing.xxl 24pt 留白
+            // V5.93: 删 slide-left 动画 (.move edge: .trailing)——改 fade only (.opacity)
+            //   Photos 偏好设置范式: 切 category 是 fade, 无 slide (iOS 风格)
+            // V5.93: Reset 按钮从内嵌 detail 底部移到 toolbar (主操作入口)
             ScrollView {
                 VStack(alignment: .leading, spacing: Spacing.xxl) {
                     Group {
@@ -119,19 +124,8 @@ struct SettingsView: View {
                         }
                     }
                     .id(selectedCategory.wrappedValue)  // V4.55.0: 强制 SwiftUI 视为不同视图（transition 关键）
-                    .transition(.opacity.combined(with: .move(edge: .trailing)))  // V4.55.0: 渐入+右移——Photos 风格
+                    .transition(.opacity)  // V5.93: 删 .move(edge: .trailing)——fade only, Photos 范式
                     .animation(Animations.standard, value: selectedCategory.wrappedValue)  // V4.55.0: 驱动 transition
-
-                    // V5.89: Reset 按钮从内嵌移到 ScrollView 底部外层, 加 top padding 跟 sections 区分
-                    Spacer(minLength: Spacing.md)
-                    HStack {
-                        Spacer()
-                        Button("恢复全部为默认") {
-                            settings.reset()
-                        }
-                        .buttonStyle(.bordered)
-                        .controlSize(.regular)
-                    }
                 }
                 .padding(Spacing.xl)  // V5.89: 统一外层 padding
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -139,6 +133,24 @@ struct SettingsView: View {
             .frame(minWidth: 480, minHeight: 360)  // V5.89: 略放大 (480 跟 Photos 接近)
         }
         .navigationTitle("设置")
+        // V5.93: 加 toolbar——Reset All + Help (Photos 偏好设置主操作入口)
+        //   之前 Reset All 在内嵌 detail 底部, 跟用户距离远; 现在放 toolbar 1-click
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    settings.reset()
+                } label: {
+                    Label("恢复全部为默认", systemImage: "arrow.counterclockwise")
+                }
+                .help("恢复全部设置为默认")
+            }
+            ToolbarItem(placement: .primaryAction) {
+                Link(destination: URL(string: "https://github.com/")!) {
+                    Label("帮助", systemImage: "questionmark.circle")
+                }
+                .help("使用帮助")
+            }
+        }
     }
 }
 
