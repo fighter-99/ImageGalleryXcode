@@ -399,10 +399,13 @@ struct SidebarView: View {
         guard !photos.isEmpty else { return }
 
         // 直接修改 + 保存（不走 undoManager）
+        // V6.09: 用 saveWithLog 替 try? context.save()——后者吞掉所有持久化错误
+        //   (磁盘满、schema 冲突) 用户无感知; 跟同文件 line 301/308/321/328 模式一致
+        // V6.10+: undo 注册待 plumbing (SidebarView 需从 ContentView 注入 onMove 回调访问 model.undoManager)
         for photo in photos {
             photo.folder = folder
         }
-        try? context.save()
+        context.saveWithLog()
     }
 
     // V3.6.12 + V3.6.33: 拖到 trash 行的处理器
