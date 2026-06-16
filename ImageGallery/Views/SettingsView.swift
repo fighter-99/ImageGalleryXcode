@@ -449,7 +449,7 @@ private struct AboutSettingsView: View {
                             .clipShape(RoundedRectangle(cornerRadius: Radius.appIcon, style: .continuous))
                     }
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("ImageGallery")
+                        Text(Copy.appName)  // V6.12.15: 硬编码英文入库
                             .font(Typography.headline)
                         Text(AppVersion.current.displayString)
                             .font(Typography.caption)
@@ -485,7 +485,7 @@ private struct AboutSettingsView: View {
                 VStack(alignment: .leading, spacing: Spacing.xs) {
                     Text("© 2026 ImageGallery")
                         .font(Typography.body)
-                    Text("Built with SwiftUI + SwiftData")
+                    Text(Copy.builtWithStack)  // V6.12.15: 硬编码英文入库
                         .font(Typography.caption)
                         .foregroundStyle(Surface.textSecondary)
                 }

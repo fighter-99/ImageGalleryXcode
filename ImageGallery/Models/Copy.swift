@@ -266,4 +266,18 @@ enum Copy {
     static let databaseInitQuit = "退出"
     static let databaseInitResetConfirm = "重置会永久删除所有照片记录、文件夹、标签和回收站。导入的原图文件不会删除（仍在 Finder 里）。确定要继续吗？"
     static let databaseInitResetSuccess = "数据库已重置"
+
+    // MARK: - V6.12.15: SettingsView + KeyboardShortcutsSheet + ImageGalleryApp 硬编码英文入库
+    /// About 页面 app 名（之前 SettingsView.swift:452 hardcoded "ImageGallery"）
+    /// i18n 准备：未来可 NSLocalizedString("CFBundleDisplayName") 替
+    static let appName = "ImageGallery"
+    /// About 页面 credit（之前 SettingsView.swift:488 hardcoded "Built with SwiftUI + SwiftData"）
+    static let builtWithStack = "Built with SwiftUI + SwiftData"
+    /// KeyboardShortcutsSheet 标题（之前 KeyboardShortcutsSheet.swift:21 hardcoded "Keyboard Shortcuts"）
+    static let keyboardShortcutsTitle = "Keyboard Shortcuts"
+    /// 通用 "Done" 按钮（之前 KeyboardShortcutsSheet.swift:24 hardcoded "Done"）
+    /// 其他 sheet 关闭按钮 (rename dialog / delete confirm / add tag) 也复用
+    static let done = "Done"
+    /// Help 菜单 "Keyboard Shortcuts…" 项（之前 ImageGalleryApp.swift:205 hardcoded "Keyboard Shortcuts…"）
+    static let keyboardShortcutsMenu = "Keyboard Shortcuts…"
 }

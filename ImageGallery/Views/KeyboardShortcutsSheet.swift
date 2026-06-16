@@ -18,10 +18,10 @@ struct KeyboardShortcutsSheet: View {
         VStack(spacing: 0) {
             // V5.60-7: sheet 顶部——标题 + 关闭按钮
             HStack {
-                Text("Keyboard Shortcuts")
+                Text(Copy.keyboardShortcutsTitle)  // V6.12.15: 硬编码英文入库
                     .font(Typography.title2)
                 Spacer()
-                Button("Done") { dismiss() }
+                Button(Copy.done) { dismiss() }  // V6.12.15: 硬编码英文入库
                     .keyboardShortcut(.cancelAction)
             }
             .padding(Spacing.lg)

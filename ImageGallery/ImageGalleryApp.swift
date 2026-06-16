@@ -202,7 +202,7 @@ struct ImageGalleryApp: App {
             //   Help 菜单是系统默认菜单, macOS 自动接管 ⌘? shortcut
             //   加 Button("Keyboard Shortcuts…") 替代无操作
             CommandGroup(replacing: .help) {
-                Button("Keyboard Shortcuts…") {
+                Button(Copy.keyboardShortcutsMenu) {
                     showShortcutsSheet = true
                 }
             }
