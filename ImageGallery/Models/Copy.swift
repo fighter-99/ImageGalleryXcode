@@ -55,6 +55,8 @@ enum Copy {
     static let addTagHint = "点击 + 添加标签"
     static let deletePhotoConfirm = "图片将从图库中移除，文件也会被永久删除。"
     static let emptyRecycleBinConfirm = "回收站里的所有照片将被永久删除，无法恢复。"
+    // V6.09: confirmationDialog title 入库——之前 ContentView+BatchDialogs:58 hardcoded
+    static let emptyRecycleBinConfirmTitle = "确定要清空回收站吗？"
     static func recycleBinCount(_ count: Int) -> String { "回收站有 \(count) 张" }
 
     // MARK: - 状态栏
@@ -127,6 +129,8 @@ enum Copy {
     static let skipAll = "全部跳过（保留现有）"
     static let importAll = "全部导入（可能重复）"
     static let deleteConfirmTitle = "确定要删除这张图片吗？"
+    // V6.09: alert title 入库——之前 DetailView:126 hardcoded
+    static let renamePhotoTitle = "重命名"
 
     // MARK: - 输入框 (V5.50-4 扩展)
     static let tagNamePlaceholder = "标签名称"
