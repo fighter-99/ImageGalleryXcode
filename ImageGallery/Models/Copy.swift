@@ -232,4 +232,13 @@ enum Copy {
         "删除的图片会出现在这里，\(days) 天后自动永久清除"
     }
     static let hintStartImport = "拖入图片，或点击“导入图片”开始添加"
+
+    // MARK: - V6.08: ModelContainer 启动失败 (SwiftData 损坏 / schema 不兼容)
+    /// ModelContainer.init 失败时显示的全屏错误页文案
+    static let databaseInitFailed = "图库无法启动"
+    static let databaseInitFailedHint = "SwiftData 存储损坏，或当前版本不兼容旧数据库。"
+    static let databaseInitReset = "重置数据库（删除本地所有数据）"
+    static let databaseInitQuit = "退出"
+    static let databaseInitResetConfirm = "重置会永久删除所有照片记录、文件夹、标签和回收站。导入的原图文件不会删除（仍在 Finder 里）。确定要继续吗？"
+    static let databaseInitResetSuccess = "数据库已重置"
 }

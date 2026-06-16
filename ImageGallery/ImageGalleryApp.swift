@@ -9,6 +9,7 @@ import SwiftUI
 import AppKit
 import SwiftData
 import Combine  // V4.36.x: RecentPhotosStoreObservable 需要 @Published
+import os  // V6.08: ModelContainer 启动失败 log
 
 // AppDelegate：处理应用层 macOS 事件
 class AppDelegate: NSObject, NSApplicationDelegate {
@@ -43,12 +44,34 @@ struct ImageGalleryApp: App {
         // 显式后：schema 版本可追溯 + 未来加字段有安全迁移路径
         let schema = Schema(versionedSchema: ImageGallerySchemaV1.self)
         // ModelConfiguration() 默认值：sqlite store 在 Application Support/ 目录
-        modelContainer = try! ModelContainer(
-            for: schema,
-            migrationPlan: ImageGalleryMigrationPlan.self,
-            configurations: ModelConfiguration()
-        )
+        let config = ModelConfiguration()
+        // V6.08: try! → do/catch + 自动重置 store——SwiftData 损坏 / schema 不兼容自愈
+        //   之前: try! 启动崩溃, 用户被迫用 terminal 删 store 文件
+        //   现在: 第一次失败删 store 重试, 绝大多数 schema 损坏情况自动恢复
+        //   二次失败才 fatalError (OS-level 完全不可用: 磁盘满 / 权限完全拒绝)
+        do {
+            modelContainer = try ModelContainer(
+                for: schema,
+                migrationPlan: ImageGalleryMigrationPlan.self,
+                configurations: config
+            )
+        } catch {
+            Self.logger.error("ModelContainer 启动失败, 尝试重置 store: \(String(describing: error))")
+            try? FileManager.default.removeItem(at: config.url)
+            do {
+                modelContainer = try ModelContainer(
+                    for: schema,
+                    migrationPlan: ImageGalleryMigrationPlan.self,
+                    configurations: config
+                )
+                Self.logger.info("ModelContainer 重置成功, 旧 store 已删")
+            } catch {
+                fatalError("ModelContainer 重置后仍失败: \(String(describing: error))")
+            }
+        }
     }
+
+    private static let logger = Logger(subsystem: "com.imagegallery.app", category: "App")
 
     // V5.59-3: 删 3 个 userDefaults-based bindings (showSidebarBinding/showDetailBinding/viewModeBinding)
     //   menu items 现在改用 $sharedSettings.X (V5.59-3 下面命令)——
