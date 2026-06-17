@@ -30,6 +30,9 @@ struct ContentView: View {
     }
 
     @State private var isBoxSelecting = false
+    // V3.7.1: 框选进行中的 rect (caller 持有, BoxSelectionGesture 写)
+    //   用于 overlay 显示 2pt accent border + "已选 N 张" floating label
+    @State private var boxSelectionRect: CGRect? = nil
 
     // 侧边栏的选中项
     private var sidebarSelection: SidebarSelection? {
@@ -543,9 +546,17 @@ struct ContentView: View {
         // V3.6.52: 1 binding<SelectionState> 替 2 bindings
         .boxSelectionGesture(
             isBoxSelecting: $isBoxSelecting,
+            boxSelectionRect: $boxSelectionRect,  // V3.7.1: 框选 rect 给 caller overlay 显示
             selection: bindableModel.selection,
             visiblePhotos: model.visiblePhotos
         )
+        // V3.7.1: 框选进行中显示 rect + "已选 N 张" floating label
+        //   macOS Photos / Finder 范式——跟 drag 视觉一致
+        .overlay {
+            if let rect = boxSelectionRect {
+                BoxSelectionOverlay(rect: rect, count: model.visiblePhotos.count)
+            }
+        }
     }
 
     private var sidebarPane: some View {
