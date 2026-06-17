@@ -109,11 +109,15 @@ struct SidebarView: View {
     // 各 section 的 item 数（用于显示在 section header 上）
     // V3.6.1：用 PhotoStats 纯函数集合（之前每行各自 filter，4 次遍历）
     // V5.7: 砍 favorites 字段——侧边栏不再有收藏入口（走筛选 popover 评分 ≥ 5）
-    private var libraryCounts: (all: Int, unfiled: Int, trashed: Int) {
+    // V6.13.4: 加 recent7Days + largeFiles 字段——SidebarView 智能文件夹 5/7 item 已有 count
+    //   补最后 2 个 ("最近 7 天" / "大图（>5MB）") 让智能文件夹 100% item 都有 count
+    private var libraryCounts: (all: Int, unfiled: Int, trashed: Int, recent7Days: Int, largeFiles: Int) {
         (
             all: PhotoStats.inLibrary(allPhotos).count,
             unfiled: PhotoStats.unfiled(allPhotos).count,
-            trashed: PhotoStats.trashed(allPhotos).count
+            trashed: PhotoStats.trashed(allPhotos).count,
+            recent7Days: PhotoStats.recent7DaysCount(allPhotos),
+            largeFiles: PhotoStats.largeFilesCount(allPhotos)
         )
     }
 
@@ -160,8 +164,10 @@ struct SidebarView: View {
                         sidebarRow(icon: "doc.on.doc", label: "重复图", count: duplicateCount, target: .duplicates, iconColor: SidebarStyle.iconColorDuplicate)
                     }
                     // V4.1.0: 智能文件夹移进"我的图馆"section（之前是独立 section）
-                    sidebarRow(icon: "clock.arrow.circlepath", label: "最近 7 天", target: .recent7Days, iconColor: SidebarStyle.iconColorRecent)
-                    sidebarRow(icon: "large.circle", label: "大图（>5MB）", target: .largeFiles, iconColor: SidebarStyle.iconColorLarge)
+                    // V4.1.0: 智能文件夹移进"我的图馆"section（之前是独立 section）
+                    // V6.13.4: 补 count — 智能文件夹 5/7 item 已有 count, 补最后 2 个
+                    sidebarRow(icon: "clock.arrow.circlepath", label: "最近 7 天", count: libraryCounts.recent7Days, target: .recent7Days, iconColor: SidebarStyle.iconColorRecent)
+                    sidebarRow(icon: "large.circle", label: "大图（>5MB）", count: libraryCounts.largeFiles, target: .largeFiles, iconColor: SidebarStyle.iconColorLarge)
                 }
             } header: {
                 // V4.1.0: 可见 header（V3.6.25 之前被隐藏）
@@ -193,7 +199,7 @@ struct SidebarView: View {
                     .buttonStyle(.plain)
                 }
             } header: {
-                SidebarSectionHeader("我的文件夹", icon: "folder", isExpanded: $isFoldersExpanded)
+                SidebarSectionHeader("我的文件夹", icon: "folder", count: folders.count, isExpanded: $isFoldersExpanded)
             }
 
             // ─── Section 3: 标签 ───
@@ -245,7 +251,7 @@ struct SidebarView: View {
                     .buttonStyle(.plain)
                 }
             } header: {
-                SidebarSectionHeader("标签", icon: "tag", isExpanded: $isTagsExpanded)
+                SidebarSectionHeader("标签", icon: "tag", count: tags.count, isExpanded: $isTagsExpanded)
             }
 
             // ─── Section 4: 最近删除（单独 section，底部入口）───

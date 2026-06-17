@@ -21,13 +21,18 @@ struct SidebarSectionHeader: View {
     let title: String
     /// V3.6.21 NEW: 可选 SF Symbol 小图标（跟 title 在同一行）
     var icon: String? = nil
+    /// V6.13.4 NEW: section item 总数（"我的文件夹" / "标签" 用，nil = 不显示）
+    ///   Photos.app 范式: section header 显示括号内数字, 跟 item 末 count badge 区分
+    ///   (item badge 是单 row 计数, header count 是 section 总数)
+    var count: Int? = nil
 
     /// V4.1.0 NEW: 折叠状态 binding
     @Binding var isExpanded: Bool
 
-    init(_ title: String, icon: String? = nil, isExpanded: Binding<Bool> = .constant(true)) {
+    init(_ title: String, icon: String? = nil, count: Int? = nil, isExpanded: Binding<Bool> = .constant(true)) {
         self.title = title
         self.icon = icon
+        self.count = count
         self._isExpanded = isExpanded
     }
 
@@ -54,6 +59,13 @@ struct SidebarSectionHeader: View {
                 .font(SidebarStyle.headerFont)
                 .foregroundStyle(SidebarStyle.headerColor)
                 .textCase(.uppercase)  // ⭐ Photos.app 风格：small caps
+
+            // V6.13.4 NEW: section item 总数 (括号样式, Photos.app 范式)
+            if let count {
+                Text("(\(count))")
+                    .font(SidebarStyle.headerFont)
+                    .foregroundStyle(SidebarStyle.headerColor)
+            }
 
             Spacer()
 

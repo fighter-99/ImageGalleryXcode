@@ -35,6 +35,18 @@ enum PhotoStats {
         photos.filter { $0.folder == nil && !$0.isInTrash }
     }
 
+    // MARK: - V6.13.4: 智能文件夹计数 (SidebarView 用)
+    ///   之前 SidebarView "最近 7 天" / "大图（>5MB）" 2 个 item 没 count (其它 5 个有)
+    ///   补 2 个纯函数 helper, 跟 inLibraryCount(folder:) 一致
+    ///   filter 范围: 排除 trash, 大图阈值 5_000_000 跟 PhotoStats.filtered filterLargeFiles 一致
+    static func recent7DaysCount(_ photos: [Photo]) -> Int {
+        let cutoff = Date().addingTimeInterval(-7 * 86400)
+        return photos.filter { !$0.isInTrash && $0.importedAt > cutoff }.count
+    }
+    static func largeFilesCount(_ photos: [Photo]) -> Int {
+        photos.filter { !$0.isInTrash && $0.fileSize > 5_000_000 }.count
+    }
+
     // MARK: - 聚合
 
     /// 所有照片总占用字节数
