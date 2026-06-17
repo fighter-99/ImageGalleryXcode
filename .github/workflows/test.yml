@@ -2,8 +2,13 @@ name: test
 
 # V6.12 收尾 ①: CI 门禁——xcodebuild test 跑全 suite, 任何 PR 不能合并
 #   之前 177 stale test 在本地断断续续沉淀 4+ 版本, 因为没强制门禁
-#   现在 GitHub Actions macos-14 runner 每次 push 自动跑——
+#   现在 GitHub Actions 每次 push 自动跑——
 #   任何 future V6.x PR 都得先过这关, 防 debt 复发
+#
+# V6.12.22: macos-14 → macos-latest
+#   pbxproj objectVersion=77 (Xcode 26.5) macos-14 runner 只有 Xcode 15.x
+#   拒绝打开 project (error code 74, "future Xcode project file format")
+#   macos-latest 走 GitHub 最新 macOS runner (Xcode 16+/26+)
 
 on:
   push:
@@ -13,17 +18,20 @@ on:
 
 jobs:
   test:
-    runs-on: macos-14
+    runs-on: macos-latest
     timeout-minutes: 20
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Select Xcode
-        # macos-14 默认 Xcode 15.x, 项目用 macOS 26 SDK
-        # 如果 runner 升级 Xcode 后 build 失败, 在这里 pin 具体版本
-        run: sudo xcode-select -s /Applications/Xcode_15.4.app/Contents/Developer
+      - name: Build
+        run: |
+          xcodebuild \
+            -project ImageGallery.xcodeproj \
+            -scheme ImageGallery \
+            -destination 'platform=macOS' \
+            build
 
       - name: Build
         run: |
