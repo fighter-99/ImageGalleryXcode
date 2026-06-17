@@ -127,7 +127,7 @@ struct ActiveFiltersBar: View {
             HStack(spacing: 4) {
                 Image(systemName: icon)
                     .font(.caption2)
-                Text("\(label) · \(count)")
+                Text(Copy.activeFilterChip(label: label, count: count))
                     .font(.caption)
                 // V5.61-2: chevron 暗示"可展开"——macOS 标准 Menu 视觉
                 Image(systemName: "chevron.down")

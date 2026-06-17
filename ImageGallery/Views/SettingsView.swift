@@ -390,7 +390,7 @@ private struct LibrarySettingsView: View {
                 Text(Copy.settingsQualityLabel)
                     .frame(width: SettingsMetrics.labelColumnWidth, alignment: .leading)
                 Slider(value: $settings.defaultExportQuality, in: 0.5...1.0, step: 0.05)
-                Text("\(Int(settings.defaultExportQuality * 100))%")
+                Text(Copy.exportQualityPercent(Int(settings.defaultExportQuality * 100)))
                     .font(Typography.captionMono)
                     .foregroundStyle(Surface.textSecondary)
                     .frame(width: 40, alignment: .trailing)

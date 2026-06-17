@@ -1,6 +1,8 @@
 {
   "sourceLanguage": "zh-Hans",
   "strings": {
+    "": {},
+    "#%@": {},
     "%@ · %lld": {
       "localizations": {
         "zh-Hans": {
@@ -21,6 +23,7 @@
         }
       }
     },
+    "%lld%%": {},
     "activeFilterBadge": {
       "comment": "V6.12.17: V Copy.activeFilterBadge → \\(n) 项筛选",
       "extractionState": "manual",
@@ -28,19 +31,67 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "\\(n) filters"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "\\(n) 项筛选"
+            "value": "%lld filters"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "\\(n) 项筛选"
+            "value": "%lld 项筛选"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%lld 项筛选"
+          }
+        }
+      }
+    },
+    "activeFiltersClearAllTooltip": {
+      "comment": "V6.12.18: Copy.activeFiltersClearAllTooltip → 清除所有筛选条件",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear all filters"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除所有筛选条件"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除所有篩選條件"
+          }
+        }
+      }
+    },
+    "activeFiltersRemoveFilterTooltip": {
+      "comment": "V6.12.18: Copy.activeFiltersRemoveFilterTooltip → 移除此筛选",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove this filter"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移除此筛选"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移除此篩選"
           }
         }
       }
@@ -55,15 +106,15 @@
             "value": "Add Tag"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "添加标签"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "添加标签"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "添加标签"
           }
         }
@@ -79,15 +130,15 @@
             "value": "Add Tag"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "加标签"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "加标签"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "加标签"
           }
         }
@@ -103,15 +154,15 @@
             "value": "Click + to add tag"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "点击 + 添加标签"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "点击 + 添加标签"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "点击 + 添加标签"
           }
         }
@@ -127,15 +178,15 @@
             "value": "ImageGallery"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "ImageGallery"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "ImageGallery"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "ImageGallery"
           }
         }
@@ -148,19 +199,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Permanently delete after \\(days) days"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "\\(days) 天后自动永久清除"
+            "value": "Permanently delete after %lld days"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "\\(days) 天后自动永久清除"
+            "value": "%lld 天后自动永久清除"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%lld 天后自动永久清除"
           }
         }
       }
@@ -172,19 +223,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Batch move to Recycle Bin failed: \\(error)"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "批量移到回收站失败：\\(error)"
+            "value": "Batch move to Recycle Bin failed: %@"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "批量移到回收站失败：\\(error)"
+            "value": "批量移到回收站失败：%@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "批量移到回收站失败：%@"
           }
         }
       }
@@ -199,15 +250,15 @@
             "value": "Batch rating failed"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "批量评分失败"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "批量评分失败"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "批量评分失败"
           }
         }
@@ -223,15 +274,15 @@
             "value": "Built with SwiftUI + SwiftData"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "Built with SwiftUI + SwiftData"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "Built with SwiftUI + SwiftData"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "Built with SwiftUI + SwiftData"
           }
         }
@@ -247,15 +298,15 @@
             "value": "Cancel"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "取消"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "取消"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "取消"
           }
         }
@@ -271,15 +322,15 @@
             "value": "Cancel Multi-Select (Esc)"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "取消多选 (Esc)"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "取消多选 (Esc)"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "取消多选 (Esc)"
           }
         }
@@ -295,15 +346,15 @@
             "value": "Clear All"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "清除全部"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "清除全部"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "清除全部"
           }
         }
@@ -319,15 +370,15 @@
             "value": "Clear Menu"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "清空菜单"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "清空菜单"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "清空菜单"
           }
         }
@@ -343,15 +394,15 @@
             "value": "Clear Rating"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "清除评分"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "清除评分"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "清除评分"
           }
         }
@@ -367,15 +418,15 @@
             "value": "Clear Search"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "清除搜索"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "清除搜索"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "清除搜索"
           }
         }
@@ -391,15 +442,15 @@
             "value": "OK"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "确定"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "确定"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "确定"
           }
         }
@@ -415,15 +466,15 @@
             "value": "Copy"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "复制"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "复制"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "复制"
           }
         }
@@ -439,15 +490,15 @@
             "value": "Create"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "创建"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "创建"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "创建"
           }
         }
@@ -463,15 +514,15 @@
             "value": "Library cannot start"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "图库无法启动"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "图库无法启动"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "图库无法启动"
           }
         }
@@ -487,15 +538,15 @@
             "value": "SwiftData store corrupted or incompatible with this version."
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "SwiftData 存储损坏，或当前版本不兼容旧数据库。"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "SwiftData 存储损坏，或当前版本不兼容旧数据库。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "SwiftData 存储损坏，或当前版本不兼容旧数据库。"
           }
         }
@@ -511,15 +562,15 @@
             "value": "Quit"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "退出"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "退出"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "退出"
           }
         }
@@ -535,15 +586,15 @@
             "value": "Reset Database (delete all local data)"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "重置数据库（删除本地所有数据）"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "重置数据库（删除本地所有数据）"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "重置数据库（删除本地所有数据）"
           }
         }
@@ -559,15 +610,15 @@
             "value": "Reset will permanently delete all photo records, folders, tags, and Recycle Bin. Original imported photos on disk will not be deleted. Continue?"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "重置会永久删除所有照片记录、文件夹、标签和回收站。导入的原图文件不会删除（仍在 Finder 里）。确定要继续吗？"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "重置会永久删除所有照片记录、文件夹、标签和回收站。导入的原图文件不会删除（仍在 Finder 里）。确定要继续吗？"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "重置会永久删除所有照片记录、文件夹、标签和回收站。导入的原图文件不会删除（仍在 Finder 里）。确定要继续吗？"
           }
         }
@@ -583,15 +634,15 @@
             "value": "Database reset"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "数据库已重置"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "数据库已重置"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "数据库已重置"
           }
         }
@@ -604,19 +655,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "\\(count) photos"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "\\(count) 张"
+            "value": "%lld photos"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "\\(count) 张"
+            "value": "%lld 张"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%lld 张"
           }
         }
       }
@@ -628,19 +679,19 @@
         "en": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "\\(days)"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "\\(days)"
+            "value": "%lld"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "\\(days)"
+            "value": "%lld"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%lld"
           }
         }
       }
@@ -652,19 +703,19 @@
         "en": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "\\(days)"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "\\(days)"
+            "value": "%lld"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "\\(days)"
+            "value": "%lld"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%lld"
           }
         }
       }
@@ -679,15 +730,15 @@
             "value": "Delete"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "删除"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "删除"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "删除"
           }
         }
@@ -703,15 +754,15 @@
             "value": "Delete this photo?"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "确定要删除这张图片吗？"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "确定要删除这张图片吗？"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "确定要删除这张图片吗？"
           }
         }
@@ -727,15 +778,15 @@
             "value": "Delete Folder"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "删除文件夹"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "删除文件夹"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "删除文件夹"
           }
         }
@@ -751,15 +802,15 @@
             "value": "The photo will be removed from the library and the file permanently deleted."
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "图片将从图库中移除，文件也会被永久删除。"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "图片将从图库中移除，文件也会被永久删除。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "图片将从图库中移除，文件也会被永久删除。"
           }
         }
@@ -772,19 +823,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Selected photos will move to Recycle Bin and be permanently deleted after \\(retentionDays) days. Can be restored from Recycle Bin."
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "选中的图片会移到回收站，\\(retentionDays) 天后自动永久清除。可在回收站中恢复。"
+            "value": "Selected photos will move to Recycle Bin and be permanently deleted after %lld days. Can be restored from Recycle Bin."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "选中的图片会移到回收站，\\(retentionDays) 天后自动永久清除。可在回收站中恢复。"
+            "value": "选中的图片会移到回收站，%lld 天后自动永久清除。可在回收站中恢复。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "选中的图片会移到回收站，%lld 天后自动永久清除。可在回收站中恢复。"
           }
         }
       }
@@ -799,16 +850,40 @@
             "value": "Delete Tag"
           }
         },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "删除标签"
+          }
+        },
         "zh-Hant": {
           "stringUnit": {
             "state": "needs_review",
             "value": "删除标签"
           }
+        }
+      }
+    },
+    "detailNoRating": {
+      "comment": "V6.12.18: Copy.detailNoRating → 未评分",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unrated"
+          }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "删除标签"
+            "value": "未评分"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未評分"
           }
         }
       }
@@ -823,15 +898,15 @@
             "value": "Done"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "Done"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "Done"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "Done"
           }
         }
@@ -847,15 +922,15 @@
             "value": "Release to Import"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "松开导入"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "松开导入"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "松开导入"
           }
         }
@@ -871,15 +946,15 @@
             "value": "Supports image files / folders"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "支持图片文件 / 文件夹"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "支持图片文件 / 文件夹"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "支持图片文件 / 文件夹"
           }
         }
@@ -892,19 +967,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "\\(count) cleanable · \\(size)"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "可清理 \\(count) 张 · \\(size)"
+            "value": "%lld cleanable · %@"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "可清理 \\(count) 张 · \\(size)"
+            "value": "可清理 %lld 张 · %@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "可清理 %lld 张 · %@"
           }
         }
       }
@@ -916,19 +991,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Keep the most recently imported photo in each group, move the rest to Recycle Bin (permanently delete after \\(retentionDays) days)"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "每组保留导入时间最近的一张，其他移到回收站（\\(retentionDays) 天后自动永久清除）"
+            "value": "Keep the most recently imported photo in each group, move the rest to Recycle Bin (permanently delete after %lld days)"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "每组保留导入时间最近的一张，其他移到回收站（\\(retentionDays) 天后自动永久清除）"
+            "value": "每组保留导入时间最近的一张，其他移到回收站（%lld 天后自动永久清除）"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "每组保留导入时间最近的一张，其他移到回收站（%lld 天后自动永久清除）"
           }
         }
       }
@@ -940,19 +1015,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "\\(count) duplicate groups found"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "发现 \\(count) 组重复"
+            "value": "%lld duplicate groups found"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "发现 \\(count) 组重复"
+            "value": "发现 %lld 组重复"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "发现 %lld 组重复"
           }
         }
       }
@@ -967,15 +1042,15 @@
             "value": "No duplicates"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "暂无重复图"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "暂无重复图"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "暂无重复图"
           }
         }
@@ -991,15 +1066,15 @@
             "value": "Empty"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "清空"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "清空"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "清空"
           }
         }
@@ -1015,15 +1090,15 @@
             "value": "No duplicates"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "没有重复的图片"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "没有重复的图片"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "没有重复的图片"
           }
         }
@@ -1039,15 +1114,15 @@
             "value": "This folder is empty"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "这个文件夹是空的"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "这个文件夹是空的"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "这个文件夹是空的"
           }
         }
@@ -1063,15 +1138,15 @@
             "value": "No photos larger than 5 MB"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "没有大于 5 MB 的图"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "没有大于 5 MB 的图"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "没有大于 5 MB 的图"
           }
         }
@@ -1087,15 +1162,15 @@
             "value": "Library is empty"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "图库还是空的"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "图库还是空的"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "图库还是空的"
           }
         }
@@ -1111,15 +1186,15 @@
             "value": "Drag photos here, or click ⌘O to import"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "把图片拖到这里，或点击 ⌘O 导入"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "把图片拖到这里，或点击 ⌘O 导入"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "把图片拖到这里，或点击 ⌘O 导入"
           }
         }
@@ -1135,15 +1210,15 @@
             "value": "No photos match filter"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "没有匹配筛选的图片"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "没有匹配筛选的图片"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "没有匹配筛选的图片"
           }
         }
@@ -1159,15 +1234,15 @@
             "value": "No matching photos"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "没有匹配的图片"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "没有匹配的图片"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "没有匹配的图片"
           }
         }
@@ -1183,15 +1258,15 @@
             "value": "No photos yet"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "还没有图片"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "还没有图片"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "还没有图片"
           }
         }
@@ -1207,15 +1282,15 @@
             "value": "No new photos in the last 7 days"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "最近 7 天没有新图"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "最近 7 天没有新图"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "最近 7 天没有新图"
           }
         }
@@ -1231,15 +1306,15 @@
             "value": "Recycle Bin is empty"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "回收站是空的"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "回收站是空的"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "回收站是空的"
           }
         }
@@ -1255,15 +1330,15 @@
             "value": "Empty Recycle Bin"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "清空回收站"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "清空回收站"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "清空回收站"
           }
         }
@@ -1279,15 +1354,15 @@
             "value": "All photos in Recycle Bin will be permanently deleted. This cannot be undone."
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "回收站里的所有照片将被永久删除，无法恢复。"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "回收站里的所有照片将被永久删除，无法恢复。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "回收站里的所有照片将被永久删除，无法恢复。"
           }
         }
@@ -1303,15 +1378,15 @@
             "value": "Empty Recycle Bin?"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "确定要清空回收站吗？"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "确定要清空回收站吗？"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "确定要清空回收站吗？"
           }
         }
@@ -1324,19 +1399,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Empty Recycle Bin failed: \\(error)"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "清空回收站失败：\\(error)"
+            "value": "Empty Recycle Bin failed: %@"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "清空回收站失败：\\(error)"
+            "value": "清空回收站失败：%@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "清空回收站失败：%@"
           }
         }
       }
@@ -1351,15 +1426,15 @@
             "value": "Permanently delete all photos in Recycle Bin (cannot be undone)"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "永久删除回收站里所有照片（无法恢复）"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "永久删除回收站里所有照片（无法恢复）"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "永久删除回收站里所有照片（无法恢复）"
           }
         }
@@ -1375,15 +1450,15 @@
             "value": "No photos with this tag"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "没有带此标签的图片"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "没有带此标签的图片"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "没有带此标签的图片"
           }
         }
@@ -1399,15 +1474,15 @@
             "value": "No unfiled photos"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "没有待整理的图片"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "没有待整理的图片"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "没有待整理的图片"
           }
         }
@@ -1420,19 +1495,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Exported \\(count) photos"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "已导出 \\(count) 张图片"
+            "value": "Exported %lld photos"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "已导出 \\(count) 张图片"
+            "value": "已导出 %lld 张图片"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已导出 %lld 张图片"
           }
         }
       }
@@ -1444,19 +1519,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Export failed: \\(filename)"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "导出失败：\\(filename)"
+            "value": "Export failed: %@"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "导出失败：\\(filename)"
+            "value": "导出失败：%@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "导出失败：%@"
           }
         }
       }
@@ -1471,15 +1546,15 @@
             "value": "Filter"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "筛选"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "筛选"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "筛选"
           }
         }
@@ -1492,19 +1567,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Filter (\\(count))"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "筛选 (\\(count))"
+            "value": "Filter (%lld)"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "筛选 (\\(count))"
+            "value": "筛选 (%lld)"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "筛选 (%lld)"
           }
         }
       }
@@ -1519,15 +1594,15 @@
             "value": "Folder name"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "文件夹名称"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "文件夹名称"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "文件夹名称"
           }
         }
@@ -1543,15 +1618,15 @@
             "value": "Add this tag in the detail panel"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "在详情中添加此标签"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "在详情中添加此标签"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "在详情中添加此标签"
           }
         }
@@ -1567,15 +1642,15 @@
             "value": "Imported photos will automatically go into this folder"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "导入图片后会自动放到此文件夹"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "导入图片后会自动放到此文件夹"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "导入图片后会自动放到此文件夹"
           }
         }
@@ -1591,15 +1666,15 @@
             "value": "Duplicates appear here automatically"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "重复图会自动出现在这里"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "重复图会自动出现在这里"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "重复图会自动出现在这里"
           }
         }
@@ -1615,15 +1690,15 @@
             "value": "Try reducing filters or adjusting the sidebar"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "尝试减少筛选条件或调整侧边栏"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "尝试减少筛选条件或调整侧边栏"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "尝试减少筛选条件或调整侧边栏"
           }
         }
@@ -1639,15 +1714,15 @@
             "value": "Move photos into folders to organize"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "把图片移动到文件夹来整理"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "把图片移动到文件夹来整理"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "把图片移动到文件夹来整理"
           }
         }
@@ -1663,15 +1738,15 @@
             "value": "Try other keywords"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "试试其他关键词"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "试试其他关键词"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "试试其他关键词"
           }
         }
@@ -1687,15 +1762,15 @@
             "value": "Drag photos here, or click \"Import Photos\" to start"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "拖入图片，或点击“导入图片”开始添加"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "拖入图片，或点击“导入图片”开始添加"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "拖入图片，或点击“导入图片”开始添加"
           }
         }
@@ -1708,19 +1783,19 @@
         "en": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "\\(width) × \\(height)"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "\\(width) × \\(height)"
+            "value": "%lld × %lld"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "\\(width) × \\(height)"
+            "value": "%lld × %lld"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%lld × %lld"
           }
         }
       }
@@ -1735,15 +1810,15 @@
             "value": "Import Photos"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "导入图片"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "导入图片"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "导入图片"
           }
         }
@@ -1759,15 +1834,15 @@
             "value": "Import All (may duplicate)"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "全部导入（可能重复）"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "全部导入（可能重复）"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "全部导入（可能重复）"
           }
         }
@@ -1780,19 +1855,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Imported \\(count) photos"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "已导入 \\(count) 张图片"
+            "value": "Imported %lld photos"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "已导入 \\(count) 张图片"
+            "value": "已导入 %lld 张图片"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已导入 %lld 张图片"
           }
         }
       }
@@ -1804,19 +1879,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Imported \\(inserted), \\(failed) failed"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "已导入 \\(inserted) 张，\\(failed) 张失败"
+            "value": "Imported %lld, %lld failed"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "已导入 \\(inserted) 张，\\(failed) 张失败"
+            "value": "已导入 %lld 张，%lld 张失败"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已导入 %lld 张，%lld 张失败"
           }
         }
       }
@@ -1828,19 +1903,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Import failed: \\(filename)"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "导入失败：\\(filename)"
+            "value": "Import failed: %@"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "导入失败：\\(filename)"
+            "value": "导入失败：%@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "导入失败：%@"
           }
         }
       }
@@ -1855,15 +1930,15 @@
             "value": "Keep Newest per Group"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "保留每组最新"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "保留每组最新"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "保留每组最新"
           }
         }
@@ -1879,15 +1954,15 @@
             "value": "Keyboard Shortcuts…"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "Keyboard Shortcuts…"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "Keyboard Shortcuts…"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "Keyboard Shortcuts…"
           }
         }
@@ -1903,16 +1978,40 @@
             "value": "Keyboard Shortcuts"
           }
         },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keyboard Shortcuts"
+          }
+        },
         "zh-Hant": {
           "stringUnit": {
             "state": "needs_review",
             "value": "Keyboard Shortcuts"
           }
+        }
+      }
+    },
+    "languageLabel": {
+      "comment": "V6.12.18: Copy.languageLabel → 语言 (SettingsView:283 原 hardcoded 英文)",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Language"
+          }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Keyboard Shortcuts"
+            "value": "语言"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "語言"
           }
         }
       }
@@ -1927,15 +2026,15 @@
             "value": "Layout"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "布局模式"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "布局模式"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "布局模式"
           }
         }
@@ -1951,15 +2050,15 @@
             "value": "Manage Tags"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "管理标签"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "管理标签"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "管理标签"
           }
         }
@@ -1972,19 +2071,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "≥ \\(n) stars"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "≥ \\(n) 星"
+            "value": "≥ %lld stars"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "≥ \\(n) 星"
+            "value": "≥ %lld 星"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "≥ %lld 星"
           }
         }
       }
@@ -1996,19 +2095,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Moved \\(count) duplicates to Recycle Bin"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "已移到回收站 \\(count) 张重复图"
+            "value": "Moved %lld duplicates to Recycle Bin"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "已移到回收站 \\(count) 张重复图"
+            "value": "已移到回收站 %lld 张重复图"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已移到回收站 %lld 张重复图"
           }
         }
       }
@@ -2020,19 +2119,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Moved to Recycle Bin (permanently delete in \\(retentionDays) days)"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "已移到回收站（\\(retentionDays) 天后永久删除）"
+            "value": "Moved to Recycle Bin (permanently delete in %lld days)"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "已移到回收站（\\(retentionDays) 天后永久删除）"
+            "value": "已移到回收站（%lld 天后永久删除）"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已移到回收站（%lld 天后永久删除）"
           }
         }
       }
@@ -2047,15 +2146,15 @@
             "value": "Move to Folder"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "移动到文件夹"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "移动到文件夹"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "移动到文件夹"
           }
         }
@@ -2068,19 +2167,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Move to Recycle Bin failed: \\(error)"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "移到回收站失败：\\(error)"
+            "value": "Move to Recycle Bin failed: %@"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "移到回收站失败：\\(error)"
+            "value": "移到回收站失败：%@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "移到回收站失败：%@"
           }
         }
       }
@@ -2095,15 +2194,15 @@
             "value": "New file name"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "新文件名"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "新文件名"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "新文件名"
           }
         }
@@ -2119,15 +2218,15 @@
             "value": "New Folder"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "新建文件夹"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "新建文件夹"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "新建文件夹"
           }
         }
@@ -2143,15 +2242,15 @@
             "value": "Choose \"Skip\" to avoid duplicates."
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "选\\\"跳过\\\"避免重复导入。"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "选\\\"跳过\\\"避免重复导入。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "选\\\"跳过\\\"避免重复导入。"
           }
         }
@@ -2167,15 +2266,15 @@
             "value": "Name the new folder"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "为新文件夹命名"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "为新文件夹命名"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "为新文件夹命名"
           }
         }
@@ -2191,15 +2290,15 @@
             "value": "New Tag"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "新建标签"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "新建标签"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "新建标签"
           }
         }
@@ -2215,15 +2314,15 @@
             "value": "Next"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "下一张"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "下一张"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "下一张"
           }
         }
@@ -2239,15 +2338,15 @@
             "value": "No Recent Files"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "无最近文件"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "无最近文件"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "无最近文件"
           }
         }
@@ -2263,15 +2362,15 @@
             "value": "Open Recent"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "最近打开"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "最近打开"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "最近打开"
           }
         }
@@ -2287,15 +2386,15 @@
             "value": "Permanently Delete Selected"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "永久删除选中"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "永久删除选中"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "永久删除选中"
           }
         }
@@ -2308,19 +2407,19 @@
         "en": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "\\(count)"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "\\(count)"
+            "value": "%lld"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "\\(count)"
+            "value": "%lld"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%lld"
           }
         }
       }
@@ -2332,19 +2431,19 @@
         "en": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "\\(current) / \\(total)"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "\\(current) / \\(total)"
+            "value": "%lld / %lld"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "\\(current) / \\(total)"
+            "value": "%lld / %lld"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%lld / %lld"
           }
         }
       }
@@ -2356,19 +2455,19 @@
         "en": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "\\(current) / \\(total)"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "\\(current) / \\(total)"
+            "value": "%lld / %lld"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "\\(current) / \\(total)"
+            "value": "%lld / %lld"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%lld / %lld"
           }
         }
       }
@@ -2383,15 +2482,15 @@
             "value": "Previous"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "上一张"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "上一张"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "上一张"
           }
         }
@@ -2407,15 +2506,15 @@
             "value": "Quick Look"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "快速查看"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "快速查看"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "快速查看"
           }
         }
@@ -2431,16 +2530,64 @@
             "value": "Rating"
           }
         },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "评分"
+          }
+        },
         "zh-Hant": {
           "stringUnit": {
             "state": "needs_review",
             "value": "评分"
           }
+        }
+      }
+    },
+    "ratingCurrent": {
+      "comment": "V6.12.18: Copy.ratingCurrent(_:) → 当前 %lld 星（点击清除）",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Current %lld stars (click to clear)"
+          }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "评分"
+            "value": "当前 %lld 星（点击清除）"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目前 %lld 星（點擊清除）"
+          }
+        }
+      }
+    },
+    "ratingSetTo": {
+      "comment": "V6.12.18: Copy.ratingSetTo(_:) → 设为 %lld 星",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Set to %lld stars"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "设为 %lld 星"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "設為 %lld 星"
           }
         }
       }
@@ -2452,19 +2599,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "\\(n) stars"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "\\(n) 星"
+            "value": "%lld stars"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "\\(n) 星"
+            "value": "%lld 星"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%lld 星"
           }
         }
       }
@@ -2476,19 +2623,19 @@
         "en": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "\\(index). \\(filename)"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "\\(index). \\(filename)"
+            "value": "%lld. %@"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "\\(index). \\(filename)"
+            "value": "%lld. %@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%lld. %@"
           }
         }
       }
@@ -2500,19 +2647,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "\\(count) photos in Recycle Bin"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "回收站有 \\(count) 张"
+            "value": "%lld photos in Recycle Bin"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "回收站有 \\(count) 张"
+            "value": "回收站有 %lld 张"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "回收站有 %lld 张"
           }
         }
       }
@@ -2524,19 +2671,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Recycle Bin operation failed: \\(error)"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "回收站操作失败：\\(error)"
+            "value": "Recycle Bin operation failed: %@"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "回收站操作失败：\\(error)"
+            "value": "回收站操作失败：%@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "回收站操作失败：%@"
           }
         }
       }
@@ -2551,15 +2698,15 @@
             "value": "Deleted photos go to the Recycle Bin first, and are permanently deleted after the number of days below."
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "删除的图片会先进入回收站，超过下面设置的天数后会被自动永久删除。"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "删除的图片会先进入回收站，超过下面设置的天数后会被自动永久删除。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "删除的图片会先进入回收站，超过下面设置的天数后会被自动永久删除。"
           }
         }
@@ -2572,19 +2719,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Emptied Recycle Bin (\\(count) photos)"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "已清空回收站（\\(count) 张）"
+            "value": "Emptied Recycle Bin (%lld photos)"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "已清空回收站（\\(count) 张）"
+            "value": "已清空回收站（%lld 张）"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已清空回收站（%lld 张）"
           }
         }
       }
@@ -2599,15 +2746,15 @@
             "value": "Redo"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "重做"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "重做"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "重做"
           }
         }
@@ -2620,19 +2767,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Redo \\(action)"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "重做 \\(action)"
+            "value": "Redo %@"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "重做 \\(action)"
+            "value": "重做 %@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "重做 %@"
           }
         }
       }
@@ -2647,15 +2794,15 @@
             "value": "Remove from Folder"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "移出文件夹"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "移出文件夹"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "移出文件夹"
           }
         }
@@ -2668,19 +2815,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Rename failed: \\(filename)"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "重命名失败：\\(filename)"
+            "value": "Rename failed: %@"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "重命名失败：\\(filename)"
+            "value": "重命名失败：%@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "重命名失败：%@"
           }
         }
       }
@@ -2695,15 +2842,15 @@
             "value": "New photo name (without extension)"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "给图片一个新名字（不包含扩展名）"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "给图片一个新名字（不包含扩展名）"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "给图片一个新名字（不包含扩展名）"
           }
         }
@@ -2719,15 +2866,15 @@
             "value": "Rename"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "重命名"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "重命名"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "重命名"
           }
         }
@@ -2743,15 +2890,15 @@
             "value": "Restore Selected"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "恢复选中"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "恢复选中"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "恢复选中"
           }
         }
@@ -2767,15 +2914,15 @@
             "value": "Reveal in Finder"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "在 Finder 中显示"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "在 Finder 中显示"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "在 Finder 中显示"
           }
         }
@@ -2791,15 +2938,15 @@
             "value": "Search"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "搜索"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "搜索"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "搜索"
           }
         }
@@ -2815,15 +2962,15 @@
             "value": "Search photos, tags, notes"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "搜索照片、标签、笔记"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "搜索照片、标签、笔记"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "搜索照片、标签、笔记"
           }
         }
@@ -2839,15 +2986,15 @@
             "value": "Search photos, tags…"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "搜索照片、标签…"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "搜索照片、标签…"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "搜索照片、标签…"
           }
         }
@@ -2863,15 +3010,15 @@
             "value": "Select a photo"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "选择一张图片"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "选择一张图片"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "选择一张图片"
           }
         }
@@ -2887,15 +3034,15 @@
             "value": "← → navigate · ⌘+click multi-select · ⌥+drag box-select"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "← → 切换 · ⌘+点击 多选 · ⌥+拖动 框选"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "← → 切换 · ⌘+点击 多选 · ⌥+拖动 框选"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "← → 切换 · ⌘+点击 多选 · ⌥+拖动 框选"
           }
         }
@@ -2908,19 +3055,283 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "\\(count) selected"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "已选 \\(count) 张"
+            "value": "%lld selected"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "已选 \\(count) 张"
+            "value": "已选 %lld 张"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已选 %lld 张"
+          }
+        }
+      }
+    },
+    "settingsAccessibilityLinkMisconfigured": {
+      "comment": "V6.12.18: Copy.settingsAccessibilityLinkMisconfigured(_:) → 链接配置错误: %@ (urlString 参数)",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link config error: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "链接配置错误: %@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "連結設定錯誤: %@"
+          }
+        }
+      }
+    },
+    "settingsAppearanceLabel": {
+      "comment": "V6.12.18: Copy.settingsAppearanceLabel → 外观",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Appearance"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "外观"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "外觀"
+          }
+        }
+      }
+    },
+    "settingsAutoDedupeLabel": {
+      "comment": "V6.12.18: Copy.settingsAutoDedupeLabel → 导入时自动去重",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auto-deduplicate on import"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "导入时自动去重"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "匯入時自動去除重複"
+          }
+        }
+      }
+    },
+    "settingsAutoThumbnailsLabel": {
+      "comment": "V6.12.18: Copy.settingsAutoThumbnailsLabel → 导入时生成缩略图",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auto-generate thumbnails on import"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "导入时生成缩略图"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "匯入時自動產生縮圖"
+          }
+        }
+      }
+    },
+    "settingsCopyright": {
+      "comment": "V6.12.18: Copy.settingsCopyright → © 2026 ImageGallery",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "© 2026 ImageGallery"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "© 2026 ImageGallery"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "© 2026 ImageGallery"
+          }
+        }
+      }
+    },
+    "settingsFormatLabel": {
+      "comment": "V6.12.18: Copy.settingsFormatLabel → 格式",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Format"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "格式"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "格式"
+          }
+        }
+      }
+    },
+    "settingsHelpDocs": {
+      "comment": "V6.12.18: Copy.settingsHelpDocs → 使用帮助 (Links section)",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "User Guide"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用帮助"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用說明"
+          }
+        }
+      }
+    },
+    "settingsHelpLabel": {
+      "comment": "V6.12.18: Copy.settingsHelpLabel → 帮助",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Help"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "帮助"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "說明"
+          }
+        }
+      }
+    },
+    "settingsHelpTooltip": {
+      "comment": "V6.12.18: Copy.settingsHelpTooltip → 使用帮助",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "User Guide"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用帮助"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用說明"
+          }
+        }
+      }
+    },
+    "settingsIssueTracker": {
+      "comment": "V6.12.18: Copy.settingsIssueTracker → 问题反馈",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Report an Issue"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "问题反馈"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "問題回報"
+          }
+        }
+      }
+    },
+    "settingsLayoutLabel": {
+      "comment": "V6.12.18: Copy.settingsLayoutLabel → 布局",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Layout"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "布局"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "佈局"
           }
         }
       }
@@ -2935,16 +3346,208 @@
             "value": "Settings…"
           }
         },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "设置…"
+          }
+        },
         "zh-Hant": {
           "stringUnit": {
             "state": "needs_review",
             "value": "设置…"
           }
+        }
+      }
+    },
+    "settingsProjectHomepage": {
+      "comment": "V6.12.18: Copy.settingsProjectHomepage → 项目主页",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Project Homepage"
+          }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "设置…"
+            "value": "项目主页"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "專案首頁"
+          }
+        }
+      }
+    },
+    "settingsQualityLabel": {
+      "comment": "V6.12.18: Copy.settingsQualityLabel → 质量",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quality"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "质量"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "品質"
+          }
+        }
+      }
+    },
+    "settingsResetAll": {
+      "comment": "V6.12.18: Copy.settingsResetAll → 恢复全部为默认",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reset all to defaults"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "恢复全部为默认"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "恢復全部為預設"
+          }
+        }
+      }
+    },
+    "settingsResetAllTooltip": {
+      "comment": "V6.12.18: Copy.settingsResetAllTooltip → 恢复全部设置为默认",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reset all settings to defaults"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "恢复全部设置为默认"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "恢復全部設定為預設"
+          }
+        }
+      }
+    },
+    "settingsRetentionLabel": {
+      "comment": "V6.12.18: Copy.settingsRetentionLabel → 保留时长",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retention"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保留时长"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保留時長"
+          }
+        }
+      }
+    },
+    "settingsSizeLabel": {
+      "comment": "V6.12.18: Copy.settingsSizeLabel → 大小",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Size"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "大小"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "大小"
+          }
+        }
+      }
+    },
+    "settingsSortLabel": {
+      "comment": "V6.12.18: Copy.settingsSortLabel → 排序",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sort"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "排序"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "排序"
+          }
+        }
+      }
+    },
+    "settingsThumbnailSizeHelpTooltip": {
+      "comment": "V6.12.18: Copy.settingsThumbnailSizeHelpTooltip → 实时预览缩略图大小",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live preview of thumbnail size"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "实时预览缩略图大小"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "即時預覽縮圖大小"
           }
         }
       }
@@ -2959,15 +3562,15 @@
             "value": "Show Detail Panel"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "显示详情面板"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "显示详情面板"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "显示详情面板"
           }
         }
@@ -2983,15 +3586,15 @@
             "value": "Show Info Panel"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "显示信息面板"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "显示信息面板"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "显示信息面板"
           }
         }
@@ -3007,15 +3610,15 @@
             "value": "Show Sidebar"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "显示侧边栏"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "显示侧边栏"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "显示侧边栏"
           }
         }
@@ -3028,19 +3631,19 @@
         "en": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "\\(count)"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "\\(count)"
+            "value": "%lld"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "\\(count)"
+            "value": "%lld"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%lld"
           }
         }
       }
@@ -3055,15 +3658,15 @@
             "value": "Skip All (keep existing)"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "全部跳过（保留现有）"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "全部跳过（保留现有）"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "全部跳过（保留现有）"
           }
         }
@@ -3079,15 +3682,15 @@
             "value": "Sort"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "排序"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "排序"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "排序"
           }
         }
@@ -3103,15 +3706,15 @@
             "value": "Custom"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "自定义"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "自定义"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "自定义"
           }
         }
@@ -3127,15 +3730,15 @@
             "value": "Filename"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "文件名"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "文件名"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "文件名"
           }
         }
@@ -3151,15 +3754,15 @@
             "value": "File Size"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "文件大小"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "文件大小"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "文件大小"
           }
         }
@@ -3175,15 +3778,15 @@
             "value": "Import Time"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "导入时间"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "导入时间"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "导入时间"
           }
         }
@@ -3199,15 +3802,15 @@
             "value": "Custom Order"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "自定义顺序"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "自定义顺序"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "自定义顺序"
           }
         }
@@ -3223,15 +3826,15 @@
             "value": "Filename A → Z"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "文件名 A → Z"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "文件名 A → Z"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "文件名 A → Z"
           }
         }
@@ -3247,15 +3850,15 @@
             "value": "Filename Z → A"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "文件名 Z → A"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "文件名 Z → A"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "文件名 Z → A"
           }
         }
@@ -3271,15 +3874,15 @@
             "value": "File Size ↑"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "文件大小 ↑"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "文件大小 ↑"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "文件大小 ↑"
           }
         }
@@ -3295,15 +3898,15 @@
             "value": "File Size ↓"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "文件大小 ↓"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "文件大小 ↓"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "文件大小 ↓"
           }
         }
@@ -3319,15 +3922,15 @@
             "value": "Import Time ↑"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "导入时间 ↑"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "导入时间 ↑"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "导入时间 ↑"
           }
         }
@@ -3343,15 +3946,15 @@
             "value": "Import Time ↓"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "导入时间 ↓"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "导入时间 ↓"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "导入时间 ↓"
           }
         }
@@ -3367,15 +3970,15 @@
             "value": "·"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "·"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "·"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "·"
           }
         }
@@ -3391,15 +3994,15 @@
             "value": "Cannot save photos to library. Check disk space or grant Full Disk Access in System Settings → Privacy & Security → Full Disk Access to ImageGallery, then retry."
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "无法保存图片到图库。请检查磁盘空间，或在「系统设置 → 隐私与安全 → 完整磁盘访问权限」中授权 ImageGallery，然后重试。"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "无法保存图片到图库。请检查磁盘空间，或在「系统设置 → 隐私与安全 → 完整磁盘访问权限」中授权 ImageGallery，然后重试。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "无法保存图片到图库。请检查磁盘空间，或在「系统设置 → 隐私与安全 → 完整磁盘访问权限」中授权 ImageGallery，然后重试。"
           }
         }
@@ -3415,15 +4018,15 @@
             "value": "Retry"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "重试"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "重试"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "重试"
           }
         }
@@ -3439,15 +4042,15 @@
             "value": "Storage Unavailable"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "存储不可用"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "存储不可用"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "存储不可用"
           }
         }
@@ -3463,15 +4066,15 @@
             "value": "Tags"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "标签"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "标签"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "标签"
           }
         }
@@ -3487,15 +4090,15 @@
             "value": "Tag name"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "标签名称"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "标签名称"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "标签名称"
           }
         }
@@ -3511,15 +4114,15 @@
             "value": "Load failed"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "加载失败"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "加载失败"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "加载失败"
           }
         }
@@ -3535,15 +4138,15 @@
             "value": "Thumbnail Size"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "缩略图大小"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "缩略图大小"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "缩略图大小"
           }
         }
@@ -3559,15 +4162,15 @@
             "value": "Tiny 70pt"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "特小 70pt"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "特小 70pt"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "特小 70pt"
           }
         }
@@ -3580,19 +4183,19 @@
         "en": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "\\(size)"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "\\(size)"
+            "value": "%lld"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "\\(size)"
+            "value": "%lld"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%lld"
           }
         }
       }
@@ -3607,15 +4210,15 @@
             "value": "Large 250pt"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "大 250pt"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "大 250pt"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "大 250pt"
           }
         }
@@ -3631,15 +4234,15 @@
             "value": "Medium 200pt"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "中 200pt"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "中 200pt"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "中 200pt"
           }
         }
@@ -3655,16 +4258,88 @@
             "value": "Small 110pt"
           }
         },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "小 110pt"
+          }
+        },
         "zh-Hant": {
           "stringUnit": {
             "state": "needs_review",
             "value": "小 110pt"
           }
+        }
+      }
+    },
+    "titlebarInfoLabel": {
+      "comment": "V6.12.18: Copy.titlebarInfoLabel → 信息面板",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Info Panel"
+          }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "小 110pt"
+            "value": "信息面板"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "資訊面板"
+          }
+        }
+      }
+    },
+    "titlebarInfoTooltipHide": {
+      "comment": "V6.12.18: Copy.titlebarInfoTooltipHide → 隐藏信息面板 (⌘I)",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide Info Panel (⌘I)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "隐藏信息面板 (⌘I)"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "隱藏資訊面板 (⌘I)"
+          }
+        }
+      }
+    },
+    "titlebarInfoTooltipShow": {
+      "comment": "V6.12.18: Copy.titlebarInfoTooltipShow → 显示信息面板 (⌘I)",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show Info Panel (⌘I)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "显示信息面板 (⌘I)"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示資訊面板 (⌘I)"
           }
         }
       }
@@ -3679,15 +4354,15 @@
             "value": "Export"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "导出"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "导出"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "导出"
           }
         }
@@ -3703,15 +4378,15 @@
             "value": "Import"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "导入"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "导入"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "导入"
           }
         }
@@ -3727,15 +4402,15 @@
             "value": "Toggle Sidebar"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "切换侧边栏"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "切换侧边栏"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "切换侧边栏"
           }
         }
@@ -3748,19 +4423,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "\\(count) photos"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "\\(count) 张"
+            "value": "%lld photos"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "\\(count) 张"
+            "value": "%lld 张"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%lld 张"
           }
         }
       }
@@ -3775,15 +4450,15 @@
             "value": "Undo"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "撤销"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "撤销"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "撤销"
           }
         }
@@ -3796,19 +4471,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Undo \\(action)"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "撤销 \\(action)"
+            "value": "Undo %@"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "撤销 \\(action)"
+            "value": "撤销 %@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "撤销 %@"
           }
         }
       }
@@ -3823,15 +4498,15 @@
             "value": "Unknown Folder"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "未知文件夹"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "未知文件夹"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "未知文件夹"
           }
         }
@@ -3847,15 +4522,15 @@
             "value": "Unknown Tag"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "未知标签"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "未知标签"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "未知标签"
           }
         }
@@ -3871,15 +4546,15 @@
             "value": "View All"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "查看全部"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "查看全部"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "查看全部"
           }
         }
@@ -3895,15 +4570,15 @@
             "value": "Grid"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "网格"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "网格"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "网格"
           }
         }
@@ -3919,15 +4594,15 @@
             "value": "Thumbnail View"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "缩略图视图"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "缩略图视图"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "缩略图视图"
           }
         }
@@ -3943,15 +4618,15 @@
             "value": "List"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "列表"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "列表"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "列表"
           }
         }
@@ -3967,15 +4642,15 @@
             "value": "List View"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "列表视图"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "列表视图"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "列表视图"
           }
         }
@@ -3991,15 +4666,15 @@
             "value": "Timeline"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "时间线"
-          }
-        },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
+            "value": "时间线"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
             "value": "时间线"
           }
         }
@@ -4015,688 +4690,89 @@
             "value": "Timeline View"
           }
         },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "时间线视图"
+          }
+        },
         "zh-Hant": {
           "stringUnit": {
             "state": "needs_review",
             "value": "时间线视图"
           }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "时间线视图"
-          }
         }
       }
     },
-    "settingsResetAll": {
-      "comment": "V6.12.18: Copy.settingsResetAll → 恢复全部为默认",
+    "设置": {},
+    "deletePhotoConfirmWithTerms": {
+      "comment": "V6.12.19: Copy.deletePhotoConfirmWithTerms(photo:library:) → %@将从%@中移除，文件也会被永久删除。",
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Reset all to defaults"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "恢復全部為預設"
+            "value": "%@ will be removed from %@ and permanently deleted."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "恢复全部为默认"
+            "value": "%@将从%@中移除，文件也会被永久删除。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@將從%@中移除，檔案也會被永久刪除。"
           }
         }
       }
     },
-    "settingsResetAllTooltip": {
-      "comment": "V6.12.18: Copy.settingsResetAllTooltip → 恢复全部设置为默认",
+    "exportQualityPercent": {
+      "comment": "V6.12.19: Copy.exportQualityPercent(_:) → %lld%% (SettingsView export quality slider)",
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Reset all settings to defaults"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "恢復全部設定為預設"
+            "value": "%lld%%"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "恢复全部设置为默认"
+            "value": "%lld%%"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld%%"
           }
         }
       }
     },
-    "settingsHelpLabel": {
-      "comment": "V6.12.18: Copy.settingsHelpLabel → 帮助",
+    "activeFilterChip": {
+      "comment": "V6.12.19: Copy.activeFilterChip(label:count:) → %@ · %lld (ActiveFiltersBar grouped filter chip)",
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Help"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "說明"
+            "value": "%@ · %lld"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "帮助"
-          }
-        }
-      }
-    },
-    "settingsHelpTooltip": {
-      "comment": "V6.12.18: Copy.settingsHelpTooltip → 使用帮助",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "User Guide"
+            "value": "%@ · %lld"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "使用說明"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "使用帮助"
-          }
-        }
-      }
-    },
-    "languageLabel": {
-      "comment": "V6.12.18: Copy.languageLabel → 语言 (SettingsView:283 原 hardcoded 英文)",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Language"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "語言"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "语言"
-          }
-        }
-      }
-    },
-    "settingsSortLabel": {
-      "comment": "V6.12.18: Copy.settingsSortLabel → 排序",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sort"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "排序"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "排序"
-          }
-        }
-      }
-    },
-    "settingsLayoutLabel": {
-      "comment": "V6.12.18: Copy.settingsLayoutLabel → 布局",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Layout"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "佈局"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "布局"
-          }
-        }
-      }
-    },
-    "settingsSizeLabel": {
-      "comment": "V6.12.18: Copy.settingsSizeLabel → 大小",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Size"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "大小"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "大小"
-          }
-        }
-      }
-    },
-    "settingsAppearanceLabel": {
-      "comment": "V6.12.18: Copy.settingsAppearanceLabel → 外观",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Appearance"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "外觀"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "外观"
-          }
-        }
-      }
-    },
-    "settingsAutoDedupeLabel": {
-      "comment": "V6.12.18: Copy.settingsAutoDedupeLabel → 导入时自动去重",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Auto-deduplicate on import"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "匯入時自動去除重複"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "导入时自动去重"
-          }
-        }
-      }
-    },
-    "settingsAutoThumbnailsLabel": {
-      "comment": "V6.12.18: Copy.settingsAutoThumbnailsLabel → 导入时生成缩略图",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Auto-generate thumbnails on import"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "匯入時自動產生縮圖"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "导入时生成缩略图"
-          }
-        }
-      }
-    },
-    "settingsFormatLabel": {
-      "comment": "V6.12.18: Copy.settingsFormatLabel → 格式",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Format"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "格式"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "格式"
-          }
-        }
-      }
-    },
-    "settingsQualityLabel": {
-      "comment": "V6.12.18: Copy.settingsQualityLabel → 质量",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Quality"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "品質"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "质量"
-          }
-        }
-      }
-    },
-    "settingsRetentionLabel": {
-      "comment": "V6.12.18: Copy.settingsRetentionLabel → 保留时长",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Retention"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "保留時長"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "保留时长"
-          }
-        }
-      }
-    },
-    "settingsProjectHomepage": {
-      "comment": "V6.12.18: Copy.settingsProjectHomepage → 项目主页",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Project Homepage"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "專案首頁"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "项目主页"
-          }
-        }
-      }
-    },
-    "settingsHelpDocs": {
-      "comment": "V6.12.18: Copy.settingsHelpDocs → 使用帮助 (Links section)",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "User Guide"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "使用說明"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "使用帮助"
-          }
-        }
-      }
-    },
-    "settingsIssueTracker": {
-      "comment": "V6.12.18: Copy.settingsIssueTracker → 问题反馈",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Report an Issue"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "問題回報"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "问题反馈"
-          }
-        }
-      }
-    },
-    "settingsCopyright": {
-      "comment": "V6.12.18: Copy.settingsCopyright → © 2026 ImageGallery",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "© 2026 ImageGallery"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "© 2026 ImageGallery"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "© 2026 ImageGallery"
-          }
-        }
-      }
-    },
-    "settingsThumbnailSizeHelpTooltip": {
-      "comment": "V6.12.18: Copy.settingsThumbnailSizeHelpTooltip → 实时预览缩略图大小",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Live preview of thumbnail size"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "即時預覽縮圖大小"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "实时预览缩略图大小"
-          }
-        }
-      }
-    },
-    "settingsAccessibilityLinkMisconfigured": {
-      "comment": "V6.12.18: Copy.settingsAccessibilityLinkMisconfigured(_:) → 链接配置错误: %@ (urlString 参数)",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Link config error: %@"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "連結設定錯誤: %@"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "链接配置错误: (urlString)"
-          }
-        }
-      }
-    },
-    "detailNoRating": {
-      "comment": "V6.12.18: Copy.detailNoRating → 未评分",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Unrated"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "未評分"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "未评分"
-          }
-        }
-      }
-    },
-    "ratingCurrent": {
-      "comment": "V6.12.18: Copy.ratingCurrent(_:) → 当前 %lld 星（点击清除）",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Current %lld stars (click to clear)"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "目前 %lld 星（點擊清除）"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "当前 (n) 星（点击清除）"
-          }
-        }
-      }
-    },
-    "ratingSetTo": {
-      "comment": "V6.12.18: Copy.ratingSetTo(_:) → 设为 %lld 星",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Set to %lld stars"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "設為 %lld 星"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "设为 (n) 星"
-          }
-        }
-      }
-    },
-    "activeFiltersClearAllTooltip": {
-      "comment": "V6.12.18: Copy.activeFiltersClearAllTooltip → 清除所有筛选条件",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Clear all filters"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "清除所有篩選條件"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "清除所有筛选条件"
-          }
-        }
-      }
-    },
-    "activeFiltersRemoveFilterTooltip": {
-      "comment": "V6.12.18: Copy.activeFiltersRemoveFilterTooltip → 移除此筛选",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Remove this filter"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "移除此篩選"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "移除此筛选"
-          }
-        }
-      }
-    },
-    "titlebarInfoLabel": {
-      "comment": "V6.12.18: Copy.titlebarInfoLabel → 信息面板",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Info Panel"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "資訊面板"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "信息面板"
-          }
-        }
-      }
-    },
-    "titlebarInfoTooltipShow": {
-      "comment": "V6.12.18: Copy.titlebarInfoTooltipShow → 显示信息面板 (⌘I)",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Show Info Panel (⌘I)"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "顯示資訊面板 (⌘I)"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "显示信息面板 (⌘I)"
-          }
-        }
-      }
-    },
-    "titlebarInfoTooltipHide": {
-      "comment": "V6.12.18: Copy.titlebarInfoTooltipHide → 隐藏信息面板 (⌘I)",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Hide Info Panel (⌘I)"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "隱藏資訊面板 (⌘I)"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "隐藏信息面板 (⌘I)"
+            "value": "%@ · %lld"
           }
         }
       }

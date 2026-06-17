@@ -141,7 +141,8 @@ struct DetailView: View {
             Button(Copy.cancel, role: .cancel) {}
         } message: {
             // V5.51: "图馆" → "图库" typo 修复 + 走 Term.photo + Term.library 字典
-            Text("\(Term.photo)将从\(Term.library)中移除，文件也会被永久删除。")
+            // V6.12.19: 整条 message 也入库（用 %@ 接受 Term 插值）
+            Text(Copy.deletePhotoConfirmWithTerms(photo: Term.photo, library: Term.library))
         }
         // V4.16.0: 右击 detail panel 任意位置 → 复制（与 operationsCard 不重复）
         .contextMenu {

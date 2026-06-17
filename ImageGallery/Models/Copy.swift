@@ -18,25 +18,25 @@ import Foundation
 /// V5.50-2 + V5.50-3 + V5.50-4: 微文案字典——所有用户可见字符串统一来源
 enum Copy {
     // MARK: - 动作结果
-    static func imported(_ count: Int) -> String { String(localized: "imported", defaultValue: "已导入 \\(count) 张图片") }
-    static func importedPartial(inserted: Int, failed: Int) -> String { String(localized: "importedPartial", defaultValue: "已导入 \\(inserted) 张，\\(failed) 张失败") }
-    static func exported(_ count: Int) -> String { String(localized: "exported", defaultValue: "已导出 \\(count) 张图片") }
-    static func movedToRecycleBin(_ count: Int, retentionDays: Int) -> String { String(localized: "movedToRecycleBin", defaultValue: "已移到回收站（\\(retentionDays) 天后永久删除）") }
-    static func movedDuplicates(_ count: Int) -> String { String(localized: "movedDuplicates", defaultValue: "已移到回收站 \\(count) 张重复图") }
-    static func recycledBinEmptied(_ count: Int) -> String { String(localized: "recycledBinEmptied", defaultValue: "已清空回收站（\\(count) 张）") }
+    static func imported(_ count: Int) -> String { String.localizedStringWithFormat(String(localized: "imported", defaultValue: "已导入 %lld 张图片"), count) }
+    static func importedPartial(inserted: Int, failed: Int) -> String { String.localizedStringWithFormat(String(localized: "importedPartial", defaultValue: "已导入 %lld 张，%lld 张失败"), inserted, failed) }
+    static func exported(_ count: Int) -> String { String.localizedStringWithFormat(String(localized: "exported", defaultValue: "已导出 %lld 张图片"), count) }
+    static func movedToRecycleBin(_ count: Int, retentionDays: Int) -> String { String.localizedStringWithFormat(String(localized: "movedToRecycleBin", defaultValue: "已移到回收站（%lld 天后永久删除）"), count, retentionDays) }
+    static func movedDuplicates(_ count: Int) -> String { String.localizedStringWithFormat(String(localized: "movedDuplicates", defaultValue: "已移到回收站 %lld 张重复图"), count) }
+    static func recycledBinEmptied(_ count: Int) -> String { String.localizedStringWithFormat(String(localized: "recycledBinEmptied", defaultValue: "已清空回收站（%lld 张）"), count) }
     static func copiedToPasteboard(_ count: Int) -> String {
         count == 1 ? "已复制 1 张图片" : "已复制 \(count) 张图片"
     }
 
     // MARK: - 错误 (3 段式)
     static let storageError = String(localized: "storageError", defaultValue: "无法保存图片到图库。请检查磁盘空间，或在「系统设置 → 隐私与安全 → 完整磁盘访问权限」中授权 ImageGallery，然后重试。")
-    static func importFailed(_ filename: String) -> String { String(localized: "importFailed", defaultValue: "导入失败：\\(filename)") }
-    static func exportFailed(_ filename: String) -> String { String(localized: "exportFailed", defaultValue: "导出失败：\\(filename)") }
-    static func moveToRecycleBinFailed(_ error: String) -> String { String(localized: "moveToRecycleBinFailed", defaultValue: "移到回收站失败：\\(error)") }
-    static func emptyRecycleBinFailed(_ error: String) -> String { String(localized: "emptyRecycleBinFailed", defaultValue: "清空回收站失败：\\(error)") }
-    static func batchMoveToRecycleBinFailed(_ error: String) -> String { String(localized: "batchMoveToRecycleBinFailed", defaultValue: "批量移到回收站失败：\\(error)") }
+    static func importFailed(_ filename: String) -> String { String.localizedStringWithFormat(String(localized: "importFailed", defaultValue: "导入失败：%@"), filename) }
+    static func exportFailed(_ filename: String) -> String { String.localizedStringWithFormat(String(localized: "exportFailed", defaultValue: "导出失败：%@"), filename) }
+    static func moveToRecycleBinFailed(_ error: String) -> String { String.localizedStringWithFormat(String(localized: "moveToRecycleBinFailed", defaultValue: "移到回收站失败：%@"), error) }
+    static func emptyRecycleBinFailed(_ error: String) -> String { String.localizedStringWithFormat(String(localized: "emptyRecycleBinFailed", defaultValue: "清空回收站失败：%@"), error) }
+    static func batchMoveToRecycleBinFailed(_ error: String) -> String { String.localizedStringWithFormat(String(localized: "batchMoveToRecycleBinFailed", defaultValue: "批量移到回收站失败：%@"), error) }
     static let batchRatingFailed = String(localized: "batchRatingFailed", defaultValue: "批量评分失败")
-    static func recycleBinOperationFailed(_ error: String) -> String { String(localized: "recycleBinOperationFailed", defaultValue: "回收站操作失败：\\(error)") }
+    static func recycleBinOperationFailed(_ error: String) -> String { String.localizedStringWithFormat(String(localized: "recycleBinOperationFailed", defaultValue: "回收站操作失败：%@"), error) }
 
     // MARK: - 空态 (含引导)
     static let emptyLibrary = String(localized: "emptyLibrary", defaultValue: "图库还是空的")
@@ -47,9 +47,9 @@ enum Copy {
     static let thumbnailLoadFailed = String(localized: "thumbnailLoadFailed", defaultValue: "加载失败")
 
     // MARK: - 详情面板
-    static func photoPosition(current: Int, total: Int) -> String { String(localized: "photoPosition", defaultValue: "\\(current) / \\(total)") }
-    static func photoPosition1Indexed(current: Int, total: Int) -> String { String(localized: "photoPosition1Indexed", defaultValue: "\\(current) / \\(total)") }
-    static func imageDimensions(width: Int, height: Int) -> String { String(localized: "imageDimensions", defaultValue: "\\(width) × \\(height)") }
+    static func photoPosition(current: Int, total: Int) -> String { String.localizedStringWithFormat(String(localized: "photoPosition", defaultValue: "%lld / %lld"), current, total) }
+    static func photoPosition1Indexed(current: Int, total: Int) -> String { String.localizedStringWithFormat(String(localized: "photoPosition1Indexed", defaultValue: "%lld / %lld"), current, total) }
+    static func imageDimensions(width: Int, height: Int) -> String { String.localizedStringWithFormat(String(localized: "imageDimensions", defaultValue: "%lld × %lld"), width, height) }
     static let renameHint = String(localized: "renameHint", defaultValue: "给图片一个新名字（不包含扩展名）")
     static let tagLabel = String(localized: "tagLabel", defaultValue: "标签")
     static let addTagHint = String(localized: "addTagHint", defaultValue: "点击 + 添加标签")
@@ -57,20 +57,20 @@ enum Copy {
     static let emptyRecycleBinConfirm = String(localized: "emptyRecycleBinConfirm", defaultValue: "回收站里的所有照片将被永久删除，无法恢复。")
     // V6.09: confirmationDialog title 入库——之前 ContentView+BatchDialogs:58 hardcoded
     static let emptyRecycleBinConfirmTitle = String(localized: "emptyRecycleBinConfirmTitle", defaultValue: "确定要清空回收站吗？")
-    static func recycleBinCount(_ count: Int) -> String { String(localized: "recycleBinCount", defaultValue: "回收站有 \\(count) 张") }
+    static func recycleBinCount(_ count: Int) -> String { String.localizedStringWithFormat(String(localized: "recycleBinCount", defaultValue: "回收站有 %lld 张"), count) }
 
     // MARK: - 状态栏
-    static func totalCount(_ count: Int) -> String { String(localized: "totalCount", defaultValue: "\\(count) 张") }
-    static func selectedCount(_ count: Int) -> String { String(localized: "selectedCount", defaultValue: "已选 \\(count) 张") }
+    static func totalCount(_ count: Int) -> String { String.localizedStringWithFormat(String(localized: "totalCount", defaultValue: "%lld 张"), count) }
+    static func selectedCount(_ count: Int) -> String { String.localizedStringWithFormat(String(localized: "selectedCount", defaultValue: "已选 %lld 张"), count) }
     static let statusSeparator = String(localized: "statusSeparator", defaultValue: "·")
-    static func daysRemaining(_ days: Int) -> String { String(localized: "daysRemaining", defaultValue: "\\(days)") }
+    static func daysRemaining(_ days: Int) -> String { String.localizedStringWithFormat(String(localized: "daysRemaining", defaultValue: "%lld"), days) }
 
     // MARK: - 设置面板
     static let viewModeGrid = String(localized: "viewModeGrid", defaultValue: "网格")
     static let viewModeList = String(localized: "viewModeList", defaultValue: "列表")
     static let viewModeTimeline = String(localized: "viewModeTimeline", defaultValue: "时间线")
     static let recycleBinSubtitle = String(localized: "recycleBinSubtitle", defaultValue: "删除的图片会先进入回收站，超过下面设置的天数后会被自动永久删除。")
-    static func thumbnailSizeLabel(_ size: Int) -> String { String(localized: "thumbnailSizeLabel", defaultValue: "\\(size)") }
+    static func thumbnailSizeLabel(_ size: Int) -> String { String.localizedStringWithFormat(String(localized: "thumbnailSizeLabel", defaultValue: "%lld"), size) }
 
     // MARK: - 侧栏 / 按钮
     static let newFolder = String(localized: "newFolder", defaultValue: "新建文件夹")
@@ -89,26 +89,26 @@ enum Copy {
     static let dropSupportedTypes = String(localized: "dropSupportedTypes", defaultValue: "支持图片文件 / 文件夹")
 
     // MARK: - Confirm 对话框 (V5.50-4 补充)
-    static func deletePhotosConfirm(retentionDays: Int) -> String { String(localized: "deletePhotosConfirm", defaultValue: "选中的图片会移到回收站，\\(retentionDays) 天后自动永久清除。可在回收站中恢复。") }
+    static func deletePhotosConfirm(retentionDays: Int) -> String { String.localizedStringWithFormat(String(localized: "deletePhotosConfirm", defaultValue: "选中的图片会移到回收站，%lld 天后自动永久清除。可在回收站中恢复。"), retentionDays) }
     static let newFolderPrompt = String(localized: "newFolderPrompt", defaultValue: "为新文件夹命名")
     static let newFolderHint = String(localized: "newFolderHint", defaultValue: "选\"跳过\"避免重复导入。")
 
     // MARK: - 重复图清理 (V5.50-4 补充)
-    static func duplicatesFoundGroups(_ count: Int) -> String { String(localized: "duplicatesFoundGroups", defaultValue: "发现 \\(count) 组重复") }
-    static func duplicatesCleanable(_ count: Int, size: String) -> String { String(localized: "duplicatesCleanable", defaultValue: "可清理 \\(count) 张 · \\(size)") }
+    static func duplicatesFoundGroups(_ count: Int) -> String { String.localizedStringWithFormat(String(localized: "duplicatesFoundGroups", defaultValue: "发现 %lld 组重复"), count) }
+    static func duplicatesCleanable(_ count: Int, size: String) -> String { String.localizedStringWithFormat(String(localized: "duplicatesCleanable", defaultValue: "可清理 %lld 张 · %@"), count, size) }
     static let duplicatesNone = String(localized: "duplicatesNone", defaultValue: "暂无重复图")
-    static func duplicatesExplanation(retentionDays: Int) -> String { String(localized: "duplicatesExplanation", defaultValue: "每组保留导入时间最近的一张，其他移到回收站（\\(retentionDays) 天后自动永久清除）") }
+    static func duplicatesExplanation(retentionDays: Int) -> String { String.localizedStringWithFormat(String(localized: "duplicatesExplanation", defaultValue: "每组保留导入时间最近的一张，其他移到回收站（%lld 天后自动永久清除）"), retentionDays) }
 
     // MARK: - 上下文菜单 (V5.50-4 补充)
     static let clearRating = String(localized: "clearRating", defaultValue: "清除评分")
 
     // MARK: - 计数 / 辅助 (V5.50-4 补充)
-    static func photoCount(_ count: Int) -> String { String(localized: "photoCount", defaultValue: "\\(count)") }
+    static func photoCount(_ count: Int) -> String { String.localizedStringWithFormat(String(localized: "photoCount", defaultValue: "%lld"), count) }
     static func yearLabel(_ year: String) -> String { year }
-    static func daysBadge(_ days: Int) -> String { String(localized: "daysBadge", defaultValue: "\\(days)") }
-    static func sidebarCount(_ count: Int) -> String { String(localized: "sidebarCount", defaultValue: "\\(count)") }
-    static func dateSectionCount(_ count: Int) -> String { String(localized: "dateSectionCount", defaultValue: "\\(count) 张") }
-    static func autoDeleteAfterDays(_ days: Int) -> String { String(localized: "autoDeleteAfterDays", defaultValue: "\\(days) 天后自动永久清除") }
+    static func daysBadge(_ days: Int) -> String { String.localizedStringWithFormat(String(localized: "daysBadge", defaultValue: "%lld"), days) }
+    static func sidebarCount(_ count: Int) -> String { String.localizedStringWithFormat(String(localized: "sidebarCount", defaultValue: "%lld"), count) }
+    static func dateSectionCount(_ count: Int) -> String { String.localizedStringWithFormat(String(localized: "dateSectionCount", defaultValue: "%lld 张"), count) }
+    static func autoDeleteAfterDays(_ days: Int) -> String { String.localizedStringWithFormat(String(localized: "autoDeleteAfterDays", defaultValue: "%lld 天后自动永久清除"), days) }
 
     // MARK: - 视图模式 (V5.50-4 扩展——菜单用全名，区别于设置面板的 "网格" 简称)
     static let viewModeGridFull = String(localized: "viewModeGridFull", defaultValue: "缩略图视图")
@@ -122,7 +122,7 @@ enum Copy {
     static let nextPhoto = String(localized: "nextPhoto", defaultValue: "下一张")
     static let clearMenu = String(localized: "clearMenu", defaultValue: "清空菜单")
     static let noRecentFiles = String(localized: "noRecentFiles", defaultValue: "无最近文件")
-    static func recentFile(index: Int, filename: String) -> String { String(localized: "recentFile", defaultValue: "\\(index). \\(filename)") }
+    static func recentFile(index: Int, filename: String) -> String { String.localizedStringWithFormat(String(localized: "recentFile", defaultValue: "%lld. %@"), index, filename) }
 
     // MARK: - Confirm 按钮 (V5.50-4 扩展)
     static let empty = String(localized: "empty", defaultValue: "清空")
@@ -165,8 +165,8 @@ enum Copy {
     static let undo = String(localized: "undo", defaultValue: "撤销")
     static let redo = String(localized: "redo", defaultValue: "重做")
     /// Edit 菜单 Undo/Redo (有 action 描述时——"撤销 <desc>")
-    static func undoWithAction(_ action: String) -> String { String(localized: "undoWithAction", defaultValue: "撤销 \\(action)") }
-    static func redoWithAction(_ action: String) -> String { String(localized: "redoWithAction", defaultValue: "重做 \\(action)") }
+    static func undoWithAction(_ action: String) -> String { String.localizedStringWithFormat(String(localized: "undoWithAction", defaultValue: "撤销 %@"), action) }
+    static func redoWithAction(_ action: String) -> String { String.localizedStringWithFormat(String(localized: "redoWithAction", defaultValue: "重做 %@"), action) }
 
     // MARK: - 工具栏 (V5.50-7 扩展)
     /// NSToolbar accessibility label + tooltip (与 Copy.quickLook / Copy.delete 共用)
@@ -182,7 +182,7 @@ enum Copy {
     static let searchHint = String(localized: "searchHint", defaultValue: "搜索照片、标签、笔记")
     static let searchPlaceholder = String(localized: "searchPlaceholder", defaultValue: "搜索照片、标签…")
     /// 筛选 badge——"筛选 (3)" 表示激活 3 个筛选条件
-    static func filterWithCount(_ count: Int) -> String { String(localized: "filterWithCount", defaultValue: "筛选 (\\(count))") }
+    static func filterWithCount(_ count: Int) -> String { String.localizedStringWithFormat(String(localized: "filterWithCount", defaultValue: "筛选 (%lld)"), count) }
 
     // MARK: - 上下文菜单 / 详情面板 (V5.50-8 扩展)
     /// 移动 / 文件夹 / 标签
@@ -198,7 +198,7 @@ enum Copy {
     /// 评分——分组标题
     static let ratingCategory = String(localized: "ratingCategory", defaultValue: "评分")
     /// 评分——"N 星" 标签
-    static func ratingStars(_ n: Int) -> String { String(localized: "ratingStars", defaultValue: "\\(n) 星") }
+    static func ratingStars(_ n: Int) -> String { String.localizedStringWithFormat(String(localized: "ratingStars", defaultValue: "%lld 星"), n) }
     /// 多选 / 回收站 / 重复图
     static let cancelMultiSelect = String(localized: "cancelMultiSelect", defaultValue: "取消多选 (Esc)")
     static let restoreSelected = String(localized: "restoreSelected", defaultValue: "恢复选中")
@@ -208,7 +208,7 @@ enum Copy {
     static let keepNewestPerGroup = String(localized: "keepNewestPerGroup", defaultValue: "保留每组最新")
     // MARK: - V6.08: 详情面板错误 toast
     /// 文件重命名失败 (DetailView.renamePhoto 磁盘 moveItem 失败)
-    static func renameFailed(_ filename: String) -> String { String(localized: "renameFailed", defaultValue: "重命名失败：\\(filename)") }
+    static func renameFailed(_ filename: String) -> String { String.localizedStringWithFormat(String(localized: "renameFailed", defaultValue: "重命名失败：%@"), filename) }
 
     // MARK: - V6.08: PhotoGridEmptyState 文案 (整个文件 hardcoded → Copy 字典)
     /// CTA 主/次按钮
@@ -220,9 +220,9 @@ enum Copy {
     static let unknownFolder = String(localized: "unknownFolder", defaultValue: "未知文件夹")
     static let unknownTag = String(localized: "unknownTag", defaultValue: "未知标签")
     // V6.12: ActiveFiltersBar '≥ N 星' 旁路 (Q14)
-    static func minRatingStars(_ n: Int) -> String { String(localized: "minRatingStars", defaultValue: "≥ \\(n) 星") }
+    static func minRatingStars(_ n: Int) -> String { String.localizedStringWithFormat(String(localized: "minRatingStars", defaultValue: "≥ %lld 星"), n) }
     // V6.12: StatusBar 'X 项筛选' 旁路 (Q7)
-    static func activeFilterBadge(_ n: Int) -> String { String(localized: "activeFilterBadge", defaultValue: "\\(n) 项筛选") }
+    static func activeFilterBadge(_ n: Int) -> String { String.localizedStringWithFormat(String(localized: "activeFilterBadge", defaultValue: "%lld 项筛选"), n) }
     // V6.12: StatusBar thumbnailSizeLabel 4 档旁路 (Q7)
     static let thumbnailSizeCompact = String(localized: "thumbnailSizeCompact", defaultValue: "特小 70pt")
     static let thumbnailSizeSmall = String(localized: "thumbnailSizeSmall", defaultValue: "小 110pt")
@@ -306,19 +306,31 @@ enum Copy {
     static let settingsCopyright = String(localized: "settingsCopyright", defaultValue: "© 2026 ImageGallery")
     static let settingsThumbnailSizeHelpTooltip = String(localized: "settingsThumbnailSizeHelpTooltip", defaultValue: "实时预览缩略图大小")
     /// SettingsView.safeExternalLink 错误兜底（urlString 是开发者填错的 URL）
-    static func settingsAccessibilityLinkMisconfigured(_ urlString: String) -> String {
-        String(localized: "settingsAccessibilityLinkMisconfigured", defaultValue: "链接配置错误: \(urlString)")
-    }
+    static func settingsAccessibilityLinkMisconfigured(_ urlString: String) -> String { String.localizedStringWithFormat(String(localized: "settingsAccessibilityLinkMisconfigured", defaultValue: "链接配置错误: %@"), urlString) }
     // DetailView — 评分显示
     static let detailNoRating = String(localized: "detailNoRating", defaultValue: "未评分")
+    /// DetailView 删除照片 alert message — 带 Term 插值（Term.photo + Term.library）
+    static func deletePhotoConfirmWithTerms(photo: String, library: String) -> String {
+        String.localizedStringWithFormat(
+            String(localized: "deletePhotoConfirmWithTerms", defaultValue: "%@将从%@中移除，文件也会被永久删除。"),
+            photo, library
+        )
+    }
+    /// SettingsView 导出质量滑杆右侧百分比显示
+    static func exportQualityPercent(_ value: Int) -> String {
+        String.localizedStringWithFormat(String(localized: "exportQualityPercent", defaultValue: "%lld%%"), value)
+    }
+    /// ActiveFiltersBar 分组 filter chip 文本 — `label · count`
+    static func activeFilterChip(label: String, count: Int) -> String {
+        String.localizedStringWithFormat(
+            String(localized: "activeFilterChip", defaultValue: "%@ · %lld"),
+            label, count
+        )
+    }
     /// 详情面板评分星按钮 help — 当前已设的星 (点击清除)
-    static func ratingCurrent(_ n: Int) -> String {
-        String(localized: "ratingCurrent", defaultValue: "当前 \(n) 星（点击清除）")
-    }
+    static func ratingCurrent(_ n: Int) -> String { String.localizedStringWithFormat(String(localized: "ratingCurrent", defaultValue: "当前 %lld 星（点击清除）"), n) }
     /// 详情面板评分星按钮 help — hover 时设的星
-    static func ratingSetTo(_ n: Int) -> String {
-        String(localized: "ratingSetTo", defaultValue: "设为 \(n) 星")
-    }
+    static func ratingSetTo(_ n: Int) -> String { String.localizedStringWithFormat(String(localized: "ratingSetTo", defaultValue: "设为 %lld 星"), n) }
     // ActiveFiltersBar — chip tooltip
     static let activeFiltersClearAllTooltip = String(localized: "activeFiltersClearAllTooltip", defaultValue: "清除所有筛选条件")
     static let activeFiltersRemoveFilterTooltip = String(localized: "activeFiltersRemoveFilterTooltip", defaultValue: "移除此筛选")
