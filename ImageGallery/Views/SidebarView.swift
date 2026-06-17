@@ -156,22 +156,26 @@ struct SidebarView: View {
                     // V4.6.0: 智能 folder icon 用语义色（SidebarStyle.iconColor* token）——
                     //   一眼区分内容类型（重复/最近/大图/收藏/最近删除）
                     //   色板：色相分散（HLS space 60°+ 间隔），避免混淆
-                    sidebarRow(icon: "photo.on.rectangle.angled", label: "全部", count: libraryCounts.all, target: .all)
+                    // V6.14.3: 5 个智能文件夹 label 入 Copy 字典（之前 hardcoded 中文）
+                    //   String(localized:defaultValue:) — 走 xcstrings String Catalog
+                    //   跟 Copy.sidebarCount / Copy.toolbarExport 同样模式
+                    sidebarRow(icon: "photo.on.rectangle.angled", label: Copy.sidebarAll, count: libraryCounts.all, target: .all)
                     // V5.7: 砍 sidebarRow "收藏"——侧边栏只放主导航
                     //   收藏 = 评分 ≥ 5 走筛选 popover（用户在筛选 popover 内点击 ≥5 星即可看收藏）
-                    sidebarRow(icon: "tray", label: "待整理", count: libraryCounts.unfiled, target: .unfiled)
+                    sidebarRow(icon: "tray", label: Copy.sidebarUnfiled, count: libraryCounts.unfiled, target: .unfiled)
                     if duplicateCount > 0 {
-                        sidebarRow(icon: "doc.on.doc", label: "重复图", count: duplicateCount, target: .duplicates, iconColor: SidebarStyle.iconColorDuplicate)
+                        sidebarRow(icon: "doc.on.doc", label: Copy.sidebarDuplicates, count: duplicateCount, target: .duplicates, iconColor: SidebarStyle.iconColorDuplicate)
                     }
                     // V4.1.0: 智能文件夹移进"我的图馆"section（之前是独立 section）
                     // V4.1.0: 智能文件夹移进"我的图馆"section（之前是独立 section）
                     // V6.13.4: 补 count — 智能文件夹 5/7 item 已有 count, 补最后 2 个
-                    sidebarRow(icon: "clock.arrow.circlepath", label: "最近 7 天", count: libraryCounts.recent7Days, target: .recent7Days, iconColor: SidebarStyle.iconColorRecent)
-                    sidebarRow(icon: "large.circle", label: "大图（>5MB）", count: libraryCounts.largeFiles, target: .largeFiles, iconColor: SidebarStyle.iconColorLarge)
+                    sidebarRow(icon: "clock.arrow.circlepath", label: Copy.sidebarRecent7Days, count: libraryCounts.recent7Days, target: .recent7Days, iconColor: SidebarStyle.iconColorRecent)
+                    sidebarRow(icon: "large.circle", label: Copy.sidebarLargeFiles, count: libraryCounts.largeFiles, target: .largeFiles, iconColor: SidebarStyle.iconColorLarge)
                 }
             } header: {
                 // V4.1.0: 可见 header（V3.6.25 之前被隐藏）
-                SidebarSectionHeader("我的图馆", icon: "sparkles", isExpanded: $isLibraryExpanded)
+                // V6.14.3: 4 个 section header label 入 Copy 字典
+                SidebarSectionHeader(Copy.sidebarSectionLibrary, icon: "sparkles", isExpanded: $isLibraryExpanded)
             }
 
             // ─── Section 2: 我的文件夹 ───
@@ -199,7 +203,7 @@ struct SidebarView: View {
                     .buttonStyle(.plain)
                 }
             } header: {
-                SidebarSectionHeader("我的文件夹", icon: "folder", count: folders.count, isExpanded: $isFoldersExpanded)
+                SidebarSectionHeader(Copy.sidebarSectionFolders, icon: "folder", count: folders.count, isExpanded: $isFoldersExpanded)
             }
 
             // ─── Section 3: 标签 ───
@@ -209,8 +213,8 @@ struct SidebarView: View {
                         // V3.6.21: 改用 EmptyStateView 统一空状态
                         EmptyStateView(
                             icon: "tag",
-                            title: "还没有标签",
-                            subtitle: "新建一个标签，给照片打上分类标记",
+                            title: Copy.emptyNoTags,
+                            subtitle: Copy.emptyNoTagsHint,
                             iconColor: .secondary
                         )
                         .frame(height: 100)
@@ -251,14 +255,14 @@ struct SidebarView: View {
                     .buttonStyle(.plain)
                 }
             } header: {
-                SidebarSectionHeader("标签", icon: "tag", count: tags.count, isExpanded: $isTagsExpanded)
+                SidebarSectionHeader(Copy.sidebarSectionTags, icon: "tag", count: tags.count, isExpanded: $isTagsExpanded)
             }
 
             // ─── Section 4: 最近删除（单独 section，底部入口）───
             Section {
                 sidebarRow(
                     icon: "trash",
-                    label: "最近删除",
+                    label: Copy.sidebarRecentlyDeleted,
                     count: libraryCounts.trashed,
                     target: .recentlyDeleted,
                     // V4.6.0: 改用 SidebarStyle.iconColorTrash token
@@ -278,7 +282,7 @@ struct SidebarView: View {
                 .animation(Animations.interactive, value: isTrashDropTargeted)
             } header: {
                 // V4.1.0: trash 是关键入口，不可折叠
-                SidebarSectionHeader("最近删除", icon: "trash", isExpanded: .constant(true))
+                SidebarSectionHeader(Copy.sidebarSectionRecycleBin, icon: "trash", isExpanded: .constant(true))
             }
         }
         .listStyle(.sidebar)

@@ -42,20 +42,25 @@ import Foundation
 enum Term {
     // MARK: - 专有名词
 
+    // V6.14.3: Term 字典 i18n 化 — `static let "中文"` → `static var { String(localized:...) }`
+    //   之前 hardcoded 中文, 真 i18n 时需要改 n+1 处 callers
+    //   现在走 xcstrings String Catalog, 未来 zh-Hant 真翻译只需 xcstrings 加 entry
+    //   调用方 Term.library 不用改 (Swift computed property API 兼容)
+
     /// "图库"——不用 "图馆" (V4.36.x typo, V5.51 二次修正)
-    static let library = "图库"
+    static var library: String { String(localized: "termLibrary", defaultValue: "图库") }
 
     /// "图片"——不用 "照片" (跟系统 Photos.app 区分, 减少概念混淆)
-    static let photo = "图片"
+    static var photo: String { String(localized: "termPhoto", defaultValue: "图片") }
 
     /// "回收站"——不用 "垃圾箱" (V4.36.x 决策, 跟 macOS Finder "废纸篓" 概念一致)
-    static let recycleBin = "回收站"
+    static var recycleBin: String { String(localized: "termRecycleBin", defaultValue: "回收站") }
 
     // MARK: - 量词
 
     /// "张"——图片计数单位 (不混用 "个")
-    static let countUnit = "张"
+    static var countUnit: String { String(localized: "termCountUnit", defaultValue: "张") }
 
     /// "天"——保留时长单位 (不混用 "日")
-    static let dayUnit = "天"
+    static var dayUnit: String { String(localized: "termDayUnit", defaultValue: "天") }
 }

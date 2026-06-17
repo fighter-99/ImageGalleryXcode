@@ -81,6 +81,26 @@ enum Copy {
     static let confirm = String(localized: "confirm", defaultValue: "确定")
     static let delete = String(localized: "delete", defaultValue: "删除")
 
+    // MARK: - V6.14.3: 侧栏 label i18n 化
+    //   之前 SidebarView 12 个 hardcoded 中文 ("全部"/"待整理"/"重复图"/"最近 7 天" 等)
+    //   走 String(localized:defaultValue:) xcstrings 模式
+    //   未来 zh-Hant 真翻译 (V6.15) 只需 xcstrings 加翻译, 代码不动
+    // 智能文件夹 row label
+    static let sidebarAll = String(localized: "sidebarAll", defaultValue: "全部")
+    static let sidebarUnfiled = String(localized: "sidebarUnfiled", defaultValue: "待整理")
+    static let sidebarDuplicates = String(localized: "sidebarDuplicates", defaultValue: "重复图")
+    static let sidebarRecent7Days = String(localized: "sidebarRecent7Days", defaultValue: "最近 7 天")
+    static let sidebarLargeFiles = String(localized: "sidebarLargeFiles", defaultValue: "大图（>5MB）")
+    static let sidebarRecentlyDeleted = String(localized: "sidebarRecentlyDeleted", defaultValue: "最近删除")
+    // section header
+    static let sidebarSectionLibrary = String(localized: "sidebarSectionLibrary", defaultValue: "我的图馆")
+    static let sidebarSectionFolders = String(localized: "sidebarSectionFolders", defaultValue: "我的文件夹")
+    static let sidebarSectionTags = String(localized: "sidebarSectionTags", defaultValue: "标签")
+    static let sidebarSectionRecycleBin = String(localized: "sidebarSectionRecycleBin", defaultValue: "最近删除")
+    // 标签 section 空态
+    static let emptyNoTags = String(localized: "emptyNoTags", defaultValue: "还没有标签")
+    static let emptyNoTagsHint = String(localized: "emptyNoTagsHint", defaultValue: "新建一个标签，给照片打上分类标记")
+
     // MARK: - 筛选
     static let clearAllFilters = String(localized: "clearAllFilters", defaultValue: "清除全部")
 
