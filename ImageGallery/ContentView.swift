@@ -382,7 +382,10 @@ struct ContentView: View {
                 onResetFilters: resetFilters,
                 onCopy: copyToPasteboard,
                 onToggleSortDirection: toggleSortDirection,
-                onToggleSidebar: { showSidebar.toggle() },
+                // V6.13.3: 工具栏 sidebar toggle 触发 withAnimation 包裹
+                //   配合 MainSplitView 的 .transition(.move + .opacity) 实现 0.3s 滑动
+                //   之前硬切——MainSplitView line 75 transition 仍触发但 toggle 本身没 anim 驱动
+                onToggleSidebar: { withAnimation(Animations.medium) { showSidebar.toggle() } },
                 onSetRating: { rating in batchSetRating(rating) },
                 onDelete: handleDelete,
                 onPrev: goPrev,
