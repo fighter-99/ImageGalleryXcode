@@ -6,6 +6,9 @@
 //  简化版——只测 ContentViewModel init/默认值，不涉及 ModelContainer
 //  ModelContainer 相关测试在 V5.54-2+ 加，那时再独立测
 //
+//  V6.12.20: 加 isolatedDefaults / isolatedModel helper (跟 ContentViewModelStateTests 同源 pattern)
+//  避开 UserDefaults.standard 跨 test 污染
+//
 
 import Testing
 import Foundation
@@ -14,12 +17,31 @@ import Foundation
 @MainActor
 struct ContentViewModelSmokeTests {
 
+    // V6.12.20: 共享 suite + cleanup pattern (跟 ContentViewModelStateTests.isolatedModel 同源)
+    @MainActor
+    private static let isolatedDefaults: UserDefaults = UserDefaults(suiteName: "ImageGalleryTests_Smoke")!
+    private static let userSettingsKeys: [String] = [
+        "viewModeRaw", "showSidebar", "showDetail", "accentColorID",
+        "trashRetentionDays", "appearanceMode", "thumbnailSize",
+        "sidebarSelection", "sortOption", "thumbnailLayoutMode",
+        "sidebarColumnWidth", "detailColumnWidth", "autoDeduplicate",
+        "autoGenerateThumbnails", "defaultExportFormat",
+        "defaultExportQuality", "scrollAnchorPhotoID"
+    ]
+    private static func isolatedModel() -> ContentViewModel {
+        for key in userSettingsKeys {
+            isolatedDefaults.removeObject(forKey: key)
+        }
+        return ContentViewModel(settings: UserSettings(defaults: isolatedDefaults))
+    }
+
     @Test func init_hasCorrectDefaultState() {
-        let model = ContentViewModel()
+        // V6.12.20: 用 isolatedModel (共享 suite + cleanup)——避开 UserDefaults.standard 跨 test 污染
+        let model = Self.isolatedModel()
 
         // 22 个 @State 默认值验证
         #expect(model.selection.isEmpty == true)
-        #expect(model.sidebarSelection == .all)
+        #expect(model.sidebarSelection == nil)  // V5.59-2: default = nil (从 settings 反序列化, init 时 nil)
         #expect(model.filterState.isActive == false)
         #expect(model.searchText == "")
         #expect(model.thumbnailSize == 200)
@@ -42,10 +64,11 @@ struct ContentViewModelSmokeTests {
     }
 
     @Test func init_settingsHaveCorrectDefaults() {
-        let model = ContentViewModel()
+        // V6.12.20: 用 isolatedModel (共享 suite + cleanup)——避开 UserDefaults.standard 跨 test 污染
+        let model = Self.isolatedModel()
         #expect(model.settings.viewModeRaw == ViewMode.grid.rawValue)
         #expect(model.settings.showSidebar == true)
-        #expect(model.settings.showDetail == false)
+        #expect(model.settings.showDetail == true)  // V5.60-1: 改回 true (用户要求"详情面板常驻")
         #expect(model.settings.accentColorID == AccentColor.system.rawValue)
         #expect(model.settings.trashRetentionDays == TrashRetentionDays.defaultValue.rawValue)
         #expect(model.settings.appearanceMode == AppearanceMode.defaultValue.rawValue)
@@ -58,12 +81,12 @@ struct ContentViewModelSmokeTests {
     }
 
     @Test func init_modelContextIsNil() {
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         #expect(model.modelContext == nil, "init 后 modelContext 应是 nil——由 .task 注入")
     }
 
     @Test func init_allPhotosAndFoldersAndAllTagsEmpty() {
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         #expect(model.allPhotos.isEmpty)
         #expect(model.folders.isEmpty)
         #expect(model.allTags.isEmpty)

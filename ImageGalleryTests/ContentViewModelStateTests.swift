@@ -15,31 +15,34 @@ import SwiftData  // V6.12 收尾: sidebarSelection_canBeSetToFolder / affectsCu
 @MainActor
 struct ContentViewModelStateTests {
 
-    // V6.12 收尾 ②: 测试隔离——每个 test 用 fresh UserDefaults suite 避免污染
-    //   之前 ContentViewModel() → UserSettings() → UserDefaults.standard
-    //   跨测试共享导致 default value 测试 flaky (viewMode/appearanceMode/accentColor 等)
-    //   现在 isolated() 给新 suite, init() 一次性清空所有 UserSettings 读过的 key
+    // V6.12.20: 共享 suite + cleanup pattern——避免每次 UUID 创建新 suite 给 cfprefsd 压力
+    //   之前用 UUID 每次新 suite: cfprefsd 守护进程被大量临时 suite 注册拖累, Swift Testing
+    //   并行下偶尔触发 signal trap 污染整个 process (memory: swift-testing-userdefaults-parallel-crash)
+    //   改共享 1 个 suite, 每个 test 跑前清 key——suite 注册压力降到 1
+    //   @MainActor 强制 + suite static let 一次性 init 避开 race
+    @MainActor
+    private static let isolatedDefaults: UserDefaults = UserDefaults(suiteName: "ImageGalleryTests_State")!
+    /// UserSettings 读过的所有 key——任何被读过的 key 都得清, 防漏
+    private static let userSettingsKeys: [String] = [
+        "viewModeRaw", "showSidebar", "showDetail", "accentColorID",
+        "trashRetentionDays", "appearanceMode", "thumbnailSize",
+        "sidebarSelection", "sortOption", "thumbnailLayoutMode",
+        "sidebarColumnWidth", "detailColumnWidth", "autoDeduplicate",
+        "autoGenerateThumbnails", "defaultExportFormat",
+        "defaultExportQuality", "scrollAnchorPhotoID"
+    ]
     private static func isolatedModel() -> ContentViewModel {
-        let suiteName = "test-\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suiteName)!
-        // 清 V6.12 收尾 17 key——任何被 UserSettings 读过的 key 都得清, 防漏
-        for key in [
-            "viewModeRaw", "showSidebar", "showDetail", "accentColorID",
-            "trashRetentionDays", "appearanceMode", "thumbnailSize",
-            "sidebarSelection", "sortOption", "thumbnailLayoutMode",
-            "sidebarColumnWidth", "detailColumnWidth", "autoDeduplicate",
-            "autoGenerateThumbnails", "defaultExportFormat",
-            "defaultExportQuality", "scrollAnchorPhotoID"
-        ] {
-            defaults.removeObject(forKey: key)
+        // Cleanup: 删所有 UserSettings 读过的 key, 强制走 field default
+        for key in userSettingsKeys {
+            isolatedDefaults.removeObject(forKey: key)
         }
-        return ContentViewModel(settings: UserSettings(defaults: defaults))
+        return ContentViewModel(settings: UserSettings(defaults: isolatedDefaults))
     }
 
     // MARK: - @State 字段 mutation
 
     @Test func selection_canBeReplaced() {
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         let id = UUID()
         model.selection = model.selection.selectingSingle(id)
         #expect(model.selection.singleSelectedID == id)
@@ -53,7 +56,7 @@ struct ContentViewModelStateTests {
             for: Photo.self, Folder.self, Tag.self,
             configurations: ModelConfiguration(isStoredInMemoryOnly: true)
         )
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         model.modelContext = container.mainContext
         let folder = Folder(name: "Vacation")
         container.mainContext.insert(folder)
@@ -65,7 +68,7 @@ struct ContentViewModelStateTests {
     }
 
     @Test func filterState_canBeReplacedWithEmpty() {
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         // 4 维 dirty: 1 folder + 0 tag + 1 shape + rating>0
         // activeCount = 1 + 0 + 1 + 1 = 3 (per FilterState.activeCount 公式)
         let dirty = FilterState(folders: [UUID()], tags: [], shapes: [.square], minRating: 5)
@@ -77,20 +80,20 @@ struct ContentViewModelStateTests {
     }
 
     @Test func searchText_canBeSet() {
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         model.searchText = "beach"
         #expect(model.searchText == "beach")
         #expect(model.trimmedSearch == "beach")
     }
 
     @Test func searchText_withSurroundingSpaces_trimmedCleanly() {
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         model.searchText = "  beach  "
         #expect(model.trimmedSearch == "beach")
     }
 
     @Test func thumbnailSize_canBeAdjusted() {
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         model.thumbnailSize = 110
         #expect(model.thumbnailSize == 110)
         model.thumbnailSize = 240
@@ -98,7 +101,7 @@ struct ContentViewModelStateTests {
     }
 
     @Test func sortOption_canBeSet() {
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         model.sortOption = .fileSizeDesc
         #expect(model.sortOption == .fileSizeDesc)
         model.sortOption = .importedAtAsc
@@ -106,20 +109,20 @@ struct ContentViewModelStateTests {
     }
 
     @Test func showingBatchDeleteConfirm_canBeToggled() {
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         #expect(model.showingBatchDeleteConfirm == false)
         model.showingBatchDeleteConfirm = true
         #expect(model.showingBatchDeleteConfirm == true)
     }
 
     @Test func newFolderName_canBeSet() {
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         model.newFolderName = "Vacation 2024"
         #expect(model.newFolderName == "Vacation 2024")
     }
 
     @Test func toastQueue_canAppend() {
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         let info = ToastInfo(message: "test", type: .info, duration: .normal)
         model.toastQueue.append(info)
         #expect(model.toastQueue.count == 1)
@@ -127,7 +130,7 @@ struct ContentViewModelStateTests {
     }
 
     @Test func importProgress_canBeSet() {
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         let progress = ImportProgress(current: 5, total: 10, isImporting: true)
         model.importProgress = progress
         #expect(model.importProgress?.current == 5)
@@ -135,7 +138,7 @@ struct ContentViewModelStateTests {
     }
 
     @Test func immersivePhoto_canBeSet() {
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         let photo = Photo(
             filename: "i.jpg",
             fileURL: URL(fileURLWithPath: "/tmp/V554_immersive.jpg"),
@@ -150,12 +153,12 @@ struct ContentViewModelStateTests {
     // MARK: - Computed properties (不需要 mutation)
 
     @Test func viewMode_defaultIsGrid() {
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         #expect(model.viewMode == .grid)
     }
 
     @Test func viewMode_setterWritesSettingsRaw() {
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         model.viewMode = .list
         #expect(model.settings.viewModeRaw == ViewMode.list.rawValue)
         #expect(model.viewMode == .list)
@@ -163,39 +166,39 @@ struct ContentViewModelStateTests {
 
     @Test func layoutMode_defaultIsSquareFit() {
         // V6.12.12: 砍 .square 后 defaultValue = .squareFit
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         #expect(model.layoutMode == .defaultValue)
     }
 
     @Test func appearanceMode_defaultIsSystem() {
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         #expect(model.appearanceMode == .system)
     }
 
     @Test func accentColor_defaultIsSystem() {
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         #expect(model.accentColor == .system)
     }
 
     @Test func currentViewTitle_forAllSidebar() {
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         model.sidebarSelection = .all
         #expect(model.currentViewTitle == "全部照片")
     }
 
     @Test func currentViewTitle_forTrashUsesRecycleBin() {
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         model.sidebarSelection = .recentlyDeleted
         #expect(model.currentViewTitle == Term.recycleBin)
     }
 
     @Test func currentViewSubtitle_empty_returnsZeroPhotos() {
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         #expect(model.currentViewSubtitle.contains("0 张"))
     }
 
     @Test func filterUnfiled_onlyTrue_whenSidebarIsUnfiled() {
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         model.sidebarSelection = .unfiled
         #expect(model.filterUnfiled == true)
         model.sidebarSelection = .all
@@ -203,7 +206,7 @@ struct ContentViewModelStateTests {
     }
 
     @Test func filterDuplicates_onlyTrue_whenSidebarIsDuplicates() {
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         model.sidebarSelection = .duplicates
         #expect(model.filterDuplicates == true)
         model.sidebarSelection = .all
@@ -211,7 +214,7 @@ struct ContentViewModelStateTests {
     }
 
     @Test func filterInTrash_onlyTrue_whenSidebarIsTrash() {
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         model.sidebarSelection = .recentlyDeleted
         #expect(model.filterInTrash == true)
         model.sidebarSelection = .all
@@ -224,7 +227,7 @@ struct ContentViewModelStateTests {
             for: Photo.self, Folder.self, Tag.self,
             configurations: ModelConfiguration(isStoredInMemoryOnly: true)
         )
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         model.modelContext = container.mainContext
         let folder = Folder(name: "Beach")
         container.mainContext.insert(folder)
@@ -242,7 +245,7 @@ struct ContentViewModelStateTests {
             for: Photo.self, Folder.self, Tag.self,
             configurations: ModelConfiguration(isStoredInMemoryOnly: true)
         )
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         model.modelContext = container.mainContext
         let tag = Tag(name: "favorite")
         container.mainContext.insert(tag)
@@ -255,36 +258,36 @@ struct ContentViewModelStateTests {
     }
 
     @Test func canPrev_canNext_initiallyFalse() {
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         #expect(model.canPrev == false)
         #expect(model.canNext == false)
     }
 
     @Test func isMultiSelect_initiallyFalse() {
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         #expect(model.isMultiSelect == false)
     }
 
     @Test func totalSizeFormatted_withEmptyAllPhotos_returnsZeroBytes() {
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         // ByteCountFormatter .file: 0 bytes → "Zero KB"
         #expect(model.totalSizeFormatted == "Zero KB")
     }
 
     @Test func sidebarColumnWidth_canBeAdjusted() {
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         model.sidebarColumnWidth = 300
         #expect(model.sidebarColumnWidth == 300)
     }
 
     @Test func detailColumnWidth_canBeAdjusted() {
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         model.detailColumnWidth = 420
         #expect(model.detailColumnWidth == 420)
     }
 
     @Test func batchDeleteTitle_zeroSelected_returnsDefault() {
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         #expect(model.batchDeleteTitle == Copy.deleteConfirmTitle)
     }
 }

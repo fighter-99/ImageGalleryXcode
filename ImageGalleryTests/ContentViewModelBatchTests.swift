@@ -17,13 +17,33 @@ import SwiftData
 @Suite(.serialized)  // V5.55: 强制串行——避免 Swift Testing runner 跟 ModelContainer 并行创建冲突
 struct ContentViewModelBatchTests {
 
+    // V6.12.20: 共享 suite + cleanup pattern (避开 UserDefaults.standard 跨 test 污染)
+    //   跟 ContentViewModelStateTests.isolatedModel 同源——共享 1 个 suite, 每个 test cleanup
+    //   避免每次 UUID 新 suite 给 cfprefsd 压力 (memory: swift-testing-userdefaults-parallel-crash)
+    @MainActor
+    private static let isolatedDefaults: UserDefaults = UserDefaults(suiteName: "ImageGalleryTests_Batch")!
+    private static let userSettingsKeys: [String] = [
+        "viewModeRaw", "showSidebar", "showDetail", "accentColorID",
+        "trashRetentionDays", "appearanceMode", "thumbnailSize",
+        "sidebarSelection", "sortOption", "thumbnailLayoutMode",
+        "sidebarColumnWidth", "detailColumnWidth", "autoDeduplicate",
+        "autoGenerateThumbnails", "defaultExportFormat",
+        "defaultExportQuality", "scrollAnchorPhotoID"
+    ]
+    private static func isolatedModel() -> ContentViewModel {
+        for key in userSettingsKeys {
+            isolatedDefaults.removeObject(forKey: key)
+        }
+        return ContentViewModel(settings: UserSettings(defaults: isolatedDefaults))
+    }
+
     @Test func batchMove_toFolder_setsFolderOnPhotos() throws {
         let container = try ModelContainer(
             for: Photo.self, Folder.self, Tag.self,
             configurations: ModelConfiguration(isStoredInMemoryOnly: true)
         )
         let context = container.mainContext
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         model.modelContext = context
 
         // 1 folder + 2 photos
@@ -50,7 +70,7 @@ struct ContentViewModelBatchTests {
             configurations: ModelConfiguration(isStoredInMemoryOnly: true)
         )
         let context = container.mainContext
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         model.modelContext = context
 
         let folder = Folder(name: "Old")
@@ -73,7 +93,7 @@ struct ContentViewModelBatchTests {
             configurations: ModelConfiguration(isStoredInMemoryOnly: true)
         )
         let context = container.mainContext
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         model.modelContext = context
 
         let tag = Tag(name: "favorite")
@@ -95,7 +115,7 @@ struct ContentViewModelBatchTests {
             configurations: ModelConfiguration(isStoredInMemoryOnly: true)
         )
         let context = container.mainContext
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         model.modelContext = context
 
         let tag = Tag(name: "favorite")
@@ -119,7 +139,7 @@ struct ContentViewModelBatchTests {
             configurations: ModelConfiguration(isStoredInMemoryOnly: true)
         )
         let context = container.mainContext
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         model.modelContext = context
 
         let p1 = Photo(filename: "1.jpg", fileURL: URL(fileURLWithPath: "/tmp/V554_\(UUID().uuidString).jpg"), fileSize: 100, width: 10, height: 10)
@@ -142,7 +162,7 @@ struct ContentViewModelBatchTests {
             configurations: ModelConfiguration(isStoredInMemoryOnly: true)
         )
         let context = container.mainContext
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         model.modelContext = context
 
         let p1 = Photo(filename: "1.jpg", fileURL: URL(fileURLWithPath: "/tmp/V554_\(UUID().uuidString).jpg"), fileSize: 100, width: 10, height: 10)
@@ -163,7 +183,7 @@ struct ContentViewModelBatchTests {
             configurations: ModelConfiguration(isStoredInMemoryOnly: true)
         )
         let context = container.mainContext
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         model.modelContext = context
 
         let folder = Folder(name: "Vacation")

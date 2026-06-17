@@ -16,11 +16,31 @@ import Foundation
 @MainActor
 struct ContentViewModelSelectionTests {
 
+    // V6.12.20: 共享 suite + cleanup pattern (避开 UserDefaults.standard 跨 test 污染)
+    //   跟 ContentViewModelStateTests.isolatedModel 同源——共享 1 个 suite, 每个 test cleanup
+    //   避免每次 UUID 新 suite 给 cfprefsd 压力 (memory: swift-testing-userdefaults-parallel-crash)
+    @MainActor
+    private static let isolatedDefaults: UserDefaults = UserDefaults(suiteName: "ImageGalleryTests_Selection")!
+    private static let userSettingsKeys: [String] = [
+        "viewModeRaw", "showSidebar", "showDetail", "accentColorID",
+        "trashRetentionDays", "appearanceMode", "thumbnailSize",
+        "sidebarSelection", "sortOption", "thumbnailLayoutMode",
+        "sidebarColumnWidth", "detailColumnWidth", "autoDeduplicate",
+        "autoGenerateThumbnails", "defaultExportFormat",
+        "defaultExportQuality", "scrollAnchorPhotoID"
+    ]
+    private static func isolatedModel() -> ContentViewModel {
+        for key in userSettingsKeys {
+            isolatedDefaults.removeObject(forKey: key)
+        }
+        return ContentViewModel(settings: UserSettings(defaults: isolatedDefaults))
+    }
+
     // MARK: - 测试数据工厂
 
     /// 构造带 N 张虚拟 photo 的 model（不写盘，纯内存）
     private func makeModelWithPhotos(_ count: Int) -> ContentViewModel {
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         let photos = (0..<count).map { i in
             Photo(
                 filename: "test_\(i).jpg",
@@ -37,21 +57,21 @@ struct ContentViewModelSelectionTests {
     // MARK: - toggleSortDirection
 
     @Test func toggleSortDirection_fromAsc_flipsToDesc() {
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         #expect(model.sortOption == .filenameAsc)
         model.toggleSortDirection()
         #expect(model.sortOption == .filenameDesc)
     }
 
     @Test func toggleSortDirection_fromDesc_flipsToAsc() {
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         model.sortOption = .filenameDesc
         model.toggleSortDirection()
         #expect(model.sortOption == .filenameAsc)
     }
 
     @Test func toggleSortDirection_toggleTwice_returnsToOriginal() {
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         let original = model.sortOption
         model.toggleSortDirection()
         model.toggleSortDirection()
@@ -61,7 +81,7 @@ struct ContentViewModelSelectionTests {
     // MARK: - resetFilters
 
     @Test func resetFilters_clearsAllFilterState() {
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         // 预设一堆 dirty state
         model.sidebarSelection = .recent7Days
         model.searchText = "query"
@@ -154,21 +174,21 @@ struct ContentViewModelSelectionTests {
     // MARK: - zoomIn / zoomOut / resetThumbnailSize
 
     @Test func zoomIn_fromDefault_advancesToLarger() {
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         let before = model.thumbnailSize
         model.zoomIn()
         #expect(model.thumbnailSize > before, "zoomIn 应增大 thumbnailSize")
     }
 
     @Test func zoomOut_fromDefault_advancesToSmaller() {
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         let before = model.thumbnailSize
         model.zoomOut()
         #expect(model.thumbnailSize < before, "zoomOut 应减小 thumbnailSize")
     }
 
     @Test func zoomIn_atMax_isNoOp() {
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         // 设到最大
         while let next = ThumbnailDensity.larger(than: model.thumbnailSize) {
             model.thumbnailSize = next.size
@@ -179,7 +199,7 @@ struct ContentViewModelSelectionTests {
     }
 
     @Test func resetThumbnailSize_restoresStoredDefault() {
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         // 改 stored default
         model.settings.thumbnailSize = 240
         // 改 live size 到别的

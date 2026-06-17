@@ -17,6 +17,26 @@ import Foundation
 @MainActor
 struct ContentViewModelInitTests {
 
+    // V6.12.20: 共享 suite + cleanup pattern (避开 UserDefaults.standard 跨 test 污染)
+    //   跟 ContentViewModelStateTests.isolatedModel 同源——共享 1 个 suite, 每个 test cleanup
+    //   避免每次 UUID 新 suite 给 cfprefsd 压力 (memory: swift-testing-userdefaults-parallel-crash)
+    @MainActor
+    private static let isolatedDefaults: UserDefaults = UserDefaults(suiteName: "ImageGalleryTests_Init")!
+    private static let userSettingsKeys: [String] = [
+        "viewModeRaw", "showSidebar", "showDetail", "accentColorID",
+        "trashRetentionDays", "appearanceMode", "thumbnailSize",
+        "sidebarSelection", "sortOption", "thumbnailLayoutMode",
+        "sidebarColumnWidth", "detailColumnWidth", "autoDeduplicate",
+        "autoGenerateThumbnails", "defaultExportFormat",
+        "defaultExportQuality", "scrollAnchorPhotoID"
+    ]
+    private static func isolatedModel() -> ContentViewModel {
+        for key in userSettingsKeys {
+            isolatedDefaults.removeObject(forKey: key)
+        }
+        return ContentViewModel(settings: UserSettings(defaults: isolatedDefaults))
+    }
+
     // 测试 setup/teardown——隔离 UserDefaults 防污染其他 test
     private func clearUserDefaults() {
         for key in [
@@ -33,7 +53,7 @@ struct ContentViewModelInitTests {
 
     @Test func init_withDefaultArg_createsNewUserSettings() {
         clearUserDefaults()
-        let model = ContentViewModel()  // 无参 → fallback UserSettings()
+        let model = Self.isolatedModel()  // 无参 → fallback UserSettings()
         // 不是 nil 也不是 default arg——是新 UserSettings 实例
         #expect(model.settings.viewModeRaw == ViewMode.grid.rawValue)
         #expect(model.settings.thumbnailSize == 200.0)

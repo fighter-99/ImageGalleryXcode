@@ -16,6 +16,26 @@ import SwiftData
 @MainActor
 struct ContentViewModelRecycleBinTests {
 
+    // V6.12.20: 共享 suite + cleanup pattern (避开 UserDefaults.standard 跨 test 污染)
+    //   跟 ContentViewModelStateTests.isolatedModel 同源——共享 1 个 suite, 每个 test cleanup
+    //   避免每次 UUID 新 suite 给 cfprefsd 压力 (memory: swift-testing-userdefaults-parallel-crash)
+    @MainActor
+    private static let isolatedDefaults: UserDefaults = UserDefaults(suiteName: "ImageGalleryTests_RecycleBin")!
+    private static let userSettingsKeys: [String] = [
+        "viewModeRaw", "showSidebar", "showDetail", "accentColorID",
+        "trashRetentionDays", "appearanceMode", "thumbnailSize",
+        "sidebarSelection", "sortOption", "thumbnailLayoutMode",
+        "sidebarColumnWidth", "detailColumnWidth", "autoDeduplicate",
+        "autoGenerateThumbnails", "defaultExportFormat",
+        "defaultExportQuality", "scrollAnchorPhotoID"
+    ]
+    private static func isolatedModel() -> ContentViewModel {
+        for key in userSettingsKeys {
+            isolatedDefaults.removeObject(forKey: key)
+        }
+        return ContentViewModel(settings: UserSettings(defaults: isolatedDefaults))
+    }
+
     @Test func deleteSinglePhoto_setsTrashedAt() throws {
         // Inline ModelContainer（不抽 helper——见文件头注释）
         let container = try ModelContainer(
@@ -23,7 +43,7 @@ struct ContentViewModelRecycleBinTests {
             configurations: ModelConfiguration(isStoredInMemoryOnly: true)
         )
         let context = container.mainContext
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         model.modelContext = context
         let photo = Photo(
             filename: "test.jpg",
@@ -48,7 +68,7 @@ struct ContentViewModelRecycleBinTests {
             configurations: ModelConfiguration(isStoredInMemoryOnly: true)
         )
         let context = container.mainContext
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         model.modelContext = context
         let photo = Photo(
             filename: "noop.jpg",
@@ -71,7 +91,7 @@ struct ContentViewModelRecycleBinTests {
             configurations: ModelConfiguration(isStoredInMemoryOnly: true)
         )
         let context = container.mainContext
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         model.modelContext = context
 
         let p1 = Photo(filename: "1.jpg", fileURL: URL(fileURLWithPath: "/tmp/V554_\(UUID().uuidString)_1.jpg"), fileSize: 100, width: 10, height: 10)
@@ -98,7 +118,7 @@ struct ContentViewModelRecycleBinTests {
             configurations: ModelConfiguration(isStoredInMemoryOnly: true)
         )
         let context = container.mainContext
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         model.modelContext = context
 
         let trashPhoto = Photo(filename: "trash.jpg", fileURL: URL(fileURLWithPath: "/tmp/V554_\(UUID().uuidString)_trash.jpg"), fileSize: 100, width: 10, height: 10)
@@ -125,7 +145,7 @@ struct ContentViewModelRecycleBinTests {
             configurations: ModelConfiguration(isStoredInMemoryOnly: true)
         )
         let context = container.mainContext
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         model.modelContext = context
         let photo = Photo(
             filename: "unique.jpg",
@@ -148,7 +168,7 @@ struct ContentViewModelRecycleBinTests {
             configurations: ModelConfiguration(isStoredInMemoryOnly: true)
         )
         let context = container.mainContext
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         model.modelContext = context
         let photo = Photo(
             filename: "restored.jpg",
@@ -176,7 +196,7 @@ struct ContentViewModelRecycleBinTests {
             configurations: ModelConfiguration(isStoredInMemoryOnly: true)
         )
         let context = container.mainContext
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         model.modelContext = context
         let photo = Photo(
             filename: "purge.jpg",

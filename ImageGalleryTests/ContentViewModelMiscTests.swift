@@ -15,45 +15,65 @@ import SwiftData
 @MainActor
 struct ContentViewModelMiscTests {
 
+    // V6.12.20: 共享 suite + cleanup pattern (避开 UserDefaults.standard 跨 test 污染)
+    //   跟 ContentViewModelStateTests.isolatedModel 同源——共享 1 个 suite, 每个 test cleanup
+    //   避免每次 UUID 新 suite 给 cfprefsd 压力 (memory: swift-testing-userdefaults-parallel-crash)
+    @MainActor
+    private static let isolatedDefaults: UserDefaults = UserDefaults(suiteName: "ImageGalleryTests_Misc")!
+    private static let userSettingsKeys: [String] = [
+        "viewModeRaw", "showSidebar", "showDetail", "accentColorID",
+        "trashRetentionDays", "appearanceMode", "thumbnailSize",
+        "sidebarSelection", "sortOption", "thumbnailLayoutMode",
+        "sidebarColumnWidth", "detailColumnWidth", "autoDeduplicate",
+        "autoGenerateThumbnails", "defaultExportFormat",
+        "defaultExportQuality", "scrollAnchorPhotoID"
+    ]
+    private static func isolatedModel() -> ContentViewModel {
+        for key in userSettingsKeys {
+            isolatedDefaults.removeObject(forKey: key)
+        }
+        return ContentViewModel(settings: UserSettings(defaults: isolatedDefaults))
+    }
+
     // MARK: - serializeSelection / restoreSelection
 
     @Test func serializeSelection_nil_returnsAll() {
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         #expect(model.serializeSelection(nil) == "all")
     }
 
     @Test func serializeSelection_all_returnsAll() {
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         #expect(model.serializeSelection(.all) == "all")
     }
 
     @Test func serializeSelection_unfiled_returnsUnfiled() {
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         #expect(model.serializeSelection(.unfiled) == "unfiled")
     }
 
     @Test func serializeSelection_duplicates_returnsDuplicates() {
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         #expect(model.serializeSelection(.duplicates) == "duplicates")
     }
 
     @Test func serializeSelection_recent7Days_returnsRecent7Days() {
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         #expect(model.serializeSelection(.recent7Days) == "recent7Days")
     }
 
     @Test func serializeSelection_largeFiles_returnsLargeFiles() {
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         #expect(model.serializeSelection(.largeFiles) == "largeFiles")
     }
 
     @Test func serializeSelection_recentlyDeleted_returnsRecentlyDeleted() {
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         #expect(model.serializeSelection(.recentlyDeleted) == "recentlyDeleted")
     }
 
     @Test func serializeSelection_folder_returnsFolderPrefixedUUID() {
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         let folder = Folder(name: "Vacation")
         // V6.08: SidebarSelection.folder(UUID) (替 V5.55-3 的 .folder(Folder) 存引用)——传 UUID
         let result = model.serializeSelection(.folder(folder.id))
@@ -61,7 +81,7 @@ struct ContentViewModelMiscTests {
     }
 
     @Test func serializeSelection_tag_returnsTagPrefixedUUID() {
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         let tag = Tag(name: "favorite")
         // V6.08: SidebarSelection.tag(UUID) (替 V5.55-3 的 .tag(Tag) 存引用)——传 UUID
         let result = model.serializeSelection(.tag(tag.id))
@@ -76,14 +96,14 @@ struct ContentViewModelMiscTests {
     // MARK: - clearSelectionOnFilterChange
 
     @Test func clearSelectionOnFilterChange_emptySelection_isNoOp() {
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         let before = model.selection
         model.clearSelectionOnFilterChange()
         #expect(model.selection == before, "空 selection 不应被改")
     }
 
     @Test func clearSelectionOnFilterChange_withSingleSelection_clears() {
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         let id = UUID()
         model.selection = model.selection.selectingSingle(id)
         #expect(!model.selection.isEmpty)
@@ -92,7 +112,7 @@ struct ContentViewModelMiscTests {
     }
 
     @Test func clearSelectionOnFilterChange_withMultiSelection_clears() {
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         let p1 = Photo(filename: "1.jpg", fileURL: URL(fileURLWithPath: "/tmp/V554_clear_1.jpg"), fileSize: 100, width: 10, height: 10)
         let p2 = Photo(filename: "2.jpg", fileURL: URL(fileURLWithPath: "/tmp/V554_clear_2.jpg"), fileSize: 100, width: 10, height: 10)
         model.selection = .empty.settingAll(in: [p1, p2])
@@ -112,7 +132,7 @@ struct ContentViewModelMiscTests {
             configurations: ModelConfiguration(isStoredInMemoryOnly: true)
         )
         let context = container.mainContext
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         model.modelContext = context
 
         model.checkStorage()
@@ -133,7 +153,7 @@ struct ContentViewModelMiscTests {
             configurations: ModelConfiguration(isStoredInMemoryOnly: true)
         )
         let context = container.mainContext
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         model.modelContext = context
 
         let folder = Folder(name: "Vacation")
@@ -152,7 +172,7 @@ struct ContentViewModelMiscTests {
             configurations: ModelConfiguration(isStoredInMemoryOnly: true)
         )
         let context = container.mainContext
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         model.modelContext = context
 
         let tag = Tag(name: "favorite")
@@ -172,7 +192,7 @@ struct ContentViewModelMiscTests {
             configurations: ModelConfiguration(isStoredInMemoryOnly: true)
         )
         let context = container.mainContext
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         model.modelContext = context
 
         // 不 insert——只用 uuid 构造 key
@@ -186,13 +206,13 @@ struct ContentViewModelMiscTests {
     //   优先级: 1. first non-trashed  2. first (即使全 trashed)  3. nil (空 group)
 
     @Test func representativePhoto_emptyGroup_returnsNil() {
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         let group = DateGroup(id: "empty", label: "今天", sortKey: Date(), photos: [])
         #expect(model.representativePhoto(for: group) == nil)
     }
 
     @Test func representativePhoto_allLive_returnsFirstPhoto() {
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         let p1 = Photo(filename: "1.jpg", fileURL: URL(fileURLWithPath: "/tmp/V556_rep_1.jpg"), fileSize: 100, width: 10, height: 10)
         let p2 = Photo(filename: "2.jpg", fileURL: URL(fileURLWithPath: "/tmp/V556_rep_2.jpg"), fileSize: 100, width: 10, height: 10)
         let group = DateGroup(id: "live", label: "今天", sortKey: Date(), photos: [p1, p2])
@@ -200,7 +220,7 @@ struct ContentViewModelMiscTests {
     }
 
     @Test func representativePhoto_firstTrashed_returnsFirstLive() {
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         let p1 = Photo(filename: "1.jpg", fileURL: URL(fileURLWithPath: "/tmp/V556_rep_3.jpg"), fileSize: 100, width: 10, height: 10)
         p1.trashedAt = Date()
         let p2 = Photo(filename: "2.jpg", fileURL: URL(fileURLWithPath: "/tmp/V556_rep_4.jpg"), fileSize: 100, width: 10, height: 10)
@@ -211,7 +231,7 @@ struct ContentViewModelMiscTests {
     }
 
     @Test func representativePhoto_allTrashed_fallsBackToFirst() {
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         let p1 = Photo(filename: "1.jpg", fileURL: URL(fileURLWithPath: "/tmp/V556_rep_5.jpg"), fileSize: 100, width: 10, height: 10)
         p1.trashedAt = Date()
         let p2 = Photo(filename: "2.jpg", fileURL: URL(fileURLWithPath: "/tmp/V556_rep_6.jpg"), fileSize: 100, width: 10, height: 10)

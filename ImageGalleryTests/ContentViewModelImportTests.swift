@@ -17,13 +17,33 @@ import SwiftData
 @Suite(.serialized)  // V5.55: 强制串行——避免 Swift Testing runner 跟 ModelContainer 并行创建冲突
 struct ContentViewModelImportTests {
 
+    // V6.12.20: 共享 suite + cleanup pattern (避开 UserDefaults.standard 跨 test 污染)
+    //   跟 ContentViewModelStateTests.isolatedModel 同源——共享 1 个 suite, 每个 test cleanup
+    //   避免每次 UUID 新 suite 给 cfprefsd 压力 (memory: swift-testing-userdefaults-parallel-crash)
+    @MainActor
+    private static let isolatedDefaults: UserDefaults = UserDefaults(suiteName: "ImageGalleryTests_Import")!
+    private static let userSettingsKeys: [String] = [
+        "viewModeRaw", "showSidebar", "showDetail", "accentColorID",
+        "trashRetentionDays", "appearanceMode", "thumbnailSize",
+        "sidebarSelection", "sortOption", "thumbnailLayoutMode",
+        "sidebarColumnWidth", "detailColumnWidth", "autoDeduplicate",
+        "autoGenerateThumbnails", "defaultExportFormat",
+        "defaultExportQuality", "scrollAnchorPhotoID"
+    ]
+    private static func isolatedModel() -> ContentViewModel {
+        for key in userSettingsKeys {
+            isolatedDefaults.removeObject(forKey: key)
+        }
+        return ContentViewModel(settings: UserSettings(defaults: isolatedDefaults))
+    }
+
     @Test func cancelDuplicateImport_clearsAllDialogState() throws {
         let container = try ModelContainer(
             for: Photo.self, Folder.self, Tag.self,
             configurations: ModelConfiguration(isStoredInMemoryOnly: true)
         )
         let context = container.mainContext
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         model.modelContext = context
 
         // 模拟 dialog 已打开 + 有待导入 urls
@@ -51,7 +71,7 @@ struct ContentViewModelImportTests {
             configurations: ModelConfiguration(isStoredInMemoryOnly: true)
         )
         let context = container.mainContext
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         model.modelContext = context
 
         let dupURL = URL(fileURLWithPath: "/tmp/V554_dup.jpg")
@@ -78,7 +98,7 @@ struct ContentViewModelImportTests {
             configurations: ModelConfiguration(isStoredInMemoryOnly: true)
         )
         let context = container.mainContext
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         model.modelContext = context
 
         model.pendingImportURLs = [URL(fileURLWithPath: "/tmp/V554_1.jpg")]
@@ -98,7 +118,7 @@ struct ContentViewModelImportTests {
             configurations: ModelConfiguration(isStoredInMemoryOnly: true)
         )
         let context = container.mainContext
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         model.modelContext = context
 
         model.handleDropImport([])
@@ -113,7 +133,7 @@ struct ContentViewModelImportTests {
             configurations: ModelConfiguration(isStoredInMemoryOnly: true)
         )
         let context = container.mainContext
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         model.modelContext = context
 
         // 用一个真实 temp file URL (空文件即可, hash 算出来唯一)
@@ -185,7 +205,7 @@ struct ContentViewModelImportTests {
             configurations: ModelConfiguration(isStoredInMemoryOnly: true)
         )
         let context = container.mainContext
-        let model = ContentViewModel()
+        let model = Self.isolatedModel()
         model.modelContext = context
 
         let result = model.handleDrop(providers: [])
