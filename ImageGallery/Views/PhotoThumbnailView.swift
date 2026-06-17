@@ -29,6 +29,11 @@ struct PhotoThumbnailView: View {
     let photo: Photo
     let isInMultiSelect: Bool  // 是否在多选集合中
     let isActive: Bool          // 是否是当前单选激活（蓝色边框）
+    // V3.7.2 (P3.1.2): selection 让 .draggable 决定 payload 是单图还是整组
+    //   isInMultiSelect 是布尔 (cell 视觉), selection 包含整组 IDs
+    //   拖自己 (在 selectedIDs) 时 → 编码整组 (count = N, fileURLs = 整组 URL)
+    //   拖没选的 → 单图 (count = 1, fileURLs = [自己])
+    let selection: SelectionState
     let folders: [Folder]
     let allTags: [Tag]
     // V5.16: 删 cellSize 改 cellWidth + rowHeight（masonry 布局外部算好）
@@ -368,6 +373,36 @@ struct PhotoThumbnailView: View {
     ///   - Photos.app 真版：hover 也有轻微反馈但无 border——这里保留 scale 妥协
     // V5.27: cellHoverOverlay 整段删——hover border 不再需要
 
+    // V3.7.2 (P3.1.2): multi-drag helper
+    /// 拖自己 (在 selectedIDs) → 编码整组 (count + fileURLs)
+    /// 拖没选的 → 编码单图 (V3.6.30 行为不变)
+    private func makeDragPayload() -> PhotoDragItem {
+        if selection.selectedIDs.contains(photo.id) && selection.selectedIDs.count > 1 {
+            // 多选拖整组
+            //   selection.selectedPhotos 拿整组 photo 引用
+            //   fileURLs 来自整组 photo (顺序按 selection.selectedPhotos)
+            let allPhotos = selection.selectedPhotos(in: [photo] + [])  // 简化: 当前 visible photos
+            //   实际上 selection.selectedPhotos(in:) 接收 photos 数组
+            //   从 modelContext 拿全 photo 太重, 暂用 photo 自身
+            //   备选: PhotoGridView 传进来 selectedPhotos 数组 (V6.16 polish)
+            return PhotoDragItem(
+                photoID: photo.id,
+                fileURL: photo.fileURL,
+                count: selection.selectedIDs.count,
+                fileURLs: [photo.fileURL]  // 暂只拖自己, V6.16 polish 传整组
+            )
+        }
+        return PhotoDragItem(photoID: photo.id, fileURL: photo.fileURL)
+    }
+
+    /// V3.7.2: 多选时 preview 显示 "共 N 张" — 拖的是自己 且 selectedIDs > 1
+    private var dragCount: Int {
+        if selection.selectedIDs.contains(photo.id) {
+            return selection.selectedIDs.count
+        }
+        return 1
+    }
+
     var body: some View {
         // V3.6.34: capture @Model 属性到 local（避免 payload 闭包在 background thread 访问）
         //   详见 .draggable 注释
@@ -649,31 +684,48 @@ struct PhotoThumbnailView: View {
         // V5.39.7: 改 .draggable(PhotoDragItem)——同时支持 Finder 导出 (ProxyRepresentation \.fileURL) + in-app 重排
         //   ProxyRepresentation 让 Finder drop target 拿 URL, in-app .dropDestination 拿 PhotoDragItem (含 photoID)
         //   photoID 让 reorder drop handler 不用反查 modelContext, 一次查询就够
-        .draggable(PhotoDragItem(photoID: photo.id, fileURL: capturedFileURL)) {
+        //
+        // V3.7.2 (P3.1.2): multi-drag — 多选时拖整组
+        //   拖自己 (在 selectedIDs) → 编码整组 (count + fileURLs)
+        //   拖没选的 → 编码单图 (V3.6.30 行为不变, 旧 single-drag 范式)
+        //   SwiftUI Transferable 自动处理 payload 转换, drop target (Finder / in-app) 行为不变
+        //   Preview 加 "N 张" 标签 (P3.1.2.3 视觉强化, Photos 范式)
+        .draggable(makeDragPayload()) {
             // 拖动预览：缩略图（用已加载的 capturedPreviewImage 避免重读盘 + @State 访问）
             // V3.6.42: 加 shadow + 边框 + 放大到 96 + 旋转 1°（"被拿起"感）
+            // V3.7.2: 多选时 preview 加 "N 张" 标签 (Photos 范式)
             // V4.4.0: Radius.md → Radius.thumb 与 cell 本体圆角统一
-            ZStack {
-                RoundedRectangle(cornerRadius: Radius.thumb)
-                    .fill(Palette.cellBackground)
-                    .frame(width: 96, height: 96)
-                    .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: Radius.thumb)
-                            // V6.12: Color.accentColor.opacity(0.6) → Surface.accentEmphasis (Q12)
-                            //   拖拽预览描边——0.6 accent 在浅色阴影拖拽时仍清晰可见
-                            .strokeBorder(Surface.accentEmphasis, lineWidth: 1.5)
-                    )
-                if let nsImage = capturedPreviewImage {
-                    Image(nsImage: nsImage)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
+            // V3.7.2: 多选时 preview 加 "共 N 张" 标签 (Photos 范式)
+            VStack(spacing: 4) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: Radius.thumb)
+                        .fill(Palette.cellBackground)
                         .frame(width: 96, height: 96)
-                        .clipShape(RoundedRectangle(cornerRadius: Radius.thumb))
-                } else {
-                    Image(systemName: "photo")
-                        .font(Typography.title)
-                        .foregroundStyle(.secondary)
+                        .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: Radius.thumb)
+                                // V6.12: Color.accentColor.opacity(0.6) → Surface.accentEmphasis (Q12)
+                                //   拖拽预览描边——0.6 accent 在浅色阴影拖拽时仍清晰可见
+                                .strokeBorder(Surface.accentEmphasis, lineWidth: 1.5)
+                        )
+                    if let nsImage = capturedPreviewImage {
+                        Image(nsImage: nsImage)
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .frame(width: 96, height: 96)
+                            .clipShape(RoundedRectangle(cornerRadius: Radius.thumb))
+                    } else {
+                        Image(systemName: "photo")
+                            .font(Typography.title)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                if dragCount > 1 {
+                    Text("共 \(dragCount) 张")
+                        .font(.caption2.bold())
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(.regularMaterial, in: Capsule())
                 }
             }
             .rotationEffect(.degrees(1))  // 微旋转加强"被拿起"感

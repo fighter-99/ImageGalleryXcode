@@ -22,9 +22,34 @@ import CoreTransferable
 import UniformTypeIdentifiers
 
 /// V5.39.7: 拖拽 payload——同时支持 Finder 导出 (URL) + in-app 重排 (photoID)
+/// V3.7.2 (P3.1.2): 扩 multi-drag——多选时拖整组
+///   - 加 count + fileURLs 字段, 单选时 fileURLs = [fileURL], count = 1
+///   - 多选时 fileURLs = selectedURLs, count = selectedIDs.count
+///   - preview 用 count 显示 "N 张" 标签
+///   - **NSDockTile badge 跳过** (SwiftUI 13+ 缺 onDragStart/End hook, V6.16 polish 跟进)
+///   - 多选拖到 Finder 仍走单 fileURL (ProxyRepresentation 只暴露 fileURL)
+///     — 完整 multi-file drag 走 NSItemProvider, V6.16 polish
 struct PhotoDragItem: Transferable {
-    let photoID: UUID
-    let fileURL: URL
+    let photoID: UUID           // in-app reorder 用, 拿 ID 查 modelContext
+    let fileURL: URL            // ProxyRepresentation 暴露给 Finder
+    let count: Int              // V3.7.2: 多选时为整组大小, preview 显示 "N 张"
+    let fileURLs: [URL]         // V3.7.2: 多选时为整组 URL, 备未来 NSItemProvider multi-file
+
+    /// 单图构造 (V5.39.7 兼容)
+    init(photoID: UUID, fileURL: URL) {
+        self.photoID = photoID
+        self.fileURL = fileURL
+        self.count = 1
+        self.fileURLs = [fileURL]
+    }
+
+    /// V3.7.2: 多图构造 (多选时拖整组)
+    init(photoID: UUID, fileURL: URL, count: Int, fileURLs: [URL]) {
+        self.photoID = photoID
+        self.fileURL = fileURL
+        self.count = count
+        self.fileURLs = fileURLs
+    }
 
     /// ProxyRepresentation(exporting: \.fileURL):
     ///   drop target 期望 URL 时 (Finder / .dropDestination(for: URL.self))

@@ -95,6 +95,8 @@ struct PhotoRowView: View {
             photo: photo,
             isInMultiSelect: selection.contains(photo.id),
             isActive: selection.singleSelectedID == photo.id,
+            // V3.7.2 (P3.1.2): selection 让 .draggable 决定 payload 是单图还是整组
+            selection: selection,
             folders: folders,
             allTags: allTags,
             cellWidth: width,
