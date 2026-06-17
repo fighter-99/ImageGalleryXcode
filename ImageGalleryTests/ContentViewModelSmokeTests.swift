@@ -19,7 +19,7 @@ struct ContentViewModelSmokeTests {
 
     // V6.12.20: 共享 suite + cleanup pattern (跟 ContentViewModelStateTests.isolatedModel 同源)
     @MainActor
-    private static let isolatedDefaults: UserDefaults = UserDefaults(suiteName: "ImageGalleryTests_Smoke")!
+    private static let isolatedDefaults: UserDefaults = FakeUserDefaults()
     private static let userSettingsKeys: [String] = [
         "viewModeRaw", "showSidebar", "showDetail", "accentColorID",
         "trashRetentionDays", "appearanceMode", "thumbnailSize",

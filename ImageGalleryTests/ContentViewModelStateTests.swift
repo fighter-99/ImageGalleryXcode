@@ -21,7 +21,7 @@ struct ContentViewModelStateTests {
     //   改共享 1 个 suite, 每个 test 跑前清 key——suite 注册压力降到 1
     //   @MainActor 强制 + suite static let 一次性 init 避开 race
     @MainActor
-    private static let isolatedDefaults: UserDefaults = UserDefaults(suiteName: "ImageGalleryTests_State")!
+    private static let isolatedDefaults: UserDefaults = FakeUserDefaults()
     /// UserSettings 读过的所有 key——任何被读过的 key 都得清, 防漏
     private static let userSettingsKeys: [String] = [
         "viewModeRaw", "showSidebar", "showDetail", "accentColorID",

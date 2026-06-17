@@ -19,7 +19,7 @@ struct ContentViewModelMiscTests {
     //   跟 ContentViewModelStateTests.isolatedModel 同源——共享 1 个 suite, 每个 test cleanup
     //   避免每次 UUID 新 suite 给 cfprefsd 压力 (memory: swift-testing-userdefaults-parallel-crash)
     @MainActor
-    private static let isolatedDefaults: UserDefaults = UserDefaults(suiteName: "ImageGalleryTests_Misc")!
+    private static let isolatedDefaults: UserDefaults = FakeUserDefaults()
     private static let userSettingsKeys: [String] = [
         "viewModeRaw", "showSidebar", "showDetail", "accentColorID",
         "trashRetentionDays", "appearanceMode", "thumbnailSize",
