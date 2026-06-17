@@ -270,8 +270,11 @@ struct ContentViewModelStateTests {
 
     @Test func totalSizeFormatted_withEmptyAllPhotos_returnsZeroBytes() {
         let model = Self.isolatedModel()
-        // ByteCountFormatter .file: 0 bytes → "Zero KB"
-        #expect(model.totalSizeFormatted == "Zero KB")
+        // V6.13.1: 之前 hardcode "Zero KB" 在 zh-Hans locale 下 stale
+        //   ByteCountFormatter 按 locale 选词: en "Zero KB" / zh-Hans "0 KB"
+        //   改用 ByteCountFormatter 自己算期望值, locale-agnostic
+        let expected = ByteCountFormatter.string(fromByteCount: 0, countStyle: .file)
+        #expect(model.totalSizeFormatted == expected)
     }
 
     @Test func sidebarColumnWidth_canBeAdjusted() {

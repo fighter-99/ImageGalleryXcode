@@ -121,8 +121,19 @@ struct ContentViewModelRecycleBinTests {
         let model = Self.isolatedModel()
         model.modelContext = context
 
-        let trashPhoto = Photo(filename: "trash.jpg", fileURL: URL(fileURLWithPath: "/tmp/V554_\(UUID().uuidString)_trash.jpg"), fileSize: 100, width: 10, height: 10)
-        let normalPhoto = Photo(filename: "normal.jpg", fileURL: URL(fileURLWithPath: "/tmp/V554_\(UUID().uuidString)_normal.jpg"), fileSize: 100, width: 10, height: 10)
+        let trashURL = URL(fileURLWithPath: "/tmp/V554_\(UUID().uuidString)_trash.jpg")
+        let normalURL = URL(fileURLWithPath: "/tmp/V554_\(UUID().uuidString)_normal.jpg")
+        // V6.13.1: 真正建临时文件——RecycleBinService.purge 调 FileManager.removeItem
+        //   文件不存在会 throw → purge 早 return → photo 没被删
+        //   之前 test 漏了这一步, fail 是 stale test 缺陷不是 production bug
+        FileManager.default.createFile(atPath: trashURL.path, contents: Data())
+        FileManager.default.createFile(atPath: normalURL.path, contents: Data())
+        defer {
+            try? FileManager.default.removeItem(at: trashURL)
+            try? FileManager.default.removeItem(at: normalURL)
+        }
+        let trashPhoto = Photo(filename: "trash.jpg", fileURL: trashURL, fileSize: 100, width: 10, height: 10)
+        let normalPhoto = Photo(filename: "normal.jpg", fileURL: normalURL, fileSize: 100, width: 10, height: 10)
         context.insert(trashPhoto)
         context.insert(normalPhoto)
         try context.save()
@@ -198,9 +209,13 @@ struct ContentViewModelRecycleBinTests {
         let context = container.mainContext
         let model = Self.isolatedModel()
         model.modelContext = context
+        let photoURL = URL(fileURLWithPath: "/tmp/V554_\(UUID().uuidString).jpg")
+        // V6.13.1: 真正建临时文件——同 emptyTrash test 根因 (FileManager.removeItem throw)
+        FileManager.default.createFile(atPath: photoURL.path, contents: Data())
+        defer { try? FileManager.default.removeItem(at: photoURL) }
         let photo = Photo(
             filename: "purge.jpg",
-            fileURL: URL(fileURLWithPath: "/tmp/V554_\(UUID().uuidString).jpg"),
+            fileURL: photoURL,
             fileSize: 100, width: 10, height: 10
         )
         context.insert(photo)
