@@ -18,266 +18,266 @@ import Foundation
 /// V5.50-2 + V5.50-3 + V5.50-4: 微文案字典——所有用户可见字符串统一来源
 enum Copy {
     // MARK: - 动作结果
-    static func imported(_ count: Int) -> String { "已导入 \(count) 张图片" }
-    static func importedPartial(inserted: Int, failed: Int) -> String { "已导入 \(inserted) 张，\(failed) 张失败" }
-    static func exported(_ count: Int) -> String { "已导出 \(count) 张图片" }
-    static func movedToRecycleBin(_ count: Int, retentionDays: Int) -> String { "已移到回收站（\(retentionDays) 天后永久删除）" }
-    static func movedDuplicates(_ count: Int) -> String { "已移到回收站 \(count) 张重复图" }
-    static func recycledBinEmptied(_ count: Int) -> String { "已清空回收站（\(count) 张）" }
+    static func imported(_ count: Int) -> String { String(localized: "imported", defaultValue: "已导入 \\(count) 张图片") }
+    static func importedPartial(inserted: Int, failed: Int) -> String { String(localized: "importedPartial", defaultValue: "已导入 \\(inserted) 张，\\(failed) 张失败") }
+    static func exported(_ count: Int) -> String { String(localized: "exported", defaultValue: "已导出 \\(count) 张图片") }
+    static func movedToRecycleBin(_ count: Int, retentionDays: Int) -> String { String(localized: "movedToRecycleBin", defaultValue: "已移到回收站（\\(retentionDays) 天后永久删除）") }
+    static func movedDuplicates(_ count: Int) -> String { String(localized: "movedDuplicates", defaultValue: "已移到回收站 \\(count) 张重复图") }
+    static func recycledBinEmptied(_ count: Int) -> String { String(localized: "recycledBinEmptied", defaultValue: "已清空回收站（\\(count) 张）") }
     static func copiedToPasteboard(_ count: Int) -> String {
         count == 1 ? "已复制 1 张图片" : "已复制 \(count) 张图片"
     }
 
     // MARK: - 错误 (3 段式)
-    static let storageError = "无法保存图片到图库。请检查磁盘空间，或在「系统设置 → 隐私与安全 → 完整磁盘访问权限」中授权 ImageGallery，然后重试。"
-    static func importFailed(_ filename: String) -> String { "导入失败：\(filename)" }
-    static func exportFailed(_ filename: String) -> String { "导出失败：\(filename)" }
-    static func moveToRecycleBinFailed(_ error: String) -> String { "移到回收站失败：\(error)" }
-    static func emptyRecycleBinFailed(_ error: String) -> String { "清空回收站失败：\(error)" }
-    static func batchMoveToRecycleBinFailed(_ error: String) -> String { "批量移到回收站失败：\(error)" }
-    static let batchRatingFailed = "批量评分失败"
-    static func recycleBinOperationFailed(_ error: String) -> String { "回收站操作失败：\(error)" }
+    static let storageError = String(localized: "storageError", defaultValue: "无法保存图片到图库。请检查磁盘空间，或在「系统设置 → 隐私与安全 → 完整磁盘访问权限」中授权 ImageGallery，然后重试。")
+    static func importFailed(_ filename: String) -> String { String(localized: "importFailed", defaultValue: "导入失败：\\(filename)") }
+    static func exportFailed(_ filename: String) -> String { String(localized: "exportFailed", defaultValue: "导出失败：\\(filename)") }
+    static func moveToRecycleBinFailed(_ error: String) -> String { String(localized: "moveToRecycleBinFailed", defaultValue: "移到回收站失败：\\(error)") }
+    static func emptyRecycleBinFailed(_ error: String) -> String { String(localized: "emptyRecycleBinFailed", defaultValue: "清空回收站失败：\\(error)") }
+    static func batchMoveToRecycleBinFailed(_ error: String) -> String { String(localized: "batchMoveToRecycleBinFailed", defaultValue: "批量移到回收站失败：\\(error)") }
+    static let batchRatingFailed = String(localized: "batchRatingFailed", defaultValue: "批量评分失败")
+    static func recycleBinOperationFailed(_ error: String) -> String { String(localized: "recycleBinOperationFailed", defaultValue: "回收站操作失败：\\(error)") }
 
     // MARK: - 空态 (含引导)
-    static let emptyLibrary = "图库还是空的"
-    static let emptyLibraryHint = "把图片拖到这里，或点击 ⌘O 导入"
-    static let emptyRecycleBin = "回收站是空的"
-    static let selectAPhoto = "选择一张图片"
-    static let selectAPhotoHint = "← → 切换 · ⌘+点击 多选 · ⌥+拖动 框选"
-    static let thumbnailLoadFailed = "加载失败"
+    static let emptyLibrary = String(localized: "emptyLibrary", defaultValue: "图库还是空的")
+    static let emptyLibraryHint = String(localized: "emptyLibraryHint", defaultValue: "把图片拖到这里，或点击 ⌘O 导入")
+    static let emptyRecycleBin = String(localized: "emptyRecycleBin", defaultValue: "回收站是空的")
+    static let selectAPhoto = String(localized: "selectAPhoto", defaultValue: "选择一张图片")
+    static let selectAPhotoHint = String(localized: "selectAPhotoHint", defaultValue: "← → 切换 · ⌘+点击 多选 · ⌥+拖动 框选")
+    static let thumbnailLoadFailed = String(localized: "thumbnailLoadFailed", defaultValue: "加载失败")
 
     // MARK: - 详情面板
-    static func photoPosition(current: Int, total: Int) -> String { "\(current) / \(total)" }
-    static func photoPosition1Indexed(current: Int, total: Int) -> String { "\(current) / \(total)" }
-    static func imageDimensions(width: Int, height: Int) -> String { "\(width) × \(height)" }
-    static let renameHint = "给图片一个新名字（不包含扩展名）"
-    static let tagLabel = "标签"
-    static let addTagHint = "点击 + 添加标签"
-    static let deletePhotoConfirm = "图片将从图库中移除，文件也会被永久删除。"
-    static let emptyRecycleBinConfirm = "回收站里的所有照片将被永久删除，无法恢复。"
+    static func photoPosition(current: Int, total: Int) -> String { String(localized: "photoPosition", defaultValue: "\\(current) / \\(total)") }
+    static func photoPosition1Indexed(current: Int, total: Int) -> String { String(localized: "photoPosition1Indexed", defaultValue: "\\(current) / \\(total)") }
+    static func imageDimensions(width: Int, height: Int) -> String { String(localized: "imageDimensions", defaultValue: "\\(width) × \\(height)") }
+    static let renameHint = String(localized: "renameHint", defaultValue: "给图片一个新名字（不包含扩展名）")
+    static let tagLabel = String(localized: "tagLabel", defaultValue: "标签")
+    static let addTagHint = String(localized: "addTagHint", defaultValue: "点击 + 添加标签")
+    static let deletePhotoConfirm = String(localized: "deletePhotoConfirm", defaultValue: "图片将从图库中移除，文件也会被永久删除。")
+    static let emptyRecycleBinConfirm = String(localized: "emptyRecycleBinConfirm", defaultValue: "回收站里的所有照片将被永久删除，无法恢复。")
     // V6.09: confirmationDialog title 入库——之前 ContentView+BatchDialogs:58 hardcoded
-    static let emptyRecycleBinConfirmTitle = "确定要清空回收站吗？"
-    static func recycleBinCount(_ count: Int) -> String { "回收站有 \(count) 张" }
+    static let emptyRecycleBinConfirmTitle = String(localized: "emptyRecycleBinConfirmTitle", defaultValue: "确定要清空回收站吗？")
+    static func recycleBinCount(_ count: Int) -> String { String(localized: "recycleBinCount", defaultValue: "回收站有 \\(count) 张") }
 
     // MARK: - 状态栏
-    static func totalCount(_ count: Int) -> String { "\(count) 张" }
-    static func selectedCount(_ count: Int) -> String { "已选 \(count) 张" }
-    static let statusSeparator = "·"
-    static func daysRemaining(_ days: Int) -> String { "\(days)" }
+    static func totalCount(_ count: Int) -> String { String(localized: "totalCount", defaultValue: "\\(count) 张") }
+    static func selectedCount(_ count: Int) -> String { String(localized: "selectedCount", defaultValue: "已选 \\(count) 张") }
+    static let statusSeparator = String(localized: "statusSeparator", defaultValue: "·")
+    static func daysRemaining(_ days: Int) -> String { String(localized: "daysRemaining", defaultValue: "\\(days)") }
 
     // MARK: - 设置面板
-    static let viewModeGrid = "网格"
-    static let viewModeList = "列表"
-    static let viewModeTimeline = "时间线"
-    static let recycleBinSubtitle = "删除的图片会先进入回收站，超过下面设置的天数后会被自动永久删除。"
-    static func thumbnailSizeLabel(_ size: Int) -> String { "\(size)" }
+    static let viewModeGrid = String(localized: "viewModeGrid", defaultValue: "网格")
+    static let viewModeList = String(localized: "viewModeList", defaultValue: "列表")
+    static let viewModeTimeline = String(localized: "viewModeTimeline", defaultValue: "时间线")
+    static let recycleBinSubtitle = String(localized: "recycleBinSubtitle", defaultValue: "删除的图片会先进入回收站，超过下面设置的天数后会被自动永久删除。")
+    static func thumbnailSizeLabel(_ size: Int) -> String { String(localized: "thumbnailSizeLabel", defaultValue: "\\(size)") }
 
     // MARK: - 侧栏 / 按钮
-    static let newFolder = "新建文件夹"
-    static let newTag = "新建标签"
-    static let folderNamePlaceholder = "文件夹名称"
-    static let cancel = "取消"
-    static let create = "创建"
-    static let confirm = "确定"
-    static let delete = "删除"
+    static let newFolder = String(localized: "newFolder", defaultValue: "新建文件夹")
+    static let newTag = String(localized: "newTag", defaultValue: "新建标签")
+    static let folderNamePlaceholder = String(localized: "folderNamePlaceholder", defaultValue: "文件夹名称")
+    static let cancel = String(localized: "cancel", defaultValue: "取消")
+    static let create = String(localized: "create", defaultValue: "创建")
+    static let confirm = String(localized: "confirm", defaultValue: "确定")
+    static let delete = String(localized: "delete", defaultValue: "删除")
 
     // MARK: - 筛选
-    static let clearAllFilters = "清除全部"
+    static let clearAllFilters = String(localized: "clearAllFilters", defaultValue: "清除全部")
 
     // MARK: - 拖拽导入
-    static let dropReleaseToImport = "松开导入"
-    static let dropSupportedTypes = "支持图片文件 / 文件夹"
+    static let dropReleaseToImport = String(localized: "dropReleaseToImport", defaultValue: "松开导入")
+    static let dropSupportedTypes = String(localized: "dropSupportedTypes", defaultValue: "支持图片文件 / 文件夹")
 
     // MARK: - Confirm 对话框 (V5.50-4 补充)
-    static func deletePhotosConfirm(retentionDays: Int) -> String { "选中的图片会移到回收站，\(retentionDays) 天后自动永久清除。可在回收站中恢复。" }
-    static let newFolderPrompt = "为新文件夹命名"
-    static let newFolderHint = "选\"跳过\"避免重复导入。"
+    static func deletePhotosConfirm(retentionDays: Int) -> String { String(localized: "deletePhotosConfirm", defaultValue: "选中的图片会移到回收站，\\(retentionDays) 天后自动永久清除。可在回收站中恢复。") }
+    static let newFolderPrompt = String(localized: "newFolderPrompt", defaultValue: "为新文件夹命名")
+    static let newFolderHint = String(localized: "newFolderHint", defaultValue: "选\"跳过\"避免重复导入。")
 
     // MARK: - 重复图清理 (V5.50-4 补充)
-    static func duplicatesFoundGroups(_ count: Int) -> String { "发现 \(count) 组重复" }
-    static func duplicatesCleanable(_ count: Int, size: String) -> String { "可清理 \(count) 张 · \(size)" }
-    static let duplicatesNone = "暂无重复图"
-    static func duplicatesExplanation(retentionDays: Int) -> String { "每组保留导入时间最近的一张，其他移到回收站（\(retentionDays) 天后自动永久清除）" }
+    static func duplicatesFoundGroups(_ count: Int) -> String { String(localized: "duplicatesFoundGroups", defaultValue: "发现 \\(count) 组重复") }
+    static func duplicatesCleanable(_ count: Int, size: String) -> String { String(localized: "duplicatesCleanable", defaultValue: "可清理 \\(count) 张 · \\(size)") }
+    static let duplicatesNone = String(localized: "duplicatesNone", defaultValue: "暂无重复图")
+    static func duplicatesExplanation(retentionDays: Int) -> String { String(localized: "duplicatesExplanation", defaultValue: "每组保留导入时间最近的一张，其他移到回收站（\\(retentionDays) 天后自动永久清除）") }
 
     // MARK: - 上下文菜单 (V5.50-4 补充)
-    static let clearRating = "清除评分"
+    static let clearRating = String(localized: "clearRating", defaultValue: "清除评分")
 
     // MARK: - 计数 / 辅助 (V5.50-4 补充)
-    static func photoCount(_ count: Int) -> String { "\(count)" }
+    static func photoCount(_ count: Int) -> String { String(localized: "photoCount", defaultValue: "\\(count)") }
     static func yearLabel(_ year: String) -> String { year }
-    static func daysBadge(_ days: Int) -> String { "\(days)" }
-    static func sidebarCount(_ count: Int) -> String { "\(count)" }
-    static func dateSectionCount(_ count: Int) -> String { "\(count) 张" }
-    static func autoDeleteAfterDays(_ days: Int) -> String { "\(days) 天后自动永久清除" }
+    static func daysBadge(_ days: Int) -> String { String(localized: "daysBadge", defaultValue: "\\(days)") }
+    static func sidebarCount(_ count: Int) -> String { String(localized: "sidebarCount", defaultValue: "\\(count)") }
+    static func dateSectionCount(_ count: Int) -> String { String(localized: "dateSectionCount", defaultValue: "\\(count) 张") }
+    static func autoDeleteAfterDays(_ days: Int) -> String { String(localized: "autoDeleteAfterDays", defaultValue: "\\(days) 天后自动永久清除") }
 
     // MARK: - 视图模式 (V5.50-4 扩展——菜单用全名，区别于设置面板的 "网格" 简称)
-    static let viewModeGridFull = "缩略图视图"
-    static let viewModeListFull = "列表视图"
-    static let viewModeTimelineFull = "时间线视图"
+    static let viewModeGridFull = String(localized: "viewModeGridFull", defaultValue: "缩略图视图")
+    static let viewModeListFull = String(localized: "viewModeListFull", defaultValue: "列表视图")
+    static let viewModeTimelineFull = String(localized: "viewModeTimelineFull", defaultValue: "时间线视图")
 
     // MARK: - 应用菜单 (V5.50-4 扩展)
-    static let settingsMenu = "设置…"
-    static let quickLook = "快速查看"
-    static let previousPhoto = "上一张"
-    static let nextPhoto = "下一张"
-    static let clearMenu = "清空菜单"
-    static let noRecentFiles = "无最近文件"
-    static func recentFile(index: Int, filename: String) -> String { "\(index). \(filename)" }
+    static let settingsMenu = String(localized: "settingsMenu", defaultValue: "设置…")
+    static let quickLook = String(localized: "quickLook", defaultValue: "快速查看")
+    static let previousPhoto = String(localized: "previousPhoto", defaultValue: "上一张")
+    static let nextPhoto = String(localized: "nextPhoto", defaultValue: "下一张")
+    static let clearMenu = String(localized: "clearMenu", defaultValue: "清空菜单")
+    static let noRecentFiles = String(localized: "noRecentFiles", defaultValue: "无最近文件")
+    static func recentFile(index: Int, filename: String) -> String { String(localized: "recentFile", defaultValue: "\\(index). \\(filename)") }
 
     // MARK: - Confirm 按钮 (V5.50-4 扩展)
-    static let empty = "清空"
-    static let skipAll = "全部跳过（保留现有）"
-    static let importAll = "全部导入（可能重复）"
-    static let deleteConfirmTitle = "确定要删除这张图片吗？"
+    static let empty = String(localized: "empty", defaultValue: "清空")
+    static let skipAll = String(localized: "skipAll", defaultValue: "全部跳过（保留现有）")
+    static let importAll = String(localized: "importAll", defaultValue: "全部导入（可能重复）")
+    static let deleteConfirmTitle = String(localized: "deleteConfirmTitle", defaultValue: "确定要删除这张图片吗？")
     // V6.09: alert title 入库——之前 DetailView:126 hardcoded
-    static let renamePhotoTitle = "重命名"
+    static let renamePhotoTitle = String(localized: "renamePhotoTitle", defaultValue: "重命名")
 
     // MARK: - 输入框 (V5.50-4 扩展)
-    static let tagNamePlaceholder = "标签名称"
+    static let tagNamePlaceholder = String(localized: "tagNamePlaceholder", defaultValue: "标签名称")
     // V6.11: DetailView:127 新文件名 placeholder 入库
-    static let newFileNamePlaceholder = "新文件名"
+    static let newFileNamePlaceholder = String(localized: "newFileNamePlaceholder", defaultValue: "新文件名")
     // V6.11: DetailView:395 .help 文案入库
-    static let addTag = "添加标签"
+    static let addTag = String(localized: "addTag", defaultValue: "添加标签")
 
     // MARK: - 排序 (V5.50-5 扩展)
     /// 7 个 label (含方向箭头) —— SortOption.label
-    static let sortImportedDesc = "导入时间 ↓"
-    static let sortImportedAsc = "导入时间 ↑"
-    static let sortFilenameAsc = "文件名 A → Z"
-    static let sortFilenameDesc = "文件名 Z → A"
-    static let sortFileSizeDesc = "文件大小 ↓"
-    static let sortFileSizeAsc = "文件大小 ↑"
-    static let sortCustomOrder = "自定义顺序"
+    static let sortImportedDesc = String(localized: "sortImportedDesc", defaultValue: "导入时间 ↓")
+    static let sortImportedAsc = String(localized: "sortImportedAsc", defaultValue: "导入时间 ↑")
+    static let sortFilenameAsc = String(localized: "sortFilenameAsc", defaultValue: "文件名 A → Z")
+    static let sortFilenameDesc = String(localized: "sortFilenameDesc", defaultValue: "文件名 Z → A")
+    static let sortFileSizeDesc = String(localized: "sortFileSizeDesc", defaultValue: "文件大小 ↓")
+    static let sortFileSizeAsc = String(localized: "sortFileSizeAsc", defaultValue: "文件大小 ↑")
+    static let sortCustomOrder = String(localized: "sortCustomOrder", defaultValue: "自定义顺序")
     /// 4 个 shortLabel (工具栏按钮短名) —— SortOption.shortLabel
-    static let sortCategoryImportTime = "导入时间"
-    static let sortCategoryFilename = "文件名"
-    static let sortCategoryFileSize = "文件大小"
-    static let sortCategoryCustom = "自定义"
+    static let sortCategoryImportTime = String(localized: "sortCategoryImportTime", defaultValue: "导入时间")
+    static let sortCategoryFilename = String(localized: "sortCategoryFilename", defaultValue: "文件名")
+    static let sortCategoryFileSize = String(localized: "sortCategoryFileSize", defaultValue: "文件大小")
+    static let sortCategoryCustom = String(localized: "sortCategoryCustom", defaultValue: "自定义")
 
     // MARK: - View 菜单 / UndoRedo (V5.50-6 扩展)
     /// File > Open Recent 子菜单标题
-    static let openRecent = "最近打开"
+    static let openRecent = String(localized: "openRecent", defaultValue: "最近打开")
     /// View 菜单 Toggle
-    static let showSidebar = "显示侧边栏"
-    static let showDetailPanel = "显示详情面板"
-    static let showInfoPanel = "显示信息面板"
+    static let showSidebar = String(localized: "showSidebar", defaultValue: "显示侧边栏")
+    static let showDetailPanel = String(localized: "showDetailPanel", defaultValue: "显示详情面板")
+    static let showInfoPanel = String(localized: "showInfoPanel", defaultValue: "显示信息面板")
     /// Edit 菜单 Undo/Redo (无 action 描述时)
-    static let undo = "撤销"
-    static let redo = "重做"
+    static let undo = String(localized: "undo", defaultValue: "撤销")
+    static let redo = String(localized: "redo", defaultValue: "重做")
     /// Edit 菜单 Undo/Redo (有 action 描述时——"撤销 <desc>")
-    static func undoWithAction(_ action: String) -> String { "撤销 \(action)" }
-    static func redoWithAction(_ action: String) -> String { "重做 \(action)" }
+    static func undoWithAction(_ action: String) -> String { String(localized: "undoWithAction", defaultValue: "撤销 \\(action)") }
+    static func redoWithAction(_ action: String) -> String { String(localized: "redoWithAction", defaultValue: "重做 \\(action)") }
 
     // MARK: - 工具栏 (V5.50-7 扩展)
     /// NSToolbar accessibility label + tooltip (与 Copy.quickLook / Copy.delete 共用)
-    static let toolbarToggleSidebar = "切换侧边栏"
-    static let toolbarExport = "导出"
-    static let toolbarImport = "导入"
-    static let layoutMode = "布局模式"
-    static let thumbnailSize = "缩略图大小"
-    static let sort = "排序"
-    static let filter = "筛选"
+    static let toolbarToggleSidebar = String(localized: "toolbarToggleSidebar", defaultValue: "切换侧边栏")
+    static let toolbarExport = String(localized: "toolbarExport", defaultValue: "导出")
+    static let toolbarImport = String(localized: "toolbarImport", defaultValue: "导入")
+    static let layoutMode = String(localized: "layoutMode", defaultValue: "布局模式")
+    static let thumbnailSize = String(localized: "thumbnailSize", defaultValue: "缩略图大小")
+    static let sort = String(localized: "sort", defaultValue: "排序")
+    static let filter = String(localized: "filter", defaultValue: "筛选")
     /// NSToolbar 搜索 (NSSearchToolbarItem)
-    static let search = "搜索"
-    static let searchHint = "搜索照片、标签、笔记"
-    static let searchPlaceholder = "搜索照片、标签…"
+    static let search = String(localized: "search", defaultValue: "搜索")
+    static let searchHint = String(localized: "searchHint", defaultValue: "搜索照片、标签、笔记")
+    static let searchPlaceholder = String(localized: "searchPlaceholder", defaultValue: "搜索照片、标签…")
     /// 筛选 badge——"筛选 (3)" 表示激活 3 个筛选条件
-    static func filterWithCount(_ count: Int) -> String { "筛选 (\(count))" }
+    static func filterWithCount(_ count: Int) -> String { String(localized: "filterWithCount", defaultValue: "筛选 (\\(count))") }
 
     // MARK: - 上下文菜单 / 详情面板 (V5.50-8 扩展)
     /// 移动 / 文件夹 / 标签
-    static let removeFromFolder = "移出文件夹"
-    static let moveToFolder = "移动到文件夹"
-    static let manageTags = "管理标签"
-    static let addTagAction = "加标签"
-    static let deleteTag = "删除标签"
-    static let deleteFolder = "删除文件夹"
+    static let removeFromFolder = String(localized: "removeFromFolder", defaultValue: "移出文件夹")
+    static let moveToFolder = String(localized: "moveToFolder", defaultValue: "移动到文件夹")
+    static let manageTags = String(localized: "manageTags", defaultValue: "管理标签")
+    static let addTagAction = String(localized: "addTagAction", defaultValue: "加标签")
+    static let deleteTag = String(localized: "deleteTag", defaultValue: "删除标签")
+    static let deleteFolder = String(localized: "deleteFolder", defaultValue: "删除文件夹")
     /// 通用 action label
-    static let copyAction = "复制"
-    static let revealInFinder = "在 Finder 中显示"
+    static let copyAction = String(localized: "copyAction", defaultValue: "复制")
+    static let revealInFinder = String(localized: "revealInFinder", defaultValue: "在 Finder 中显示")
     /// 评分——分组标题
-    static let ratingCategory = "评分"
+    static let ratingCategory = String(localized: "ratingCategory", defaultValue: "评分")
     /// 评分——"N 星" 标签
-    static func ratingStars(_ n: Int) -> String { "\(n) 星" }
+    static func ratingStars(_ n: Int) -> String { String(localized: "ratingStars", defaultValue: "\\(n) 星") }
     /// 多选 / 回收站 / 重复图
-    static let cancelMultiSelect = "取消多选 (Esc)"
-    static let restoreSelected = "恢复选中"
-    static let permanentlyDeleteSelected = "永久删除选中"
+    static let cancelMultiSelect = String(localized: "cancelMultiSelect", defaultValue: "取消多选 (Esc)")
+    static let restoreSelected = String(localized: "restoreSelected", defaultValue: "恢复选中")
+    static let permanentlyDeleteSelected = String(localized: "permanentlyDeleteSelected", defaultValue: "永久删除选中")
     /// "清空回收站"——区别于 Copy.empty = "清空" (按钮短名)
-    static let emptyRecycleBinAction = "清空回收站"
-    static let keepNewestPerGroup = "保留每组最新"
+    static let emptyRecycleBinAction = String(localized: "emptyRecycleBinAction", defaultValue: "清空回收站")
+    static let keepNewestPerGroup = String(localized: "keepNewestPerGroup", defaultValue: "保留每组最新")
     // MARK: - V6.08: 详情面板错误 toast
     /// 文件重命名失败 (DetailView.renamePhoto 磁盘 moveItem 失败)
-    static func renameFailed(_ filename: String) -> String { "重命名失败：\(filename)" }
+    static func renameFailed(_ filename: String) -> String { String(localized: "renameFailed", defaultValue: "重命名失败：\\(filename)") }
 
     // MARK: - V6.08: PhotoGridEmptyState 文案 (整个文件 hardcoded → Copy 字典)
     /// CTA 主/次按钮
-    static let clearSearch = "清除搜索"
+    static let clearSearch = String(localized: "clearSearch", defaultValue: "清除搜索")
     /// 跟 toolbarImport("导入") 区别——空状态 CTA 是完整短语
-    static let importAction = "导入图片"
-    static let viewAll = "查看全部"
+    static let importAction = String(localized: "importAction", defaultValue: "导入图片")
+    static let viewAll = String(localized: "viewAll", defaultValue: "查看全部")
     // V6.11: ActiveFiltersBar fallback 文案入库 (folderName 查不到 / tagName 查不到时)
-    static let unknownFolder = "未知文件夹"
-    static let unknownTag = "未知标签"
+    static let unknownFolder = String(localized: "unknownFolder", defaultValue: "未知文件夹")
+    static let unknownTag = String(localized: "unknownTag", defaultValue: "未知标签")
     // V6.12: ActiveFiltersBar '≥ N 星' 旁路 (Q14)
-    static func minRatingStars(_ n: Int) -> String { "≥ \(n) 星" }
+    static func minRatingStars(_ n: Int) -> String { String(localized: "minRatingStars", defaultValue: "≥ \\(n) 星") }
     // V6.12: StatusBar 'X 项筛选' 旁路 (Q7)
-    static func activeFilterBadge(_ n: Int) -> String { "\(n) 项筛选" }
+    static func activeFilterBadge(_ n: Int) -> String { String(localized: "activeFilterBadge", defaultValue: "\\(n) 项筛选") }
     // V6.12: StatusBar thumbnailSizeLabel 4 档旁路 (Q7)
-    static let thumbnailSizeCompact = "特小 70pt"
-    static let thumbnailSizeSmall = "小 110pt"
-    static let thumbnailSizeMedium = "中 200pt"
-    static let thumbnailSizeLarge = "大 250pt"
+    static let thumbnailSizeCompact = String(localized: "thumbnailSizeCompact", defaultValue: "特小 70pt")
+    static let thumbnailSizeSmall = String(localized: "thumbnailSizeSmall", defaultValue: "小 110pt")
+    static let thumbnailSizeMedium = String(localized: "thumbnailSizeMedium", defaultValue: "中 200pt")
+    static let thumbnailSizeLarge = String(localized: "thumbnailSizeLarge", defaultValue: "大 250pt")
     // V6.12: DetailPane 存储错误 (Q9)
-    static let storageUnavailableTitle = "存储不可用"
-    static let storageRetry = "重试"
+    static let storageUnavailableTitle = String(localized: "storageUnavailableTitle", defaultValue: "存储不可用")
+    static let storageRetry = String(localized: "storageRetry", defaultValue: "重试")
     // V6.12: TrashDetailView help tooltip (Q10)
-    static let emptyRecycleBinHelp = "永久删除回收站里所有照片（无法恢复）"
+    static let emptyRecycleBinHelp = String(localized: "emptyRecycleBinHelp", defaultValue: "永久删除回收站里所有照片（无法恢复）")
     /// 空状态标题——按 empty 场景分类
-    static let emptyNoMatchFilter = "没有匹配筛选的图片"
-    static let emptyNoMatchSearch = "没有匹配的图片"
-    static let emptyUnfiled = "没有待整理的图片"
-    static let emptyFolder = "这个文件夹是空的"
-    static let emptyTag = "没有带此标签的图片"
-    static let emptyDuplicates = "没有重复的图片"
-    static let emptyRecent7Days = "最近 7 天没有新图"
-    static let emptyLargeFiles = "没有大于 5 MB 的图"
-    static let emptyNoPhotosYet = "还没有图片"
+    static let emptyNoMatchFilter = String(localized: "emptyNoMatchFilter", defaultValue: "没有匹配筛选的图片")
+    static let emptyNoMatchSearch = String(localized: "emptyNoMatchSearch", defaultValue: "没有匹配的图片")
+    static let emptyUnfiled = String(localized: "emptyUnfiled", defaultValue: "没有待整理的图片")
+    static let emptyFolder = String(localized: "emptyFolder", defaultValue: "这个文件夹是空的")
+    static let emptyTag = String(localized: "emptyTag", defaultValue: "没有带此标签的图片")
+    static let emptyDuplicates = String(localized: "emptyDuplicates", defaultValue: "没有重复的图片")
+    static let emptyRecent7Days = String(localized: "emptyRecent7Days", defaultValue: "最近 7 天没有新图")
+    static let emptyLargeFiles = String(localized: "emptyLargeFiles", defaultValue: "没有大于 5 MB 的图")
+    static let emptyNoPhotosYet = String(localized: "emptyNoPhotosYet", defaultValue: "还没有图片")
     /// 空状态副提示
-    static let hintFilterAdjust = "尝试减少筛选条件或调整侧边栏"
-    static let hintSearchOther = "试试其他关键词"
-    static let hintMoveToFolder = "把图片移动到文件夹来整理"
-    static let hintAutoImportToFolder = "导入图片后会自动放到此文件夹"
-    static let hintAddTagInDetail = "在详情中添加此标签"
-    static let hintDuplicatesAuto = "重复图会自动出现在这里"
+    static let hintFilterAdjust = String(localized: "hintFilterAdjust", defaultValue: "尝试减少筛选条件或调整侧边栏")
+    static let hintSearchOther = String(localized: "hintSearchOther", defaultValue: "试试其他关键词")
+    static let hintMoveToFolder = String(localized: "hintMoveToFolder", defaultValue: "把图片移动到文件夹来整理")
+    static let hintAutoImportToFolder = String(localized: "hintAutoImportToFolder", defaultValue: "导入图片后会自动放到此文件夹")
+    static let hintAddTagInDetail = String(localized: "hintAddTagInDetail", defaultValue: "在详情中添加此标签")
+    static let hintDuplicatesAuto = String(localized: "hintDuplicatesAuto", defaultValue: "重复图会自动出现在这里")
     /// 回收站空状态副提示——带 retentionDays 参数
     /// 之前 hardcoded \(TrashRetentionDays.defaultValue.rawValue) (永远 30)
     /// 现在接受 retentionDays, 跟 settings 同步——V6.08 bug 修
     static func hintTrashAutoPurge(days: Int) -> String {
         "删除的图片会出现在这里，\(days) 天后自动永久清除"
     }
-    static let hintStartImport = "拖入图片，或点击“导入图片”开始添加"
+    static let hintStartImport = String(localized: "hintStartImport", defaultValue: "拖入图片，或点击“导入图片”开始添加")
 
     // MARK: - V6.08: ModelContainer 启动失败 (SwiftData 损坏 / schema 不兼容)
     /// ModelContainer.init 失败时显示的全屏错误页文案
-    static let databaseInitFailed = "图库无法启动"
-    static let databaseInitFailedHint = "SwiftData 存储损坏，或当前版本不兼容旧数据库。"
-    static let databaseInitReset = "重置数据库（删除本地所有数据）"
-    static let databaseInitQuit = "退出"
-    static let databaseInitResetConfirm = "重置会永久删除所有照片记录、文件夹、标签和回收站。导入的原图文件不会删除（仍在 Finder 里）。确定要继续吗？"
-    static let databaseInitResetSuccess = "数据库已重置"
+    static let databaseInitFailed = String(localized: "databaseInitFailed", defaultValue: "图库无法启动")
+    static let databaseInitFailedHint = String(localized: "databaseInitFailedHint", defaultValue: "SwiftData 存储损坏，或当前版本不兼容旧数据库。")
+    static let databaseInitReset = String(localized: "databaseInitReset", defaultValue: "重置数据库（删除本地所有数据）")
+    static let databaseInitQuit = String(localized: "databaseInitQuit", defaultValue: "退出")
+    static let databaseInitResetConfirm = String(localized: "databaseInitResetConfirm", defaultValue: "重置会永久删除所有照片记录、文件夹、标签和回收站。导入的原图文件不会删除（仍在 Finder 里）。确定要继续吗？")
+    static let databaseInitResetSuccess = String(localized: "databaseInitResetSuccess", defaultValue: "数据库已重置")
 
     // MARK: - V6.12.15: SettingsView + KeyboardShortcutsSheet + ImageGalleryApp 硬编码英文入库
     /// About 页面 app 名（之前 SettingsView.swift:452 hardcoded "ImageGallery"）
     /// i18n 准备：未来可 NSLocalizedString("CFBundleDisplayName") 替
-    static let appName = "ImageGallery"
+    static let appName = String(localized: "appName", defaultValue: "ImageGallery")
     /// About 页面 credit（之前 SettingsView.swift:488 hardcoded "Built with SwiftUI + SwiftData"）
-    static let builtWithStack = "Built with SwiftUI + SwiftData"
+    static let builtWithStack = String(localized: "builtWithStack", defaultValue: "Built with SwiftUI + SwiftData")
     /// KeyboardShortcutsSheet 标题（之前 KeyboardShortcutsSheet.swift:21 hardcoded "Keyboard Shortcuts"）
-    static let keyboardShortcutsTitle = "Keyboard Shortcuts"
+    static let keyboardShortcutsTitle = String(localized: "keyboardShortcutsTitle", defaultValue: "Keyboard Shortcuts")
     /// 通用 "Done" 按钮（之前 KeyboardShortcutsSheet.swift:24 hardcoded "Done"）
     /// 其他 sheet 关闭按钮 (rename dialog / delete confirm / add tag) 也复用
-    static let done = "Done"
+    static let done = String(localized: "done", defaultValue: "Done")
     /// Help 菜单 "Keyboard Shortcuts…" 项（之前 ImageGalleryApp.swift:205 hardcoded "Keyboard Shortcuts…"）
-    static let keyboardShortcutsMenu = "Keyboard Shortcuts…"
+    static let keyboardShortcutsMenu = String(localized: "keyboardShortcutsMenu", defaultValue: "Keyboard Shortcuts…")
 }
