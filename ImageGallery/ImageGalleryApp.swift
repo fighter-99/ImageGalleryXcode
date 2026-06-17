@@ -12,14 +12,88 @@ import Combine  // V4.36.x: 保留——HistoryStore/ImageGalleryUndoManager 等
 import os  // V6.08: ModelContainer 启动失败 log
 
 // AppDelegate：处理应用层 macOS 事件
-class AppDelegate: NSObject, NSApplicationDelegate {
+// V3.7.1 重写: 自实现窗口 frame 持久化 (替换 V6.12.6 的 setFrameAutosaveName, 不 work)
+//   - 原因: setFrameAutosaveName 在 SwiftUI Scene 创建的 NSWindow 不生效
+//     (SwiftUI 自己管 frame state, AppKit autosave 绑不住)
+//   - 修法: NSWindowDelegate 监 windowDidResize/windowDidMove 写 UserDefaults
+//     + applicationDidFinishLaunching 读 UserDefaults setFrame 恢复
+//   - 4 个 key (size.w/h, position.x/y) — 简单, 不污染其他 key
+//   - Photos.app / Finder / Safari 标准行为: 关在哪开回来还在哪
+final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
+    // V3.7.1: frame 持久化 4 个 key
+    private static let sizeWKey = "imageGalleryWindowSizeW"
+    private static let sizeHKey = "imageGalleryWindowSizeH"
+    private static let posXKey = "imageGalleryWindowPosX"
+    private static let posYKey = "imageGalleryWindowPosY"
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
+
+        // V3.7.1: 挂 NSWindowDelegate 到所有 window + 恢复 stored frame
+        //   SwiftUI Scene 创建的 NSWindow 在 applicationDidFinishLaunching 之后
+        //   用 DispatchQueue.main.async 延迟到下一个 runloop, 拿得到 NSApp.windows
+        DispatchQueue.main.async { [weak self] in
+            self?.attachToAllWindows()
+        }
+    }
+
+    private func attachToAllWindows() {
+        for window in NSApp.windows {
+            attach(to: window)
+        }
+    }
+
+    private func attach(to window: NSWindow) {
+        // 防止重复挂同一个 delegate (避免循环)
+        if window.delegate === self { return }
+        window.delegate = self
+        // 应用 stored frame (启动恢复)
+        applyStoredFrameIfAny(to: window)
+    }
+
+    private func applyStoredFrameIfAny(to window: NSWindow) {
+        let defaults = UserDefaults.standard
+        // 4 个 key 都要有才认为 stored frame 有效 (避免用 defaultSize 数据意外恢复)
+        guard let w = defaults.object(forKey: Self.sizeWKey) as? Double,
+              let h = defaults.object(forKey: Self.sizeHKey) as? Double,
+              let x = defaults.object(forKey: Self.posXKey) as? Double,
+              let y = defaults.object(forKey: Self.posYKey) as? Double else {
+            return
+        }
+        // 验证 frame 合理 (e.g. 不超出屏幕)
+        let frame = NSRect(x: x, y: y, width: w, height: h)
+        // 屏幕可见性 check: 至少部分在主屏上
+        guard let mainScreen = NSScreen.main else { return }
+        let screenFrame = mainScreen.visibleFrame
+        let intersection = frame.intersection(screenFrame)
+        // 至少 50pt 宽 + 50pt 高 visible — 否则 frame 几乎全在屏幕外, 不恢复
+        guard intersection.width > 50, intersection.height > 50 else { return }
+        window.setFrame(frame, display: true)
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         return true
+    }
+
+    // MARK: - V3.7.1: NSWindowDelegate — 监听 window 变化 + 写 UserDefaults
+
+    func windowDidResize(_ notification: Notification) {
+        saveFrame(from: notification.object as? NSWindow)
+    }
+
+    func windowDidMove(_ notification: Notification) {
+        saveFrame(from: notification.object as? NSWindow)
+    }
+
+    private func saveFrame(from window: NSWindow?) {
+        guard let window else { return }
+        let frame = window.frame
+        let defaults = UserDefaults.standard
+        defaults.set(frame.size.width, forKey: Self.sizeWKey)
+        defaults.set(frame.size.height, forKey: Self.sizeHKey)
+        defaults.set(frame.origin.x, forKey: Self.posXKey)
+        defaults.set(frame.origin.y, forKey: Self.posYKey)
     }
 }
 
