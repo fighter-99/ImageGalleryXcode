@@ -163,24 +163,38 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
     // MARK: - NSToolbarDelegate
 
     /// 默认 item 顺序——决定 toolbar 的视觉布局
-    /// sidebar | search | flex | quickLook | export | delete | import | filter | layoutMode | density | sort
+    /// V6.13.2: 工具栏 3 group 化 (Photos.app 范式)
+    ///   1. 主操作组: sidebarToggle · importItem · export · delete · quickLook
+    ///   2. flexible space (推到右边)
+    ///   3. 视图组: filter · sortMenu · layoutModeMenu · densityMenu
+    ///   4. space + search (centered, 原 V4.8.3 设计)
+    ///   NSToolbar 自动支持 .space (小 fixed) 跟 .flexibleSpace (弹性) 作 separator
+    ///   自动 overflow: 窗口窄时 NSToolbar 把末尾 items 塞进 ⋯ 菜单 (Photos 范式)
+    ///
     /// V4.36.x: 在 importItem 之后插入 filter（import→filter 形成操作组）
     /// V4.37.1: 在 favorite 之后插入 quickLook（"看"的语义紧邻 favorite/"标记"语义）
     /// V5.7: 砍 favorite 项——侧栏/工具栏都不再放收藏入口（走右键菜单评分 / 筛选 popover）
     /// V5.39.3: filter 之后插入 3 个 NSMenu 下拉按钮 (布局模式/缩略图大小/排序)——viewOptions 砍
     func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
         [
+            // 主操作组 (left side)
             Identifier.sidebarToggle.nsIdentifier,
-            Identifier.search.nsIdentifier,
-            Identifier.flexibleSpace.nsIdentifier,
-            Identifier.quickLook.nsIdentifier,  // V4.37.1 NEW
+            NSToolbarItem.Identifier.space,  // V6.13.2: 跟视图组视觉分隔
+            Identifier.importItem.nsIdentifier,
             Identifier.export.nsIdentifier,
             Identifier.delete.nsIdentifier,
-            Identifier.importItem.nsIdentifier,
+            Identifier.quickLook.nsIdentifier,  // V4.37.1 NEW
+            // 弹性 space 推视图组到右
+            Identifier.flexibleSpace.nsIdentifier,
+            // 视图组 (right side, 主操作右侧)
             Identifier.filter.nsIdentifier,
+            NSToolbarItem.Identifier.space,
+            Identifier.sortMenu.nsIdentifier,         // V5.39.3: 从 viewOptions 提到 toolbar
             Identifier.layoutModeMenu.nsIdentifier,  // V5.39.3: 从 viewOptions 提到 toolbar
             Identifier.densityMenu.nsIdentifier,     // V5.39.3: NSSegmentedControl → NSMenu
-            Identifier.sortMenu.nsIdentifier         // V5.39.3: 从 viewOptions 提到 toolbar
+            // 搜索 (centered, V4.8.3 设计保留)
+            NSToolbarItem.Identifier.space,
+            Identifier.search.nsIdentifier
         ]
     }
 

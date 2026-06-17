@@ -348,6 +348,13 @@ final class ContentViewModel {
         toolbar.allowsUserCustomization = true   // 用户可自定义 toolbar items
         toolbar.autosavesConfiguration = true   // 自定义状态自动保存
         toolbar.showsBaselineSeparator = false  // 不显示底部分隔线
+        // V6.13.2: 允许 displayMode 切换 (macOS 14+ Photos.app 范式)
+        //   用户点 toolbar title → menu 切 Icon Only / Icon and Text / Text Only / Use Small Size
+        //   NSToolbar 自动 rebuild, makeSimpleItem 已用 label="" + image 跟所有 mode 兼容
+        //   NSSearchToolbarItem + NSMenuToolbarItem 自动 follow displayMode
+        if #available(macOS 14.0, *) {
+            toolbar.allowsDisplayModeCustomization = true
+        }
 
         // 绑 action closures
         // V5.52-6: [model] capture (class stable ref)——比原 [self] (struct value copy) 更正确
