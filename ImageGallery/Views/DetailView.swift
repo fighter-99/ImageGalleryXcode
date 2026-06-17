@@ -121,7 +121,7 @@ struct DetailView: View {
         .background(.bar)
         .frame(minWidth: 280, idealWidth: 340, maxWidth: 480)
         .alert(Copy.newTag, isPresented: $showingAddTagAlert) {
-            TextField("标签名称", text: $newTagName)
+            TextField(Copy.tagNamePlaceholder, text: $newTagName)
             Button(Copy.cancel, role: .cancel) {}
             Button(Copy.create) { createAndAddTag() }
         }
@@ -468,7 +468,7 @@ struct DetailView: View {
                 }
             )
             Spacer()
-            Text(photo.rating > 0 ? "\(photo.rating) 星" : "未评分")
+            Text(photo.rating > 0 ? Copy.ratingStars(photo.rating) : Copy.detailNoRating)
                 .font(Typography.caption)
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
@@ -627,7 +627,7 @@ private struct RatingStarsView: View {
                     // 鼠标离开该星 → hoverRating = 0（恢复 actual rating）
                     hoverRating = isHovered ? n : 0
                 }
-                .help(n <= rating ? "当前 \(n) 星（点击清除）" : "设为 \(n) 星")
+                .help(n <= rating ? Copy.ratingCurrent(n) : Copy.ratingSetTo(n))
             }
         }
 }

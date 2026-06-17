@@ -280,4 +280,50 @@ enum Copy {
     static let done = String(localized: "done", defaultValue: "Done")
     /// Help 菜单 "Keyboard Shortcuts…" 项（之前 ImageGalleryApp.swift:205 hardcoded "Keyboard Shortcuts…"）
     static let keyboardShortcutsMenu = String(localized: "keyboardShortcutsMenu", defaultValue: "Keyboard Shortcuts…")
+
+    // MARK: - V6.12.18: SettingsView / DetailView / ActiveFiltersBar / ContentViewModel 硬编码入库
+    // SettingsView — toolbar 按钮
+    static let settingsResetAll = String(localized: "settingsResetAll", defaultValue: "恢复全部为默认")
+    static let settingsResetAllTooltip = String(localized: "settingsResetAllTooltip", defaultValue: "恢复全部设置为默认")
+    static let settingsHelpLabel = String(localized: "settingsHelpLabel", defaultValue: "帮助")
+    static let settingsHelpTooltip = String(localized: "settingsHelpTooltip", defaultValue: "使用帮助")
+    // SettingsView — picker/slider label
+    static let languageLabel = String(localized: "languageLabel", defaultValue: "语言")
+    static let settingsSortLabel = String(localized: "settingsSortLabel", defaultValue: "排序")
+    static let settingsLayoutLabel = String(localized: "settingsLayoutLabel", defaultValue: "布局")
+    static let settingsSizeLabel = String(localized: "settingsSizeLabel", defaultValue: "大小")
+    static let settingsAppearanceLabel = String(localized: "settingsAppearanceLabel", defaultValue: "外观")
+    static let settingsAutoDedupeLabel = String(localized: "settingsAutoDedupeLabel", defaultValue: "导入时自动去重")
+    static let settingsAutoThumbnailsLabel = String(localized: "settingsAutoThumbnailsLabel", defaultValue: "导入时生成缩略图")
+    static let settingsFormatLabel = String(localized: "settingsFormatLabel", defaultValue: "格式")
+    static let settingsQualityLabel = String(localized: "settingsQualityLabel", defaultValue: "质量")
+    static let settingsRetentionLabel = String(localized: "settingsRetentionLabel", defaultValue: "保留时长")
+    // SettingsView — Links section
+    static let settingsProjectHomepage = String(localized: "settingsProjectHomepage", defaultValue: "项目主页")
+    static let settingsHelpDocs = String(localized: "settingsHelpDocs", defaultValue: "使用帮助")
+    static let settingsIssueTracker = String(localized: "settingsIssueTracker", defaultValue: "问题反馈")
+    // SettingsView — 版权 + 预览 tooltip
+    static let settingsCopyright = String(localized: "settingsCopyright", defaultValue: "© 2026 ImageGallery")
+    static let settingsThumbnailSizeHelpTooltip = String(localized: "settingsThumbnailSizeHelpTooltip", defaultValue: "实时预览缩略图大小")
+    /// SettingsView.safeExternalLink 错误兜底（urlString 是开发者填错的 URL）
+    static func settingsAccessibilityLinkMisconfigured(_ urlString: String) -> String {
+        String(localized: "settingsAccessibilityLinkMisconfigured", defaultValue: "链接配置错误: \(urlString)")
+    }
+    // DetailView — 评分显示
+    static let detailNoRating = String(localized: "detailNoRating", defaultValue: "未评分")
+    /// 详情面板评分星按钮 help — 当前已设的星 (点击清除)
+    static func ratingCurrent(_ n: Int) -> String {
+        String(localized: "ratingCurrent", defaultValue: "当前 \(n) 星（点击清除）")
+    }
+    /// 详情面板评分星按钮 help — hover 时设的星
+    static func ratingSetTo(_ n: Int) -> String {
+        String(localized: "ratingSetTo", defaultValue: "设为 \(n) 星")
+    }
+    // ActiveFiltersBar — chip tooltip
+    static let activeFiltersClearAllTooltip = String(localized: "activeFiltersClearAllTooltip", defaultValue: "清除所有筛选条件")
+    static let activeFiltersRemoveFilterTooltip = String(localized: "activeFiltersRemoveFilterTooltip", defaultValue: "移除此筛选")
+    // ContentViewModel — titlebar 右上角 ⓘ 按钮
+    static let titlebarInfoLabel = String(localized: "titlebarInfoLabel", defaultValue: "信息面板")
+    static let titlebarInfoTooltipShow = String(localized: "titlebarInfoTooltipShow", defaultValue: "显示信息面板 (⌘I)")
+    static let titlebarInfoTooltipHide = String(localized: "titlebarInfoTooltipHide", defaultValue: "隐藏信息面板 (⌘I)")
 }

@@ -52,7 +52,7 @@ private func safeExternalLink(_ urlString: String, @ViewBuilder label: () -> som
         // 提示让 bug 可见 (Label + 红字), 不崩溃
         label()
             .foregroundStyle(.red)
-            .accessibilityLabel("链接配置错误: \(urlString)")
+            .accessibilityLabel(Copy.settingsAccessibilityLinkMisconfigured(urlString))
     }
 }
 
@@ -181,15 +181,15 @@ struct SettingsView: View {
                 Button {
                     settings.reset()
                 } label: {
-                    Label("恢复全部为默认", systemImage: "arrow.counterclockwise")
+                    Label(Copy.settingsResetAll, systemImage: "arrow.counterclockwise")
                 }
-                .help("恢复全部设置为默认")
+                .help(Copy.settingsResetAllTooltip)
             }
             ToolbarItem(placement: .automatic) {
                 safeExternalLink(SettingsLinks.helpDocs) {
-                    Label("帮助", systemImage: "questionmark.circle")
+                    Label(Copy.settingsHelpLabel, systemImage: "questionmark.circle")
                 }
-                .help("使用帮助")
+                .help(Copy.settingsHelpTooltip)
             }
         }
     }
@@ -225,7 +225,7 @@ private struct GeneralSettingsView: View {
             subtitle: "启动时图片按以下规则排序"
         ) {
             HStack(alignment: .center, spacing: Spacing.md) {
-                Text("排序")
+                Text(Copy.settingsSortLabel)
                     .frame(width: SettingsMetrics.labelColumnWidth, alignment: .leading)
                 Picker("", selection: $settings.sortOption) {
                     ForEach(defaultSortOptions) { option in
@@ -260,7 +260,7 @@ private struct AppearanceSettingsView: View {
             subtitle: "启动应用时的缩略图布局形状。视图模式 (网格/列表/时间线) 仍可通过 View 菜单或 ⌥1/⌥2/⌥3 快捷键切换。"
         ) {
             HStack(alignment: .center, spacing: Spacing.md) {
-                Text("布局")
+                Text(Copy.settingsLayoutLabel)
                     .frame(width: SettingsMetrics.labelColumnWidth, alignment: .leading)
                 Picker("", selection: $settings.thumbnailLayoutMode) {
                     ForEach(ThumbnailLayoutMode.allCases) { mode in
@@ -280,7 +280,7 @@ private struct AppearanceSettingsView: View {
             subtitle: "App 显示语言。需重启 app 让部分 SwiftUI 文案刷新。"
         ) {
             HStack(alignment: .center, spacing: Spacing.md) {
-                Text("Language")
+                Text(Copy.languageLabel)
                     .frame(width: SettingsMetrics.labelColumnWidth, alignment: .leading)
                 Picker("", selection: $settings.appLanguage) {
                     ForEach(Language.allCases) { lang in
@@ -303,7 +303,7 @@ private struct AppearanceSettingsView: View {
             //   现在: slider row 跟其他 section 同节奏 (label + slider + 数字)
             //         preview row 居中 100x100, 视觉重心独立
             HStack(alignment: .center, spacing: Spacing.md) {
-                Text("大小")
+                Text(Copy.settingsSizeLabel)
                     .frame(width: SettingsMetrics.labelColumnWidth, alignment: .leading)
                 Slider(value: $settings.thumbnailSize, in: 100...250, step: 10)
                 Text(Copy.thumbnailSizeLabel(Int(settings.thumbnailSize)))
@@ -326,7 +326,7 @@ private struct AppearanceSettingsView: View {
             subtitle: "应用整体外观。\u{201C}跟随系统\u{201D} 会随 macOS 切换自动调整。"
         ) {
             HStack(alignment: .center, spacing: Spacing.md) {
-                Text("外观")
+                Text(Copy.settingsAppearanceLabel)
                     .frame(width: SettingsMetrics.labelColumnWidth, alignment: .leading)
                 Picker("", selection: $settings.appearanceMode) {
                     ForEach(AppearanceMode.allCases) { mode in
@@ -359,11 +359,11 @@ private struct LibrarySettingsView: View {
             subtitle: "拖入或选择文件夹导入图片时的默认行为。"
         ) {
             HStack {
-                Text("导入时自动去重").frame(maxWidth: .infinity, alignment: .leading)
+                Text(Copy.settingsAutoDedupeLabel).frame(maxWidth: .infinity, alignment: .leading)
                 Toggle("", isOn: $settings.autoDeduplicate).labelsHidden()
             }
             HStack {
-                Text("导入时生成缩略图").frame(maxWidth: .infinity, alignment: .leading)
+                Text(Copy.settingsAutoThumbnailsLabel).frame(maxWidth: .infinity, alignment: .leading)
                 Toggle("", isOn: $settings.autoGenerateThumbnails).labelsHidden()
             }
         }
@@ -375,7 +375,7 @@ private struct LibrarySettingsView: View {
             subtitle: "导出图片时的默认格式和质量。"
         ) {
             HStack(alignment: .center, spacing: Spacing.md) {
-                Text("格式")
+                Text(Copy.settingsFormatLabel)
                     .frame(width: SettingsMetrics.labelColumnWidth, alignment: .leading)
                 Picker("", selection: $settings.defaultExportFormat) {
                     ForEach(ExportFormat.allCases) { format in
@@ -387,7 +387,7 @@ private struct LibrarySettingsView: View {
             }
 
             HStack(alignment: .center, spacing: Spacing.md) {
-                Text("质量")
+                Text(Copy.settingsQualityLabel)
                     .frame(width: SettingsMetrics.labelColumnWidth, alignment: .leading)
                 Slider(value: $settings.defaultExportQuality, in: 0.5...1.0, step: 0.05)
                 Text("\(Int(settings.defaultExportQuality * 100))%")
@@ -404,7 +404,7 @@ private struct LibrarySettingsView: View {
             subtitle: "删除的图片会先进入回收站，超过下面设置的天数后会被自动永久删除。"
         ) {
             HStack(alignment: .center, spacing: Spacing.md) {
-                Text("保留时长")
+                Text(Copy.settingsRetentionLabel)
                     .frame(width: SettingsMetrics.labelColumnWidth, alignment: .leading)
                 Picker("", selection: $settings.trashRetentionDays) {
                     ForEach(TrashRetentionDays.allCases) { days in
@@ -487,13 +487,13 @@ private struct AboutSettingsView: View {
             ) {
                 VStack(alignment: .leading, spacing: Spacing.sm) {
                     safeExternalLink(SettingsLinks.projectHomepage) {
-                        Label("项目主页", systemImage: "arrow.up.right.square")
+                        Label(Copy.settingsProjectHomepage, systemImage: "arrow.up.right.square")
                     }
                     safeExternalLink(SettingsLinks.helpDocs) {
-                        Label("使用帮助", systemImage: "book")
+                        Label(Copy.settingsHelpDocs, systemImage: "book")
                     }
                     safeExternalLink(SettingsLinks.issueTracker) {
-                        Label("问题反馈", systemImage: "exclamationmark.bubble")
+                        Label(Copy.settingsIssueTracker, systemImage: "exclamationmark.bubble")
                     }
                 }
             }
@@ -504,7 +504,7 @@ private struct AboutSettingsView: View {
                 subtitle: nil
             ) {
                 VStack(alignment: .leading, spacing: Spacing.xs) {
-                    Text("© 2026 ImageGallery")
+                    Text(Copy.settingsCopyright)
                         .font(Typography.body)
                     Text(Copy.builtWithStack)  // V6.12.15: 硬编码英文入库
                         .font(Typography.caption)
@@ -631,7 +631,7 @@ private struct ThumbnailSizePreview: View {
                 .foregroundStyle(.primary)  // V5.99: 暗色下也清晰可见
         }
         .frame(width: 100, height: 100)
-        .help("实时预览缩略图大小")
+        .help(Copy.settingsThumbnailSizeHelpTooltip)
     }
 
     /// V5.57-2: size 100..250 映射到 scale 0.3..1.0

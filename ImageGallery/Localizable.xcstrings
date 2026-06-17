@@ -1,2385 +1,29 @@
 {
   "sourceLanguage": "zh-Hans",
   "strings": {
-    "imported": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.imported → 已导入 \\(count) 张图片",
+    "%@ · %lld": {
       "localizations": {
-        "en": {
+        "zh-Hans": {
           "stringUnit": {
-            "state": "translated",
-            "value": "Imported \\(count) photos"
+            "state": "new",
+            "value": "%1$@ · %2$lld"
           }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "已导入 \\(count) 张图片"
-          }
-        }
-      }
-    },
-    "importedPartial": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.importedPartial → 已导入 \\(inserted) 张，\\(failed) 张失败",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Imported \\(inserted), \\(failed) failed"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "已导入 \\(inserted) 张，\\(failed) 张失败"
-          }
-        }
-      }
-    },
-    "exported": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.exported → 已导出 \\(count) 张图片",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Exported \\(count) photos"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "已导出 \\(count) 张图片"
-          }
-        }
-      }
-    },
-    "movedToRecycleBin": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.movedToRecycleBin → 已移到回收站（\\(retentionDays) 天后永久删除）",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Moved to Recycle Bin (permanently delete in \\(retentionDays) days)"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "已移到回收站（\\(retentionDays) 天后永久删除）"
-          }
-        }
-      }
-    },
-    "movedDuplicates": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.movedDuplicates → 已移到回收站 \\(count) 张重复图",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Moved \\(count) duplicates to Recycle Bin"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "已移到回收站 \\(count) 张重复图"
-          }
-        }
-      }
-    },
-    "recycledBinEmptied": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.recycledBinEmptied → 已清空回收站（\\(count) 张）",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Emptied Recycle Bin (\\(count) photos)"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "已清空回收站（\\(count) 张）"
-          }
-        }
-      }
-    },
-    "storageError": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.storageError → 无法保存图片到图库。请检查磁盘空间，或在「系统设置 → 隐私与安全 → 完整磁盘访问权限」中授权 ImageGaller...",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cannot save photos to library. Check disk space or grant Full Disk Access in System Settings → Privacy & Security → Full Disk Access to ImageGallery, then retry."
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "无法保存图片到图库。请检查磁盘空间，或在「系统设置 → 隐私与安全 → 完整磁盘访问权限」中授权 ImageGallery，然后重试。"
-          }
-        }
-      }
-    },
-    "importFailed": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.importFailed → 导入失败：\\(filename)",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Import failed: \\(filename)"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "导入失败：\\(filename)"
-          }
-        }
-      }
-    },
-    "exportFailed": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.exportFailed → 导出失败：\\(filename)",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Export failed: \\(filename)"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "导出失败：\\(filename)"
-          }
-        }
-      }
-    },
-    "moveToRecycleBinFailed": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.moveToRecycleBinFailed → 移到回收站失败：\\(error)",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Move to Recycle Bin failed: \\(error)"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "移到回收站失败：\\(error)"
-          }
-        }
-      }
-    },
-    "emptyRecycleBinFailed": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.emptyRecycleBinFailed → 清空回收站失败：\\(error)",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Empty Recycle Bin failed: \\(error)"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "清空回收站失败：\\(error)"
-          }
-        }
-      }
-    },
-    "batchMoveToRecycleBinFailed": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.batchMoveToRecycleBinFailed → 批量移到回收站失败：\\(error)",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Batch move to Recycle Bin failed: \\(error)"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "批量移到回收站失败：\\(error)"
-          }
-        }
-      }
-    },
-    "batchRatingFailed": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.batchRatingFailed → 批量评分失败",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Batch rating failed"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "批量评分失败"
-          }
-        }
-      }
-    },
-    "recycleBinOperationFailed": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.recycleBinOperationFailed → 回收站操作失败：\\(error)",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Recycle Bin operation failed: \\(error)"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "回收站操作失败：\\(error)"
-          }
-        }
-      }
-    },
-    "emptyLibrary": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.emptyLibrary → 图库还是空的",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Library is empty"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "图库还是空的"
-          }
-        }
-      }
-    },
-    "emptyLibraryHint": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.emptyLibraryHint → 把图片拖到这里，或点击 ⌘O 导入",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Drag photos here, or click ⌘O to import"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "把图片拖到这里，或点击 ⌘O 导入"
-          }
-        }
-      }
-    },
-    "emptyRecycleBin": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.emptyRecycleBin → 回收站是空的",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Recycle Bin is empty"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "回收站是空的"
-          }
-        }
-      }
-    },
-    "selectAPhoto": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.selectAPhoto → 选择一张图片",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Select a photo"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "选择一张图片"
-          }
-        }
-      }
-    },
-    "selectAPhotoHint": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.selectAPhotoHint → ← → 切换 · ⌘+点击 多选 · ⌥+拖动 框选",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "← → navigate · ⌘+click multi-select · ⌥+drag box-select"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "← → 切换 · ⌘+点击 多选 · ⌥+拖动 框选"
-          }
-        }
-      }
-    },
-    "thumbnailLoadFailed": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.thumbnailLoadFailed → 加载失败",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Load failed"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "加载失败"
-          }
-        }
-      }
-    },
-    "photoPosition": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.photoPosition → \\(current) / \\(total)",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "\\(current) / \\(total)"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "\\(current) / \\(total)"
-          }
-        }
-      }
-    },
-    "photoPosition1Indexed": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.photoPosition1Indexed → \\(current) / \\(total)",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "\\(current) / \\(total)"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "\\(current) / \\(total)"
-          }
-        }
-      }
-    },
-    "imageDimensions": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.imageDimensions → \\(width) × \\(height)",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "\\(width) × \\(height)"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "\\(width) × \\(height)"
-          }
-        }
-      }
-    },
-    "renameHint": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.renameHint → 给图片一个新名字（不包含扩展名）",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "New photo name (without extension)"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "给图片一个新名字（不包含扩展名）"
-          }
-        }
-      }
-    },
-    "tagLabel": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.tagLabel → 标签",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tags"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "标签"
-          }
-        }
-      }
-    },
-    "addTagHint": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.addTagHint → 点击 + 添加标签",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Click + to add tag"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "点击 + 添加标签"
-          }
-        }
-      }
-    },
-    "deletePhotoConfirm": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.deletePhotoConfirm → 图片将从图库中移除，文件也会被永久删除。",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The photo will be removed from the library and the file permanently deleted."
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "图片将从图库中移除，文件也会被永久删除。"
-          }
-        }
-      }
-    },
-    "emptyRecycleBinConfirm": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.emptyRecycleBinConfirm → 回收站里的所有照片将被永久删除，无法恢复。",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "All photos in Recycle Bin will be permanently deleted. This cannot be undone."
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "回收站里的所有照片将被永久删除，无法恢复。"
-          }
-        }
-      }
-    },
-    "emptyRecycleBinConfirmTitle": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.emptyRecycleBinConfirmTitle → 确定要清空回收站吗？",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Empty Recycle Bin?"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "确定要清空回收站吗？"
-          }
-        }
-      }
-    },
-    "recycleBinCount": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.recycleBinCount → 回收站有 \\(count) 张",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "\\(count) photos in Recycle Bin"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "回收站有 \\(count) 张"
-          }
-        }
-      }
-    },
-    "totalCount": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.totalCount → \\(count) 张",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "\\(count) photos"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "\\(count) 张"
-          }
-        }
-      }
-    },
-    "selectedCount": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.selectedCount → 已选 \\(count) 张",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "\\(count) selected"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "已选 \\(count) 张"
-          }
-        }
-      }
-    },
-    "statusSeparator": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.statusSeparator → ·",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "·"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "·"
-          }
-        }
-      }
-    },
-    "daysRemaining": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.daysRemaining → \\(days)",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "\\(days)"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "\\(days)"
-          }
-        }
-      }
-    },
-    "viewModeGrid": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.viewModeGrid → 网格",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Grid"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "网格"
-          }
-        }
-      }
-    },
-    "viewModeList": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.viewModeList → 列表",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "List"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "列表"
-          }
-        }
-      }
-    },
-    "viewModeTimeline": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.viewModeTimeline → 时间线",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Timeline"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "时间线"
-          }
-        }
-      }
-    },
-    "recycleBinSubtitle": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.recycleBinSubtitle → 删除的图片会先进入回收站，超过下面设置的天数后会被自动永久删除。",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Deleted photos go to the Recycle Bin first, and are permanently deleted after the number of days below."
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "删除的图片会先进入回收站，超过下面设置的天数后会被自动永久删除。"
-          }
-        }
-      }
-    },
-    "thumbnailSizeLabel": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.thumbnailSizeLabel → \\(size)",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "\\(size)"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "\\(size)"
-          }
-        }
-      }
-    },
-    "newFolder": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.newFolder → 新建文件夹",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "New Folder"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "新建文件夹"
-          }
-        }
-      }
-    },
-    "newTag": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.newTag → 新建标签",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "New Tag"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "新建标签"
-          }
-        }
-      }
-    },
-    "folderNamePlaceholder": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.folderNamePlaceholder → 文件夹名称",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Folder name"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "文件夹名称"
-          }
-        }
-      }
-    },
-    "cancel": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.cancel → 取消",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cancel"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "取消"
-          }
-        }
-      }
-    },
-    "create": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.create → 创建",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Create"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "创建"
-          }
-        }
-      }
-    },
-    "confirm": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.confirm → 确定",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "OK"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "确定"
-          }
-        }
-      }
-    },
-    "delete": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.delete → 删除",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Delete"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "删除"
-          }
-        }
-      }
-    },
-    "clearAllFilters": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.clearAllFilters → 清除全部",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Clear All"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "清除全部"
-          }
-        }
-      }
-    },
-    "dropReleaseToImport": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.dropReleaseToImport → 松开导入",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Release to Import"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "松开导入"
-          }
-        }
-      }
-    },
-    "dropSupportedTypes": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.dropSupportedTypes → 支持图片文件 / 文件夹",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Supports image files / folders"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "支持图片文件 / 文件夹"
-          }
-        }
-      }
-    },
-    "deletePhotosConfirm": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.deletePhotosConfirm → 选中的图片会移到回收站，\\(retentionDays) 天后自动永久清除。可在回收站中恢复。",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Selected photos will move to Recycle Bin and be permanently deleted after \\(retentionDays) days. Can be restored from Recycle Bin."
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "选中的图片会移到回收站，\\(retentionDays) 天后自动永久清除。可在回收站中恢复。"
-          }
-        }
-      }
-    },
-    "newFolderPrompt": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.newFolderPrompt → 为新文件夹命名",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Name the new folder"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "为新文件夹命名"
-          }
-        }
-      }
-    },
-    "newFolderHint": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.newFolderHint → 选\\\"跳过\\\"避免重复导入。",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Choose \"Skip\" to avoid duplicates."
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "选\\\"跳过\\\"避免重复导入。"
-          }
-        }
-      }
-    },
-    "duplicatesFoundGroups": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.duplicatesFoundGroups → 发现 \\(count) 组重复",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "\\(count) duplicate groups found"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "发现 \\(count) 组重复"
-          }
-        }
-      }
-    },
-    "duplicatesCleanable": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.duplicatesCleanable → 可清理 \\(count) 张 · \\(size)",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "\\(count) cleanable · \\(size)"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "可清理 \\(count) 张 · \\(size)"
-          }
-        }
-      }
-    },
-    "duplicatesNone": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.duplicatesNone → 暂无重复图",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No duplicates"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "暂无重复图"
-          }
-        }
-      }
-    },
-    "duplicatesExplanation": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.duplicatesExplanation → 每组保留导入时间最近的一张，其他移到回收站（\\(retentionDays) 天后自动永久清除）",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Keep the most recently imported photo in each group, move the rest to Recycle Bin (permanently delete after \\(retentionDays) days)"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "每组保留导入时间最近的一张，其他移到回收站（\\(retentionDays) 天后自动永久清除）"
-          }
-        }
-      }
-    },
-    "clearRating": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.clearRating → 清除评分",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Clear Rating"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "清除评分"
-          }
-        }
-      }
-    },
-    "photoCount": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.photoCount → \\(count)",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "\\(count)"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "\\(count)"
-          }
-        }
-      }
-    },
-    "daysBadge": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.daysBadge → \\(days)",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "\\(days)"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "\\(days)"
-          }
-        }
-      }
-    },
-    "sidebarCount": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.sidebarCount → \\(count)",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "\\(count)"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "\\(count)"
-          }
-        }
-      }
-    },
-    "dateSectionCount": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.dateSectionCount → \\(count) 张",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "\\(count) photos"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "\\(count) 张"
-          }
-        }
-      }
-    },
-    "autoDeleteAfterDays": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.autoDeleteAfterDays → \\(days) 天后自动永久清除",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Permanently delete after \\(days) days"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "\\(days) 天后自动永久清除"
-          }
-        }
-      }
-    },
-    "viewModeGridFull": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.viewModeGridFull → 缩略图视图",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Thumbnail View"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "缩略图视图"
-          }
-        }
-      }
-    },
-    "viewModeListFull": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.viewModeListFull → 列表视图",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "List View"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "列表视图"
-          }
-        }
-      }
-    },
-    "viewModeTimelineFull": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.viewModeTimelineFull → 时间线视图",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Timeline View"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "时间线视图"
-          }
-        }
-      }
-    },
-    "settingsMenu": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.settingsMenu → 设置…",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Settings…"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "设置…"
-          }
-        }
-      }
-    },
-    "quickLook": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.quickLook → 快速查看",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Quick Look"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "快速查看"
-          }
-        }
-      }
-    },
-    "previousPhoto": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.previousPhoto → 上一张",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Previous"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "上一张"
-          }
-        }
-      }
-    },
-    "nextPhoto": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.nextPhoto → 下一张",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Next"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "下一张"
-          }
-        }
-      }
-    },
-    "clearMenu": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.clearMenu → 清空菜单",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Clear Menu"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "清空菜单"
-          }
-        }
-      }
-    },
-    "noRecentFiles": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.noRecentFiles → 无最近文件",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No Recent Files"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "无最近文件"
-          }
-        }
-      }
-    },
-    "recentFile": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.recentFile → \\(index). \\(filename)",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "\\(index). \\(filename)"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "\\(index). \\(filename)"
-          }
-        }
-      }
-    },
-    "empty": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.empty → 清空",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Empty"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "清空"
-          }
-        }
-      }
-    },
-    "skipAll": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.skipAll → 全部跳过（保留现有）",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Skip All (keep existing)"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "全部跳过（保留现有）"
-          }
-        }
-      }
-    },
-    "importAll": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.importAll → 全部导入（可能重复）",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Import All (may duplicate)"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "全部导入（可能重复）"
-          }
-        }
-      }
-    },
-    "deleteConfirmTitle": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.deleteConfirmTitle → 确定要删除这张图片吗？",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Delete this photo?"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "确定要删除这张图片吗？"
-          }
-        }
-      }
-    },
-    "renamePhotoTitle": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.renamePhotoTitle → 重命名",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rename"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "重命名"
-          }
-        }
-      }
-    },
-    "tagNamePlaceholder": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.tagNamePlaceholder → 标签名称",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tag name"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "标签名称"
-          }
-        }
-      }
-    },
-    "newFileNamePlaceholder": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.newFileNamePlaceholder → 新文件名",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "New file name"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "新文件名"
-          }
-        }
-      }
-    },
-    "addTag": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.addTag → 添加标签",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Add Tag"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "添加标签"
-          }
-        }
-      }
-    },
-    "sortImportedDesc": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.sortImportedDesc → 导入时间 ↓",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Import Time ↓"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "导入时间 ↓"
-          }
-        }
-      }
-    },
-    "sortImportedAsc": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.sortImportedAsc → 导入时间 ↑",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Import Time ↑"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "导入时间 ↑"
-          }
-        }
-      }
-    },
-    "sortFilenameAsc": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.sortFilenameAsc → 文件名 A → Z",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Filename A → Z"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "文件名 A → Z"
-          }
-        }
-      }
-    },
-    "sortFilenameDesc": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.sortFilenameDesc → 文件名 Z → A",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Filename Z → A"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "文件名 Z → A"
-          }
-        }
-      }
-    },
-    "sortFileSizeDesc": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.sortFileSizeDesc → 文件大小 ↓",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "File Size ↓"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "文件大小 ↓"
-          }
-        }
-      }
-    },
-    "sortFileSizeAsc": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.sortFileSizeAsc → 文件大小 ↑",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "File Size ↑"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "文件大小 ↑"
-          }
-        }
-      }
-    },
-    "sortCustomOrder": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.sortCustomOrder → 自定义顺序",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Custom Order"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "自定义顺序"
-          }
-        }
-      }
-    },
-    "sortCategoryImportTime": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.sortCategoryImportTime → 导入时间",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Import Time"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "导入时间"
-          }
-        }
-      }
-    },
-    "sortCategoryFilename": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.sortCategoryFilename → 文件名",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Filename"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "文件名"
-          }
-        }
-      }
-    },
-    "sortCategoryFileSize": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.sortCategoryFileSize → 文件大小",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "File Size"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "文件大小"
-          }
-        }
-      }
-    },
-    "sortCategoryCustom": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.sortCategoryCustom → 自定义",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Custom"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "自定义"
-          }
-        }
-      }
-    },
-    "openRecent": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.openRecent → 最近打开",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Open Recent"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "最近打开"
-          }
-        }
-      }
-    },
-    "showSidebar": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.showSidebar → 显示侧边栏",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Show Sidebar"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "显示侧边栏"
-          }
-        }
-      }
-    },
-    "showDetailPanel": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.showDetailPanel → 显示详情面板",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Show Detail Panel"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "显示详情面板"
-          }
-        }
-      }
-    },
-    "showInfoPanel": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.showInfoPanel → 显示信息面板",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Show Info Panel"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "显示信息面板"
-          }
-        }
-      }
-    },
-    "undo": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.undo → 撤销",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Undo"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "撤销"
-          }
-        }
-      }
-    },
-    "redo": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.redo → 重做",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Redo"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "重做"
-          }
-        }
-      }
-    },
-    "undoWithAction": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.undoWithAction → 撤销 \\(action)",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Undo \\(action)"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "撤销 \\(action)"
-          }
-        }
-      }
-    },
-    "redoWithAction": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.redoWithAction → 重做 \\(action)",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Redo \\(action)"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "重做 \\(action)"
-          }
-        }
-      }
-    },
-    "toolbarToggleSidebar": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.toolbarToggleSidebar → 切换侧边栏",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Toggle Sidebar"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "切换侧边栏"
-          }
-        }
-      }
-    },
-    "toolbarExport": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.toolbarExport → 导出",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Export"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "导出"
-          }
-        }
-      }
-    },
-    "toolbarImport": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.toolbarImport → 导入",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Import"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "导入"
-          }
-        }
-      }
-    },
-    "layoutMode": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.layoutMode → 布局模式",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Layout"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "布局模式"
-          }
-        }
-      }
-    },
-    "thumbnailSize": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.thumbnailSize → 缩略图大小",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Thumbnail Size"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "缩略图大小"
-          }
-        }
-      }
-    },
-    "sort": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.sort → 排序",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sort"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "排序"
-          }
-        }
-      }
-    },
-    "filter": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.filter → 筛选",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Filter"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "筛选"
-          }
-        }
-      }
-    },
-    "search": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.search → 搜索",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Search"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "搜索"
-          }
-        }
-      }
-    },
-    "searchHint": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.searchHint → 搜索照片、标签、笔记",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Search photos, tags, notes"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "搜索照片、标签、笔记"
-          }
-        }
-      }
-    },
-    "searchPlaceholder": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.searchPlaceholder → 搜索照片、标签…",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Search photos, tags…"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "搜索照片、标签…"
-          }
-        }
-      }
-    },
-    "filterWithCount": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.filterWithCount → 筛选 (\\(count))",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Filter (\\(count))"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "筛选 (\\(count))"
-          }
-        }
-      }
-    },
-    "removeFromFolder": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.removeFromFolder → 移出文件夹",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Remove from Folder"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "移出文件夹"
-          }
-        }
-      }
-    },
-    "moveToFolder": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.moveToFolder → 移动到文件夹",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Move to Folder"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "移动到文件夹"
-          }
-        }
-      }
-    },
-    "manageTags": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.manageTags → 管理标签",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Manage Tags"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "管理标签"
-          }
-        }
-      }
-    },
-    "addTagAction": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.addTagAction → 加标签",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Add Tag"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "加标签"
-          }
-        }
-      }
-    },
-    "deleteTag": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.deleteTag → 删除标签",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Delete Tag"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "删除标签"
-          }
-        }
-      }
-    },
-    "deleteFolder": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.deleteFolder → 删除文件夹",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Delete Folder"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "删除文件夹"
-          }
-        }
-      }
-    },
-    "copyAction": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.copyAction → 复制",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Copy"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "复制"
-          }
-        }
-      }
-    },
-    "revealInFinder": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.revealInFinder → 在 Finder 中显示",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Reveal in Finder"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "在 Finder 中显示"
-          }
-        }
-      }
-    },
-    "ratingCategory": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.ratingCategory → 评分",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rating"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "评分"
-          }
-        }
-      }
-    },
-    "ratingStars": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.ratingStars → \\(n) 星",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "\\(n) stars"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "\\(n) 星"
-          }
-        }
-      }
-    },
-    "cancelMultiSelect": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.cancelMultiSelect → 取消多选 (Esc)",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cancel Multi-Select (Esc)"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "取消多选 (Esc)"
-          }
-        }
-      }
-    },
-    "restoreSelected": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.restoreSelected → 恢复选中",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Restore Selected"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "恢复选中"
-          }
-        }
-      }
-    },
-    "permanentlyDeleteSelected": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.permanentlyDeleteSelected → 永久删除选中",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Permanently Delete Selected"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "永久删除选中"
-          }
-        }
-      }
-    },
-    "emptyRecycleBinAction": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.emptyRecycleBinAction → 清空回收站",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Empty Recycle Bin"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "清空回收站"
-          }
-        }
-      }
-    },
-    "keepNewestPerGroup": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.keepNewestPerGroup → 保留每组最新",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Keep Newest per Group"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "保留每组最新"
-          }
-        }
-      }
-    },
-    "renameFailed": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.renameFailed → 重命名失败：\\(filename)",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rename failed: \\(filename)"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "重命名失败：\\(filename)"
-          }
-        }
-      }
-    },
-    "clearSearch": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.clearSearch → 清除搜索",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Clear Search"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "清除搜索"
-          }
-        }
-      }
-    },
-    "importAction": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.importAction → 导入图片",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Import Photos"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "导入图片"
-          }
-        }
-      }
-    },
-    "viewAll": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.viewAll → 查看全部",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "View All"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "查看全部"
-          }
-        }
-      }
-    },
-    "unknownFolder": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.unknownFolder → 未知文件夹",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Unknown Folder"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "未知文件夹"
-          }
-        }
-      }
-    },
-    "unknownTag": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.unknownTag → 未知标签",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Unknown Tag"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "未知标签"
-          }
         }
       }
     },
-    "minRatingStars": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.minRatingStars → ≥ \\(n) 星",
+    "%@将从%@中移除，文件也会被永久删除。": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "≥ \\(n) stars"
-          }
-        },
-        "zh-Hant": {
+        "zh-Hans": {
           "stringUnit": {
-            "state": "needs_review",
-            "value": "≥ \\(n) 星"
+            "state": "new",
+            "value": "%1$@将从%2$@中移除，文件也会被永久删除。"
           }
         }
       }
     },
     "activeFilterBadge": {
-      "extractionState": "manual",
       "comment": "V6.12.17: V Copy.activeFilterBadge → \\(n) 项筛选",
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2392,426 +36,426 @@
             "state": "needs_review",
             "value": "\\(n) 项筛选"
           }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\\(n) 项筛选"
+          }
         }
       }
     },
-    "thumbnailSizeCompact": {
+    "addTag": {
+      "comment": "V6.12.17: V Copy.addTag → 添加标签",
       "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.thumbnailSizeCompact → 特小 70pt",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tiny 70pt"
+            "value": "Add Tag"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "特小 70pt"
+            "value": "添加标签"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添加标签"
           }
         }
       }
     },
-    "thumbnailSizeSmall": {
+    "addTagAction": {
+      "comment": "V6.12.17: V Copy.addTagAction → 加标签",
       "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.thumbnailSizeSmall → 小 110pt",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Small 110pt"
+            "value": "Add Tag"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "小 110pt"
+            "value": "加标签"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "加标签"
           }
         }
       }
     },
-    "thumbnailSizeMedium": {
+    "addTagHint": {
+      "comment": "V6.12.17: V Copy.addTagHint → 点击 + 添加标签",
       "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.thumbnailSizeMedium → 中 200pt",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Medium 200pt"
+            "value": "Click + to add tag"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "中 200pt"
+            "value": "点击 + 添加标签"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "点击 + 添加标签"
           }
         }
       }
     },
-    "thumbnailSizeLarge": {
+    "appName": {
+      "comment": "V6.12.17: V Copy.appName → ImageGallery",
       "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.thumbnailSizeLarge → 大 250pt",
       "localizations": {
         "en": {
           "stringUnit": {
-            "state": "translated",
-            "value": "Large 250pt"
+            "state": "needs_review",
+            "value": "ImageGallery"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "大 250pt"
+            "value": "ImageGallery"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ImageGallery"
           }
         }
       }
     },
-    "storageUnavailableTitle": {
+    "autoDeleteAfterDays": {
+      "comment": "V6.12.17: V Copy.autoDeleteAfterDays → \\(days) 天后自动永久清除",
       "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.storageUnavailableTitle → 存储不可用",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Storage Unavailable"
+            "value": "Permanently delete after \\(days) days"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "存储不可用"
+            "value": "\\(days) 天后自动永久清除"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\\(days) 天后自动永久清除"
           }
         }
       }
     },
-    "storageRetry": {
+    "batchMoveToRecycleBinFailed": {
+      "comment": "V6.12.17: V Copy.batchMoveToRecycleBinFailed → 批量移到回收站失败：\\(error)",
       "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.storageRetry → 重试",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Retry"
+            "value": "Batch move to Recycle Bin failed: \\(error)"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "重试"
+            "value": "批量移到回收站失败：\\(error)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "批量移到回收站失败：\\(error)"
           }
         }
       }
     },
-    "emptyRecycleBinHelp": {
+    "batchRatingFailed": {
+      "comment": "V6.12.17: V Copy.batchRatingFailed → 批量评分失败",
       "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.emptyRecycleBinHelp → 永久删除回收站里所有照片（无法恢复）",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Permanently delete all photos in Recycle Bin (cannot be undone)"
+            "value": "Batch rating failed"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "永久删除回收站里所有照片（无法恢复）"
+            "value": "批量评分失败"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "批量评分失败"
           }
         }
       }
     },
-    "emptyNoMatchFilter": {
+    "builtWithStack": {
+      "comment": "V6.12.17: V Copy.builtWithStack → Built with SwiftUI + SwiftData",
       "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.emptyNoMatchFilter → 没有匹配筛选的图片",
       "localizations": {
         "en": {
           "stringUnit": {
-            "state": "translated",
-            "value": "No photos match filter"
+            "state": "needs_review",
+            "value": "Built with SwiftUI + SwiftData"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "没有匹配筛选的图片"
+            "value": "Built with SwiftUI + SwiftData"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Built with SwiftUI + SwiftData"
           }
         }
       }
     },
-    "emptyNoMatchSearch": {
+    "cancel": {
+      "comment": "V6.12.17: V Copy.cancel → 取消",
       "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.emptyNoMatchSearch → 没有匹配的图片",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "No matching photos"
+            "value": "Cancel"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "没有匹配的图片"
+            "value": "取消"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消"
           }
         }
       }
     },
-    "emptyUnfiled": {
+    "cancelMultiSelect": {
+      "comment": "V6.12.17: V Copy.cancelMultiSelect → 取消多选 (Esc)",
       "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.emptyUnfiled → 没有待整理的图片",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "No unfiled photos"
+            "value": "Cancel Multi-Select (Esc)"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "没有待整理的图片"
+            "value": "取消多选 (Esc)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消多选 (Esc)"
           }
         }
       }
     },
-    "emptyFolder": {
+    "clearAllFilters": {
+      "comment": "V6.12.17: V Copy.clearAllFilters → 清除全部",
       "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.emptyFolder → 这个文件夹是空的",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "This folder is empty"
+            "value": "Clear All"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "这个文件夹是空的"
+            "value": "清除全部"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除全部"
           }
         }
       }
     },
-    "emptyTag": {
+    "clearMenu": {
+      "comment": "V6.12.17: V Copy.clearMenu → 清空菜单",
       "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.emptyTag → 没有带此标签的图片",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "No photos with this tag"
+            "value": "Clear Menu"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "没有带此标签的图片"
+            "value": "清空菜单"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清空菜单"
           }
         }
       }
     },
-    "emptyDuplicates": {
+    "clearRating": {
+      "comment": "V6.12.17: V Copy.clearRating → 清除评分",
       "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.emptyDuplicates → 没有重复的图片",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "No duplicates"
+            "value": "Clear Rating"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "没有重复的图片"
+            "value": "清除评分"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除评分"
           }
         }
       }
     },
-    "emptyRecent7Days": {
+    "clearSearch": {
+      "comment": "V6.12.17: V Copy.clearSearch → 清除搜索",
       "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.emptyRecent7Days → 最近 7 天没有新图",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "No new photos in the last 7 days"
+            "value": "Clear Search"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "最近 7 天没有新图"
+            "value": "清除搜索"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除搜索"
           }
         }
       }
     },
-    "emptyLargeFiles": {
+    "confirm": {
+      "comment": "V6.12.17: V Copy.confirm → 确定",
       "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.emptyLargeFiles → 没有大于 5 MB 的图",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "No photos larger than 5 MB"
+            "value": "OK"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "没有大于 5 MB 的图"
+            "value": "确定"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "确定"
           }
         }
       }
     },
-    "emptyNoPhotosYet": {
+    "copyAction": {
+      "comment": "V6.12.17: V Copy.copyAction → 复制",
       "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.emptyNoPhotosYet → 还没有图片",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "No photos yet"
+            "value": "Copy"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "还没有图片"
+            "value": "复制"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "复制"
           }
         }
       }
     },
-    "hintFilterAdjust": {
+    "create": {
+      "comment": "V6.12.17: V Copy.create → 创建",
       "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.hintFilterAdjust → 尝试减少筛选条件或调整侧边栏",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Try reducing filters or adjusting the sidebar"
+            "value": "Create"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "尝试减少筛选条件或调整侧边栏"
-          }
-        }
-      }
-    },
-    "hintSearchOther": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.hintSearchOther → 试试其他关键词",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Try other keywords"
+            "value": "创建"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "试试其他关键词"
-          }
-        }
-      }
-    },
-    "hintMoveToFolder": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.hintMoveToFolder → 把图片移动到文件夹来整理",
-      "localizations": {
-        "en": {
+        "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Move photos into folders to organize"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "把图片移动到文件夹来整理"
-          }
-        }
-      }
-    },
-    "hintAutoImportToFolder": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.hintAutoImportToFolder → 导入图片后会自动放到此文件夹",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Imported photos will automatically go into this folder"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "导入图片后会自动放到此文件夹"
-          }
-        }
-      }
-    },
-    "hintAddTagInDetail": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.hintAddTagInDetail → 在详情中添加此标签",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Add this tag in the detail panel"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "在详情中添加此标签"
-          }
-        }
-      }
-    },
-    "hintDuplicatesAuto": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.hintDuplicatesAuto → 重复图会自动出现在这里",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Duplicates appear here automatically"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "重复图会自动出现在这里"
-          }
-        }
-      }
-    },
-    "hintStartImport": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.hintStartImport → 拖入图片，或点击“导入图片”开始添加",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Drag photos here, or click \"Import Photos\" to start"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "拖入图片，或点击“导入图片”开始添加"
+            "value": "创建"
           }
         }
       }
     },
     "databaseInitFailed": {
-      "extractionState": "manual",
       "comment": "V6.12.17: V Copy.databaseInitFailed → 图库无法启动",
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2824,12 +468,18 @@
             "state": "needs_review",
             "value": "图库无法启动"
           }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "图库无法启动"
+          }
         }
       }
     },
     "databaseInitFailedHint": {
-      "extractionState": "manual",
       "comment": "V6.12.17: V Copy.databaseInitFailedHint → SwiftData 存储损坏，或当前版本不兼容旧数据库。",
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2842,30 +492,18 @@
             "state": "needs_review",
             "value": "SwiftData 存储损坏，或当前版本不兼容旧数据库。"
           }
-        }
-      }
-    },
-    "databaseInitReset": {
-      "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.databaseInitReset → 重置数据库（删除本地所有数据）",
-      "localizations": {
-        "en": {
+        },
+        "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Reset Database (delete all local data)"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "重置数据库（删除本地所有数据）"
+            "value": "SwiftData 存储损坏，或当前版本不兼容旧数据库。"
           }
         }
       }
     },
     "databaseInitQuit": {
-      "extractionState": "manual",
       "comment": "V6.12.17: V Copy.databaseInitQuit → 退出",
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2878,12 +516,42 @@
             "state": "needs_review",
             "value": "退出"
           }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "退出"
+          }
+        }
+      }
+    },
+    "databaseInitReset": {
+      "comment": "V6.12.17: V Copy.databaseInitReset → 重置数据库（删除本地所有数据）",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reset Database (delete all local data)"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "重置数据库（删除本地所有数据）"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重置数据库（删除本地所有数据）"
+          }
         }
       }
     },
     "databaseInitResetConfirm": {
-      "extractionState": "manual",
       "comment": "V6.12.17: V Copy.databaseInitResetConfirm → 重置会永久删除所有照片记录、文件夹、标签和回收站。导入的原图文件不会删除（仍在 Finder 里）。确定要继续吗？",
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2896,12 +564,18 @@
             "state": "needs_review",
             "value": "重置会永久删除所有照片记录、文件夹、标签和回收站。导入的原图文件不会删除（仍在 Finder 里）。确定要继续吗？"
           }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重置会永久删除所有照片记录、文件夹、标签和回收站。导入的原图文件不会删除（仍在 Finder 里）。确定要继续吗？"
+          }
         }
       }
     },
     "databaseInitResetSuccess": {
-      "extractionState": "manual",
       "comment": "V6.12.17: V Copy.databaseInitResetSuccess → 数据库已重置",
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2914,66 +588,234 @@
             "state": "needs_review",
             "value": "数据库已重置"
           }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "数据库已重置"
+          }
         }
       }
     },
-    "appName": {
+    "dateSectionCount": {
+      "comment": "V6.12.17: V Copy.dateSectionCount → \\(count) 张",
       "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.appName → ImageGallery",
       "localizations": {
         "en": {
           "stringUnit": {
-            "state": "needs_review",
-            "value": "ImageGallery"
+            "state": "translated",
+            "value": "\\(count) photos"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "ImageGallery"
+            "value": "\\(count) 张"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\\(count) 张"
           }
         }
       }
     },
-    "builtWithStack": {
+    "daysBadge": {
+      "comment": "V6.12.17: V Copy.daysBadge → \\(days)",
       "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.builtWithStack → Built with SwiftUI + SwiftData",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Built with SwiftUI + SwiftData"
+            "value": "\\(days)"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Built with SwiftUI + SwiftData"
+            "value": "\\(days)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\\(days)"
           }
         }
       }
     },
-    "keyboardShortcutsTitle": {
+    "daysRemaining": {
+      "comment": "V6.12.17: V Copy.daysRemaining → \\(days)",
       "extractionState": "manual",
-      "comment": "V6.12.17: V Copy.keyboardShortcutsTitle → Keyboard Shortcuts",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Keyboard Shortcuts"
+            "value": "\\(days)"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Keyboard Shortcuts"
+            "value": "\\(days)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\\(days)"
+          }
+        }
+      }
+    },
+    "delete": {
+      "comment": "V6.12.17: V Copy.delete → 删除",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "删除"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "删除"
+          }
+        }
+      }
+    },
+    "deleteConfirmTitle": {
+      "comment": "V6.12.17: V Copy.deleteConfirmTitle → 确定要删除这张图片吗？",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete this photo?"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "确定要删除这张图片吗？"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "确定要删除这张图片吗？"
+          }
+        }
+      }
+    },
+    "deleteFolder": {
+      "comment": "V6.12.17: V Copy.deleteFolder → 删除文件夹",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete Folder"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "删除文件夹"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "删除文件夹"
+          }
+        }
+      }
+    },
+    "deletePhotoConfirm": {
+      "comment": "V6.12.17: V Copy.deletePhotoConfirm → 图片将从图库中移除，文件也会被永久删除。",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The photo will be removed from the library and the file permanently deleted."
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "图片将从图库中移除，文件也会被永久删除。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "图片将从图库中移除，文件也会被永久删除。"
+          }
+        }
+      }
+    },
+    "deletePhotosConfirm": {
+      "comment": "V6.12.17: V Copy.deletePhotosConfirm → 选中的图片会移到回收站，\\(retentionDays) 天后自动永久清除。可在回收站中恢复。",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selected photos will move to Recycle Bin and be permanently deleted after \\(retentionDays) days. Can be restored from Recycle Bin."
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "选中的图片会移到回收站，\\(retentionDays) 天后自动永久清除。可在回收站中恢复。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选中的图片会移到回收站，\\(retentionDays) 天后自动永久清除。可在回收站中恢复。"
+          }
+        }
+      }
+    },
+    "deleteTag": {
+      "comment": "V6.12.17: V Copy.deleteTag → 删除标签",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete Tag"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "删除标签"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "删除标签"
           }
         }
       }
     },
     "done": {
-      "extractionState": "manual",
       "comment": "V6.12.17: V Copy.done → Done",
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2984,14 +826,1052 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "needs_review",
+            "value": "Done"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
             "value": "Done"
           }
         }
       }
     },
-    "keyboardShortcutsMenu": {
+    "dropReleaseToImport": {
+      "comment": "V6.12.17: V Copy.dropReleaseToImport → 松开导入",
       "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Release to Import"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "松开导入"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "松开导入"
+          }
+        }
+      }
+    },
+    "dropSupportedTypes": {
+      "comment": "V6.12.17: V Copy.dropSupportedTypes → 支持图片文件 / 文件夹",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Supports image files / folders"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "支持图片文件 / 文件夹"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "支持图片文件 / 文件夹"
+          }
+        }
+      }
+    },
+    "duplicatesCleanable": {
+      "comment": "V6.12.17: V Copy.duplicatesCleanable → 可清理 \\(count) 张 · \\(size)",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\\(count) cleanable · \\(size)"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "可清理 \\(count) 张 · \\(size)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "可清理 \\(count) 张 · \\(size)"
+          }
+        }
+      }
+    },
+    "duplicatesExplanation": {
+      "comment": "V6.12.17: V Copy.duplicatesExplanation → 每组保留导入时间最近的一张，其他移到回收站（\\(retentionDays) 天后自动永久清除）",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep the most recently imported photo in each group, move the rest to Recycle Bin (permanently delete after \\(retentionDays) days)"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "每组保留导入时间最近的一张，其他移到回收站（\\(retentionDays) 天后自动永久清除）"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "每组保留导入时间最近的一张，其他移到回收站（\\(retentionDays) 天后自动永久清除）"
+          }
+        }
+      }
+    },
+    "duplicatesFoundGroups": {
+      "comment": "V6.12.17: V Copy.duplicatesFoundGroups → 发现 \\(count) 组重复",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\\(count) duplicate groups found"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "发现 \\(count) 组重复"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "发现 \\(count) 组重复"
+          }
+        }
+      }
+    },
+    "duplicatesNone": {
+      "comment": "V6.12.17: V Copy.duplicatesNone → 暂无重复图",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No duplicates"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "暂无重复图"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暂无重复图"
+          }
+        }
+      }
+    },
+    "empty": {
+      "comment": "V6.12.17: V Copy.empty → 清空",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Empty"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "清空"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清空"
+          }
+        }
+      }
+    },
+    "emptyDuplicates": {
+      "comment": "V6.12.17: V Copy.emptyDuplicates → 没有重复的图片",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No duplicates"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "没有重复的图片"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "没有重复的图片"
+          }
+        }
+      }
+    },
+    "emptyFolder": {
+      "comment": "V6.12.17: V Copy.emptyFolder → 这个文件夹是空的",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This folder is empty"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "这个文件夹是空的"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "这个文件夹是空的"
+          }
+        }
+      }
+    },
+    "emptyLargeFiles": {
+      "comment": "V6.12.17: V Copy.emptyLargeFiles → 没有大于 5 MB 的图",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No photos larger than 5 MB"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "没有大于 5 MB 的图"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "没有大于 5 MB 的图"
+          }
+        }
+      }
+    },
+    "emptyLibrary": {
+      "comment": "V6.12.17: V Copy.emptyLibrary → 图库还是空的",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Library is empty"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "图库还是空的"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "图库还是空的"
+          }
+        }
+      }
+    },
+    "emptyLibraryHint": {
+      "comment": "V6.12.17: V Copy.emptyLibraryHint → 把图片拖到这里，或点击 ⌘O 导入",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drag photos here, or click ⌘O to import"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "把图片拖到这里，或点击 ⌘O 导入"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "把图片拖到这里，或点击 ⌘O 导入"
+          }
+        }
+      }
+    },
+    "emptyNoMatchFilter": {
+      "comment": "V6.12.17: V Copy.emptyNoMatchFilter → 没有匹配筛选的图片",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No photos match filter"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "没有匹配筛选的图片"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "没有匹配筛选的图片"
+          }
+        }
+      }
+    },
+    "emptyNoMatchSearch": {
+      "comment": "V6.12.17: V Copy.emptyNoMatchSearch → 没有匹配的图片",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No matching photos"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "没有匹配的图片"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "没有匹配的图片"
+          }
+        }
+      }
+    },
+    "emptyNoPhotosYet": {
+      "comment": "V6.12.17: V Copy.emptyNoPhotosYet → 还没有图片",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No photos yet"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "还没有图片"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "还没有图片"
+          }
+        }
+      }
+    },
+    "emptyRecent7Days": {
+      "comment": "V6.12.17: V Copy.emptyRecent7Days → 最近 7 天没有新图",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No new photos in the last 7 days"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "最近 7 天没有新图"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最近 7 天没有新图"
+          }
+        }
+      }
+    },
+    "emptyRecycleBin": {
+      "comment": "V6.12.17: V Copy.emptyRecycleBin → 回收站是空的",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recycle Bin is empty"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "回收站是空的"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "回收站是空的"
+          }
+        }
+      }
+    },
+    "emptyRecycleBinAction": {
+      "comment": "V6.12.17: V Copy.emptyRecycleBinAction → 清空回收站",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Empty Recycle Bin"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "清空回收站"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清空回收站"
+          }
+        }
+      }
+    },
+    "emptyRecycleBinConfirm": {
+      "comment": "V6.12.17: V Copy.emptyRecycleBinConfirm → 回收站里的所有照片将被永久删除，无法恢复。",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All photos in Recycle Bin will be permanently deleted. This cannot be undone."
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "回收站里的所有照片将被永久删除，无法恢复。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "回收站里的所有照片将被永久删除，无法恢复。"
+          }
+        }
+      }
+    },
+    "emptyRecycleBinConfirmTitle": {
+      "comment": "V6.12.17: V Copy.emptyRecycleBinConfirmTitle → 确定要清空回收站吗？",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Empty Recycle Bin?"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "确定要清空回收站吗？"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "确定要清空回收站吗？"
+          }
+        }
+      }
+    },
+    "emptyRecycleBinFailed": {
+      "comment": "V6.12.17: V Copy.emptyRecycleBinFailed → 清空回收站失败：\\(error)",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Empty Recycle Bin failed: \\(error)"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "清空回收站失败：\\(error)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清空回收站失败：\\(error)"
+          }
+        }
+      }
+    },
+    "emptyRecycleBinHelp": {
+      "comment": "V6.12.17: V Copy.emptyRecycleBinHelp → 永久删除回收站里所有照片（无法恢复）",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permanently delete all photos in Recycle Bin (cannot be undone)"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "永久删除回收站里所有照片（无法恢复）"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "永久删除回收站里所有照片（无法恢复）"
+          }
+        }
+      }
+    },
+    "emptyTag": {
+      "comment": "V6.12.17: V Copy.emptyTag → 没有带此标签的图片",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No photos with this tag"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "没有带此标签的图片"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "没有带此标签的图片"
+          }
+        }
+      }
+    },
+    "emptyUnfiled": {
+      "comment": "V6.12.17: V Copy.emptyUnfiled → 没有待整理的图片",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No unfiled photos"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "没有待整理的图片"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "没有待整理的图片"
+          }
+        }
+      }
+    },
+    "exported": {
+      "comment": "V6.12.17: V Copy.exported → 已导出 \\(count) 张图片",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exported \\(count) photos"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已导出 \\(count) 张图片"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已导出 \\(count) 张图片"
+          }
+        }
+      }
+    },
+    "exportFailed": {
+      "comment": "V6.12.17: V Copy.exportFailed → 导出失败：\\(filename)",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Export failed: \\(filename)"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "导出失败：\\(filename)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "导出失败：\\(filename)"
+          }
+        }
+      }
+    },
+    "filter": {
+      "comment": "V6.12.17: V Copy.filter → 筛选",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filter"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "筛选"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "筛选"
+          }
+        }
+      }
+    },
+    "filterWithCount": {
+      "comment": "V6.12.17: V Copy.filterWithCount → 筛选 (\\(count))",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filter (\\(count))"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "筛选 (\\(count))"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "筛选 (\\(count))"
+          }
+        }
+      }
+    },
+    "folderNamePlaceholder": {
+      "comment": "V6.12.17: V Copy.folderNamePlaceholder → 文件夹名称",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Folder name"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "文件夹名称"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件夹名称"
+          }
+        }
+      }
+    },
+    "hintAddTagInDetail": {
+      "comment": "V6.12.17: V Copy.hintAddTagInDetail → 在详情中添加此标签",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add this tag in the detail panel"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "在详情中添加此标签"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在详情中添加此标签"
+          }
+        }
+      }
+    },
+    "hintAutoImportToFolder": {
+      "comment": "V6.12.17: V Copy.hintAutoImportToFolder → 导入图片后会自动放到此文件夹",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Imported photos will automatically go into this folder"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "导入图片后会自动放到此文件夹"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "导入图片后会自动放到此文件夹"
+          }
+        }
+      }
+    },
+    "hintDuplicatesAuto": {
+      "comment": "V6.12.17: V Copy.hintDuplicatesAuto → 重复图会自动出现在这里",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Duplicates appear here automatically"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "重复图会自动出现在这里"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重复图会自动出现在这里"
+          }
+        }
+      }
+    },
+    "hintFilterAdjust": {
+      "comment": "V6.12.17: V Copy.hintFilterAdjust → 尝试减少筛选条件或调整侧边栏",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try reducing filters or adjusting the sidebar"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "尝试减少筛选条件或调整侧边栏"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "尝试减少筛选条件或调整侧边栏"
+          }
+        }
+      }
+    },
+    "hintMoveToFolder": {
+      "comment": "V6.12.17: V Copy.hintMoveToFolder → 把图片移动到文件夹来整理",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move photos into folders to organize"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "把图片移动到文件夹来整理"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "把图片移动到文件夹来整理"
+          }
+        }
+      }
+    },
+    "hintSearchOther": {
+      "comment": "V6.12.17: V Copy.hintSearchOther → 试试其他关键词",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try other keywords"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "试试其他关键词"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "试试其他关键词"
+          }
+        }
+      }
+    },
+    "hintStartImport": {
+      "comment": "V6.12.17: V Copy.hintStartImport → 拖入图片，或点击“导入图片”开始添加",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drag photos here, or click \"Import Photos\" to start"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "拖入图片，或点击“导入图片”开始添加"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "拖入图片，或点击“导入图片”开始添加"
+          }
+        }
+      }
+    },
+    "imageDimensions": {
+      "comment": "V6.12.17: V Copy.imageDimensions → \\(width) × \\(height)",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "\\(width) × \\(height)"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "\\(width) × \\(height)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\\(width) × \\(height)"
+          }
+        }
+      }
+    },
+    "importAction": {
+      "comment": "V6.12.17: V Copy.importAction → 导入图片",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Import Photos"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "导入图片"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "导入图片"
+          }
+        }
+      }
+    },
+    "importAll": {
+      "comment": "V6.12.17: V Copy.importAll → 全部导入（可能重复）",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Import All (may duplicate)"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "全部导入（可能重复）"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全部导入（可能重复）"
+          }
+        }
+      }
+    },
+    "imported": {
+      "comment": "V6.12.17: V Copy.imported → 已导入 \\(count) 张图片",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Imported \\(count) photos"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已导入 \\(count) 张图片"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已导入 \\(count) 张图片"
+          }
+        }
+      }
+    },
+    "importedPartial": {
+      "comment": "V6.12.17: V Copy.importedPartial → 已导入 \\(inserted) 张，\\(failed) 张失败",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Imported \\(inserted), \\(failed) failed"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已导入 \\(inserted) 张，\\(failed) 张失败"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已导入 \\(inserted) 张，\\(failed) 张失败"
+          }
+        }
+      }
+    },
+    "importFailed": {
+      "comment": "V6.12.17: V Copy.importFailed → 导入失败：\\(filename)",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Import failed: \\(filename)"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "导入失败：\\(filename)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "导入失败：\\(filename)"
+          }
+        }
+      }
+    },
+    "keepNewestPerGroup": {
+      "comment": "V6.12.17: V Copy.keepNewestPerGroup → 保留每组最新",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep Newest per Group"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "保留每组最新"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保留每组最新"
+          }
+        }
+      }
+    },
+    "keyboardShortcutsMenu": {
       "comment": "V6.12.17: V Copy.keyboardShortcutsMenu → Keyboard Shortcuts…",
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3003,6 +1883,2820 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "Keyboard Shortcuts…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keyboard Shortcuts…"
+          }
+        }
+      }
+    },
+    "keyboardShortcutsTitle": {
+      "comment": "V6.12.17: V Copy.keyboardShortcutsTitle → Keyboard Shortcuts",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Keyboard Shortcuts"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Keyboard Shortcuts"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keyboard Shortcuts"
+          }
+        }
+      }
+    },
+    "layoutMode": {
+      "comment": "V6.12.17: V Copy.layoutMode → 布局模式",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Layout"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "布局模式"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "布局模式"
+          }
+        }
+      }
+    },
+    "manageTags": {
+      "comment": "V6.12.17: V Copy.manageTags → 管理标签",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manage Tags"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "管理标签"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "管理标签"
+          }
+        }
+      }
+    },
+    "minRatingStars": {
+      "comment": "V6.12.17: V Copy.minRatingStars → ≥ \\(n) 星",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "≥ \\(n) stars"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "≥ \\(n) 星"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "≥ \\(n) 星"
+          }
+        }
+      }
+    },
+    "movedDuplicates": {
+      "comment": "V6.12.17: V Copy.movedDuplicates → 已移到回收站 \\(count) 张重复图",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Moved \\(count) duplicates to Recycle Bin"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已移到回收站 \\(count) 张重复图"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已移到回收站 \\(count) 张重复图"
+          }
+        }
+      }
+    },
+    "movedToRecycleBin": {
+      "comment": "V6.12.17: V Copy.movedToRecycleBin → 已移到回收站（\\(retentionDays) 天后永久删除）",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Moved to Recycle Bin (permanently delete in \\(retentionDays) days)"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已移到回收站（\\(retentionDays) 天后永久删除）"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已移到回收站（\\(retentionDays) 天后永久删除）"
+          }
+        }
+      }
+    },
+    "moveToFolder": {
+      "comment": "V6.12.17: V Copy.moveToFolder → 移动到文件夹",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move to Folder"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "移动到文件夹"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移动到文件夹"
+          }
+        }
+      }
+    },
+    "moveToRecycleBinFailed": {
+      "comment": "V6.12.17: V Copy.moveToRecycleBinFailed → 移到回收站失败：\\(error)",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move to Recycle Bin failed: \\(error)"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "移到回收站失败：\\(error)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移到回收站失败：\\(error)"
+          }
+        }
+      }
+    },
+    "newFileNamePlaceholder": {
+      "comment": "V6.12.17: V Copy.newFileNamePlaceholder → 新文件名",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New file name"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "新文件名"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新文件名"
+          }
+        }
+      }
+    },
+    "newFolder": {
+      "comment": "V6.12.17: V Copy.newFolder → 新建文件夹",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New Folder"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "新建文件夹"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新建文件夹"
+          }
+        }
+      }
+    },
+    "newFolderHint": {
+      "comment": "V6.12.17: V Copy.newFolderHint → 选\\\"跳过\\\"避免重复导入。",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose \"Skip\" to avoid duplicates."
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "选\\\"跳过\\\"避免重复导入。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选\\\"跳过\\\"避免重复导入。"
+          }
+        }
+      }
+    },
+    "newFolderPrompt": {
+      "comment": "V6.12.17: V Copy.newFolderPrompt → 为新文件夹命名",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Name the new folder"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "为新文件夹命名"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "为新文件夹命名"
+          }
+        }
+      }
+    },
+    "newTag": {
+      "comment": "V6.12.17: V Copy.newTag → 新建标签",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New Tag"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "新建标签"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新建标签"
+          }
+        }
+      }
+    },
+    "nextPhoto": {
+      "comment": "V6.12.17: V Copy.nextPhoto → 下一张",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "下一张"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "下一张"
+          }
+        }
+      }
+    },
+    "noRecentFiles": {
+      "comment": "V6.12.17: V Copy.noRecentFiles → 无最近文件",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Recent Files"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "无最近文件"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无最近文件"
+          }
+        }
+      }
+    },
+    "openRecent": {
+      "comment": "V6.12.17: V Copy.openRecent → 最近打开",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Recent"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "最近打开"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最近打开"
+          }
+        }
+      }
+    },
+    "permanentlyDeleteSelected": {
+      "comment": "V6.12.17: V Copy.permanentlyDeleteSelected → 永久删除选中",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permanently Delete Selected"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "永久删除选中"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "永久删除选中"
+          }
+        }
+      }
+    },
+    "photoCount": {
+      "comment": "V6.12.17: V Copy.photoCount → \\(count)",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "\\(count)"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "\\(count)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\\(count)"
+          }
+        }
+      }
+    },
+    "photoPosition": {
+      "comment": "V6.12.17: V Copy.photoPosition → \\(current) / \\(total)",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "\\(current) / \\(total)"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "\\(current) / \\(total)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\\(current) / \\(total)"
+          }
+        }
+      }
+    },
+    "photoPosition1Indexed": {
+      "comment": "V6.12.17: V Copy.photoPosition1Indexed → \\(current) / \\(total)",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "\\(current) / \\(total)"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "\\(current) / \\(total)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\\(current) / \\(total)"
+          }
+        }
+      }
+    },
+    "previousPhoto": {
+      "comment": "V6.12.17: V Copy.previousPhoto → 上一张",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Previous"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "上一张"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "上一张"
+          }
+        }
+      }
+    },
+    "quickLook": {
+      "comment": "V6.12.17: V Copy.quickLook → 快速查看",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quick Look"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "快速查看"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "快速查看"
+          }
+        }
+      }
+    },
+    "ratingCategory": {
+      "comment": "V6.12.17: V Copy.ratingCategory → 评分",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rating"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "评分"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "评分"
+          }
+        }
+      }
+    },
+    "ratingStars": {
+      "comment": "V6.12.17: V Copy.ratingStars → \\(n) 星",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\\(n) stars"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "\\(n) 星"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\\(n) 星"
+          }
+        }
+      }
+    },
+    "recentFile": {
+      "comment": "V6.12.17: V Copy.recentFile → \\(index). \\(filename)",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "\\(index). \\(filename)"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "\\(index). \\(filename)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\\(index). \\(filename)"
+          }
+        }
+      }
+    },
+    "recycleBinCount": {
+      "comment": "V6.12.17: V Copy.recycleBinCount → 回收站有 \\(count) 张",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\\(count) photos in Recycle Bin"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "回收站有 \\(count) 张"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "回收站有 \\(count) 张"
+          }
+        }
+      }
+    },
+    "recycleBinOperationFailed": {
+      "comment": "V6.12.17: V Copy.recycleBinOperationFailed → 回收站操作失败：\\(error)",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recycle Bin operation failed: \\(error)"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "回收站操作失败：\\(error)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "回收站操作失败：\\(error)"
+          }
+        }
+      }
+    },
+    "recycleBinSubtitle": {
+      "comment": "V6.12.17: V Copy.recycleBinSubtitle → 删除的图片会先进入回收站，超过下面设置的天数后会被自动永久删除。",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deleted photos go to the Recycle Bin first, and are permanently deleted after the number of days below."
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "删除的图片会先进入回收站，超过下面设置的天数后会被自动永久删除。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "删除的图片会先进入回收站，超过下面设置的天数后会被自动永久删除。"
+          }
+        }
+      }
+    },
+    "recycledBinEmptied": {
+      "comment": "V6.12.17: V Copy.recycledBinEmptied → 已清空回收站（\\(count) 张）",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Emptied Recycle Bin (\\(count) photos)"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已清空回收站（\\(count) 张）"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已清空回收站（\\(count) 张）"
+          }
+        }
+      }
+    },
+    "redo": {
+      "comment": "V6.12.17: V Copy.redo → 重做",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Redo"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "重做"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重做"
+          }
+        }
+      }
+    },
+    "redoWithAction": {
+      "comment": "V6.12.17: V Copy.redoWithAction → 重做 \\(action)",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Redo \\(action)"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "重做 \\(action)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重做 \\(action)"
+          }
+        }
+      }
+    },
+    "removeFromFolder": {
+      "comment": "V6.12.17: V Copy.removeFromFolder → 移出文件夹",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove from Folder"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "移出文件夹"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移出文件夹"
+          }
+        }
+      }
+    },
+    "renameFailed": {
+      "comment": "V6.12.17: V Copy.renameFailed → 重命名失败：\\(filename)",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rename failed: \\(filename)"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "重命名失败：\\(filename)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重命名失败：\\(filename)"
+          }
+        }
+      }
+    },
+    "renameHint": {
+      "comment": "V6.12.17: V Copy.renameHint → 给图片一个新名字（不包含扩展名）",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New photo name (without extension)"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "给图片一个新名字（不包含扩展名）"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "给图片一个新名字（不包含扩展名）"
+          }
+        }
+      }
+    },
+    "renamePhotoTitle": {
+      "comment": "V6.12.17: V Copy.renamePhotoTitle → 重命名",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rename"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "重命名"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重命名"
+          }
+        }
+      }
+    },
+    "restoreSelected": {
+      "comment": "V6.12.17: V Copy.restoreSelected → 恢复选中",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restore Selected"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "恢复选中"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "恢复选中"
+          }
+        }
+      }
+    },
+    "revealInFinder": {
+      "comment": "V6.12.17: V Copy.revealInFinder → 在 Finder 中显示",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reveal in Finder"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "在 Finder 中显示"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 Finder 中显示"
+          }
+        }
+      }
+    },
+    "search": {
+      "comment": "V6.12.17: V Copy.search → 搜索",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "搜索"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索"
+          }
+        }
+      }
+    },
+    "searchHint": {
+      "comment": "V6.12.17: V Copy.searchHint → 搜索照片、标签、笔记",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search photos, tags, notes"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "搜索照片、标签、笔记"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索照片、标签、笔记"
+          }
+        }
+      }
+    },
+    "searchPlaceholder": {
+      "comment": "V6.12.17: V Copy.searchPlaceholder → 搜索照片、标签…",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search photos, tags…"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "搜索照片、标签…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索照片、标签…"
+          }
+        }
+      }
+    },
+    "selectAPhoto": {
+      "comment": "V6.12.17: V Copy.selectAPhoto → 选择一张图片",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select a photo"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "选择一张图片"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择一张图片"
+          }
+        }
+      }
+    },
+    "selectAPhotoHint": {
+      "comment": "V6.12.17: V Copy.selectAPhotoHint → ← → 切换 · ⌘+点击 多选 · ⌥+拖动 框选",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "← → navigate · ⌘+click multi-select · ⌥+drag box-select"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "← → 切换 · ⌘+点击 多选 · ⌥+拖动 框选"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "← → 切换 · ⌘+点击 多选 · ⌥+拖动 框选"
+          }
+        }
+      }
+    },
+    "selectedCount": {
+      "comment": "V6.12.17: V Copy.selectedCount → 已选 \\(count) 张",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\\(count) selected"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已选 \\(count) 张"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已选 \\(count) 张"
+          }
+        }
+      }
+    },
+    "settingsMenu": {
+      "comment": "V6.12.17: V Copy.settingsMenu → 设置…",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Settings…"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "设置…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "设置…"
+          }
+        }
+      }
+    },
+    "showDetailPanel": {
+      "comment": "V6.12.17: V Copy.showDetailPanel → 显示详情面板",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show Detail Panel"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "显示详情面板"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "显示详情面板"
+          }
+        }
+      }
+    },
+    "showInfoPanel": {
+      "comment": "V6.12.17: V Copy.showInfoPanel → 显示信息面板",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show Info Panel"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "显示信息面板"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "显示信息面板"
+          }
+        }
+      }
+    },
+    "showSidebar": {
+      "comment": "V6.12.17: V Copy.showSidebar → 显示侧边栏",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show Sidebar"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "显示侧边栏"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "显示侧边栏"
+          }
+        }
+      }
+    },
+    "sidebarCount": {
+      "comment": "V6.12.17: V Copy.sidebarCount → \\(count)",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "\\(count)"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "\\(count)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\\(count)"
+          }
+        }
+      }
+    },
+    "skipAll": {
+      "comment": "V6.12.17: V Copy.skipAll → 全部跳过（保留现有）",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skip All (keep existing)"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "全部跳过（保留现有）"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全部跳过（保留现有）"
+          }
+        }
+      }
+    },
+    "sort": {
+      "comment": "V6.12.17: V Copy.sort → 排序",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sort"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "排序"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "排序"
+          }
+        }
+      }
+    },
+    "sortCategoryCustom": {
+      "comment": "V6.12.17: V Copy.sortCategoryCustom → 自定义",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Custom"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "自定义"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自定义"
+          }
+        }
+      }
+    },
+    "sortCategoryFilename": {
+      "comment": "V6.12.17: V Copy.sortCategoryFilename → 文件名",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filename"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "文件名"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件名"
+          }
+        }
+      }
+    },
+    "sortCategoryFileSize": {
+      "comment": "V6.12.17: V Copy.sortCategoryFileSize → 文件大小",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "File Size"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "文件大小"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件大小"
+          }
+        }
+      }
+    },
+    "sortCategoryImportTime": {
+      "comment": "V6.12.17: V Copy.sortCategoryImportTime → 导入时间",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Import Time"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "导入时间"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "导入时间"
+          }
+        }
+      }
+    },
+    "sortCustomOrder": {
+      "comment": "V6.12.17: V Copy.sortCustomOrder → 自定义顺序",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Custom Order"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "自定义顺序"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自定义顺序"
+          }
+        }
+      }
+    },
+    "sortFilenameAsc": {
+      "comment": "V6.12.17: V Copy.sortFilenameAsc → 文件名 A → Z",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filename A → Z"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "文件名 A → Z"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件名 A → Z"
+          }
+        }
+      }
+    },
+    "sortFilenameDesc": {
+      "comment": "V6.12.17: V Copy.sortFilenameDesc → 文件名 Z → A",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filename Z → A"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "文件名 Z → A"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件名 Z → A"
+          }
+        }
+      }
+    },
+    "sortFileSizeAsc": {
+      "comment": "V6.12.17: V Copy.sortFileSizeAsc → 文件大小 ↑",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "File Size ↑"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "文件大小 ↑"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件大小 ↑"
+          }
+        }
+      }
+    },
+    "sortFileSizeDesc": {
+      "comment": "V6.12.17: V Copy.sortFileSizeDesc → 文件大小 ↓",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "File Size ↓"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "文件大小 ↓"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件大小 ↓"
+          }
+        }
+      }
+    },
+    "sortImportedAsc": {
+      "comment": "V6.12.17: V Copy.sortImportedAsc → 导入时间 ↑",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Import Time ↑"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "导入时间 ↑"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "导入时间 ↑"
+          }
+        }
+      }
+    },
+    "sortImportedDesc": {
+      "comment": "V6.12.17: V Copy.sortImportedDesc → 导入时间 ↓",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Import Time ↓"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "导入时间 ↓"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "导入时间 ↓"
+          }
+        }
+      }
+    },
+    "statusSeparator": {
+      "comment": "V6.12.17: V Copy.statusSeparator → ·",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "·"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "·"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "·"
+          }
+        }
+      }
+    },
+    "storageError": {
+      "comment": "V6.12.17: V Copy.storageError → 无法保存图片到图库。请检查磁盘空间，或在「系统设置 → 隐私与安全 → 完整磁盘访问权限」中授权 ImageGaller...",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cannot save photos to library. Check disk space or grant Full Disk Access in System Settings → Privacy & Security → Full Disk Access to ImageGallery, then retry."
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "无法保存图片到图库。请检查磁盘空间，或在「系统设置 → 隐私与安全 → 完整磁盘访问权限」中授权 ImageGallery，然后重试。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法保存图片到图库。请检查磁盘空间，或在「系统设置 → 隐私与安全 → 完整磁盘访问权限」中授权 ImageGallery，然后重试。"
+          }
+        }
+      }
+    },
+    "storageRetry": {
+      "comment": "V6.12.17: V Copy.storageRetry → 重试",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retry"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "重试"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重试"
+          }
+        }
+      }
+    },
+    "storageUnavailableTitle": {
+      "comment": "V6.12.17: V Copy.storageUnavailableTitle → 存储不可用",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Storage Unavailable"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "存储不可用"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "存储不可用"
+          }
+        }
+      }
+    },
+    "tagLabel": {
+      "comment": "V6.12.17: V Copy.tagLabel → 标签",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tags"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "标签"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "标签"
+          }
+        }
+      }
+    },
+    "tagNamePlaceholder": {
+      "comment": "V6.12.17: V Copy.tagNamePlaceholder → 标签名称",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tag name"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "标签名称"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "标签名称"
+          }
+        }
+      }
+    },
+    "thumbnailLoadFailed": {
+      "comment": "V6.12.17: V Copy.thumbnailLoadFailed → 加载失败",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Load failed"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "加载失败"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "加载失败"
+          }
+        }
+      }
+    },
+    "thumbnailSize": {
+      "comment": "V6.12.17: V Copy.thumbnailSize → 缩略图大小",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thumbnail Size"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "缩略图大小"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "缩略图大小"
+          }
+        }
+      }
+    },
+    "thumbnailSizeCompact": {
+      "comment": "V6.12.17: V Copy.thumbnailSizeCompact → 特小 70pt",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tiny 70pt"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "特小 70pt"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "特小 70pt"
+          }
+        }
+      }
+    },
+    "thumbnailSizeLabel": {
+      "comment": "V6.12.17: V Copy.thumbnailSizeLabel → \\(size)",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "\\(size)"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "\\(size)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\\(size)"
+          }
+        }
+      }
+    },
+    "thumbnailSizeLarge": {
+      "comment": "V6.12.17: V Copy.thumbnailSizeLarge → 大 250pt",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Large 250pt"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "大 250pt"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "大 250pt"
+          }
+        }
+      }
+    },
+    "thumbnailSizeMedium": {
+      "comment": "V6.12.17: V Copy.thumbnailSizeMedium → 中 200pt",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Medium 200pt"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "中 200pt"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "中 200pt"
+          }
+        }
+      }
+    },
+    "thumbnailSizeSmall": {
+      "comment": "V6.12.17: V Copy.thumbnailSizeSmall → 小 110pt",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Small 110pt"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "小 110pt"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "小 110pt"
+          }
+        }
+      }
+    },
+    "toolbarExport": {
+      "comment": "V6.12.17: V Copy.toolbarExport → 导出",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Export"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "导出"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "导出"
+          }
+        }
+      }
+    },
+    "toolbarImport": {
+      "comment": "V6.12.17: V Copy.toolbarImport → 导入",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Import"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "导入"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "导入"
+          }
+        }
+      }
+    },
+    "toolbarToggleSidebar": {
+      "comment": "V6.12.17: V Copy.toolbarToggleSidebar → 切换侧边栏",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toggle Sidebar"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "切换侧边栏"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "切换侧边栏"
+          }
+        }
+      }
+    },
+    "totalCount": {
+      "comment": "V6.12.17: V Copy.totalCount → \\(count) 张",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\\(count) photos"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "\\(count) 张"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\\(count) 张"
+          }
+        }
+      }
+    },
+    "undo": {
+      "comment": "V6.12.17: V Copy.undo → 撤销",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Undo"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "撤销"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "撤销"
+          }
+        }
+      }
+    },
+    "undoWithAction": {
+      "comment": "V6.12.17: V Copy.undoWithAction → 撤销 \\(action)",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Undo \\(action)"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "撤销 \\(action)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "撤销 \\(action)"
+          }
+        }
+      }
+    },
+    "unknownFolder": {
+      "comment": "V6.12.17: V Copy.unknownFolder → 未知文件夹",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unknown Folder"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "未知文件夹"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未知文件夹"
+          }
+        }
+      }
+    },
+    "unknownTag": {
+      "comment": "V6.12.17: V Copy.unknownTag → 未知标签",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unknown Tag"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "未知标签"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未知标签"
+          }
+        }
+      }
+    },
+    "viewAll": {
+      "comment": "V6.12.17: V Copy.viewAll → 查看全部",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "View All"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "查看全部"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查看全部"
+          }
+        }
+      }
+    },
+    "viewModeGrid": {
+      "comment": "V6.12.17: V Copy.viewModeGrid → 网格",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grid"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "网格"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "网格"
+          }
+        }
+      }
+    },
+    "viewModeGridFull": {
+      "comment": "V6.12.17: V Copy.viewModeGridFull → 缩略图视图",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thumbnail View"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "缩略图视图"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "缩略图视图"
+          }
+        }
+      }
+    },
+    "viewModeList": {
+      "comment": "V6.12.17: V Copy.viewModeList → 列表",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "List"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "列表"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "列表"
+          }
+        }
+      }
+    },
+    "viewModeListFull": {
+      "comment": "V6.12.17: V Copy.viewModeListFull → 列表视图",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "List View"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "列表视图"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "列表视图"
+          }
+        }
+      }
+    },
+    "viewModeTimeline": {
+      "comment": "V6.12.17: V Copy.viewModeTimeline → 时间线",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Timeline"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "时间线"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "时间线"
+          }
+        }
+      }
+    },
+    "viewModeTimelineFull": {
+      "comment": "V6.12.17: V Copy.viewModeTimelineFull → 时间线视图",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Timeline View"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "时间线视图"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "时间线视图"
+          }
+        }
+      }
+    },
+    "settingsResetAll": {
+      "comment": "V6.12.18: Copy.settingsResetAll → 恢复全部为默认",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reset all to defaults"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "恢復全部為預設"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "恢复全部为默认"
+          }
+        }
+      }
+    },
+    "settingsResetAllTooltip": {
+      "comment": "V6.12.18: Copy.settingsResetAllTooltip → 恢复全部设置为默认",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reset all settings to defaults"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "恢復全部設定為預設"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "恢复全部设置为默认"
+          }
+        }
+      }
+    },
+    "settingsHelpLabel": {
+      "comment": "V6.12.18: Copy.settingsHelpLabel → 帮助",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Help"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "說明"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "帮助"
+          }
+        }
+      }
+    },
+    "settingsHelpTooltip": {
+      "comment": "V6.12.18: Copy.settingsHelpTooltip → 使用帮助",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "User Guide"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用說明"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用帮助"
+          }
+        }
+      }
+    },
+    "languageLabel": {
+      "comment": "V6.12.18: Copy.languageLabel → 语言 (SettingsView:283 原 hardcoded 英文)",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Language"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "語言"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "语言"
+          }
+        }
+      }
+    },
+    "settingsSortLabel": {
+      "comment": "V6.12.18: Copy.settingsSortLabel → 排序",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sort"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "排序"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "排序"
+          }
+        }
+      }
+    },
+    "settingsLayoutLabel": {
+      "comment": "V6.12.18: Copy.settingsLayoutLabel → 布局",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Layout"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "佈局"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "布局"
+          }
+        }
+      }
+    },
+    "settingsSizeLabel": {
+      "comment": "V6.12.18: Copy.settingsSizeLabel → 大小",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Size"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "大小"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "大小"
+          }
+        }
+      }
+    },
+    "settingsAppearanceLabel": {
+      "comment": "V6.12.18: Copy.settingsAppearanceLabel → 外观",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Appearance"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "外觀"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "外观"
+          }
+        }
+      }
+    },
+    "settingsAutoDedupeLabel": {
+      "comment": "V6.12.18: Copy.settingsAutoDedupeLabel → 导入时自动去重",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auto-deduplicate on import"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "匯入時自動去除重複"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "导入时自动去重"
+          }
+        }
+      }
+    },
+    "settingsAutoThumbnailsLabel": {
+      "comment": "V6.12.18: Copy.settingsAutoThumbnailsLabel → 导入时生成缩略图",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auto-generate thumbnails on import"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "匯入時自動產生縮圖"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "导入时生成缩略图"
+          }
+        }
+      }
+    },
+    "settingsFormatLabel": {
+      "comment": "V6.12.18: Copy.settingsFormatLabel → 格式",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Format"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "格式"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "格式"
+          }
+        }
+      }
+    },
+    "settingsQualityLabel": {
+      "comment": "V6.12.18: Copy.settingsQualityLabel → 质量",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quality"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "品質"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "质量"
+          }
+        }
+      }
+    },
+    "settingsRetentionLabel": {
+      "comment": "V6.12.18: Copy.settingsRetentionLabel → 保留时长",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retention"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保留時長"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保留时长"
+          }
+        }
+      }
+    },
+    "settingsProjectHomepage": {
+      "comment": "V6.12.18: Copy.settingsProjectHomepage → 项目主页",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Project Homepage"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "專案首頁"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "项目主页"
+          }
+        }
+      }
+    },
+    "settingsHelpDocs": {
+      "comment": "V6.12.18: Copy.settingsHelpDocs → 使用帮助 (Links section)",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "User Guide"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用說明"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用帮助"
+          }
+        }
+      }
+    },
+    "settingsIssueTracker": {
+      "comment": "V6.12.18: Copy.settingsIssueTracker → 问题反馈",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Report an Issue"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "問題回報"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "问题反馈"
+          }
+        }
+      }
+    },
+    "settingsCopyright": {
+      "comment": "V6.12.18: Copy.settingsCopyright → © 2026 ImageGallery",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "© 2026 ImageGallery"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "© 2026 ImageGallery"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "© 2026 ImageGallery"
+          }
+        }
+      }
+    },
+    "settingsThumbnailSizeHelpTooltip": {
+      "comment": "V6.12.18: Copy.settingsThumbnailSizeHelpTooltip → 实时预览缩略图大小",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live preview of thumbnail size"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "即時預覽縮圖大小"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "实时预览缩略图大小"
+          }
+        }
+      }
+    },
+    "settingsAccessibilityLinkMisconfigured": {
+      "comment": "V6.12.18: Copy.settingsAccessibilityLinkMisconfigured(_:) → 链接配置错误: %@ (urlString 参数)",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link config error: %@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "連結設定錯誤: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "链接配置错误: (urlString)"
+          }
+        }
+      }
+    },
+    "detailNoRating": {
+      "comment": "V6.12.18: Copy.detailNoRating → 未评分",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unrated"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未評分"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未评分"
+          }
+        }
+      }
+    },
+    "ratingCurrent": {
+      "comment": "V6.12.18: Copy.ratingCurrent(_:) → 当前 %lld 星（点击清除）",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Current %lld stars (click to clear)"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目前 %lld 星（點擊清除）"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "当前 (n) 星（点击清除）"
+          }
+        }
+      }
+    },
+    "ratingSetTo": {
+      "comment": "V6.12.18: Copy.ratingSetTo(_:) → 设为 %lld 星",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Set to %lld stars"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "設為 %lld 星"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "设为 (n) 星"
+          }
+        }
+      }
+    },
+    "activeFiltersClearAllTooltip": {
+      "comment": "V6.12.18: Copy.activeFiltersClearAllTooltip → 清除所有筛选条件",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear all filters"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除所有篩選條件"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除所有筛选条件"
+          }
+        }
+      }
+    },
+    "activeFiltersRemoveFilterTooltip": {
+      "comment": "V6.12.18: Copy.activeFiltersRemoveFilterTooltip → 移除此筛选",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove this filter"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移除此篩選"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移除此筛选"
+          }
+        }
+      }
+    },
+    "titlebarInfoLabel": {
+      "comment": "V6.12.18: Copy.titlebarInfoLabel → 信息面板",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Info Panel"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "資訊面板"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "信息面板"
+          }
+        }
+      }
+    },
+    "titlebarInfoTooltipShow": {
+      "comment": "V6.12.18: Copy.titlebarInfoTooltipShow → 显示信息面板 (⌘I)",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show Info Panel (⌘I)"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示資訊面板 (⌘I)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "显示信息面板 (⌘I)"
+          }
+        }
+      }
+    },
+    "titlebarInfoTooltipHide": {
+      "comment": "V6.12.18: Copy.titlebarInfoTooltipHide → 隐藏信息面板 (⌘I)",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide Info Panel (⌘I)"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "隱藏資訊面板 (⌘I)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "隐藏信息面板 (⌘I)"
           }
         }
       }

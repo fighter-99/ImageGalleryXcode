@@ -442,7 +442,7 @@ final class ContentViewModel {
         let accessory = TitlebarAccessoryController(
             inactiveSymbol: "info.circle",
             activeSymbol: "info.circle.fill",
-            accessibilityLabel: "信息面板",
+            accessibilityLabel: Copy.titlebarInfoLabel,
             tooltip: titlebarAccessoryTooltip(isActive: settings.showDetail),
             onAction: { [model = self] in
                 withAnimation(Animations.medium) { model.settings.showDetail.toggle() }
@@ -462,7 +462,7 @@ final class ContentViewModel {
 
     /// V4.37.4: titlebar ⓘ 按钮 tooltip——从 ContentView.titlebarAccessoryTooltip 搬过来
     func titlebarAccessoryTooltip(isActive: Bool) -> String {
-        isActive ? "隐藏信息面板 (⌘I)" : "显示信息面板 (⌘I)"
+        isActive ? Copy.titlebarInfoTooltipHide : Copy.titlebarInfoTooltipShow
     }
 
     // MARK: - V5.53: 40 funcs + 2 statics 全部搬到 model

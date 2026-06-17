@@ -98,7 +98,7 @@ struct ActiveFiltersBar: View {
                             .padding(.vertical, 4)
                     }
                     .buttonStyle(.plain)
-                    .help("清除所有筛选条件")
+                    .help(Copy.activeFiltersClearAllTooltip)
                 }
                 .padding(.horizontal, Spacing.md)
                 .padding(.vertical, 4)
@@ -158,7 +158,7 @@ struct ActiveFiltersBar: View {
                     .foregroundStyle(.secondary)
             }
             .buttonStyle(.plain)
-            .help("移除此筛选")
+            .help(Copy.activeFiltersRemoveFilterTooltip)
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
