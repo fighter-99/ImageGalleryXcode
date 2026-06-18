@@ -35,6 +35,11 @@ struct SidebarSectionHeader: View {
     /// P4.1.1 NEW: "+" 按钮的可访问性标签 + help tooltip
     var addAccessibilityLabel: String = "新建"
 
+    // V6.21.3 (Phase 1.4 UX polish): hover state — 整个 header 区域轻微 background tint
+    //   之前整个 header 区域可点击切换折叠 (V4.1.0) 但 hover 无视觉反馈, 跟 SidebarRow 不一致
+    //   现在 hover 时 chevron + "+" button + icon 颜色加深 + 轻微 background tint
+    @State private var isHovered = false
+
     init(
         _ title: String,
         icon: String? = nil,
@@ -68,18 +73,20 @@ struct SidebarSectionHeader: View {
             if let icon {
                 Image(systemName: icon)
                     .font(SidebarStyle.headerFont)
-                    .foregroundStyle(.secondary)
+                    // V6.21.3: hover 时从 secondary → primary, 视觉锤
+                    .foregroundStyle(isHovered ? .primary : .secondary)
             }
             Text(title)
                 .font(SidebarStyle.headerFont)
-                .foregroundStyle(SidebarStyle.headerColor)
+                // V6.21.3: hover 时从 headerColor → primary, 视觉锤
+                .foregroundStyle(isHovered ? .primary : SidebarStyle.headerColor)
                 .textCase(.uppercase)  // ⭐ Photos.app 风格：small caps
 
             // V6.13.4 NEW: section item 总数 (括号样式, Photos.app 范式)
             if let count {
                 Text("(\(count))")
                     .font(SidebarStyle.headerFont)
-                    .foregroundStyle(SidebarStyle.headerColor)
+                    .foregroundStyle(isHovered ? .primary : SidebarStyle.headerColor)
             }
 
             Spacer()
@@ -90,7 +97,8 @@ struct SidebarSectionHeader: View {
                 Button(action: addAction) {
                     Image(systemName: "plus")
                         .font(SidebarStyle.headerFont)
-                        .foregroundStyle(.secondary)
+                        // V6.21.3: hover 时 plus button 颜色加深
+                        .foregroundStyle(isHovered ? .primary : .secondary)
                 }
                 .buttonStyle(.plain)
                 .help(addAccessibilityLabel)
@@ -100,7 +108,7 @@ struct SidebarSectionHeader: View {
             // V4.1.0 NEW: chevron（▶ → ▼ 旋转）
             Image(systemName: "chevron.right")
                 .font(SidebarStyle.headerFont)
-                .foregroundStyle(SidebarStyle.headerColor)
+                .foregroundStyle(isHovered ? .primary : SidebarStyle.headerColor)
                 .rotationEffect(.degrees(isExpanded ? 90 : 0))
                 .animation(Animations.interactive, value: isExpanded)
         }
@@ -108,10 +116,21 @@ struct SidebarSectionHeader: View {
         .padding(.horizontal, SidebarStyle.headerPaddingHorizontal)
         .padding(.top, SidebarStyle.headerPaddingTop)
         .padding(.bottom, SidebarStyle.headerPaddingBottom)
+        // V6.21.3: hover 时轻微 background tint (跟 SidebarRow hoverBackground 风格一致)
+        .background(
+            isHovered
+                ? SidebarStyle.hoverBackground.opacity(0.5)  // 比 row 轻 (header 不该抢戏)
+                : Color.clear
+        )
         .contentShape(Rectangle())  // 让整个 header 区域可点击
         .onTapGesture {
             // V4.1.0: 点击切换折叠
             isExpanded.toggle()
         }
+        // V6.21.3: hover 检测 — onHover 跟 SidebarRow 同 pattern
+        .onHover { hovering in
+            isHovered = hovering
+        }
+        .animation(Animations.springGentle, value: isHovered)
     }
 }
