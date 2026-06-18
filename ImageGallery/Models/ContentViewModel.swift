@@ -26,6 +26,7 @@ import Foundation
 import SwiftUI
 import SwiftData
 import UniformTypeIdentifiers
+import AVFoundation  // V6.19.5 (P0 #16): speakSelection() AVSpeechSynthesizer
 
 /// V5.52: ContentView 的业务模型——@MainActor @Observable 单一根
 @MainActor
@@ -590,6 +591,30 @@ final class ContentViewModel {
             return []
         }
         return urls
+    }
+
+    /// V6.19.5 (P0 #16): 朗读选中照片 (Speech menu, macOS Edit > Speech 范式)
+    ///   - selection 空 → toast 提示
+    ///   - 1 张 → 读 "已选 1 张照片, 文件名 XXX"
+    ///   - N 张 → 读 "已选 N 张照片, 第一张 XXX"
+    ///   zh-CN 语音; AVSpeechSynthesizer 一次性 utterance (不持久 synthesizer)
+    func speakSelection() {
+        let photos = selection.selectedPhotos(in: visiblePhotos)
+        guard !photos.isEmpty else {
+            showToast("请先选择要朗读的图片", type: .info)
+            return
+        }
+        let message: String
+        if photos.count == 1 {
+            message = "已选 1 张照片，文件名 \(photos[0].filename)"
+        } else {
+            message = "已选 \(photos.count) 张照片，第一张 \(photos[0].filename)"
+        }
+        let utterance = AVSpeechUtterance(string: message)
+        utterance.voice = AVSpeechSynthesisVoice(language: "zh-CN")
+            ?? AVSpeechSynthesisVoice(language: Locale.current.language.languageCode?.identifier ?? "en-US")
+        utterance.rate = AVSpeechUtteranceDefaultSpeechRate
+        AVSpeechSynthesizer().speak(utterance)
     }
 
     /// 进入沉浸式查看

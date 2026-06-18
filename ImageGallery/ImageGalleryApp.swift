@@ -12,10 +12,13 @@ import Combine  // V4.36.x: 保留——HistoryStore/ImageGalleryUndoManager 等
 import os  // V6.08: ModelContainer 启动失败 log
 
 // MARK: - P4.2: 通知名 (File 菜单 ⌘⇧R → ContentView batchRenameSheet 监听)
-// V6.19.0 (P0 #1): 加 .shareRequested 通知 (File 菜单 ⌘⇧S → ContentView 弹 NSSharingServicePicker)
+// V6.19.0 (P0 #1): 加 .shareRequested 通知 (File 菜单 ⌘⇧E → ContentView 弹 NSSharingServicePicker)
+// V6.19.5 (P0 #16): 加 .newFolderRequested + .speakRequested (新文件夹菜单 + Speech 朗读)
 extension Notification.Name {
     static let showBatchRenameSheet = Notification.Name("com.iridescent.ImageGallery.showBatchRenameSheet")
     static let shareRequested = Notification.Name("com.iridescent.ImageGallery.shareRequested")
+    static let newFolderRequested = Notification.Name("com.iridescent.ImageGallery.newFolderRequested")
+    static let speakRequested = Notification.Name("com.iridescent.ImageGallery.speakRequested")
 }
 
 // AppDelegate：处理应用层 macOS 事件
@@ -224,6 +227,14 @@ struct ImageGalleryApp: App {
                 Menu(Copy.openRecent) {
                     RecentPhotosMenu()
                 }
+                // V6.19.5 (P0 #16): 新文件夹 (菜单 + ⌘⇧N, Photos 范式)
+                //   跟现有 ⌘N hidden button (ContentKeyboardShortcuts) 同路径 — 触发 model.createFolderFromAlert()
+                //   双 trigger 不冲突: ⌘N = hidden button (走 onNewFolder closure),
+                //   ⌘⇧N = menu button (走 NotificationCenter), 都触发 model.createFolderFromAlert()
+                Button("新文件夹") {
+                    NotificationCenter.default.post(name: .newFolderRequested, object: nil)
+                }
+                .keyboardShortcut("n", modifiers: [.command, .shift])
                 // P4.2: 批量重命名 — ⌘⇧R
                 //   走 NotificationCenter 通知 ContentView 弹 sheet (跟 V3.5.D .openSettingsRequested 同模式)
                 //   ContentView+Lifecycle.batchRenameSheet 内 onReceive 监听
@@ -232,13 +243,27 @@ struct ImageGalleryApp: App {
                     NotificationCenter.default.post(name: .showBatchRenameSheet, object: nil)
                 }
                 .keyboardShortcut("r", modifiers: [.command, .shift])
-                // V6.19.0 (P0 #1): 多图分享 — ⌘⇧S (跟 P4.2 批量重命名同 pattern)
+                // V6.19.0 (P0 #1): 多图分享 — ⌘⇧E (跟 P4.2 批量重命名同 pattern)
                 //   走 NotificationCenter → ContentView 弹 NSSharingServicePicker (AirDrop/Messages/Mail)
                 //   单图分享走 cell context menu ShareLink (Photos.app 范式)
                 Button("分享…") {
                     NotificationCenter.default.post(name: .shareRequested, object: nil)
                 }
-                .keyboardShortcut("s", modifiers: [.command, .shift])
+                .keyboardShortcut("e", modifiers: [.command, .shift])
+            }
+            // V6.19.5 (P0 #16): Speech 朗读 — macOS 没有 .speech placement, 放 Edit 菜单用 .pasteboard 占位
+            //   选 N 张 → 朗读 "已选 N 张照片, 第一张 <filename>" (zh-CN)
+            //   AVSpeechSynthesizer 在 model.speakSelection() 实现
+            CommandGroup(after: .pasteboard) {
+                Divider()
+                Button("开始朗读") {
+                    NotificationCenter.default.post(name: .speakRequested, object: nil)
+                }
+            }
+            // V6.19.5 (P0 #16): Services 默认 submenu — macOS 自动接管 (系统 services, .systemServices placement)
+            //   EmptyView — 留给系统 services 自动填充 (NSServices 注册的 providers)
+            CommandGroup(replacing: .systemServices) {
+                EmptyView()
             }
             // macOS 原生 View 菜单（在 View 菜单里加 Toggle 项）
             // V5.59-3: 3 Toggle + 3 Button 改用 $sharedSettings.X 替代已删的 3 userDefaults bindings
