@@ -197,6 +197,44 @@ private struct PhotoCellContent: View {
         isMarqueeActive ? nil : makeDragPayload()
     }
 
+    // V6.22.8: 抽 dragPreview helper — 96pt 缩略图 + 阴影 + accent 描边 (V3.6.42 "被拿起"感)
+    //   V3.7.2: 多选时 preview 加 "共 N 张" badge
+    //   抽出来给 ConditionalDraggableModifier 用 (避免 .draggable 闭包 body 太长 type-check 超时)
+    @ViewBuilder
+    private var dragPreview: some View {
+        VStack(spacing: 4) {
+            ZStack {
+                RoundedRectangle(cornerRadius: Radius.thumb)
+                    .fill(Palette.cellBackground)
+                    .frame(width: 96, height: 96)
+                    .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: Radius.thumb)
+                            .strokeBorder(Surface.accentEmphasis, lineWidth: 1.5)
+                    )
+                if let nsImage = loadedImage {
+                    Image(nsImage: nsImage)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(width: 96, height: 96)
+                        .clipShape(RoundedRectangle(cornerRadius: Radius.thumb))
+                } else {
+                    Image(systemName: "photo")
+                        .font(Typography.title)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            if dragCount > 1 {
+                Text("共 \(dragCount) 张")
+                    .font(.caption2.bold())
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(.regularMaterial, in: Capsule())
+            }
+        }
+        .rotationEffect(.degrees(1))
+    }
+
     // V6.22.7: 抽 imageOrPlaceholder helper — VStack + Group + 3-branch if/else 触发 type-check timeout
     //   V6.22.6 + V6.22.7 改动 gesture chain 数量, SwiftUI type-checker 超过 timeout 阈值
     //   拆出来让 PhotoCellContent.body 短一些, type-checker 能算
@@ -398,49 +436,17 @@ private struct PhotoCellContent: View {
         .focusable(true)
         .focusEffectDisabled(true)  // V4.4.6: 禁用系统 focus ring
         .help(tooltipText)
-        // 拖拽：V6.17.2 改 currentDragPayload() — 圈选时返 nil (视觉冲突修复保留)
-        //   V3.6.33: 迁移到 .draggable(URL) 现代 API
-        //   V3.6.34: capture @Model 属性到 local 避免 background thread 访问
-        //   V5.39.7: 改 .draggable(PhotoDragItem) — Finder 导出 + in-app 重排共用
-        //   V6.22.7 (尝试修): 砍 `?? makeDragPayload()` 让圈选时真正禁 .draggable — 但 SwiftUI
-        //     .draggable 不直接支持 Optional, 编译失败 → revert 回 `??` 兜底
-        //     圈选 vs item drag 优先级由父 VStack 的 .simultaneousGesture (marquee) + cell .draggable
-        //     共同决定, 不需要 nil payload 机制 (currentDragPayload 保留以便将来用)
-        .draggable(currentDragPayload() ?? makeDragPayload()) {
-            // 拖动预览: 96pt 缩略图 + 阴影 + accent 描边 (V3.6.42 "被拿起"感)
-            // V3.7.2: 多选时 preview 加 "共 N 张" badge
-            VStack(spacing: 4) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: Radius.thumb)
-                        .fill(Palette.cellBackground)
-                        .frame(width: 96, height: 96)
-                        .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: Radius.thumb)
-                                .strokeBorder(Surface.accentEmphasis, lineWidth: 1.5)
-                        )
-                    if let nsImage = capturedPreviewImage {
-                        Image(nsImage: nsImage)
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(width: 96, height: 96)
-                            .clipShape(RoundedRectangle(cornerRadius: Radius.thumb))
-                    } else {
-                        Image(systemName: "photo")
-                            .font(Typography.title)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                if dragCount > 1 {
-                    Text("共 \(dragCount) 张")
-                        .font(.caption2.bold())
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(.regularMaterial, in: Capsule())
-                }
-            }
-            .rotationEffect(.degrees(1))
-        }
+        // 拖拽：V6.22.8 (Bug fix): 条件化 .draggable — 只在 cell 已选中时启用
+        //   V6.22.7 之前无条件 .draggable → .draggable (AppKit NSItemProvider) 抢父 VStack 的
+        //   simultaneousGesture (marquee), drag.onEnded 被 cancel → selection 不变
+        //   Photos.app 范式: 已选 cell 才能拖出 (item drag), 未选 cell 拖 = marquee 选区
+        //   配合 BoxSelectionGesture.swift isStartOnSelectedCell 恢复 (V6.22.8 同时回滚 Bug 2B)
+        //   .draggable Payload: 单选时 makeDragPayload (单图), 多选时 PhotoDragItem(photoIDs: array)
+        .modifier(ConditionalDraggableModifier(
+            isDraggable: selection.contains(photo.id),
+            payload: makeDragPayload(),
+            preview: { dragPreview }
+        ))
         // V5.39.7: 拖入重排 — dropDestination 常驻, 仅 customOrder 模式接受 drop
         //   V6.22.7: 抽 handleReorderDropDecision helper — guard chain 触发 type-check timeout
         .dropDestination(for: PhotoDragItem.self) { items, _ in
@@ -575,5 +581,25 @@ struct PhotoThumbnailView: View {
             onRotateLeft: onRotateLeft,
             onRotateRight: onRotateRight
         )
+    }
+}
+
+// V6.22.8: 条件 .draggable modifier — Photos.app 范式
+//   只在 cell 已选中时启用 .draggable (item drag 到 Finder / sidebar folder)
+//   未选 cell 拖 = 让父 VStack 的 marqueeSelectionGesture 接管 (selection 替换)
+//   之前无条件 .draggable → AppKit NSItemProvider 抢父 simultaneousGesture 的 DragGesture.onEnded
+//   → marquee 选区不应用 (selection 不变)
+//   SwiftUI .draggable 不直接支持 Optional payload, 用 ViewModifier 包装实现条件应用
+struct ConditionalDraggableModifier<Preview: View>: ViewModifier {
+    let isDraggable: Bool  // cell 是否已选中
+    let payload: PhotoDragItem
+    @ViewBuilder let preview: () -> Preview
+
+    func body(content: Content) -> some View {
+        if isDraggable {
+            content.draggable(payload) { preview() }
+        } else {
+            content
+        }
     }
 }
