@@ -341,7 +341,9 @@ struct PhotoGridView: View {
                         gridHorizontalPadding: gridHorizontalPadding,
                         rowHeight: rowHeight,
                         rowSpacing: rowSpacing,
-                        cellSpacing: cellSpacing
+                        cellSpacing: cellSpacing,
+                        // V6.17.0.3: cell frames 透传到 masonry 内挂 gesture + overlay
+                        cellFrames: cellFrames
                     )
                 } else {
                     masonryFlatLayout(
@@ -349,33 +351,22 @@ struct PhotoGridView: View {
                         gridHorizontalPadding: gridHorizontalPadding,
                         rowHeight: rowHeight,
                         rowSpacing: rowSpacing,
-                        cellSpacing: cellSpacing
+                        cellSpacing: cellSpacing,
+                        // V6.17.0.3: cell frames 透传到 masonry 内挂 gesture + overlay
+                        cellFrames: cellFrames
                     )
                 }
             }
             // V6.17.0: 矩形圈选 gesture 挂 photoGrid 根 — 跟 cell frames 同坐标系
             //   用 .local (GeometryReader 内), 跟 cellFrames 完全对齐
-            .marqueeSelectionGesture(
-                isMarqueeActive: $isMarqueeActive,
-                marqueeRect: $marqueeRect,
-                selection: $selection,
-                cellFrames: cellFrames
-            )
-            // V6.17.0.2: 矩形 overlay 也搬进 photoGrid — rect 跟 overlay 都在 photoGrid space
-            //   之前 overlay 在 mainSplitPane (ContentView), rect 是 photoGrid space,
-            //   两个 space 错位 → 矩形视觉不跟手 (用户报告)
-            //   现在 overlay 跟 rect 同 space, 矩形跟鼠标精准
-            .overlay {
-                if let rect = marqueeRect {
-                    // count = 当前 rect 内的 cell 数 (跟 hit test 同逻辑, 视觉一致)
-                    let count = cellFrames.filter { cell in
-                        let centerX = cell.frame.midX
-                        let centerY = cell.frame.midY
-                        return rect.contains(CGPoint(x: centerX, y: centerY))
-                    }.count
-                    BoxSelectionOverlay(rect: rect, count: count)
-                }
-            }
+            //   V6.17.0.3: gesture + overlay 都搬进 masonryFlatLayout/masonryDateGroupedLayout
+            //     内的 VStack — 之前挂 Group 跟 cell frames 不同 space (Group 是 GeometryReader
+            //     空间, VStack 是 photoGrid named space), rect 跟 overlay 不同步 → 视觉滞后
+            //     而且 gesture 触发时 sidebar 的 List(selection:) 也并行识别 (simultaneousGesture
+            //     不挡), 拖到 sidebar 区域时 sidebar 选中被改 — "影响侧边栏" BUG
+            //   现在 gesture + overlay 都在 VStack 上 (photoGrid space + VStack bounds):
+            //     - rect 跟 cell frames 完全同 space → 视觉精准
+            //     - gesture 限定在 VStack bounds 内 → 不会跟 sidebar 串扰
         }
     }
 
@@ -473,7 +464,8 @@ struct PhotoGridView: View {
         gridHorizontalPadding: CGFloat,
         rowHeight: CGFloat,
         rowSpacing: CGFloat,
-        cellSpacing: CGFloat
+        cellSpacing: CGFloat,
+        cellFrames: [CellFrame]  // V6.17.0.3: 给 LazyVStack 内 gesture + overlay 用
     ) -> some View {
         let groups = cachedDateGroups  // V5.32: 缓存, 不再每 render 重算 O(n log n)
 
@@ -520,6 +512,27 @@ struct PhotoGridView: View {
             .padding(.horizontal, gridHorizontalPadding)
             // V6.17.0.1: photoGrid coord space 挂 LazyVStack — 跟 cell frames 同空间
             .coordinateSpace(.photoGrid)
+            // V6.17.0.3: gesture + overlay 都搬进 LazyVStack (在 ScrollView 内)
+            //   之前在 Group (外面) 跟 cell frames 不同 space → 视觉滞后
+            //   现在都在 photoGrid space, rect 跟 cell 精准对齐
+            //   LazyVStack bounds 限定 gesture — 不会延伸到 sidebar (BUG1 修)
+            .marqueeSelectionGesture(
+                isMarqueeActive: $isMarqueeActive,
+                marqueeRect: $marqueeRect,
+                selection: $selection,
+                cellFrames: cellFrames
+            )
+            .overlay {
+                if let rect = marqueeRect {
+                    // count = 当前 rect 内的 cell 数 (跟 hit test 同逻辑, 视觉一致)
+                    let count = cellFrames.filter { cell in
+                        let centerX = cell.frame.midX
+                        let centerY = cell.frame.midY
+                        return rect.contains(CGPoint(x: centerX, y: centerY))
+                    }.count
+                    BoxSelectionOverlay(rect: rect, count: count)
+                }
+            }
             .animation(Animations.medium, value: photos.count)
         }
         // V5.61-1: .scrollPosition(id: $scrollAnchorID) 自动追踪顶部可见 item
@@ -548,7 +561,8 @@ struct PhotoGridView: View {
         gridHorizontalPadding: CGFloat,
         rowHeight: CGFloat,
         rowSpacing: CGFloat,
-        cellSpacing: CGFloat
+        cellSpacing: CGFloat,
+        cellFrames: [CellFrame]  // V6.17.0.3: 给 VStack 内 gesture + overlay 用
     ) -> some View {
         // V5.61-1: 改用 .scrollPosition(id:)——同 date grouped 模式
         //   masonryRowsView 内部用 ForEach 渲染 Photo, swiftUI 自动找 .id 锚点
@@ -572,6 +586,27 @@ struct PhotoGridView: View {
             // V6.17.0.1: photoGrid coord space 挂 VStack — 跟 cell frames 同空间
             //   跟 .padding 一起挂 (named space 覆盖 VStack + padding 的整体)
             .coordinateSpace(.photoGrid)
+            // V6.17.0.3: gesture + overlay 都搬进 VStack — 之前在 Group (外面),
+            //   rect 跟 overlay 不同 space → 视觉滞后
+            //   现在都在 photoGrid space, rect 跟 cell 精准对齐
+            //   VStack bounds 限定 gesture — 不会延伸到 sidebar (V6.17.0.3 BUG1 修)
+            .marqueeSelectionGesture(
+                isMarqueeActive: $isMarqueeActive,
+                marqueeRect: $marqueeRect,
+                selection: $selection,
+                cellFrames: cellFrames
+            )
+            .overlay {
+                if let rect = marqueeRect {
+                    // count = 当前 rect 内的 cell 数 (跟 hit test 同逻辑, 视觉一致)
+                    let count = cellFrames.filter { cell in
+                        let centerX = cell.frame.midX
+                        let centerY = cell.frame.midY
+                        return rect.contains(CGPoint(x: centerX, y: centerY))
+                    }.count
+                    BoxSelectionOverlay(rect: rect, count: count)
+                }
+            }
             .animation(Animations.medium, value: photos.count)
         }
         // V5.61-1: masonryRowsView 内部 Photo 渲染用 .id(photo.id) 锚定
