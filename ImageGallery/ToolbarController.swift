@@ -59,6 +59,11 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
     /// 这里保存引用是为了 ContentView 通过 setSearchText 主动更新 stringValue
     private(set) weak var searchField: NSSearchField?
 
+    // V6.20.2 (code audit fix #5): searchField observer token — NSToolbar rebuild 时 remove 旧的
+    //   之前 addObserver 返回的 token 没存, NSToolbar 每次 rebuild makeSearchItem 都加新 observer
+    //   旧 observer token 丢失, 永不 remove → 多个 observer 同触发 text change
+    private var searchFieldObserver: NSObjectProtocol?
+
     /// NSSearchField → SwiftUI @State 同步（用户输入时）
     var onSearchTextChanged: ((String) -> Void)?
 
@@ -748,7 +753,12 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
         searchItem.preferredWidthForSearchField = 280
 
         // 监听文本变化——同 V4.8.1，NSSearchField 继承自 NSSearchField
-        NotificationCenter.default.addObserver(
+        // V6.20.2 (code audit fix #5): 旧 observer token 先 remove, 避免多次 rebuild 累积
+        if let oldToken = searchFieldObserver {
+            NotificationCenter.default.removeObserver(oldToken)
+            searchFieldObserver = nil
+        }
+        searchFieldObserver = NotificationCenter.default.addObserver(
             forName: NSControl.textDidChangeNotification,
             object: searchField,
             queue: .main

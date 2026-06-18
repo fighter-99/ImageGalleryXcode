@@ -632,8 +632,17 @@ final class ContentViewModel {
         utterance.voice = AVSpeechSynthesisVoice(language: "zh-CN")
             ?? AVSpeechSynthesisVoice(language: Locale.current.language.languageCode?.identifier ?? "en-US")
         utterance.rate = AVSpeechUtteranceDefaultSpeechRate
-        AVSpeechSynthesizer().speak(utterance)
+        // V6.20.2 (code audit fix #4): 用 stable synthesizer 实例 + stop 上一个 utterance
+        //   之前 \`AVSpeechSynthesizer().speak()\` 每次新建实例, 上一个 utterance 被 cut off + audio glitch
+        //   现在 stable instance + stopSpeaking(.immediate) → smooth 切换
+        //   macOS Edit > Speech 标准 pattern (一个 app 一个 synthesizer)
+        speechSynthesizer.stopSpeaking(at: .immediate)
+        speechSynthesizer.speak(utterance)
     }
+
+    /// V6.20.2 (code audit fix #4): stable AVSpeechSynthesizer instance — 跨多次 speak() 复用
+    ///   @ObservationIgnored: 不需要 observation tracking (speak 是 fire-and-forget)
+    private let speechSynthesizer = AVSpeechSynthesizer()
 
     /// 进入沉浸式查看
     func enterImmersive(_ photo: Photo) {
