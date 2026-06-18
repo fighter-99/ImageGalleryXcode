@@ -557,6 +557,18 @@ struct ContentView: View {
                 BoxSelectionOverlay(rect: rect, count: model.visiblePhotos.count)
             }
         }
+        // P3.1.3: 选完 mini toolbar — 4 action (Tag / Move / Export / Delete)
+        //   选非空时浮在 content 顶部, 走 macOS Photos / Finder 范式
+        //   regular material + accent color, 跟系统级 toolbar 视觉一致
+        .overlay(alignment: .top) {
+            if model.isMultiSelect || !model.selection.selectedIDs.isEmpty {
+                SelectionMiniToolbar(model: model)
+                    .padding(.top, 8)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
+        .animation(.easeInOut(duration: 0.2), value: model.isMultiSelect)
+        .animation(.easeInOut(duration: 0.2), value: model.selection.selectedIDs.isEmpty)
     }
 
     private var sidebarPane: some View {
