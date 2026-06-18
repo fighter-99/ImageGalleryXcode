@@ -139,7 +139,17 @@ final class ContentViewModel {
     /// V3.6.13: viewMode 包装 (从 viewModeRaw 字符串解析)
     var viewMode: ViewMode {
         get { ViewMode(rawValue: settings.viewModeRaw) ?? .grid }
-        set { settings.viewModeRaw = newValue.rawValue }
+        set {
+            settings.viewModeRaw = newValue.rawValue
+            // V6.22.6 (Bug 1): 反向同步 layoutMode — 修 "工具栏模式跟实际视图不同步" bug
+            //   之前只 onLayoutModeChange 单向同步 (layoutMode → viewMode),
+            //   ⌥1/⌥2 切 viewMode 后 layoutMode 留在旧值, toolbar 显示错模式
+            switch newValue {
+            case .list:     self.layoutMode = .list
+            case .grid:     self.layoutMode = .squareFit
+            case .timeline: break  // timeline 不动 layoutMode
+            }
+        }
     }
 
     /// V3.6.22: 外观模式

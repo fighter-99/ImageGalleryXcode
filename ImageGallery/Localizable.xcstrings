@@ -13,6 +13,31 @@
     "%lld 张已选" : {
 
     },
+    "%lld." : {
+
+    },
+    "accessibilitySelected" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "已选中"
+          }
+        }
+      }
+    },
+    "accessibilityUnselected" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "未选中"
+          }
+        }
+      }
+    },
     "activeFilterBadge" : {
       "comment" : "V6.12.17: V Copy.activeFilterBadge → \\(n) 项筛选",
       "extractionState" : "manual",
@@ -181,6 +206,17 @@
         }
       }
     },
+    "apply" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "应用"
+          }
+        }
+      }
+    },
     "appName" : {
       "comment" : "V6.12.17: V Copy.appName → ImageGallery",
       "extractionState" : "manual",
@@ -273,6 +309,61 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "批次評分失敗"
+          }
+        }
+      }
+    },
+    "batchRenamePreviewSuffix" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "等 %lld 个"
+          }
+        }
+      }
+    },
+    "batchRenameSheetTitle" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "重命名 %lld 张照片"
+          }
+        }
+      }
+    },
+    "batchRenameTemplatePlaceholder" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "photo_{n:3}"
+          }
+        }
+      }
+    },
+    "batchRenameTitle" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "批量重命名"
+          }
+        }
+      }
+    },
+    "batchRenameTokenHint" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "可用占位符：{n} 序列号 · {n:N} 零填充 · {originalName} 原文件名"
           }
         }
       }
@@ -3865,6 +3956,72 @@
         }
       }
     },
+    "smartFolderEmptyFilterHint" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "当前工具栏无筛选条件 (智能文件夹将匹配全部图库照片)"
+          }
+        }
+      }
+    },
+    "smartFolderFallback" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "智能文件夹"
+          }
+        }
+      }
+    },
+    "smartFolderFilterSection" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "筛选条件"
+          }
+        }
+      }
+    },
+    "smartFolderIconSection" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "图标"
+          }
+        }
+      }
+    },
+    "smartFolderNamePlaceholder" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "智能文件夹名"
+          }
+        }
+      }
+    },
+    "smartFolderSheetTitle" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "新建智能文件夹"
+          }
+        }
+      }
+    },
     "sort" : {
       "comment" : "V6.12.17: V Copy.sort → 排序",
       "extractionState" : "manual",
@@ -4952,7 +5109,22 @@
         }
       }
     },
+    "上一步" : {
+
+    },
+    "下一步" : {
+
+    },
     "共 %lld 张" : {
+
+    },
+    "关闭" : {
+
+    },
+    "分享" : {
+
+    },
+    "分享…" : {
 
     },
     "创建" : {
@@ -4961,7 +5133,28 @@
     "删除" : {
 
     },
+    "删除智能文件夹" : {
+
+    },
     "加标签" : {
+
+    },
+    "单击切换选中, 双击进入沉浸式查看, 右键显示更多操作" : {
+
+    },
+    "单击展开" : {
+
+    },
+    "单击折叠" : {
+
+    },
+    "向右旋转" : {
+
+    },
+    "向左旋转" : {
+
+    },
+    "在空白处按下左键拖动, 选择一片区域内的所有照片" : {
 
     },
     "导出" : {
@@ -4973,13 +5166,40 @@
     "已选 %lld 张" : {
 
     },
+    "开始使用" : {
+
+    },
+    "开始朗读" : {
+
+    },
+    "拖动鼠标框选多张照片" : {
+
+    },
+    "按模板批量重命名 (⌘⇧R)" : {
+
+    },
+    "新文件夹" : {
+
+    },
     "新标签" : {
+
+    },
+    "旋转" : {
 
     },
     "未整理" : {
 
     },
     "标签" : {
+
+    },
+    "模板" : {
+
+    },
+    "模板会产生 %lld 个重名 — Apply 时会自动加 _1 _2 后缀" : {
+
+    },
+    "知道了" : {
 
     },
     "移到回收站" : {
@@ -4997,7 +5217,13 @@
     "设置" : {
 
     },
+    "跳过" : {
+
+    },
     "还没有标签" : {
+
+    },
+    "预览" : {
 
     }
   },

@@ -91,7 +91,7 @@ enum Copy {
     static let sidebarDuplicates = String(localized: "sidebarDuplicates", defaultValue: "重复图")
     static let sidebarRecent7Days = String(localized: "sidebarRecent7Days", defaultValue: "最近 7 天")
     static let sidebarLargeFiles = String(localized: "sidebarLargeFiles", defaultValue: "大图（>5MB）")
-    static let sidebarRecentlyDeleted = String(localized: "sidebarRecentlyDeleted", defaultValue: "最近删除")
+    static let sidebarRecentlyDeleted = String(localized: "sidebarRecentlyDeleted", defaultValue: "回收站")
     // section header
     static let sidebarSectionLibrary = String(localized: "sidebarSectionLibrary", defaultValue: "我的图馆")
     static let sidebarSectionFolders = String(localized: "sidebarSectionFolders", defaultValue: "我的文件夹")
@@ -145,7 +145,6 @@ enum Copy {
     static let viewModeTimelineFull = String(localized: "viewModeTimelineFull", defaultValue: "时间线视图")
 
     // MARK: - 应用菜单 (V5.50-4 扩展)
-    static let settingsMenu = String(localized: "settingsMenu", defaultValue: "设置…")
     static let quickLook = String(localized: "quickLook", defaultValue: "快速查看")
     static let previousPhoto = String(localized: "previousPhoto", defaultValue: "上一张")
     static let nextPhoto = String(localized: "nextPhoto", defaultValue: "下一张")

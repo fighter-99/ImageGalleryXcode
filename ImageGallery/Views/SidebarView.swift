@@ -280,10 +280,10 @@ struct SidebarView: View {
                         .padding(-4)
                 )
                 .animation(Animations.interactive, value: isTrashDropTargeted)
-            } header: {
-                // V4.1.0: trash 是关键入口，不可折叠
-                SidebarSectionHeader(Copy.sidebarSectionRecycleBin, icon: "trash", isExpanded: .constant(true))
             }
+            // V6.22.6 (Bug 3): 删 section header — user 决定 row 自己说话, 不要重复 section 标题
+            //   原 chevron 也消失 (issue 3 的 "下拉菜单" 取消)
+            //   保留 row 视觉, 加 trash icon + label + count, 清晰可点
         }
         .listStyle(.sidebar)
         .scrollContentBackground(.hidden)

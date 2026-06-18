@@ -314,15 +314,10 @@ struct ImageGalleryApp: App {
                 }
                 .keyboardShortcut("3", modifiers: .option)
             }
-            // V4.13.0: 用 SettingsLink 触发 Settings scene（macOS 14+ 标准 API）
-            //   自动绑定 ⌘,（之前 V3.5.D 手动 keyboardShortcut 已被系统接管）
-            //   撤回 V3.5.D 旧方案：NotificationCenter + ContentView sheet 路径
-            //   （applySettingsChrome extension 内 sheet 路径待 ContentView 清理）
-            CommandGroup(after: .appInfo) {
-                SettingsLink {
-                    Text(Copy.settingsMenu)
-                }
-            }
+            // V6.22.6 (Bug 4): 删 SettingsLink CommandGroup
+            //   macOS 14+ Settings scene (L221) 自动在 app menu 加 "设置…" + 绑 ⌘, — 不需要显式 SettingsLink
+            //   之前同时存在 → 2 个 "设置…" 菜单项 (AppleScript 验证)
+            //   撤回 V4.13.0 误加的 SettingsLink block
             // V4.7.0 NEW: Undo/Redo Edit menu 集成
             //   CommandGroup(replacing: .undoRedo) 替换系统默认 Undo/Redo（macOS 标准位置）
             //   之前 ⌘Z/⌘⇧Z 由 ContentKeyboardShortcuts.swift 里的 hidden Button 处理

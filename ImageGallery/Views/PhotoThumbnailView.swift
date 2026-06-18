@@ -361,9 +361,13 @@ private struct PhotoCellContent: View {
         .accessibilityLabel(Copy.accessibilityPhotoLabel(photo.filename, rating: photo.rating, selected: isActive))
         .accessibilityHint("单击切换选中, 双击进入沉浸式查看, 右键显示更多操作")
         .accessibilityAddTraits(isActive ? .isSelected : [])
-        .onTapGesture {
-            onTap()
-        }
+        // V6.22.6 (Bug 2A): .highPriorityGesture 替 .onTapGesture — 让 tap 比 drag 优先级高
+        //   之前 .onTapGesture (低优先级) 跟 cell .draggable + grid marquee drag 竞争,
+        //   drag 起点在 cell 边缘时 tap 抢手势 → selection 被设成 startCell,覆盖 marquee 选的 cells
+        //   highPriorityGesture 明确 tap 赢 → drag 启动时也先 tap 再 drag
+        .highPriorityGesture(
+            TapGesture().onEnded { onTap() }
+        )
         .onTapGesture(count: 2) {
             onDoubleTap()
         }

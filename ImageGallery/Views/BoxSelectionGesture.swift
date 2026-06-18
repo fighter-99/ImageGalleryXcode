@@ -104,20 +104,12 @@ extension View {
         simultaneousGesture(
             DragGesture(minimumDistance: 4, coordinateSpace: .named("com.iridescent.ImageGallery.photoGrid"))
                 .onChanged { value in
-                    // V6.17.1: 第一次 onChanged 判别
-                    //   - 已经在 marquee 中: 更新 rect
-                    //   - start 在 selected cell: 不启动 marquee, 让 .draggable 处理 (item drag)
-                    //   - 其他 (unselected cell / 空白区): 启动 marquee
+                    // V6.22.6 (Bug 2B): 砍 isStartOnSelectedCell — 任何 drag 都启动 marquee (Finder 范式)
+                    //   之前 Photos.app 范式: 从已选 cell 拖 = item drag (拖到 Finder),marquee 静默不响应
+                    //   改 Finder 范式: 任何 plain drag 都 marquee,跟用户期望一致
+                    //   .draggable 仍工作 (拖到 Finder 不受影响, 因为 drag 距离 > 4pt 时 cell 已识别为 drag)
                     let alreadyActive = isMarqueeActive.wrappedValue
                     if !alreadyActive {
-                        let startOnSelected = isStartOnSelectedCell(
-                            startPoint: value.startLocation,
-                            selectedIDs: selection.wrappedValue.selectedIDs,
-                            cellFrames: cellFrames
-                        )
-                        if startOnSelected {
-                            return  // item drag 模式, 不启动 marquee
-                        }
                         isMarqueeActive.wrappedValue = true
                     }
                     // 写 rect 给 caller 显示 (start + current 归一化)
