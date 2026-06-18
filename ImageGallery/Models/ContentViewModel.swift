@@ -45,11 +45,17 @@ final class ContentViewModel {
     var sidebarSelection: SidebarSelection? = nil  // V5.59-2: init 时从 settings.sidebarSelection 反序列化
     var filterState = FilterState()
     var searchText = ""
-    /// V5.59-2: thumbnailSize 改为 computed 绑 settings.thumbnailSize——单一真相源
-    ///   UserSettings init 时已从 UserDefaults 读 200 默认
+    /// V6.14.8: 拆 "stored default" (settings.thumbnailSize) + "live zoom" (liveThumbnailSize)
+    ///   - settings.thumbnailSize = 用户偏好 (UserDefaults 持久化), SettingsView 改这里
+    ///   - liveThumbnailSize = 当前显示 (内存, 不持久化), zoom in/out 改这里
+    ///   - thumbnailSize getter: live 优先, fallback stored
+    ///   - thumbnailSize setter: 只改 live, 不动 stored (zoom 临时态)
+    ///   - resetThumbnailSize() (⌘0): 清 live → 回到 stored
+    /// Photos.app 范式: 用户设的 default 不被临时 zoom 污染, ⌘0 一定回得到
+    @ObservationIgnored private var liveThumbnailSize: CGFloat? = nil
     var thumbnailSize: CGFloat {
-        get { CGFloat(settings.thumbnailSize) }
-        set { settings.thumbnailSize = Double(newValue) }
+        get { liveThumbnailSize ?? CGFloat(settings.thumbnailSize) }
+        set { liveThumbnailSize = newValue }
     }
     /// V5.59-2: sortOption 改为 computed 绑 settings.sortOption
     var sortOption: SortOption {
@@ -634,9 +640,10 @@ final class ContentViewModel {
         }
     }
 
-    /// ⌘0 reset zoom
+    /// V6.14.8: ⌘0 reset zoom — 清 liveThumbnailSize, 回到 stored default
+    ///   之前是 `thumbnailSize = settings.thumbnailSize` no-op (V6.14.7 修 stale test 时发现)
     func resetThumbnailSize() {
-        thumbnailSize = CGFloat(settings.thumbnailSize)
+        liveThumbnailSize = nil
     }
 
     /// V4.37.1: Quick Look——V5.42 改走 enterImmersiveFromSelection
