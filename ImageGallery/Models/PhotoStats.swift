@@ -139,7 +139,9 @@ enum PhotoStats {
         selectedFolderIDs: Set<UUID> = [],
         selectedTagIDs: Set<UUID> = [],
         selectedShapes: Set<PhotoShape> = [],
-        minRating: Int = 0
+        minRating: Int = 0,
+        // P4.1.1: 智能文件夹 filter — 跟工具栏 4 维同 pattern
+        smartFolderFilter: FilterState? = nil
     ) -> [Photo] {
         var result = photos
 
@@ -188,10 +190,35 @@ enum PhotoStats {
         if !selectedTagIDs.isEmpty { result = tagFilter(result, ids: selectedTagIDs) }
         if !selectedShapes.isEmpty { result = shapeFilter(result, shapes: selectedShapes) }
         if minRating > 0 { result = ratingFilter(result, minRating: minRating) }
+        // P4.1.1: 智能文件夹 filter — 跟工具栏 4 维同 pattern (复用 helper, 维度间 AND)
+        //   smart folder filter 是 sidebarSelection 强制的, 跟 toolbar filter 独立 AND 应用
+        //   nil = no smart folder active; .empty (isActive=false) = 跳过 no-op
+        if let sff = smartFolderFilter, sff.isActive {
+            if !sff.folders.isEmpty { result = folderFilter(result, ids: sff.folders) }
+            if !sff.tags.isEmpty { result = tagFilter(result, ids: sff.tags) }
+            if !sff.shapes.isEmpty { result = shapeFilter(result, shapes: sff.shapes) }
+            if sff.minRating > 0 { result = ratingFilter(result, minRating: sff.minRating) }
+        }
         // V3.6.3: 用 PhotoSearch 纯函数（含 folder.name 匹配）
         result = PhotoSearch.filter(result, query: searchText)
         // 排序
         return sortOption.apply(to: result)
+    }
+
+    // MARK: - P4.1.1: 智能文件夹 sidebar count helper
+    /// 算 smart folder 命中的 photo 数 (sidebar row 显示用)
+    ///   V1 简化: 走完整 filtered pipeline (其他维度默认 false/nil, 只应用 smart folder filter)
+    ///   跟 V6.11 教训: 用 result 算 hashCounts, 不用 photos input
+    ///   N smart folder × M photo = N×M, 但 sidebar 渲染只在 smart folder 数 ≤ 几十时调用, OK
+    static func smartFolderCount(_ photos: [Photo], smartFolderFilter: FilterState) -> Int {
+        filtered(
+            photos,
+            folder: nil, tag: nil, searchText: "",
+            sortOption: .filenameAsc,
+            filterUnfiled: false, filterDuplicates: false,
+            filterRecent7Days: false, filterLargeFiles: false, filterInTrash: false,
+            smartFolderFilter: smartFolderFilter
+        ).count
     }
 
     // MARK: - 4 个纯函数 helper（V4.36.x：工具栏筛选按钮的可独立单测单元）

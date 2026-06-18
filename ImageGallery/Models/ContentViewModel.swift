@@ -65,6 +65,10 @@ final class ContentViewModel {
     var showingBatchDeleteConfirm = false
     /// P4.2: 批量重命名 sheet — mini toolbar "重命名" 按钮 / File 菜单 ⌘⇧R 触发
     var showingBatchRenameSheet = false
+    /// P4.1.1: 智能文件夹创建 sheet — sidebar Library section header "+" 触发
+    var showingNewSmartFolderSheet = false
+    /// P4.1.1: sheet 打开时快照当前 filter — 避免 sheet 打开后用户改 toolbar filter 干扰预览
+    var pendingSmartFolderFilter: FilterState? = nil
     var showingEmptyTrashConfirm = false
     var importDuplicateCheck: ImageImporter.DuplicateCheckResult? = nil
     var pendingImportURLs: [URL] = []
@@ -107,6 +111,9 @@ final class ContentViewModel {
     @ObservationIgnored var allPhotos: [Photo] = []
     @ObservationIgnored var folders: [Folder] = []
     @ObservationIgnored var allTags: [Tag] = []
+    /// P4.1.1: smartFolders cache — 跟 allPhotos/folders/allTags 同 pattern
+    ///   ContentView .onChange(of: smartFolders) 推送; createSmartFolder 用 max+1 算 order
+    @ObservationIgnored var smartFoldersCache: [SmartFolder] = []
 
     // MARK: 配置 wrapper (跟 @AppStorage 镜像字段配合)
 
@@ -147,6 +154,19 @@ final class ContentViewModel {
     var currentTag: Tag? {
         guard case .tag(let id) = sidebarSelection, let modelContext else { return nil }
         return (try? modelContext.fetch(FetchDescriptor<Tag>(predicate: #Predicate { $0.id == id })))?.first
+    }
+
+    /// P4.1.1: 当前侧栏选中的 smartFolder——跟 currentFolder/currentTag 同 UUID fetch 模式
+    ///   删后自动返 nil (V6.08 dangling ref 防护)
+    var currentSmartFolder: SmartFolder? {
+        guard case .smartFolder(let id) = sidebarSelection, let modelContext else { return nil }
+        return (try? modelContext.fetch(FetchDescriptor<SmartFolder>(predicate: #Predicate { $0.id == id })))?.first
+    }
+
+    /// P4.1.1: 当前 smartFolder 的 filter (decoded)
+    ///   nil = no smart folder active; .empty (isActive=false) = 激活但无 constraint, 走 no-op
+    var smartFolderFilter: FilterState? {
+        currentSmartFolder?.decodedFilter
     }
 
     var filterUnfiled: Bool {
@@ -217,7 +237,9 @@ final class ContentViewModel {
             selectedFolderIDs: filterState.folders,
             selectedTagIDs: filterState.tags,
             selectedShapes: filterState.shapes,
-            minRating: filterState.minRating
+            minRating: filterState.minRating,
+            // P4.1.1: smart folder filter 跟 toolbar filter 独立 AND 应用
+            smartFolderFilter: smartFolderFilter
         )
     }
 
@@ -279,8 +301,8 @@ final class ContentViewModel {
         case .recentlyDeleted:      return Term.recycleBin
         case .folder:               return currentFolder?.name ?? "全部照片"
         case .tag:                  return currentTag.map { "#\($0.name)" } ?? "全部照片"
-        // P4.1: 智能文件夹标题 — 跟 tag 类似, 名字存 @Model, 这里 fallback "全部照片"
-        case .smartFolder:          return "全部照片"  // 实际名字 ContentView 取
+        // P4.1.1: 智能文件夹标题 — 名字来自 decoded entity, 删除时 fallback "智能文件夹"
+        case .smartFolder:          return currentSmartFolder?.name ?? Copy.smartFolderFallback
         }
     }
 
@@ -509,6 +531,24 @@ final class ContentViewModel {
         modelContext.saveWithLog()
         // V6.08: 存 UUID 而非 @Model 引用
         sidebarSelection = .folder(folder.id)
+    }
+
+    /// P4.1.1: 创建智能文件夹 — V1 简化: 不走 undo (跟 Folder create 一致)
+    ///   auto-select 跟 Photos.app Smart Album 范式一致
+    func createSmartFolder(name: String, iconName: String, filterState: FilterState) {
+        let trimmed = name.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty, let modelContext else { return }
+        let nextOrder = (smartFoldersCache.map(\.order).max() ?? -1) + 1
+        let sf = SmartFolder(
+            name: trimmed,
+            iconName: iconName,
+            filterState: filterState,
+            order: nextOrder
+        )
+        modelContext.insert(sf)
+        modelContext.saveWithLog()
+        // P4.1.1: auto-select 刚创建的 smart folder
+        sidebarSelection = .smartFolder(sf.id)
     }
 
     /// 切换当前排序方向

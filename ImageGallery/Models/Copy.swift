@@ -244,6 +244,19 @@ enum Copy {
     /// Apply 按钮
     static let apply = String(localized: "apply", defaultValue: "应用")
 
+    // MARK: - P4.1.1: 智能文件夹
+    /// Sheet 标题
+    static let smartFolderSheetTitle = String(localized: "smartFolderSheetTitle", defaultValue: "新建智能文件夹")
+    /// Name 字段 placeholder
+    static let smartFolderNamePlaceholder = String(localized: "smartFolderNamePlaceholder", defaultValue: "智能文件夹名")
+    /// Section: 图标
+    static let smartFolderIconSection = String(localized: "smartFolderIconSection", defaultValue: "图标")
+    /// Section: 筛选条件 (跟 V6.14.3 printf 插值, 见 [[swift-stringlocalized-pitfalls]])
+    static let smartFolderFilterSection = String(localized: "smartFolderFilterSection", defaultValue: "筛选条件")
+    static let smartFolderEmptyFilterHint = String(localized: "smartFolderEmptyFilterHint", defaultValue: "当前工具栏无筛选条件 (智能文件夹将匹配全部图库照片)")
+    /// currentViewTitle fallback (smart folder 已删, 但 sidebarSelection 还在)
+    static let smartFolderFallback = String(localized: "smartFolderFallback", defaultValue: "智能文件夹")
+
     // MARK: - V6.08: PhotoGridEmptyState 文案 (整个文件 hardcoded → Copy 字典)
     /// CTA 主/次按钮
     static let clearSearch = String(localized: "clearSearch", defaultValue: "清除搜索")

@@ -53,6 +53,8 @@ extension View {
         allPhotos: [Photo],
         folders: [Folder],
         allTags: [Tag],
+        // P4.1.1: smartFolders 跟 allPhotos/folders/allTags 同 pattern
+        smartFolders: [SmartFolder],
         selection: SelectionState,
         sidebarSelection: SidebarSelection?,
         showSidebar: Bool,
@@ -172,6 +174,14 @@ extension View {
                 visiblePhotos: visiblePhotos,
                 showingBatchRename: bindableModel.showingBatchRenameSheet
             )
+            // P4.1.1: 智能文件夹创建 sheet
+            //   sheet 入口在 SidebarView (Library section "+" 按钮), 触发 model.showingNewSmartFolderSheet
+            //   此处 host sheet — ContentView 是 model @Bindable owner
+            .smartFolderCreateSheet(
+                model: model,
+                showingSheet: bindableModel.showingNewSmartFolderSheet,
+                pendingFilter: model.pendingSmartFolderFilter ?? .empty
+            )
             .onChange(of: filterState.activeCount) { _, count in
                 ToolbarController.shared.filterActiveCount = count
             }
@@ -201,6 +211,8 @@ extension View {
             .onChange(of: allPhotos) { _, new in model.allPhotos = new }
             .onChange(of: folders) { _, new in model.folders = new }
             .onChange(of: allTags) { _, new in model.allTags = new }
+            // P4.1.1: smartFolders 推 model.smartFoldersCache (createSmartFolder 用 max+1 算 order)
+            .onChange(of: smartFolders) { _, new in model.smartFoldersCache = new }
     }
 }
 
@@ -234,6 +246,31 @@ extension View {
             .onReceive(NotificationCenter.default.publisher(for: .showBatchRenameSheet)) { _ in
                 guard !selection.isEmpty else { return }
                 showingBatchRename.wrappedValue = true
+            }
+    }
+}
+
+// MARK: - P4.1.1: 智能文件夹创建 sheet
+//
+// Photos.app "Save as Smart Album" 范式
+// 入口: SidebarView Library section "+" 按钮 → onCreateSmartFolder → 设 model.showingNewSmartFolderSheet
+// 此处 host sheet — ContentView 是 model @Bindable owner (跟 batchRenameSheet 同模式)
+extension View {
+    @MainActor
+    func smartFolderCreateSheet(
+        model: ContentViewModel,
+        showingSheet: Binding<Bool>,
+        pendingFilter: FilterState
+    ) -> some View {
+        self
+            .sheet(isPresented: showingSheet) {
+                SmartFolderCreateSheet(
+                    initialFilter: pendingFilter,
+                    onSave: { name, iconName, filterState in
+                        // 直接调 model, 跟 createFolderFromAlert 范式一致
+                        model.createSmartFolder(name: name, iconName: iconName, filterState: filterState)
+                    }
+                )
             }
     }
 }

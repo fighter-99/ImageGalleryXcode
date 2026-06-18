@@ -29,11 +29,26 @@ struct SidebarSectionHeader: View {
     /// V4.1.0 NEW: 折叠状态 binding
     @Binding var isExpanded: Bool
 
-    init(_ title: String, icon: String? = nil, count: Int? = nil, isExpanded: Binding<Bool> = .constant(true)) {
+    /// P4.1.1 NEW: header 右侧 "+" 按钮 (跟 section 主题一致, e.g. 智能文件夹创建)
+    ///   V1: nil = 不显示按钮 (向后兼容现有 4 个 caller)
+    var addAction: (() -> Void)? = nil
+    /// P4.1.1 NEW: "+" 按钮的可访问性标签 + help tooltip
+    var addAccessibilityLabel: String = "新建"
+
+    init(
+        _ title: String,
+        icon: String? = nil,
+        count: Int? = nil,
+        isExpanded: Binding<Bool> = .constant(true),
+        addAction: (() -> Void)? = nil,
+        addAccessibilityLabel: String = "新建"
+    ) {
         self.title = title
         self.icon = icon
         self.count = count
         self._isExpanded = isExpanded
+        self.addAction = addAction
+        self.addAccessibilityLabel = addAccessibilityLabel
     }
 
     /// V4.1.0 便利构造：可折叠 + 自动持久化（推荐用这个）
@@ -68,6 +83,19 @@ struct SidebarSectionHeader: View {
             }
 
             Spacer()
+
+            // P4.1.1 NEW: header "+" 按钮 (Library section 用, 触发 smart folder 创建 sheet)
+            //   位置: Spacer 后, chevron 前 — 视觉跟 title 距离更近, 跟 Folders section 已有 "+" 一致
+            if let addAction {
+                Button(action: addAction) {
+                    Image(systemName: "plus")
+                        .font(SidebarStyle.headerFont)
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+                .help(addAccessibilityLabel)
+                .accessibilityLabel(addAccessibilityLabel)
+            }
 
             // V4.1.0 NEW: chevron（▶ → ▼ 旋转）
             Image(systemName: "chevron.right")

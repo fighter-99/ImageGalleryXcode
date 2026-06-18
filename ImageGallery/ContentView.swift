@@ -232,6 +232,8 @@ struct ContentView: View {
     @Query private var allPhotos: [Photo]
     @Query(sort: \Folder.createdAt, order: .forward) private var folders: [Folder]
     @Query(sort: \Tag.createdAt, order: .forward) private var allTags: [Tag]
+    // P4.1.1: smartFolders @Query — 跟 allPhotos/folders/allTags 同模式, 推 model.smartFoldersCache
+    @Query(sort: \SmartFolder.order, order: .forward) private var smartFolders: [SmartFolder]
 
     // SwiftData 上下文
     @Environment(\.modelContext) private var modelContext
@@ -382,6 +384,8 @@ struct ContentView: View {
                 allPhotos: allPhotos,
                 folders: folders,
                 allTags: allTags,
+                // P4.1.1: smartFolders 推 model.smartFoldersCache
+                smartFolders: smartFolders,
                 selection: selection,
                 sidebarSelection: sidebarSelection,
                 showSidebar: showSidebar,
@@ -581,6 +585,8 @@ struct ContentView: View {
             // V4.0.0.6: 缩放 + 排序搬到侧栏顶部（"视图控制中心"）
             thumbnailSize: bindableModel.thumbnailSize,
             sortOption: bindableModel.sortOption,
+            // P4.1.1: 注入 model 让 sidebar 触发 smart folder 创建 sheet
+            model: model,
             // V6.10: 注入 undoManager 让拖到 folder 注册 undo (跟 batchMove 模式一致)
             undoManager: model.undoManager
             // V4.1.0f: 移除 showSidebar binding（hide 按钮完全搬回主工具栏）

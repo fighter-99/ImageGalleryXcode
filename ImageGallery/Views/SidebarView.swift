@@ -43,19 +43,25 @@ struct SidebarView: View {
 
     // V6.10: 显式 init——synthesized memberwise init 在 @Query / @Environment 存在时
     //   行为不一致, 不接受 `undoManager` 参数。显式列出 4 个 @Binding + undoManager
+    //   P4.1.1: 加 `model` 参数 (智能文件夹创建 sheet 触发需要)
     init(
         selection: Binding<SidebarSelection?>,
         photoSelection: Binding<SelectionState>,
         thumbnailSize: Binding<CGFloat>,
         sortOption: Binding<SortOption>,
+        model: ContentViewModel,
         undoManager: ImageGalleryUndoManager? = nil
     ) {
         self._selection = selection
         self._photoSelection = photoSelection
         self._thumbnailSize = thumbnailSize
         self._sortOption = sortOption
+        self.model = model
         self.undoManager = undoManager
     }
+
+    // P4.1.1: 智能文件夹创建入口 — model.pendingSmartFolderFilter / showingNewSmartFolderSheet
+    @Bindable var model: ContentViewModel
 
     // 选中项（双向绑定）
     @Binding var selection: SidebarSelection?
@@ -184,7 +190,14 @@ struct SidebarView: View {
             } header: {
                 // V4.1.0: 可见 header（V3.6.25 之前被隐藏）
                 // V6.14.3: 4 个 section header label 入 Copy 字典
-                SidebarSectionHeader(Copy.sidebarSectionLibrary, icon: "sparkles", isExpanded: $isLibraryExpanded)
+                SidebarSectionHeader(
+                    Copy.sidebarSectionLibrary,
+                    icon: "sparkles",
+                    isExpanded: $isLibraryExpanded,
+                    // P4.1.1: Library section "+" 按钮 — 触发 smart folder 创建 sheet
+                    addAction: { onCreateSmartFolder() },
+                    addAccessibilityLabel: "新建智能文件夹"
+                )
             }
 
             // ─── Section 2: 我的文件夹 ───
@@ -581,15 +594,14 @@ struct SidebarView: View {
     }
 
     // P4.1: 智能文件夹 row — 跟 folderSidebarRow 类似, 但用 .smartFolder(UUID) target
-    //   V1 read-only (创建 UI 留 P4.1.1), contextMenu 留删除入口
+    //   P4.1.1: count 实际算 (用 PhotoStats.smartFolderCount + sf.decodedFilter)
     @ViewBuilder
     private func smartFolderRow(_ sf: SmartFolder) -> some View {
         sidebarRow(
             icon: sf.iconName,
             label: sf.name,
-            // P4.1: count = filter 命中的 photo 数 — 用 decodedFilter 调 PhotoStats.filtered
-            //   V1 简化: 全 0 (没接 filter logic, 留 P4.1.1)
-            count: 0,
+            // P4.1.1: 实际算 count — 跟 V6.11 教训一致, 用 filtered() result 不用 photos input
+            count: PhotoStats.smartFolderCount(allPhotos, smartFolderFilter: sf.decodedFilter),
             target: .smartFolder(sf.id)
         )
         // P4.1.1: 右键删除入口 (跟 folder 类似)
@@ -612,14 +624,25 @@ struct SidebarView: View {
         }
         try? modelContext.save()
     }
+
+    /// P4.1.1: 触发智能文件夹创建 sheet — 拿当前 model.filterState 作初值快照
+    ///   snapshot 避免 sheet 打开后用户改 toolbar filter 干扰预览
+    private func onCreateSmartFolder() {
+        model.pendingSmartFolderFilter = model.filterState
+        model.showingNewSmartFolderSheet = true
+    }
 }
 
 #Preview {
+    // P4.1.1: model parameter 加进 init 后, Preview 用 suite 隔离 UserDefaults
+    //   suite 独立, 不污染 standard 也不持久化
+    let previewDefaults = UserDefaults(suiteName: "com.iridescent.ImageGallery.preview") ?? .standard
     SidebarView(
         selection: .constant(.all),
         photoSelection: .constant(SelectionState()),
         thumbnailSize: .constant(170),
-        sortOption: .constant(.importedAtDesc)
+        sortOption: .constant(.importedAtDesc),
+        model: ContentViewModel(settings: UserSettings(defaults: previewDefaults))
     )
     .frame(width: 220, height: 600)
 }

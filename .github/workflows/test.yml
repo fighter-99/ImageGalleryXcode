@@ -108,6 +108,7 @@ jobs:
             -only-testing:ImageGalleryTests/FilterUnifiedPopoverInitialStateTests \
             -only-testing:ImageGalleryTests/FilterUnifiedPopoverResizeTests \
             -only-testing:ImageGalleryTests/BatchRenameTemplateTests \
+            -only-testing:ImageGalleryTests/SmartFolderCreateTests \
             -only-testing:ImageGalleryTests/ImageLoaderTests \
             -only-testing:ImageGalleryTests/RecycleBinErrorPropagationTests \
             -only-testing:ImageGalleryTests/RecycleBinServiceTests \
