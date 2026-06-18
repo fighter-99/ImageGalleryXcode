@@ -222,6 +222,12 @@ extension View {
                 model.allPhotos = allPhotos
                 model.folders = folders
                 model.allTags = allTags
+                // V6.22.0 (P2 #12): Thumbnail warmup — 启动后批量预热最近 50 张
+                //   用户进入 grid 时立即看到缩略图 (而不是等懒加载)
+                //   .background priority 不抢主线程 + 滚动性能
+                //   ModelContainer.fetch 拉最近 50 张 (按 importedAt 降序)
+                //   失败 URL (data 损坏 / 文件删) ImageLoader.warmupThumbnails 内部跳过
+                await Self.warmupRecentThumbnails(context: modelContext, count: 50)
             }
             .onChange(of: allPhotos) { _, new in model.allPhotos = new }
             .onChange(of: folders) { _, new in model.folders = new }
@@ -307,6 +313,29 @@ extension View {
                 if !newValue { onDismiss() }
             }
         )
+    }
+
+    /// V6.22.0 (P2 #12): 拉最近 N 张 photo URLs, 触发 ImageLoader.warmupThumbnails 预热
+    ///   - .background priority 不抢主线程 (用户感知启动快)
+    ///   - ModelContext.fetch @MainActor (SwiftData @Query 类比)
+    ///   - count 50: warmup 大概 1-2s, 用户进入 grid 立即看到缩略图
+    ///   - 失败 / 无 photo: URL 数组空, warmup 内部 0 task 启动, 安全 noop
+    @MainActor
+    private static func warmupRecentThumbnails(context: ModelContext?, count: Int) async {
+        guard let context else { return }
+        let descriptor = FetchDescriptor<Photo>(
+            sortBy: [SortDescriptor(\Photo.importedAt, order: .reverse)]
+        )
+        // V6.22.0: fetch 限 count — 大库 (5k+) 只 fetch 50, 避免 startup latency spike
+        var fetch = descriptor
+        fetch.fetchLimit = count
+        let photos = (try? context.fetch(fetch)) ?? []
+        let urls = photos.map { $0.fileURL }
+        guard !urls.isEmpty else { return }
+        // .background: 最低 priority, 让主线程滚动/响应优先
+        await Task(priority: .background) {
+            await ImageLoader.warmupThumbnails(urls: urls, maxPixelSize: 200)
+        }.value
     }
 }
 

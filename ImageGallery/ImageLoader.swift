@@ -103,4 +103,28 @@ enum ImageLoader {
 
         return image
     }
+
+    /// V6.22.0 (P2 #12): Thumbnail warmup — 启动后批量预热最近 N 张 thumbnail
+    /// - 启动后 (ContentView .task 触发) 异步批量 prefetch, 用户进入 grid 立刻看到缩略图
+    /// - 并行 4 个 TaskGroup (避免内存爆 + CPU spike)
+    /// - 缓存命中后下次访问 O(1), 启动 + scroll 流畅度提升
+    /// - 跟 ThumbnailCache 协同: 预热结果直接进 NSCache, 走 LRU 替换
+    /// - URL 失败的图片跳过 (data 损坏 / 文件被删)
+    static func warmupThumbnails(urls: [URL], maxPixelSize: CGFloat) async {
+        // V6.22.0: batch size 4 — 并行 4 个 task 平衡速度 + 内存
+        //   50 URLs × ~2MB = ~100MB 解码峰值, batch 4 让 4 × 2MB = 8MB 峰值
+        let batchSize = 4
+        let batches = stride(from: 0, to: urls.count, by: batchSize).map {
+            Array(urls[$0..<min($0 + batchSize, urls.count)])
+        }
+        for batch in batches {
+            await withTaskGroup(of: Void.self) { group in
+                for url in batch {
+                    group.addTask {
+                        _ = await Self.loadImageAsync(at: url, maxPixelSize: maxPixelSize)
+                    }
+                }
+            }
+        }
+    }
 }
