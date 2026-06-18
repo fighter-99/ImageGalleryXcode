@@ -32,6 +32,7 @@ struct ToastView: View {
 
     let message: String
     let type: ToastType
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         HStack(spacing: 10) {
@@ -49,7 +50,12 @@ struct ToastView: View {
         .overlay(
             Capsule().stroke(type.tint.opacity(0.3), lineWidth: 0.5)
         )
-        .shadow(color: .black.opacity(0.15), radius: 10, y: 4)
+        // V6.16.1: 暗色模式阴影加强 — 0.15 黑阴影在深灰底上看不见
+        .shadow(
+            color: .black.opacity(colorScheme == .dark ? 0.55 : 0.15),
+            radius: colorScheme == .dark ? 14 : 10,
+            y: 4
+        )
     }
 }
 

@@ -19,6 +19,7 @@ import SwiftData
 ///   - Delete: 弹确认 dialog (showingBatchDeleteConfirm)
 struct SelectionMiniToolbar: View {
     @Bindable var model: ContentViewModel
+    @Environment(\.colorScheme) private var colorScheme
     @State private var showTagPicker = false
     @State private var showMovePicker = false
 
@@ -84,7 +85,15 @@ struct SelectionMiniToolbar: View {
         .background(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .fill(.regularMaterial)
-                .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+                // V6.16.1: 暗色模式阴影加强 — 0.1 黑阴影在深灰底上几乎不可见
+                //   浅色: 0.15 黑 (柔和, 提一下就好)
+                //   暗色: 0.5 黑 (明显抬起, 否则浮层感丢失)
+                .shadow(
+                    color: .black.opacity(colorScheme == .dark ? 0.5 : 0.15),
+                    radius: colorScheme == .dark ? 8 : 4,
+                    x: 0,
+                    y: colorScheme == .dark ? 3 : 2
+                )
         )
     }
 }
