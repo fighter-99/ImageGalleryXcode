@@ -182,6 +182,10 @@ extension View {
                 showingSheet: bindableModel.showingNewSmartFolderSheet,
                 pendingFilter: model.pendingSmartFolderFilter ?? .empty
             )
+            // V6.22.3 (P2 #10): Onboarding 3-card sheet — first-run 弹, 用户 dismiss 后不再出现
+            //   showingOnboarding getter 直接读 !model.settings.hasSeenOnboarding
+            //   OnboardingView dismiss → model.settings.hasSeenOnboarding = true → getter 返 false → sheet 关
+            .onboardingSheet(model: model)
             // V6.19.0 (P0 #1): 分享 sheet — File 菜单 ⌘⇧E 触发 NSSharingServicePicker
             .shareSheet(model: model)
             // V6.19.5 (P0 #16): File 菜单 ⌘⇧N (新文件夹) + Edit > Speech (开始朗读) 监听
@@ -410,6 +414,23 @@ extension View {
                         model.createSmartFolder(name: name, iconName: iconName, filterState: filterState)
                     }
                 )
+            }
+    }
+}
+
+// MARK: - V6.22.3 (P2 #10): Onboarding sheet extension
+//
+// First-run 3-card sheet — 弹 import / marquee / 快捷键介绍
+// 类似 P4.2 batchRenameSheet pattern, 用 bindableModel 控制 sheet 可见性
+extension View {
+    @MainActor
+    func onboardingSheet(model: ContentViewModel) -> some View {
+        self
+            .sheet(isPresented: bindable(!model.settings.hasSeenOnboarding)) {
+                OnboardingView(hasSeenOnboarding: Binding(
+                    get: { model.settings.hasSeenOnboarding },
+                    set: { model.settings.hasSeenOnboarding = $0 }
+                ))
             }
     }
 }
