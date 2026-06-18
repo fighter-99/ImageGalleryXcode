@@ -61,6 +61,10 @@ struct PhotoThumbnailView: View {
 
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme) private var colorScheme  // V3.6.14: 暗色适配 trash opacity
+    // V6.17.1: 圈选时禁 .draggable — 因 type-check 超时 (cell body 340+ 行, pre-existing)
+    //   暂不加 @Environment(\.isMarqueeActive), 留 V6.17.2 抽 sub-view 后再加
+    //   V6.17.1 行为: plain drag on unselected cell = 圈选 (disambiguate by start)
+    //   V6.17.2 计划: 抽 cellContent 主体到子 view, 减 type-check 压力, 加 @Environment 禁 drag
     // V4.4.0 NEW: Reduced Motion 适配——禁用 hover scale / 选中 scale 等动画
     // V5.30: 删 @Environment(\.accessibilityReduceMotion) reduceMotion
     //   - 之前 V4.4.0 加, 配合 currentScale (V5.28-4 已删)
@@ -374,8 +378,12 @@ struct PhotoThumbnailView: View {
     // V5.27: cellHoverOverlay 整段删——hover border 不再需要
 
     // V3.7.2 (P3.1.2): multi-drag helper
-    /// 拖自己 (在 selectedIDs) → 编码整组 (count + fileURLs)
-    /// 拖没选的 → 编码单图 (V3.6.30 行为不变)
+    /// V6.17.1: 圈选进行中返回 nil (禁 .draggable), 否则正常 makeDragPayload
+    ///   V6.17.2 实际用 (抽 sub-view 后, @Environment 透传 isMarqueeActive)
+    private func currentDragPayload(isMarqueeActive: Bool) -> PhotoDragItem? {
+        isMarqueeActive ? nil : makeDragPayload()
+    }
+
     private func makeDragPayload() -> PhotoDragItem {
         if selection.selectedIDs.contains(photo.id) && selection.selectedIDs.count > 1 {
             // 多选拖整组
@@ -690,6 +698,14 @@ struct PhotoThumbnailView: View {
         //   拖没选的 → 编码单图 (V3.6.30 行为不变, 旧 single-drag 范式)
         //   SwiftUI Transferable 自动处理 payload 转换, drop target (Finder / in-app) 行为不变
         //   Preview 加 "N 张" 标签 (P3.1.2.3 视觉强化, Photos 范式)
+        // V6.17.1: 圈选时禁 .draggable 留 V6.17.2 (cell body 340+ 行 type-check 卡死)
+        //   V6.17.1 暂时: plain drag on selected cell = item drag (V6.17.1 disambiguation 接管)
+        //   - 之前 V6.17.0.4: simultaneousGesture 让两者同时触发, cell drag preview 出现
+        //   - V6.17.1: gesture 判别 start 是否在 selected cell, 选中 → 不启 marquee
+        //     .draggable 自然接管 (没启动 marquee, isMarqueeActive 还是 false)
+        //   - V6.17.1 net effect: selected cell 拖动 = item drag (无 rect),
+        //     unselected cell 拖动 = 圈选 (有 rect, 但 cell drag 也触发 — 视觉冲突)
+        //   - V6.17.2: 加 @Environment, 圈选时禁 cell .draggable 彻底解决
         .draggable(makeDragPayload()) {
             // 拖动预览：缩略图（用已加载的 capturedPreviewImage 避免重读盘 + @State 访问）
             // V3.6.42: 加 shadow + 边框 + 放大到 96 + 旋转 1°（"被拿起"感）

@@ -37,32 +37,90 @@ struct CellFrame: Equatable {
     let frame: CGRect  // in photoGrid coordinate space (scroll content)
 }
 
+// MARK: - V6.17.1: Photos.app 风格圈选判别
+/// V6.17.1: 圈选 vs item drag 判别 (Mac/Photos 标准行为)
+/// - Photos.app 范式:
+///   - plain left-drag 在 selected cell 上 = item drag (拖到 Finder)
+///   - plain left-drag 在 unselected cell / 空白区 = 圈选
+/// - V6.17.0.4 之前用 ⌥+drag 避开 .draggable 冲突
+/// - V6.17.1 改 plain drag, 用这个判别逻辑
+
+/// V6.17.1: 圈选激活状态 — 通过 @Environment 透传到 cell
+///   cell 据此条件禁用 .draggable, 避免圈选时 cell drag preview 干扰
+private struct IsMarqueeActiveKey: EnvironmentKey {
+    @MainActor static let defaultValue: Bool = false
+}
+
+extension EnvironmentValues {
+    /// V6.17.1: 圈选进行中 — cell 看到这个就禁掉 .draggable
+    var isMarqueeActive: Bool {
+        get { self[IsMarqueeActiveKey.self] }
+        set { self[IsMarqueeActiveKey.self] = newValue }
+    }
+}
+
+extension CellFrame {
+    /// point 是否在 cell frame 内 (用 inset 缩 1pt 边, 避免边缘 cell 误判)
+    func contains(_ point: CGPoint) -> Bool {
+        return frame.insetBy(dx: 1, dy: 1).contains(point)
+    }
+}
+
+/// V6.17.1: 纯函数 — start 位置是否在 selected cell 上
+/// - 返回 true: 圈选不启动, 让 cell 的 .draggable 处理 (item drag)
+/// - 返回 false: 启动圈选
+/// - 时间复杂度 O(n) 但 cellFrames < 1000 时纳秒级, OK
+func isStartOnSelectedCell(
+    startPoint: CGPoint,
+    selectedIDs: Set<UUID>,
+    cellFrames: [CellFrame]
+) -> Bool {
+    for cell in cellFrames where cell.contains(startPoint) {
+        if selectedIDs.contains(cell.id) {
+            return true
+        }
+        // 在 unselected cell 上 — 圈选 (Photos 范式: 也把这个 cell 加进选区)
+        return false
+    }
+    // 空白区 — 圈选
+    return false
+}
+
 extension View {
-    /// V6.17.0.1: ⌥+拖动 矩形圈选 (真 marquee)
+    /// V6.17.1: plain left-drag 矩形圈选 (Mac/Photos 范式, 无 ⌥ 修饰符)
     /// - Parameters:
-    ///   - isMarqueeActive: 圈选进行中状态（用于 UI 锁定滚动等）
+    ///   - isMarqueeActive: 圈选进行中状态 (用于 UI 锁定滚动 + cell .draggable 条件禁用)
     ///   - marqueeRect: 圈选进行中的 rect — caller 在 overlay 显示
-    ///   - selection: 选中状态 binding（手势结束时全量替换为 rect 内的 cell）
-    ///   - cellFrames: 预计算的 cell 位置 (photoGrid coord space), 由 caller 算
-    ///     V6.17.0.1 fix: 必须在 photoGrid space 算 (跟 ScrollView 内容同步)
-    ///     V6.17.0 之前用 GeometryReader-local, scroll 后对不上
+    ///   - selection: 选中状态 binding
+    ///     - V6.17.1 加: 用于判别 start 是否在 selected cell (决定 marquee vs item drag)
+    ///     - 手势结束时全量替换为 rect 内的 cell
+    ///   - cellFrames: 预计算的 cell 位置 (photoGrid coord space)
     func marqueeSelectionGesture(
         isMarqueeActive: Binding<Bool>,
         marqueeRect: Binding<CGRect?>,
         selection: Binding<SelectionState>,
         cellFrames: [CellFrame]
     ) -> some View {
-        // V6.17.0.4: 仍用 simultaneousGesture — cell 的 .draggable 不被挡 (P3.1.2 item drag)
-        //   scroll disable 在 caller (masonry funcs) 加 — 圈选时 ScrollView .scrollDisabled(true)
-        //   之前没 disable scroll → 拖动时 content 跟着 scroll, rect (在 content 空间) 跟 mouse
-        //   (在 screen 空间) 错位 → 用户感觉 rect 不跟手 / 准确度差
         simultaneousGesture(
             DragGesture(minimumDistance: 4, coordinateSpace: .named("com.iridescent.ImageGallery.photoGrid"))
                 .onChanged { value in
-                    // 必须按住 ⌥ 键 (V1: 跟旧版一致; V2 可改 plain drag)
-                    guard NSEvent.modifierFlags.contains(.option) else { return }
-                    isMarqueeActive.wrappedValue = true
-                    // V6.17.0: 写 rect 给 caller 显示 (start + current 归一化)
+                    // V6.17.1: 第一次 onChanged 判别
+                    //   - 已经在 marquee 中: 更新 rect
+                    //   - start 在 selected cell: 不启动 marquee, 让 .draggable 处理 (item drag)
+                    //   - 其他 (unselected cell / 空白区): 启动 marquee
+                    let alreadyActive = isMarqueeActive.wrappedValue
+                    if !alreadyActive {
+                        let startOnSelected = isStartOnSelectedCell(
+                            startPoint: value.startLocation,
+                            selectedIDs: selection.wrappedValue.selectedIDs,
+                            cellFrames: cellFrames
+                        )
+                        if startOnSelected {
+                            return  // item drag 模式, 不启动 marquee
+                        }
+                        isMarqueeActive.wrappedValue = true
+                    }
+                    // 写 rect 给 caller 显示 (start + current 归一化)
                     let start = value.startLocation
                     let current = value.location
                     marqueeRect.wrappedValue = CGRect(
