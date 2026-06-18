@@ -265,6 +265,24 @@ final class ContentViewModel {
     var trashedCount: Int { PhotoStats.trashed(allPhotos).count }
     var trashedTotalSize: Int64 { PhotoStats.trashedSize(allPhotos) }
 
+    // V6.20.0 (code audit fix #6): libraryStats 缓存 — PhotoStatsSnapshot.compute 每次 body 重渲都重算
+    //   @Query allPhotos 任何 SwiftData write (import/delete/tag/rating/drag-drop) 都触发 SidebarView body 重渲染
+    //   之前 7-8 遍 O(n) (V6.19.2 P0 #11 优化前) 改 2 遍 (snapshot) 仍 per-render 重算 — 大库 + 频繁写入场景下卡顿
+    //   修: 缓存 snapshot + allPhotos.count 比较 (O(1) invalidation key)
+    //   libraryStats getter: cache hit → return cached; cache miss → compute + cache + return
+    //   ContentView .onChange(of: allPhotos) 同步更新 countInCache 触发失效
+    @ObservationIgnored private var cachedLibraryStats: PhotoStatsSnapshot?
+    @ObservationIgnored private var libraryStatsCacheCount: Int = -1
+    var libraryStats: PhotoStatsSnapshot {
+        if let cached = cachedLibraryStats, libraryStatsCacheCount == allPhotos.count {
+            return cached
+        }
+        let snapshot = PhotoStatsSnapshot.compute(allPhotos)
+        cachedLibraryStats = snapshot
+        libraryStatsCacheCount = allPhotos.count
+        return snapshot
+    }
+
     /// V3.6.15: 重复图 group / purgeable count / size
     /// V6.12: 用 allPhotos 替 visiblePhotos——sidebar 数字 (DuplicateCount 用 allPhotos)
     ///   跟 detail panel 数字 保持一致 (trashedCount 用 allPhotos 同 precedent)

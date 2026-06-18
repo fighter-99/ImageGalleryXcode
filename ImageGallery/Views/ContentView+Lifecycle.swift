@@ -274,7 +274,14 @@ extension View {
     @MainActor
     func shareSheet(model: ContentViewModel) -> some View {
         self
-            .sheet(isPresented: bindable(model.sharingURLs != nil)) {
+            // V6.20.0 (code audit fix #7): binding setter 在 sheet dismiss 时清空 model.sharingURLs
+            //   之前 setter 是 _ in {} → URLs 永不清理 → 第二次 ⌘⇧E 选不同图仍弹老 URLs
+            //   同时 fix: viewDidAppear 不再 fire 第二次 picker bug (sheet 重新 present 时 SwiftUI
+            //   重新 make NSViewController, viewDidAppear 自然 fire — 之前 URLs 残留时 sheet 不重新 present)
+            .sheet(isPresented: bindable(
+                model.sharingURLs != nil,
+                onDismiss: { model.sharingURLs = nil }
+            )) {
                 if let urls = model.sharingURLs, !urls.isEmpty {
                     SharePickerView(urls: urls)
                         .frame(minWidth: 400, minHeight: 300)
@@ -289,10 +296,12 @@ extension View {
             }
     }
 
-    private func bindable(_ isPresent: Bool) -> Binding<Bool> {
+    private func bindable(_ isPresent: Bool, onDismiss: @escaping () -> Void = {}) -> Binding<Bool> {
         Binding(
             get: { isPresent },
-            set: { _ in }
+            set: { newValue in
+                if !newValue { onDismiss() }
+            }
         )
     }
 }

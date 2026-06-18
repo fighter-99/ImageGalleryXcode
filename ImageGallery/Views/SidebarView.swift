@@ -102,9 +102,10 @@ struct SidebarView: View {
     // ─── 计算重复图数量 + 各 section 计数 (V6.19.2 P0 #11: 单遍 O(n)) ───
     // 之前 libraryCounts tuple computed 5 遍 O(n) + duplicateCount 2-3 遍 = 7-8 遍
     // 现在 PhotoStatsSnapshot 2 遍 O(n) (1 遍累加 + 1 遍算 duplicate)
-    private var libraryStats: PhotoStatsSnapshot {
-        PhotoStatsSnapshot.compute(allPhotos)
-    }
+    // V6.20.0 (code audit fix #6): 走 ContentViewModel.libraryStats 缓存 (count invalidation)
+    //   之前每次 body 重渲重算 — @Query 任何 write 触发整库 2 遍 O(n) 扫描
+    //   现在模型层缓存, count 不变复用 cache; count 变触发失效重算
+    private var libraryStats: PhotoStatsSnapshot { model.libraryStats }
 
     var body: some View {
         // V4.1.0f: 侧栏完全"无 UI"——hide 按钮搬回主工具栏
