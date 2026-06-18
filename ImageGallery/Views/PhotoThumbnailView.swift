@@ -197,6 +197,77 @@ private struct PhotoCellContent: View {
         isMarqueeActive ? nil : makeDragPayload()
     }
 
+    // V6.22.7: 抽 imageOrPlaceholder helper — VStack + Group + 3-branch if/else 触发 type-check timeout
+    //   V6.22.6 + V6.22.7 改动 gesture chain 数量, SwiftUI type-checker 超过 timeout 阈值
+    //   拆出来让 PhotoCellContent.body 短一些, type-checker 能算
+    @ViewBuilder
+    private var imageOrPlaceholder: some View {
+        VStack(spacing: 0) {
+            Spacer(minLength: 0)
+            Group {
+                if let nsImage = loadedImage {
+                    // V5.34: .fit → .fill——回 Photos.app Library 真版
+                    // V6.12.12: 砍 .square 模式后只剩 .squareFit——永远 .fit (letterbox 不裁切)
+                    loadedImageView(nsImage)
+                } else if loadFailed {
+                    RoundedRectangle(cornerRadius: Radius.lg)
+                        .fill(.quaternary)
+                        .aspectRatio(aspectRatio, contentMode: .fill)
+                        .overlay {
+                            VStack(spacing: 4) {
+                                Image(systemName: "exclamationmark.triangle")
+                                    .font(Typography.headline)
+                                Text(Copy.thumbnailLoadFailed)
+                                    .font(Typography.caption)
+                            }
+                            .foregroundStyle(.secondary)
+                        }
+                } else {
+                    RoundedRectangle(cornerRadius: Radius.lg)
+                        .fill(.quaternary)
+                        .aspectRatio(aspectRatio, contentMode: .fill)
+                        .shimmer()
+                }
+            }
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity)
+        // V6.12.7: cell 背景永远透明 (opacity 0), 避免「浅框」幽灵
+        .background(
+            RoundedRectangle(cornerRadius: Radius.lg)
+                .fill(Surface.elevated)
+                .opacity(0)
+        )
+    }
+
+    @ViewBuilder
+    private func loadedImageView(_ nsImage: NSImage) -> some View {
+        Image(nsImage: nsImage)
+            .resizable()
+            .aspectRatio(aspectRatio, contentMode: .fit)
+            // V5.99: 8pt → 12pt 圆角
+            .clipShape(RoundedRectangle(cornerRadius: Radius.lg))
+            // V6.12.9/11: 2pt @ 15% opacity 描边
+            .overlay(
+                RoundedRectangle(cornerRadius: Radius.lg)
+                    .stroke(Color.primary.opacity(0.15), lineWidth: 2)
+            )
+            .saturation(photo.isInTrash ? 0.05 : 1)
+            .opacity(photo.isInTrash ? (colorScheme == .dark ? 0.65 : 0.55) : 1)
+            // V5.30: image 加载完淡入
+            .transition(.opacity)
+            .animation(.easeOut(duration: 0.1), value: loadedImage != nil)
+    }
+
+    // V6.22.7: 抽 handleReorderDropDecision helper — guard chain 触发 type-check timeout
+    private func handleReorderDropDecision(items: [PhotoDragItem]) -> Bool {
+        guard sortOption == .customOrder else { return false }
+        guard let draggedItem = items.first else { return false }
+        guard draggedItem.photoID != photo.id else { return false }
+        handleReorderDrop(draggedID: draggedItem.photoID)
+        return true
+    }
+
     private func makeDragPayload() -> PhotoDragItem {
         if selection.selectedIDs.contains(photo.id) && selection.selectedIDs.count > 1 {
             return PhotoDragItem(
@@ -262,72 +333,24 @@ private struct PhotoCellContent: View {
             // V3.6.14: 暗色下 opacity 0.65（暗背景下半透明不会"黑掉"）
             // V3.6.26: 改用 .task + 异步加载，主线程不阻塞
             // V4.4.0: 三态 → 加载中 (shimmer 骨架) / 加载失败 (exclamationmark) / 已加载 (Image)
-            VStack(spacing: 0) {
-                Spacer(minLength: 0)
-                Group {
-                    if let nsImage = loadedImage {
-                        // V5.34: .fit → .fill——回 Photos.app Library 真版
-                        // V6.12.12: 砍 .square 模式后只剩 .squareFit——永远 .fit (letterbox 不裁切)
-                        Image(nsImage: nsImage)
-                            .resizable()
-                            .aspectRatio(aspectRatio, contentMode: .fit)
-                            // V5.99: 8pt → 12pt 圆角
-                            .clipShape(RoundedRectangle(cornerRadius: Radius.lg))
-                            // V6.12.9/11: 2pt @ 15% opacity 描边
-                            .overlay(
-                                RoundedRectangle(cornerRadius: Radius.lg)
-                                    .stroke(Color.primary.opacity(0.15), lineWidth: 2)
-                            )
-                            .saturation(photo.isInTrash ? 0.05 : 1)
-                            .opacity(photo.isInTrash ? (colorScheme == .dark ? 0.65 : 0.55) : 1)
-                            // V5.30: image 加载完淡入
-                            .transition(.opacity)
-                            .animation(.easeOut(duration: 0.1), value: loadedImage != nil)
-                    } else if loadFailed {
-                        RoundedRectangle(cornerRadius: Radius.lg)
-                            .fill(.quaternary)
-                            .aspectRatio(aspectRatio, contentMode: .fill)
-                            .overlay {
-                                VStack(spacing: 4) {
-                                    Image(systemName: "exclamationmark.triangle")
-                                        .font(Typography.headline)
-                                    Text(Copy.thumbnailLoadFailed)
-                                        .font(Typography.caption)
-                                }
-                                .foregroundStyle(.secondary)
-                            }
-                    } else {
-                        RoundedRectangle(cornerRadius: Radius.lg)
-                            .fill(.quaternary)
-                            .aspectRatio(aspectRatio, contentMode: .fill)
-                            .shimmer()
-                    }
-                }
+            // V6.22.7: 抽 imageOrPlaceholder helper — VStack + Group + 3-branch if/else 触发 type-check timeout
+            imageOrPlaceholder
                 // V5.98: 选中 overlay 贴 image
                 .overlay(cellSelectionOverlay)
                 .animation(Animations.standard, value: selectionState)
-                Spacer(minLength: 0)
-            }
-            .frame(maxWidth: .infinity)
-            // V6.12.7: cell 背景永远透明 (opacity 0), 避免「浅框」幽灵
-            .background(
-                RoundedRectangle(cornerRadius: Radius.lg)
-                    .fill(Surface.elevated)
-                    .opacity(0)
-            )
-            // V5.32: 600px maxPixelSize (200pt cell × 2x retina = 400px, 50% headroom)
-            .task(id: photo.id) {
-                loadFailed = false
-                let img = await ImageLoader.loadImageAsync(
-                    at: photo.fileURL,
-                    maxPixelSize: 600
-                )
-                if img == nil {
-                    loadFailed = true
-                } else {
-                    loadedImage = img
+                // V5.32: 600px maxPixelSize (200pt cell × 2x retina = 400px, 50% headroom)
+                .task(id: photo.id) {
+                    loadFailed = false
+                    let img = await ImageLoader.loadImageAsync(
+                        at: photo.fileURL,
+                        maxPixelSize: 600
+                    )
+                    if img == nil {
+                        loadFailed = true
+                    } else {
+                        loadedImage = img
+                    }
                 }
-            }
 
             // V3.6.6: 回收站剩余天数 badge
             if let days = daysLeft, photo.isInTrash {
@@ -361,13 +384,13 @@ private struct PhotoCellContent: View {
         .accessibilityLabel(Copy.accessibilityPhotoLabel(photo.filename, rating: photo.rating, selected: isActive))
         .accessibilityHint("单击切换选中, 双击进入沉浸式查看, 右键显示更多操作")
         .accessibilityAddTraits(isActive ? .isSelected : [])
-        // V6.22.6 (Bug 2A): .highPriorityGesture 替 .onTapGesture — 让 tap 比 drag 优先级高
-        //   之前 .onTapGesture (低优先级) 跟 cell .draggable + grid marquee drag 竞争,
-        //   drag 起点在 cell 边缘时 tap 抢手势 → selection 被设成 startCell,覆盖 marquee 选的 cells
-        //   highPriorityGesture 明确 tap 赢 → drag 启动时也先 tap 再 drag
-        .highPriorityGesture(
-            TapGesture().onEnded { onTap() }
-        )
+        // V6.22.7 (Bug fix): 撤销 V6.22.6 highPriorityGesture — 实测证明 tap 反而覆盖 marquee
+        //   之前 .onTapGesture (低优先级) drag.onEnded 跑赢 → 多选 work
+        //   V6.22.6 改 .highPriorityGesture(TapGesture) → tap 后跑设单选,覆盖 marquee 多选
+        //   改回 .onTapGesture, 配合 V6.22.6 Bug 2B (砍 isStartOnSelectedCell) + 修 .draggable 让 drag 优先
+        .onTapGesture {
+            onTap()
+        }
         .onTapGesture(count: 2) {
             onDoubleTap()
         }
@@ -375,10 +398,14 @@ private struct PhotoCellContent: View {
         .focusable(true)
         .focusEffectDisabled(true)  // V4.4.6: 禁用系统 focus ring
         .help(tooltipText)
-        // 拖拽：V6.17.2 改 currentDragPayload() — 圈选时返 nil (修视觉冲突)
+        // 拖拽：V6.17.2 改 currentDragPayload() — 圈选时返 nil (视觉冲突修复保留)
         //   V3.6.33: 迁移到 .draggable(URL) 现代 API
         //   V3.6.34: capture @Model 属性到 local 避免 background thread 访问
         //   V5.39.7: 改 .draggable(PhotoDragItem) — Finder 导出 + in-app 重排共用
+        //   V6.22.7 (尝试修): 砍 `?? makeDragPayload()` 让圈选时真正禁 .draggable — 但 SwiftUI
+        //     .draggable 不直接支持 Optional, 编译失败 → revert 回 `??` 兜底
+        //     圈选 vs item drag 优先级由父 VStack 的 .simultaneousGesture (marquee) + cell .draggable
+        //     共同决定, 不需要 nil payload 机制 (currentDragPayload 保留以便将来用)
         .draggable(currentDragPayload() ?? makeDragPayload()) {
             // 拖动预览: 96pt 缩略图 + 阴影 + accent 描边 (V3.6.42 "被拿起"感)
             // V3.7.2: 多选时 preview 加 "共 N 张" badge
@@ -415,12 +442,9 @@ private struct PhotoCellContent: View {
             .rotationEffect(.degrees(1))
         }
         // V5.39.7: 拖入重排 — dropDestination 常驻, 仅 customOrder 模式接受 drop
+        //   V6.22.7: 抽 handleReorderDropDecision helper — guard chain 触发 type-check timeout
         .dropDestination(for: PhotoDragItem.self) { items, _ in
-            guard sortOption == .customOrder else { return false }
-            guard let draggedItem = items.first else { return false }
-            guard draggedItem.photoID != photo.id else { return false }
-            handleReorderDrop(draggedID: draggedItem.photoID)
-            return true
+            handleReorderDropDecision(items: items)
         }
         // V3.6.37: 抽 contextMenu 到独立 view (类型检查)
         .modifier(CellContextMenuModifier(

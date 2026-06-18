@@ -488,7 +488,7 @@ struct PhotoGridView: View {
                             // V6.12.12: 砍 .square 后只剩 .squareFit
                             //   现在 always true (所有 mode 都显示 caption)
                             //   保留判断形式方便未来加 mode 时直接改这里
-                            showDateCaption: layoutMode != .squareFit,
+                            showDateCaption: false,  // V6.22.7: 永远不显示日期 caption (用户要求)
                             // V5.39.7: 透传排序 + 重排回调 (拖拽重排依赖)
                             sortOption: sortOption,
                             onReorder: onReorder
