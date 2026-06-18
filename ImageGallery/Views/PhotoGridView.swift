@@ -100,6 +100,8 @@ struct PhotoGridView: View {
     let onDropImport: ([URL]) -> Void
     // V5.39.7 NEW: 重排回调 (customOrder 拖拽重排后调, 触发 recomputePhotos 重算 grid)
     let onReorder: () -> Void
+    // V6.22.1 (P2 #2): 旋转回调 — caller (ContentView) 传 model.rotateSelected closure
+    let onRotate: (Photo, Bool) -> Void
 
     // ─── 综合筛选 ───
     // V3.6.5: 从 computed property 改为 @State 缓存 + filterSignature 失效
@@ -701,7 +703,9 @@ struct PhotoGridView: View {
             retentionDays: retentionDays,
             onDelete: deletePhoto,
             onTap: handleTap,
-            onDoubleTap: onDoubleTap
+            onDoubleTap: onDoubleTap,
+            // V6.22.1 (P2 #2): 旋转回调 — 透传 ContentView 传的 { model.rotateSelected(clockwise:) }
+            onRotate: onRotate
         )
     }
 
@@ -804,7 +808,9 @@ struct PhotoGridView: View {
         onClearFilters: {},
         onExportComplete: { _ in },
         onDropImport: { _ in },
-        onReorder: {}
+        onReorder: {},
+        // V6.22.1: Preview no-op 旋转
+        onRotate: { _, _ in }
     )
     .frame(width: 600, height: 400)
 }

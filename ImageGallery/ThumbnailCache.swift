@@ -41,6 +41,16 @@ final class ThumbnailCache {
         cache.setObject(image, forKey: key, cost: actualCost)
     }
 
+    /// V6.22.1 (P2 #2): invalidate 单张 URL 的所有缓存 (所有 maxPixelSize)
+    ///   旋转 / 编辑后 thumbnail 方向变了, 必须清除
+    func invalidate(url: URL) {
+        // NSCache 没有按 prefix 删 — 循环所有 maxPixelSize 删除
+        let sizes: [CGFloat] = [170, 200, 400, 1000, 2000]
+        for size in sizes {
+            cache.removeObject(forKey: makeKey(url: url, maxPixelSize: size))
+        }
+    }
+
     // MARK: - 私有
 
     private func makeKey(url: URL, maxPixelSize: CGFloat) -> NSString {

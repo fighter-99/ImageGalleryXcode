@@ -45,6 +45,8 @@ struct PhotoGridPane: View {
     let onImport: () -> Void
     let onBatchDelete: () -> Void
     let onClearMultiSelect: () -> Void
+    // V6.22.1 (P2 #2): 旋转回调 — ContentView 传 { model.rotateSelected(clockwise:) }
+    let onRotate: (Photo, Bool) -> Void
     let onDoubleTap: (Photo) -> Void
     // V4.9.0: 清空所有 filter（用于"无搜索结果"等空状态次 CTA）
     let onClearFilters: () -> Void
@@ -95,7 +97,9 @@ struct PhotoGridPane: View {
             onClearFilters: onClearFilters,  // V4.9.0
             onExportComplete: onExportComplete,
             onDropImport: onDropImport,      // V5.39.6 透传
-            onReorder: onReorder              // V5.39.7 透传
+            onReorder: onReorder,             // V5.39.7 透传
+            // V6.22.1 (P2 #2): 旋转回调 — caller (ContentView) 传 model.rotateSelected 闭包
+            onRotate: onRotate
         )
     }
 }

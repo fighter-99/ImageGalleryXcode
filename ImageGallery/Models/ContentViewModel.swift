@@ -27,6 +27,7 @@ import SwiftUI
 import SwiftData
 import UniformTypeIdentifiers
 import AVFoundation  // V6.19.5 (P0 #16): speakSelection() AVSpeechSynthesizer
+import ImageIO  // V6.22.1 (P2 #2): rotateSelected EXIF read/write
 
 /// V5.52: ContentView 的业务模型——@MainActor @Observable 单一根
 @MainActor
@@ -638,6 +639,42 @@ final class ContentViewModel {
             return []
         }
         return urls
+    }
+
+    /// V6.22.1 (P2 #2): 旋转选中照片 (顺时针 / 逆时针 90°)
+    ///   - 写 EXIF orientation 到原文件 (lossy 重编码, JPEG/HEIC 通常不可察觉)
+    ///   - 失效 ThumbnailCache (旧 thumbnail 是旧方向)
+    ///   - Toast 提示成功数
+    ///   - selection 空时 toast 提示用户先选图 (跟 shareSelected 一致 UX)
+    ///   - Photos.app 范式: 旋转是 in-place file 修改, 无 undo (用户可 export 原图 + 重新 import 复原)
+    func rotateSelected(clockwise: Bool) {
+        let photos = selection.selectedPhotos(in: visiblePhotos)
+        guard !photos.isEmpty else {
+            showToast("请先选择要旋转的图片", type: .info)
+            return
+        }
+        var successCount = 0
+        for photo in photos {
+            // 读取当前 EXIF orientation (V6.22.1: 用 CGImageSource 读 metadata)
+            let current = readOrientation(url: photo.fileURL) ?? .up
+            let new = clockwise ? current.rotated90Clockwise() : current.rotated90CounterClockwise()
+            // 写新 orientation 到文件 + 失效 cache
+            if PhotoRotationService.applyOrientation(new, to: photo.fileURL) {
+                PhotoRotationService.invalidateThumbnail(for: photo.fileURL)
+                successCount += 1
+            }
+        }
+        let message = successCount == 1 ? "已旋转 1 张图片" : "已旋转 \(successCount) 张图片"
+        showToast(message, type: successCount == photos.count ? .success : .warning)
+    }
+
+    /// V6.22.1: 读 EXIF orientation — 用 CGImageSourceCopyPropertiesAtIndex
+    ///   返回 nil 表示无 orientation tag (default .up)
+    private func readOrientation(url: URL) -> PhotoOrientation? {
+        guard let source = CGImageSourceCreateWithURL(url as CFURL, nil) else { return nil }
+        guard let props = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any] else { return nil }
+        guard let raw = props[kCGImagePropertyOrientation] as? UInt32 else { return nil }
+        return PhotoOrientation(rawValue: raw)
     }
 
     /// V6.19.5 (P0 #16): 朗读选中照片 (Speech menu, macOS Edit > Speech 范式)

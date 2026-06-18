@@ -23,6 +23,9 @@ struct CellContextMenuModifier: ViewModifier {
     let toggleTag: (Tag, Photo) -> Void
     @Binding var showingDeleteConfirm: Bool
     let onDelete: () -> Void
+    // V6.22.1 (P2 #2): rotate closures — ContentView 传 { model.rotateSelected(clockwise: ...) }
+    let onRotateLeft: () -> Void
+    let onRotateRight: () -> Void
 
     func body(content: Content) -> some View {
         content.contextMenu {
@@ -112,6 +115,24 @@ struct CellContextMenuModifier: ViewModifier {
                 )
             ) {
                 Label("分享", systemImage: "square.and.arrow.up")
+            }
+
+            // V6.22.1 (P2 #2): 旋转子菜单 — 左旋 / 右旋 90° (Photos.app 范式)
+            //   写 EXIF orientation 到原文件 + 失效 ThumbnailCache
+            //   单图 + 多选都支持 (onRotateLeft/Right 由 caller 决定 batch 操作)
+            Menu {
+                Button {
+                    onRotateLeft()
+                } label: {
+                    Label("向左旋转", systemImage: "rotate.left")
+                }
+                Button {
+                    onRotateRight()
+                } label: {
+                    Label("向右旋转", systemImage: "rotate.right")
+                }
+            } label: {
+                Label("旋转", systemImage: "rotate.right")
             }
 
             Divider()

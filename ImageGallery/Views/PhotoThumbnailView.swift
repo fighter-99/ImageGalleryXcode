@@ -57,6 +57,9 @@ private struct PhotoCellContent: View {
     let onDelete: () -> Void
     let onTap: () -> Void
     let onDoubleTap: () -> Void
+    // V6.22.1 (P2 #2): 旋转闭包 — ContentView 传 { model.rotateSelected(clockwise:) }
+    let onRotateLeft: () -> Void
+    let onRotateRight: () -> Void
 
     // 内部 state (跟原 PhotoThumbnailView 同)
     // V3.6.26: 异步缩略图加载
@@ -424,7 +427,12 @@ private struct PhotoCellContent: View {
                 modelContext.saveWithLog()
             },
             showingDeleteConfirm: $showingDeleteConfirm,
-            onDelete: onDelete
+            onDelete: onDelete,
+            // V6.22.1 (P2 #2): 旋转闭包 — 转发到 CellContextMenuModifier
+            //   Cell 自身不持有 model, 走 context 调用 PhotoCellContent → ContentView → model
+            //   ContentView 在 cell 上挂 onRotateLeft/Right (跟 onDelete 同 pattern)
+            onRotateLeft: onRotateLeft,
+            onRotateRight: onRotateRight
         ))
         .confirmationDialog(
             Copy.deleteConfirmTitle,
@@ -503,6 +511,9 @@ struct PhotoThumbnailView: View {
     let onDelete: () -> Void
     let onTap: () -> Void
     let onDoubleTap: () -> Void
+    // V6.22.1 (P2 #2): 旋转闭包 — ContentView 传 { model.rotateSelected(clockwise:) }
+    let onRotateLeft: () -> Void
+    let onRotateRight: () -> Void
 
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme) private var colorScheme
@@ -525,7 +536,10 @@ struct PhotoThumbnailView: View {
             onReorder: onReorder,
             onDelete: onDelete,
             onTap: onTap,
-            onDoubleTap: onDoubleTap
+            onDoubleTap: onDoubleTap,
+            // V6.22.1 (P2 #2): 旋转闭包 (cell 自己没 model, 转发到 caller)
+            onRotateLeft: onRotateLeft,
+            onRotateRight: onRotateRight
         )
     }
 }

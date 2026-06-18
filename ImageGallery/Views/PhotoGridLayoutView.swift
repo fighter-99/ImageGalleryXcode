@@ -36,6 +36,8 @@ struct PhotoGridLayoutView: View {
     let onDelete: (Photo) -> Void
     let onTap: (Photo) -> Void
     let onDoubleTap: (Photo) -> Void
+    // V6.22.1 (P2 #2): 旋转回调 — 透传到 PhotoRowView
+    let onRotate: (Photo, Bool) -> Void
 
     var body: some View {
         // V5.39.1: 改用 LazyVStack(spacing: rowSpacing) 直接设行间距
@@ -62,7 +64,9 @@ struct PhotoGridLayoutView: View {
                     retentionDays: retentionDays,
                     onDelete: onDelete,
                     onTap: onTap,
-                    onDoubleTap: onDoubleTap
+                    onDoubleTap: onDoubleTap,
+                    // V6.22.1 (P2 #2): 旋转回调透传到 PhotoRowView
+                    onRotate: onRotate
                 )
             }
         }

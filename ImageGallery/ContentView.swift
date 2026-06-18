@@ -641,6 +641,12 @@ struct ContentView: View {
                 onImport: { model.startImport() },
                 onBatchDelete: { showingBatchDeleteConfirm = true },
                 onClearMultiSelect: { selection = .empty },
+                // V6.22.1 (P2 #2): 旋转回调 — cell → pane → grid view 透传, 最终调 model.rotateSelected
+                //   单 cell 右键 rotate (cell menu) — ContentView 先把 selection 设成单选这张图, 再 rotate
+                onRotate: { photo, clockwise in
+                    selection = selection.selectingSingle(photo.id)
+                    model.rotateSelected(clockwise: clockwise)
+                },
                 onDoubleTap: { model.enterImmersive($0) },
                 onClearFilters: { model.resetFilters() },
                 onExportComplete: { count in

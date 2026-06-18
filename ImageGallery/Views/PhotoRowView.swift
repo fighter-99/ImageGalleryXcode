@@ -43,6 +43,8 @@ struct PhotoRowView: View {
     let onDelete: (Photo) -> Void
     let onTap: (Photo) -> Void
     let onDoubleTap: (Photo) -> Void
+    // V6.22.1 (P2 #2): 旋转回调 — ContentView 传 { model.rotateSelected(clockwise:) }
+    let onRotate: (Photo, Bool) -> Void
 
     /// V5.21: caption 预留高度从 16 → 20pt (callout 14pt 字号调整必同步调预留高度)
     private static let captionReservedHeight: CGFloat = 20
@@ -109,7 +111,10 @@ struct PhotoRowView: View {
             onReorder: onReorder,
             onDelete: { onDelete(photo) },
             onTap: { onTap(photo) },
-            onDoubleTap: { onDoubleTap(photo) }
+            onDoubleTap: { onDoubleTap(photo) },
+            // V6.22.1 (P2 #2): 旋转回调 — 转发给 ContentView's model
+            onRotateLeft: { onRotate(photo, false) },
+            onRotateRight: { onRotate(photo, true) }
         )
         .transition(.asymmetric(
             insertion: .scale(scale: 0.8).combined(with: .opacity),
