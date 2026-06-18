@@ -76,6 +76,14 @@ struct SidebarRow: View {
         // V3.6.41: 升级 hover/选中 动画到 spring（统一 cell 动画风格）
         .animation(Animations.springGentle, value: isHovered)
         .animation(Animations.springGentle, value: isSelected)
+        // V6.22.2 (P2 #8): VoiceOver 标签 — 之前 0 标签, 盲人用户不能用
+        //   - label: sidebar item 名称 + count ("图库 50 张")
+        //   - hint: "显示所有照片" / "筛选重复图" 等 role 描述
+        //   - value (选中): "已选中" / "未选中" 让用户感知状态
+        .accessibilityLabel(count.map { Copy.sidebarCount($0) } ?? label)
+        .accessibilityHint(accessibilityHint)
+        .accessibilityValue(isSelected ? Copy.accessibilitySelected : Copy.accessibilityUnselected)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     /// 背景色：选中 > hover > 默认
@@ -99,5 +107,11 @@ struct SidebarRow: View {
         if let iconColor { return iconColor }
         if isSelected || isHovered { return SidebarStyle.iconActive }
         return SidebarStyle.iconDefault
+    }
+
+    /// V6.22.2 (P2 #8): VoiceOver hint — 描述 sidebar item 角色 (display all / filter / etc.)
+    ///   简单 fallback: "显示 sidebar item" + icon name 让盲人用户理解操作
+    private var accessibilityHint: String {
+        "显示 \(label)"
     }
 }

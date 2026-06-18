@@ -355,6 +355,12 @@ private struct PhotoCellContent: View {
         // V3.6.51: 单一 .animation 驱动所有选中状态过渡
         .animation(Animations.springGentle, value: isFocused)
         .contentShape(Rectangle())  // 让空白处也响应点击
+        // V6.22.2 (P2 #8): VoiceOver 标签 — cell 主 a11y 入口
+        //   label: filename + rating + selected state (盲人用户能感知选中)
+        //   hint: 描述 cell 操作 ("双击进入沉浸式 / 右键菜单")
+        .accessibilityLabel(Copy.accessibilityPhotoLabel(photo.filename, rating: photo.rating, selected: isActive))
+        .accessibilityHint("单击切换选中, 双击进入沉浸式查看, 右键显示更多操作")
+        .accessibilityAddTraits(isActive ? .isSelected : [])
         .onTapGesture {
             onTap()
         }

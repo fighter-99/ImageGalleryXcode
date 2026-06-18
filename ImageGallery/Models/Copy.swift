@@ -130,6 +130,15 @@ enum Copy {
     static func dateSectionCount(_ count: Int) -> String { String.localizedStringWithFormat(String(localized: "dateSectionCount", defaultValue: "%lld 张"), count) }
     static func autoDeleteAfterDays(_ days: Int) -> String { String.localizedStringWithFormat(String(localized: "autoDeleteAfterDays", defaultValue: "%lld 天后自动永久清除"), days) }
 
+    // MARK: - V6.22.2 (P2 #8): VoiceOver / a11y 标签
+    static let accessibilitySelected = String(localized: "accessibilitySelected", defaultValue: "已选中")
+    static let accessibilityUnselected = String(localized: "accessibilityUnselected", defaultValue: "未选中")
+    static func accessibilityPhotoLabel(_ filename: String, rating: Int, selected: Bool) -> String {
+        let ratingText = rating > 0 ? "，\(rating) 星" : ""
+        let stateText = selected ? "，已选中" : ""
+        return "\(filename)\(ratingText)\(stateText)"
+    }
+
     // MARK: - 视图模式 (V5.50-4 扩展——菜单用全名，区别于设置面板的 "网格" 简称)
     static let viewModeGridFull = String(localized: "viewModeGridFull", defaultValue: "缩略图视图")
     static let viewModeListFull = String(localized: "viewModeListFull", defaultValue: "列表视图")

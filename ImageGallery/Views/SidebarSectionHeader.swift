@@ -127,6 +127,11 @@ struct SidebarSectionHeader: View {
             // V4.1.0: 点击切换折叠
             isExpanded.toggle()
         }
+        // V6.22.2 (P2 #8): VoiceOver 标签 — section header hint
+        //   hint 描述折叠状态 + 操作 ("单击切换折叠, 当前已展开 / 已折叠")
+        .accessibilityLabel(title)
+        .accessibilityHint(isExpanded ? "单击折叠" : "单击展开")
+        .accessibilityAddTraits(isExpanded ? [] : [.isHeader])
         // V6.21.3: hover 检测 — onHover 跟 SidebarRow 同 pattern
         .onHover { hovering in
             isHovered = hovering
