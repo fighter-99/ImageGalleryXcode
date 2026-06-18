@@ -850,27 +850,28 @@ final class ContentViewModel {
     }
 
     /// 批量移动到文件夹
+    ///
+    /// V6.14.1: 去掉 `undoManager.registerAction` 调用, 改跟 batchAddTag / batchSetRating 同模式
+    /// (直接改 folder + save, 不注册 undo)。
+    ///
+    /// 根因: `registerAction` 内部用 `UndoManager.registerUndo(withTarget:)` 把 ImageGalleryUndoManager
+    /// 强引用作为 target, 加上 action 闭包 `self.selection = .empty` 强捕获 ContentViewModel,
+    /// 形成强引用环 (UndoManager → closure → ContentViewModel → ImageGalleryUndoManager → UndoManager),
+    /// 在 Swift Testing `@MainActor` + `ModelContainer` + 内部 run loop 组合下, 第一个 batchMove test
+    /// 60s+ 不返回, 整个 suite 死锁。batchAddTag / batchSetRating 不走 registerAction, 0.002s 跑过,
+    /// 对比鲜明。SidebarView.performMove (V3.5.20) 已走同样修复路径。
+    ///
+    /// batchMove 的 undo 暂时砍掉 (跟 performMove 一样, 走回收站恢复就够) — 后续如需 undo,
+    /// 需重做 ImageGalleryUndoManager (避开 Foundation UndoManager 的 target 强引用, 用手写 stack)。
     func batchMove(to folder: Folder?) {
         let photosToMove = selection.selectedPhotos(in: visiblePhotos)
         guard !photosToMove.isEmpty, let modelContext else { return }
-        let oldFolders = photosToMove.map { $0.folder }
-        let count = photosToMove.count
-        let folderName = folder?.name ?? "待整理"
 
-        undoManager.registerAction(
-            description: "移动 \(count) 张照片到 \(folderName)"
-        ) {
-            for photo in photosToMove {
-                photo.folder = folder
-            }
-            modelContext.saveWithLog()
-            self.selection = .empty
-        } undo: {
-            for (photo, oldFolder) in zip(photosToMove, oldFolders) {
-                photo.folder = oldFolder
-            }
-            modelContext.saveWithLog()
+        for photo in photosToMove {
+            photo.folder = folder
         }
+        modelContext.saveWithLog()
+        selection = .empty
     }
 
     /// 批量加标签

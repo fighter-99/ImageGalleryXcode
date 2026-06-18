@@ -54,13 +54,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Test (4 critical classes)
+      - name: Test (5 critical classes)
         # V6.12.25: 只跑 4 个本机已验证的 ContentViewModel class
         #   SmokeTests / InitTests / StateTests / RecycleBinTests
         #   V6.12.20-21 isolatedModel + FakeUserDefaults 修过后这 4 个 class
         #   80%+ pass (3 unique fail = 1 stale test + 2 production bug)
         #   跳过的 class: Batch/Import/Misc/Selection/RecycleBinErrorPropagation/ImageLoader 等
         #   这些有 130+ stale test 跑超 20 min, V6.13 修
+        # V6.14.1: 加 BatchTests (5 class 一起跑 < 2 sec)
+        #   之前 7 test hang 10+ min 根因: batchMove 调 undoManager.registerAction
+        #   跟 Foundation UndoManager + ContentViewModel 形成强引用环, 在
+        #   Swift Testing @MainActor + ModelContainer 组合下死锁
+        #   修法: batchMove 改跟 batchAddTag/batchSetRating 同模式, 不走 registerAction
         # -only-testing: 多 flag 限定范围
         run: |
           xcodebuild \
@@ -71,6 +76,7 @@ jobs:
             -only-testing:ImageGalleryTests/ContentViewModelInitTests \
             -only-testing:ImageGalleryTests/ContentViewModelStateTests \
             -only-testing:ImageGalleryTests/ContentViewModelRecycleBinTests \
+            -only-testing:ImageGalleryTests/ContentViewModelBatchTests \
             test
 
       - name: Upload xcresult on failure
