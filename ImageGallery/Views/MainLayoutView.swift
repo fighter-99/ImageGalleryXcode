@@ -41,6 +41,8 @@ struct MainLayoutView<PathBar: View, Split: View, StatusBarView: View>: View {
 
     // 修饰需要的 action
     let onImmersiveDismiss: () -> Void
+    // V6.21.1 (Phase 1.2 UX polish): toast 用户主动 dismiss (close button) → caller 移除队首
+    let onToastDismiss: () -> Void
 
     init(
         @ViewBuilder pathBar: () -> PathBar,
@@ -52,7 +54,9 @@ struct MainLayoutView<PathBar: View, Split: View, StatusBarView: View>: View {
         immersivePhoto: Binding<Photo?>,
         immersiveIndex: Binding<Int>,
         visiblePhotos: [Photo],
-        onImmersiveDismiss: @escaping () -> Void
+        onImmersiveDismiss: @escaping () -> Void,
+        // V6.21.1: toast close button → caller 移除 toastQueue 队首
+        onToastDismiss: @escaping () -> Void = {}
     ) {
         self.pathBar = pathBar()
         self.split = split()
@@ -64,6 +68,7 @@ struct MainLayoutView<PathBar: View, Split: View, StatusBarView: View>: View {
         self._immersiveIndex = immersiveIndex
         self.visiblePhotos = visiblePhotos
         self.onImmersiveDismiss = onImmersiveDismiss
+        self.onToastDismiss = onToastDismiss
     }
 
     var body: some View {
@@ -74,11 +79,13 @@ struct MainLayoutView<PathBar: View, Split: View, StatusBarView: View>: View {
         }
         // V3.5 Phase 2：把 undoManager 注入环境，让 DetailView 的撤销逻辑（添加/移除标签、重命名）能用
         .environment(\.undoManager, undoManager)
-        // Toast 浮层（中央上方）—— V5.13: 读 toastQueue.first（队首显示中）
+        // Toast 浮层（顶部紧贴 status bar 上方）—— V5.13: 读 toastQueue.first（队首显示中）
+        // V6.21.1 (Phase 1.2): padding 80pt → 8pt (紧贴顶部, Photos 范式)
+        //   onToastDismiss 闭包: 用户点 X 主动 dismiss, 不等 duration auto-dismiss
         .overlay(alignment: .top) {
             if let toast = toastQueue.first {
-                ToastView(message: toast.message, type: toast.type)
-                    .padding(.top, 80)
+                ToastView(message: toast.message, type: toast.type, onDismiss: onToastDismiss)
+                    .padding(.top, 8)
                     .transition(.move(edge: .top).combined(with: .opacity))
             }
         }

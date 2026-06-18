@@ -497,7 +497,10 @@ struct ContentView: View {
             immersivePhoto: Binding(get: { model.immersivePhoto }, set: { model.immersivePhoto = $0 }),
             immersiveIndex: Binding(get: { model.immersiveIndex }, set: { model.immersiveIndex = $0 }),
             visiblePhotos: model.visiblePhotos,
-            onImmersiveDismiss: { immersivePhoto = nil }
+            onImmersiveDismiss: { immersivePhoto = nil },
+            // V6.21.1 (Phase 1.2): toast close button → 用户主动 dismiss
+            //   调 model.scheduleDismissToast() 移除队首 + 触发 next toast 显示
+            onToastDismiss: { model.scheduleDismissToast() }
         )
         // V6.21.0 (Phase 1.1 UX polish): 圈选启动 → dismiss marquee hint
         //   isBoxSelecting 由 ContentView @State 持有, mainSplitPane 传 $isBoxSelecting 给 MainSplitView

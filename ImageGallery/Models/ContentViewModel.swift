@@ -722,6 +722,19 @@ final class ContentViewModel {
         }
     }
 
+    /// V6.21.1 (Phase 1.2 UX polish): 用户主动 dismiss toast (close button)
+    ///   跟 scheduleDismiss 区别: 这是 user-initiated, 不等 duration
+    ///   取消当前 dismiss task (避免 race) + 立即 removeFirst + 触发 next toast 显示
+    func scheduleDismissToast() {
+        toastTask?.cancel()
+        toastTask = nil
+        guard !toastQueue.isEmpty else { return }
+        toastQueue.removeFirst()
+        if let next = toastQueue.first {
+            scheduleDismiss(after: next.duration.seconds)
+        }
+    }
+
     /// 兼容旧 showToast 调用
     func showToast(_ message: String, type: ToastView.ToastType = .info) {
         enqueueToast(message, type: type, duration: .normal)
