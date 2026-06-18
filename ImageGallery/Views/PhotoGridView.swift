@@ -364,7 +364,13 @@ struct PhotoGridView: View {
         }
     }
 
-    // V6.17.0: 计算 cell 在 photoGrid 局部坐标的 frame — 给 marquee hit test 用
+    // V6.17.0: 计算 cell 在 photoGrid 命名 coord space 的 frame — 给 marquee hit test 用
+    //   V6.17.0.1 fix: 改用 photoGrid named space (挂 VStack/LazyVStack)
+    //     之前 V6.17.0 用 gridPadding offset (y 从 gridPadding 开始), scroll 之后 rect 跟
+    //     cellFrames 对不上 (rect 在 visible area, cellFrames 在 content)
+    //     现在 y 从 0 开始 (photoGrid space = VStack 局部, 顶部是 (0,0))
+    //   x 用 gridPadding 是因为 VStack 有 .padding(.horizontal, gridHorizontalPadding)
+    //     (16pt), cell 在 VStack space 里的 x 实际从 16 开始
     //   跟 masonryRowsView 用同一 GridLayout, 保证位置完全一致
     //   支持 date grouped (带 section header) + flat 两种 layout
     private func computeCellFrames(
@@ -389,7 +395,8 @@ struct PhotoGridView: View {
         if sortOption.isDateBased {
             // V5.32: 缓存, 不再每 render 重算
             let groups = cachedDateGroups
-            var y: CGFloat = gridPadding
+            // V6.17.0.1: y 从 0 开始 (photoGrid space 顶部)
+            var y: CGFloat = 0
             for group in groups {
                 y += dateHeaderHeight
                 let rows = GridLayout(
@@ -399,6 +406,7 @@ struct PhotoGridView: View {
                     layoutMode: layoutMode
                 ).computeRows(from: group.photos)
                 for row in rows {
+                    // V6.17.0.1: x 从 gridPadding 开始 (VStack 有 horizontal padding 16pt)
                     var x: CGFloat = gridPadding
                     for item in row.items {
                         result.append(CellFrame(
@@ -424,8 +432,10 @@ struct PhotoGridView: View {
                 cellSpacing: cellSpacing,
                 layoutMode: layoutMode
             ).computeRows(from: items)
-            var y: CGFloat = gridPadding
+            // V6.17.0.1: y 从 0 开始
+            var y: CGFloat = 0
             for row in rows {
+                // V6.17.0.1: x 从 gridPadding 开始
                 var x: CGFloat = gridPadding
                 for item in row.items {
                     result.append(CellFrame(
@@ -493,6 +503,8 @@ struct PhotoGridView: View {
             // V5.39.2: grid 左右缩进——整组缩进 (包括 DateSectionHeader)
             //   与 cell 容器一致缩进, 视觉上 date header 和 cell 对齐
             .padding(.horizontal, gridHorizontalPadding)
+            // V6.17.0.1: photoGrid coord space 挂 LazyVStack — 跟 cell frames 同空间
+            .coordinateSpace(.photoGrid)
             .animation(Animations.medium, value: photos.count)
         }
         // V5.61-1: .scrollPosition(id: $scrollAnchorID) 自动追踪顶部可见 item
@@ -542,6 +554,9 @@ struct PhotoGridView: View {
             }
             // V5.39.2: grid 左右缩进 16pt
             .padding(.horizontal, gridHorizontalPadding)
+            // V6.17.0.1: photoGrid coord space 挂 VStack — 跟 cell frames 同空间
+            //   跟 .padding 一起挂 (named space 覆盖 VStack + padding 的整体)
+            .coordinateSpace(.photoGrid)
             .animation(Animations.medium, value: photos.count)
         }
         // V5.61-1: masonryRowsView 内部 Photo 渲染用 .id(photo.id) 锚定

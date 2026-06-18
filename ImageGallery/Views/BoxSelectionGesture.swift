@@ -3,6 +3,9 @@
 //  ImageGallery
 //
 //  V6.17.0: 矩形圈选手势 (真 marquee, 跟 Finder / Photos 一致)
+//    V6.17.0 首发: 挂 photoGrid (GeometryReader) + .local — BUG: scroll 之后 rect 跟 cellFrames
+//      空间对不上 (rect 在可见区, cellFrames 在 content)
+//    V6.17.0.1 fix: 改用 NamedCoordinateSpace, 挂 ScrollView inner content (cellFrames 同空间)
 //    之前 V3.5.17 → V3.6.32 5 版迭代都是 "⌥+drag = 全选当前可见" V1 简化版
 //    当时 V2 矩形 hit test 跟 cell 的 .draggable (P3.1.2 multi-drag) 抢手势 → 退回 V1
 //    现在 cell 布局稳定 + 测试基建齐, 重新接 V2
@@ -20,21 +23,29 @@
 import SwiftUI
 import AppKit
 
-/// V6.17.0: 单 cell 的位置 (grid 局部坐标)
+/// V6.17.0.1: 矩形圈选用的命名 coord space
+///   挂 ScrollView 的 inner content, gesture + cellFrames 都用这个 space
+///   跟 V6.17.0 .local 区别: 跟 scroll content 同步, scroll 后 hit test 仍准
+extension NamedCoordinateSpace {
+    static let photoGrid = Self.named("com.iridescent.ImageGallery.photoGrid")
+}
+
+/// V6.17.0: 单 cell 的位置 (photoGrid coord space)
 ///   caller 用 GridLayout + 实际 cellSize 算出来后传入
 struct CellFrame: Equatable {
     let id: UUID
-    let frame: CGRect  // in grid local coordinate space
+    let frame: CGRect  // in photoGrid coordinate space (scroll content)
 }
 
 extension View {
-    /// V6.17.0: ⌥+拖动 矩形圈选 (真 marquee)
+    /// V6.17.0.1: ⌥+拖动 矩形圈选 (真 marquee)
     /// - Parameters:
     ///   - isMarqueeActive: 圈选进行中状态（用于 UI 锁定滚动等）
-    ///   - marqueeRect: 圈选进行中的 rect (start + current 归一化) — caller 在 overlay 显示
+    ///   - marqueeRect: 圈选进行中的 rect — caller 在 overlay 显示
     ///   - selection: 选中状态 binding（手势结束时全量替换为 rect 内的 cell）
-    ///   - cellFrames: 预计算的 cell 位置 (grid 局部坐标), 由 caller 算
-    ///     e.g. PhotoGridView 的 GridLayout 输出 + cellSize/cellSpacing 算
+    ///   - cellFrames: 预计算的 cell 位置 (photoGrid coord space), 由 caller 算
+    ///     V6.17.0.1 fix: 必须在 photoGrid space 算 (跟 ScrollView 内容同步)
+    ///     V6.17.0 之前用 GeometryReader-local, scroll 后对不上
     func marqueeSelectionGesture(
         isMarqueeActive: Binding<Bool>,
         marqueeRect: Binding<CGRect?>,
@@ -42,12 +53,12 @@ extension View {
         cellFrames: [CellFrame]
     ) -> some View {
         simultaneousGesture(
-            DragGesture(minimumDistance: 4, coordinateSpace: .local)
+            DragGesture(minimumDistance: 4, coordinateSpace: .named("com.iridescent.ImageGallery.photoGrid"))
                 .onChanged { value in
                     // 必须按住 ⌥ 键 (V1: 跟旧版一致; V2 可改 plain drag)
                     guard NSEvent.modifierFlags.contains(.option) else { return }
                     isMarqueeActive.wrappedValue = true
-                    // V6.17.0: 写 rect 给 caller 显示 (从 start 到 current 归一化 rect)
+                    // V6.17.0: 写 rect 给 caller 显示 (start + current 归一化)
                     let start = value.startLocation
                     let current = value.location
                     marqueeRect.wrappedValue = CGRect(
