@@ -442,30 +442,17 @@ struct SidebarView: View {
         }
         guard !photos.isEmpty else { return }
 
-        // V6.10: 捕获原 folder 引用, 注册 undo 后再做实际移动
-        let oldFolders = photos.map { $0.folder }
-        let count = photos.count
-        if let undoManager {
-            undoManager.registerAction(
-                description: "移动 \(count) 张照片到 \(folderName)"
-            ) {
-                for photo in photos {
-                    photo.folder = folder
-                }
-                context.saveWithLog()
-            } undo: {
-                for (photo, oldFolder) in zip(photos, oldFolders) {
-                    photo.folder = oldFolder
-                }
-                context.saveWithLog()
-            }
-        } else {
-            // V6.10: undoManager 不可用 (测试 seam) — 退化为直接执行, 不注册 undo
-            for photo in photos {
-                photo.folder = folder
-            }
-            context.saveWithLog()
+        // V6.14.9: 砍 `undoManager.registerAction` — 跟 ContentViewModel.batchMove (V6.14.4) 同根
+        //   根因: registerAction → Foundation.UndoManager.registerUndo(withTarget:) 把
+        //   ImageGalleryUndoManager 强引用, 加 action 闭包强捕获 self → 强引用环
+        //   在 Swift Testing @MainActor + ModelContainer + run loop 组合下死锁
+        //   SidebarView.performMove 之前没人 follow up batchMove 的修法
+        //   现在统一砍 — undo 走回收站恢复 (跟 batchMove 同处理)
+        //   后续 V6.14.10 重做 ImageGalleryUndoManager (自写 stack) 再恢复
+        for photo in photos {
+            photo.folder = folder
         }
+        context.saveWithLog()
     }
 
     // V3.6.12 + V3.6.33: 拖到 trash 行的处理器
