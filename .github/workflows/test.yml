@@ -134,6 +134,7 @@ jobs:
             -only-testing:ImageGalleryTests/PhotoShapeTests \
             -only-testing:ImageGalleryTests/PhotoStatsFilterTests \
             -only-testing:ImageGalleryTests/PhotoStatsTests \
+            -only-testing:ImageGalleryTests/PhotoStatsSnapshotTests \
             -only-testing:ImageGalleryTests/PhotoStorageTests \
             -only-testing:ImageGalleryTests/PopoverItemFactoryTests \
             -only-testing:ImageGalleryTests/PopoverStyleTokensTests \

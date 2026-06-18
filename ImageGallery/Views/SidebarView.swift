@@ -99,35 +99,11 @@ struct SidebarView: View {
     // V3.6.12: 拖到 trash 行的高亮状态
     @State private var isTrashDropTargeted: Bool = false
 
-    // ─── 计算重复图数量 ───
-    // V6.11: 过滤 trash 照片——sidebar 数字跟 .duplicates 视图一致
-    //   之前 allPhotos 含 trash, "重复图 (2)" 跟实际重复图视图数对不上
-    //   (trash 1 张重复仍显示 2, 但重复图视图已排除 trash 显示 1)
-    private var duplicateCount: Int {
-        // V6.11 perf: Q1 deferred——libraryCounts 用 PhotoStats 纯函数
-        //   1 万图时每次 body 重算 3 次 O(n) 遍历。本处只 1 次但同样 per-render
-        let inLibrary = allPhotos.filter { !$0.isInTrash }
-        let groups = Dictionary(grouping: inLibrary) { $0.fileHash }
-        let duplicateHashes = groups.compactMap { $0.key != nil && $0.value.count > 1 ? $0.key : nil }
-        return inLibrary.filter { photo in
-            guard let hash = photo.fileHash else { return false }
-            return duplicateHashes.contains(hash)
-        }.count
-    }
-
-    // 各 section 的 item 数（用于显示在 section header 上）
-    // V3.6.1：用 PhotoStats 纯函数集合（之前每行各自 filter，4 次遍历）
-    // V5.7: 砍 favorites 字段——侧边栏不再有收藏入口（走筛选 popover 评分 ≥ 5）
-    // V6.13.4: 加 recent7Days + largeFiles 字段——SidebarView 智能文件夹 5/7 item 已有 count
-    //   补最后 2 个 ("最近 7 天" / "大图（>5MB）") 让智能文件夹 100% item 都有 count
-    private var libraryCounts: (all: Int, unfiled: Int, trashed: Int, recent7Days: Int, largeFiles: Int) {
-        (
-            all: PhotoStats.inLibrary(allPhotos).count,
-            unfiled: PhotoStats.unfiled(allPhotos).count,
-            trashed: PhotoStats.trashed(allPhotos).count,
-            recent7Days: PhotoStats.recent7DaysCount(allPhotos),
-            largeFiles: PhotoStats.largeFilesCount(allPhotos)
-        )
+    // ─── 计算重复图数量 + 各 section 计数 (V6.19.2 P0 #11: 单遍 O(n)) ───
+    // 之前 libraryCounts tuple computed 5 遍 O(n) + duplicateCount 2-3 遍 = 7-8 遍
+    // 现在 PhotoStatsSnapshot 2 遍 O(n) (1 遍累加 + 1 遍算 duplicate)
+    private var libraryStats: PhotoStatsSnapshot {
+        PhotoStatsSnapshot.compute(allPhotos)
     }
 
     var body: some View {
@@ -168,18 +144,19 @@ struct SidebarView: View {
                     // V6.14.3: 5 个智能文件夹 label 入 Copy 字典（之前 hardcoded 中文）
                     //   String(localized:defaultValue:) — 走 xcstrings String Catalog
                     //   跟 Copy.sidebarCount / Copy.toolbarExport 同样模式
-                    sidebarRow(icon: "photo.on.rectangle.angled", label: Copy.sidebarAll, count: libraryCounts.all, target: .all)
+                    sidebarRow(icon: "photo.on.rectangle.angled", label: Copy.sidebarAll, count: libraryStats.inLibraryCount, target: .all)
                     // V5.7: 砍 sidebarRow "收藏"——侧边栏只放主导航
                     //   收藏 = 评分 ≥ 5 走筛选 popover（用户在筛选 popover 内点击 ≥5 星即可看收藏）
-                    sidebarRow(icon: "tray", label: Copy.sidebarUnfiled, count: libraryCounts.unfiled, target: .unfiled)
-                    if duplicateCount > 0 {
-                        sidebarRow(icon: "doc.on.doc", label: Copy.sidebarDuplicates, count: duplicateCount, target: .duplicates, iconColor: SidebarStyle.iconColorDuplicate)
+                    sidebarRow(icon: "tray", label: Copy.sidebarUnfiled, count: libraryStats.unfiledCount, target: .unfiled)
+                    if libraryStats.duplicatePhotoCount > 0 {
+                        sidebarRow(icon: "doc.on.doc", label: Copy.sidebarDuplicates, count: libraryStats.duplicatePhotoCount, target: .duplicates, iconColor: SidebarStyle.iconColorDuplicate)
                     }
                     // V4.1.0: 智能文件夹移进"我的图馆"section（之前是独立 section）
                     // V4.1.0: 智能文件夹移进"我的图馆"section（之前是独立 section）
                     // V6.13.4: 补 count — 智能文件夹 5/7 item 已有 count, 补最后 2 个
-                    sidebarRow(icon: "clock.arrow.circlepath", label: Copy.sidebarRecent7Days, count: libraryCounts.recent7Days, target: .recent7Days, iconColor: SidebarStyle.iconColorRecent)
-                    sidebarRow(icon: "large.circle", label: Copy.sidebarLargeFiles, count: libraryCounts.largeFiles, target: .largeFiles, iconColor: SidebarStyle.iconColorLarge)
+                    // V6.19.2: 全部走 libraryStats (PhotoStatsSnapshot 单遍 O(n) 替 5+ 遍)
+                    sidebarRow(icon: "clock.arrow.circlepath", label: Copy.sidebarRecent7Days, count: libraryStats.recent7DaysCount, target: .recent7Days, iconColor: SidebarStyle.iconColorRecent)
+                    sidebarRow(icon: "large.circle", label: Copy.sidebarLargeFiles, count: libraryStats.largeFilesCount, target: .largeFiles, iconColor: SidebarStyle.iconColorLarge)
                     // P4.1: 用户自定义 SmartFolder — 跟 built-in 智能项同 section
                     //   按 order 升序, 同 order 按 createdAt
                     //   V1 read-only (创建 UI 留 P4.1.1)
@@ -285,10 +262,10 @@ struct SidebarView: View {
                 sidebarRow(
                     icon: "trash",
                     label: Copy.sidebarRecentlyDeleted,
-                    count: libraryCounts.trashed,
+                    count: libraryStats.trashedCount,
                     target: .recentlyDeleted,
                     // V4.6.0: 改用 SidebarStyle.iconColorTrash token
-                    iconColor: libraryCounts.trashed > 0 ? SidebarStyle.iconColorTrash : nil
+                    iconColor: libraryStats.trashedCount > 0 ? SidebarStyle.iconColorTrash : nil
                 )
                 // V3.6.12: 拖拽缩略图到 trash 行直接 recycle
                 .dropDestination(for: URL.self) { urls, _ in
