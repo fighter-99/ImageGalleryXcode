@@ -66,6 +66,7 @@ struct SidebarSelectionTests {
 
     /// 复制 ContentView.serializeSelection 的简单 case 逻辑
     /// V5.8: 砍 .favorites case
+    /// P4.1: 加 .smartFolder case
     private func serializeSelectionForTesting(_ selection: SidebarSelection) -> String {
         switch selection {
         case .all: return "all"
@@ -76,6 +77,7 @@ struct SidebarSelectionTests {
         case .folder: return "folder:skip"  // 简化
         case .tag: return "tag:skip"  // 简化
         case .recentlyDeleted: return "recentlyDeleted"  // V3.6 NEW
+        case .smartFolder: return "smartFolder:skip"  // P4.1 NEW (跟 ContentView.serializeSelection 同样简化)
         }
     }
 }

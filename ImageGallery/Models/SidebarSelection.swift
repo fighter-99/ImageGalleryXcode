@@ -24,7 +24,7 @@ enum SidebarSelection: Hashable {
     case unfiled
     case duplicates
 
-    // V2: 智能文件夹
+    // V2: 智能文件夹 (内置)
     case recent7Days       // 最近 7 天导入
     case largeFiles        // 大图 > 5MB
 
@@ -35,4 +35,9 @@ enum SidebarSelection: Hashable {
 
     // V3.6 NEW: 回收站
     case recentlyDeleted
+
+    // P4.1 NEW: 用户自定义智能文件夹
+    //   case .smartFolder(UUID) — UUID 跟 V6.08 一样, 不用 @Model 引用
+    //   SmartFolder 删除时 sidebarSelection 自动失效 (fetch 不存在 → nil → 切回 .all)
+    case smartFolder(UUID)
 }

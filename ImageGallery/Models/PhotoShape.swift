@@ -12,7 +12,7 @@
 
 import SwiftUI
 
-enum PhotoShape: String, CaseIterable, Identifiable, Hashable {
+enum PhotoShape: String, CaseIterable, Identifiable, Hashable, Codable {
     case landscape  // width > height
     case portrait   // height > width
     case square     // width == height

@@ -28,6 +28,9 @@ struct SidebarView: View {
     // SwiftData 查询
     @Query(sort: \Folder.createdAt, order: .forward) private var folders: [Folder]
     @Query(sort: \Tag.createdAt, order: .forward) private var tags: [Tag]
+    // P4.1: 用户自定义智能文件夹 — order 升序
+    //   @Query 不支持 SortDescriptor 数组, 用单一 sort key, 同 order 时 SwiftData 自然 order
+    @Query(sort: \SmartFolder.order, order: .forward) private var smartFolders: [SmartFolder]
     @Query private var allPhotos: [Photo]
 
     // SwiftData 上下文
@@ -171,6 +174,12 @@ struct SidebarView: View {
                     // V6.13.4: 补 count — 智能文件夹 5/7 item 已有 count, 补最后 2 个
                     sidebarRow(icon: "clock.arrow.circlepath", label: Copy.sidebarRecent7Days, count: libraryCounts.recent7Days, target: .recent7Days, iconColor: SidebarStyle.iconColorRecent)
                     sidebarRow(icon: "large.circle", label: Copy.sidebarLargeFiles, count: libraryCounts.largeFiles, target: .largeFiles, iconColor: SidebarStyle.iconColorLarge)
+                    // P4.1: 用户自定义 SmartFolder — 跟 built-in 智能项同 section
+                    //   按 order 升序, 同 order 按 createdAt
+                    //   V1 read-only (创建 UI 留 P4.1.1)
+                    ForEach(smartFolders) { sf in
+                        smartFolderRow(sf)
+                    }
                 }
             } header: {
                 // V4.1.0: 可见 header（V3.6.25 之前被隐藏）
@@ -569,6 +578,39 @@ struct SidebarView: View {
                 Label(Copy.deleteFolder, systemImage: "trash")
             }
         }
+    }
+
+    // P4.1: 智能文件夹 row — 跟 folderSidebarRow 类似, 但用 .smartFolder(UUID) target
+    //   V1 read-only (创建 UI 留 P4.1.1), contextMenu 留删除入口
+    @ViewBuilder
+    private func smartFolderRow(_ sf: SmartFolder) -> some View {
+        sidebarRow(
+            icon: sf.iconName,
+            label: sf.name,
+            // P4.1: count = filter 命中的 photo 数 — 用 decodedFilter 调 PhotoStats.filtered
+            //   V1 简化: 全 0 (没接 filter logic, 留 P4.1.1)
+            count: 0,
+            target: .smartFolder(sf.id)
+        )
+        // P4.1.1: 右键删除入口 (跟 folder 类似)
+        .contextMenu {
+            Button(role: .destructive) {
+                deleteSmartFolder(sf)
+            } label: {
+                Label("删除智能文件夹", systemImage: "trash")
+            }
+        }
+    }
+
+    /// P4.1: 删除 SmartFolder — 跟 deleteFolder 类似, 从 modelContext 移除
+    private func deleteSmartFolder(_ sf: SmartFolder) {
+        modelContext.delete(sf)
+        // 如果当前 sidebarSelection 指向这个 SmartFolder, 自动切回 .all
+        //  (因为下次访问时 fetch 返 nil, 见 ContentViewModel.currentSmartFolder)
+        if selection == .smartFolder(sf.id) {
+            selection = .all
+        }
+        try? modelContext.save()
     }
 }
 

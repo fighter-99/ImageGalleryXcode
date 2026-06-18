@@ -47,8 +47,14 @@ struct ImageGallerySchemaTests {
     }
 
     @Test func migrationPlanStagesIsEmptyForBaselineV1() {
-        // V1 是 baseline，没有迁移阶段（空 stages 是合法的）
-        #expect(ImageGalleryMigrationPlan.stages.isEmpty)
+        // P4.1: V1 是 baseline 但 V2 加了 (V1 → V2 lightweight migration 加 SmartFolder)
+        // 旧测试期望 stages 是空, V2 后改成"至少 1 个 V1→V2 stage"
+        let stages = ImageGalleryMigrationPlan.stages
+        #expect(!stages.isEmpty, "V1→V2 至少有 1 个 migration stage")
+        // 验证 schemas 至少含 V1 + V2
+        let schemas = ImageGalleryMigrationPlan.schemas
+        #expect(schemas.contains(where: { $0 == ImageGallerySchemaV1.self }))
+        #expect(schemas.contains(where: { $0 == ImageGallerySchemaV2.self }))
     }
 
     // MARK: - Schema 实例可构造

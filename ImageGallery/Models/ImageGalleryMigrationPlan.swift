@@ -3,13 +3,7 @@
 //  ImageGallery
 //
 //  V3.6.7 NEW: SwiftData 显式 SchemaMigrationPlan。
-//
-//  V1 是 baseline，没有迁移阶段。未来加 V2 时：
-//  1. 新建 ImageGallerySchemaV2: VersionedSchema
-//  2. 在 schemas 里加 [V1, V2]
-//  3. 在 stages 里加 .migration(from: V1.self, to: V2.self)
-//
-//  当前 stages 为空（仅 V1，不需要迁移）。
+//  P4.1: V1 → V2 加 SmartFolder 表
 //
 
 import Foundation
@@ -18,14 +12,16 @@ import SwiftData
 enum ImageGalleryMigrationPlan: SchemaMigrationPlan {
     /// 所有 schema 版本（按版本顺序）
     static var schemas: [any VersionedSchema.Type] {
-        [ImageGallerySchemaV1.self]
+        [ImageGallerySchemaV1.self, ImageGallerySchemaV2.self]
     }
 
     /// 迁移阶段列表
-    /// - V1 是 baseline，无迁移阶段
-    /// - 未来 V2 在这里加 .migration(from: V1.self, to: V2.self)
+    /// - V1 → V2: lightweight (新增 SmartFolder 表, SwiftData 自动建表, 不需 custom migration)
     static var stages: [MigrationStage] {
-        // V1 是 baseline，没有迁移阶段。空数组是合法的（SwiftData 接受空 stages）。
-        return []
+        [
+            // V1 → V2: 仅新增 @Model 表, SwiftData 自带 .lightweight 推断
+            // (不需要 MigrationPlan.customMigration, 告诉 SwiftData "加表就 OK")
+            .lightweight(fromVersion: ImageGallerySchemaV1.self, toVersion: ImageGallerySchemaV2.self)
+        ]
     }
 }

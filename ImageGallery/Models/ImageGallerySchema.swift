@@ -5,26 +5,35 @@
 //  V3.6.7 NEW: 显式 SwiftData VersionedSchema。
 //
 //  设计：
-//  - V1 = 当前 baseline schema（Photo 含 trashedAt / Folder / Tag）
-//  - 未来 V2+ 在 V1 基础上加字段/关系，每个版本号对应一个 schema enum
-//  - 列出所有 model 是 V1 的"快照"，防止某天 model 改名/删除时 schema 漂移
+//  - V1 = baseline (Photo / Folder / Tag)
+//  - V2 (P4.1): 加 SmartFolder — 用户自定义智能文件夹
+//  - V3+ 继续在 V2 基础上加字段/关系
 //
 //  跟轻量级自动迁移的关系：
 //  - 之前 V3.6 加 trashedAt 用了"轻量级自动迁移"（SwiftData 自动检测新增 Optional 字段）
 //  - VersionedSchema 提供显式版本管理 + 显式 MigrationPlan，是更严谨的路径
-//  - V1 是 baseline，stages 为空。未来 V2 stages = v1→v2 显式迁移
+//  - V1 → V2 是 lightweight 级别 (新增 @Model 表), V2 stages 用 .lightweight
 //
 
 import Foundation
 import SwiftData
 
-/// V1 schema：当前 baseline
-/// 包含：Photo / Folder / Tag 三个 @Model
+/// V1 schema: baseline (V3.6.7)
 enum ImageGallerySchemaV1: VersionedSchema {
-    /// Schema 版本号（major.minor.patch）
     static var versionIdentifier: Schema.Version { Schema.Version(1, 0, 0) }
 
     static var models: [any PersistentModel.Type] {
         [Photo.self, Folder.self, Tag.self]
+    }
+}
+
+/// P4.1 NEW: V2 schema 加 SmartFolder
+/// - 跟 V1 区别: 新增 SmartFolder @Model 表
+/// - lightweight 自动迁移: SwiftData 检测新表, 自动建表
+enum ImageGallerySchemaV2: VersionedSchema {
+    static var versionIdentifier: Schema.Version { Schema.Version(2, 0, 0) }
+
+    static var models: [any PersistentModel.Type] {
+        [Photo.self, Folder.self, Tag.self, SmartFolder.self]
     }
 }

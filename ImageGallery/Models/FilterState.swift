@@ -18,7 +18,7 @@
 
 import Foundation
 
-struct FilterState: Equatable, Hashable {
+struct FilterState: Equatable, Hashable, Codable {
     var folders: Set<UUID> = []
     var tags: Set<UUID> = []
     var shapes: Set<PhotoShape> = []

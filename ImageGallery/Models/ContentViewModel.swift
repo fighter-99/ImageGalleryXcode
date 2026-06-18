@@ -277,6 +277,8 @@ final class ContentViewModel {
         case .recentlyDeleted:      return Term.recycleBin
         case .folder:               return currentFolder?.name ?? "全部照片"
         case .tag:                  return currentTag.map { "#\($0.name)" } ?? "全部照片"
+        // P4.1: 智能文件夹标题 — 跟 tag 类似, 名字存 @Model, 这里 fallback "全部照片"
+        case .smartFolder:          return "全部照片"  // 实际名字 ContentView 取
         }
     }
 
@@ -1050,6 +1052,8 @@ final class ContentViewModel {
         case .folder(let id): return "folder:\(id.uuidString)"
         case .tag(let id): return "tag:\(id.uuidString)"
         case .recentlyDeleted: return "recentlyDeleted"
+        // P4.1: 智能文件夹 UUID 字符串 (跟 folder/tag 一样模式, "smartFolder:" 前缀)
+        case .smartFolder(let id): return "smartFolder:\(id.uuidString)"
         }
     }
 
@@ -1077,6 +1081,15 @@ final class ContentViewModel {
                 let uuidStr = String(key.dropFirst(4))
                 if let uuid = UUID(uuidString: uuidStr) {
                     return .tag(uuid)
+                }
+            }
+            // P4.1: 智能文件夹恢复 (跟 folder/tag 同样 UUID 模式)
+            if key.hasPrefix("smartFolder:") {
+                let uuidStr = String(key.dropFirst(12))
+                if let uuid = UUID(uuidString: uuidStr) {
+                    // 跟 folder/tag 一样: 不 fetch, 访问时再 fetch
+                    // (SmartFolder 删除时 sidebarSelection 自动失效, fetch 返 nil → 切回 .all)
+                    return .smartFolder(uuid)
                 }
             }
             return .all
