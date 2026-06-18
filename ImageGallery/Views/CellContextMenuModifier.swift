@@ -13,6 +13,7 @@
 import SwiftUI
 import SwiftData
 import AppKit
+import UniformTypeIdentifiers  // V6.20.3: UTType for pasteboard UTI detection
 
 struct CellContextMenuModifier: ViewModifier {
     let photo: Photo
@@ -73,16 +74,21 @@ struct CellContextMenuModifier: ViewModifier {
             //   之前 cell 缺这 2 个 macOS 标准 actions，用户多选到 detail panel
             //   才能找到这些——直接右键 cell 更快
             Button {
-                // V4.16.0: 复制单张图片到剪贴板（photo.fileURL -> Data -> NSPasteboard）
-                //   ContentView 已有 batch 路径 copyToPasteboard()，单张走相同 NSPasteboard API
-                if let data = try? Data(contentsOf: photo.fileURL) {
-                    let pasteboard = NSPasteboard.general
-                    pasteboard.clearContents()
-                    pasteboard.setData(data, forType: .png)
-                    // 实际图片类型由 extension 决定——jpg/heic 不一定 .png
-                    // V4.16.0: 简化只设 fileURL promise，让接受方读原文件
-                    pasteboard.writeObjects([photo.fileURL as NSURL])
+                // V4.16.0: 复制单张图片到剪贴板（photo.fileURL promise）
+                //   V6.20.3 (code audit fix #8): 用 NSPasteboardItem 多 type 替 writeObjects([URL as NSURL])
+                //   之前 \`setData(data, forType: .png)\` 错误标 .png 类型 (jpg/heic 不一定是 png)
+                //   同步读 file Data 阻塞主线程 (50MB RAW 卡 UI)
+                //   修: 只声明 fileURL promise + image UTI, 不读 file bytes
+                //   接受方 (Finder/Photoshop/Preview) 自己 lazy load
+                let pasteboard = NSPasteboard.general
+                pasteboard.clearContents()
+                let item = NSPasteboardItem()
+                item.setString(photo.fileURL.absoluteString, forType: NSPasteboard.PasteboardType.fileURL)
+                if let uti = UTType(filenameExtension: photo.fileURL.pathExtension.lowercased()),
+                   uti.conforms(to: .image) {
+                    item.setString(photo.fileURL.absoluteString, forType: NSPasteboard.PasteboardType(uti.identifier))
                 }
+                pasteboard.writeObjects([item])
             } label: {
                 Label(Copy.copyAction, systemImage: "doc.on.doc")
             }

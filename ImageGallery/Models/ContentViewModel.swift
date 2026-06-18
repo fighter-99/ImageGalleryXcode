@@ -69,6 +69,19 @@ final class ContentViewModel {
     /// V6.19.0 (P0 #1): 分享 picker — File 菜单 ⌘⇧S / NSSharingServicePicker host
     ///   nil = picker hidden, 非空 = sheet 显示并弹 NSSharingServicePicker (AirDrop/Messages/Mail)
     var sharingURLs: [URL]?
+
+    // V6.20.3 (code audit fix #15): share request throttle — 0.3s 内重复 ⌘⇧S 忽略
+    //   @ObservationIgnored: 不需要 observation tracking (fire-and-forget throttle)
+    //   instance var (不是 static): Swift extension 不能有 stored property, instance var 放 model 上
+    @ObservationIgnored private var lastShareRequestTime: Date?
+    func shouldThrottleShareRequest() -> Bool {
+        let now = Date()
+        if let last = lastShareRequestTime, now.timeIntervalSince(last) < 0.3 {
+            return true  // throttle
+        }
+        lastShareRequestTime = now
+        return false
+    }
     /// P4.1.1: 智能文件夹创建 sheet — sidebar Library section header "+" 触发
     var showingNewSmartFolderSheet = false
     /// P4.1.1: sheet 打开时快照当前 filter — 避免 sheet 打开后用户改 toolbar filter 干扰预览
@@ -590,7 +603,23 @@ final class ContentViewModel {
         } else {
             return
         }
-        pasteboard.writeObjects(urls as [NSURL])
+        // V6.20.3 (code audit fix #8): 用 NSPasteboardItem + 多 type representation
+        //   之前 \`writeObjects(urls as [NSURL])\` 只声明 fileURL promise — Photoshop/Pixelmator
+        //   等专业 app 找不到 image bytes (kUTTypeImage), copy → paste 失败
+        //   现在每个 URL 一个 NSPasteboardItem, 声明 .fileURL (Finder 接) + auto-detect image type (专业 app 接)
+        //   writeObjects([NSPasteboardItem]) 自动 handle 多 item
+        let items: [NSPasteboardItem] = urls.map { url in
+            let item = NSPasteboardItem()
+            // fileURL promise — Finder / Messages 接
+            item.setString(url.absoluteString, forType: NSPasteboard.PasteboardType.fileURL)
+            // 自动检测 image type — Photoshop / Pixelmator / Preview 接
+            if let uti = UTType(filenameExtension: url.pathExtension.lowercased()),
+               uti.conforms(to: .image) {
+                item.setString(url.absoluteString, forType: NSPasteboard.PasteboardType(uti.identifier))
+            }
+            return item
+        }
+        pasteboard.writeObjects(items)
         showToast(urls.count == 1 ? "已复制 1 张图片" : "已复制 \(urls.count) 张图片", type: .success)
     }
 
@@ -629,8 +658,14 @@ final class ContentViewModel {
             message = "已选 \(photos.count) 张照片，第一张 \(photos[0].filename)"
         }
         let utterance = AVSpeechUtterance(string: message)
-        utterance.voice = AVSpeechSynthesisVoice(language: "zh-CN")
+        // V6.20.3 (code audit fix #13): voice fallback chain — zh-CN → 当前 locale → en-US → system default
+        //   之前 ?? 链: zh-CN ?? locale ?? "en-US" — 如果 zh-CN 没装 + locale nil + en-US 也没装, voice = nil
+        //   AVSpeechSynthesizer 用系统默认 voice (可能英文, 用户无感)
+        //   现在 fallback 到 AVSpeechSynthesisVoice() 系统默认 + zh-CN 优先
+        let voice = AVSpeechSynthesisVoice(language: "zh-CN")
             ?? AVSpeechSynthesisVoice(language: Locale.current.language.languageCode?.identifier ?? "en-US")
+            ?? AVSpeechSynthesisVoice()
+        utterance.voice = voice
         utterance.rate = AVSpeechUtteranceDefaultSpeechRate
         // V6.20.2 (code audit fix #4): 用 stable synthesizer 实例 + stop 上一个 utterance
         //   之前 \`AVSpeechSynthesizer().speak()\` 每次新建实例, 上一个 utterance 被 cut off + audio glitch

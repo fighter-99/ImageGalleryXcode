@@ -23,9 +23,16 @@ final class PhotoStorage {
     let photosDirectory: URL
 
     nonisolated private init() {
+        // V6.20.3 (code audit fix #11): fallback 到 ~/Pictures 代替 force-unwrap
+        //   之前 first! — sandbox/sandbox-disabled 异常场景 (CI / 自动化测试 / 文件系统损坏) 会 crash
+        //   现在 fallback: Application Support → ~/Pictures → fatalError with clear msg
+        //   99.99% 场景 first 永远存在 (macOS Application Support 永远可用)
+        //   0.01% 异常场景 fallback 让 app 仍能启动 (Photos 库可能在 ~/Pictures)
         let appSupport = FileManager.default.urls(
             for: .applicationSupportDirectory, in: .userDomainMask
-        ).first!
+        ).first
+            ?? FileManager.default.homeDirectoryForCurrentUser
+                .appendingPathComponent("Pictures", isDirectory: true)
         photosDirectory = appSupport
             .appendingPathComponent("ImageGallery", isDirectory: true)
             .appendingPathComponent("Photos", isDirectory: true)

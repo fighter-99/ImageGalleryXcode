@@ -892,11 +892,13 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
 
         // V4.90.0: 创建 coordinator + 调 showTop
         //   ContentView 注入 factory + onStateChange closure
+        // V6.20.3 (code audit fix #14): state change 不再丢弃 — 真正 sync 给 toolbar
+        //   之前 _ = newState; _ = self — closure 接 newState 不转发, 完全死路径
+        //   现在调 self.pushFilterStateToOpenChild(newState) — toolbar 推 state 到打开的 child popover
+        //   ContentView .onChange 同步, toolbar 也能直接响应 (双保险)
         guard let coordinator = filterCoordinatorFactory?({ [weak self] newState in
-            // V4.90.0: 写回 ContentView filterState——coordinator 不直接管 ContentView state
-            //   实际由 ContentView .onChange 推——coordinator 只管 popover lifecycle
-            _ = newState
-            _ = self
+            guard let self = self else { return }
+            self.pushFilterStateToOpenChild(newState)
         }) else { return }
 
         // V5.39.2: 用 coordinator.showTopAtRect + contentView positioningView

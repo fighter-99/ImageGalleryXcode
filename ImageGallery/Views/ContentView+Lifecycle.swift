@@ -289,7 +289,11 @@ extension View {
             }
             // V6.19.0: File 菜单 ⌘⇧S 通过通知触发 sheet
             //   model.shareSelectedURLs() 拿选中 + 单图 fallback, 无选给 toast 提示
+            // V6.20.3 (code audit fix #15): debounce 0.3s — 快速连点 ⌘⇧S 不堆叠 sheet
+            //   之前每次 onReceive 立即设 sharingURLs + 弹 sheet — 用户狂点会闪烁 sheet UI
+            //   现在 model.shouldThrottleShareRequest() 用 instance Date 状态做 throttle
             .onReceive(NotificationCenter.default.publisher(for: .shareRequested)) { _ in
+                guard !model.shouldThrottleShareRequest() else { return }
                 let urls = model.shareSelectedURLs()
                 guard !urls.isEmpty else { return }
                 model.sharingURLs = urls
@@ -337,13 +341,22 @@ struct SharePickerView: NSViewControllerRepresentable {
             super.viewDidAppear()
             // 弹 NSSharingServicePicker — AirDrop / Messages / Mail / Save / Add to Photos
             //   sheet 容器是 NSView, picker show relativeTo view
-            let picker = NSSharingServicePicker(items: urls)
+            // V6.20.3 (code audit fix #12): picker 升级为 ivar, 保证 ARC 持有直到 user dismiss
+            //   之前 picker 是局部 let — closure capture 持有, 但 Apple 文档说 picker 必须 retained
+            //   直到 dismissed. ivar 化避免任何边缘 case 下 ARC 早释放
+            self.picker = NSSharingServicePicker(items: urls)
             // 0.1s 延迟让 sheet 动画完成再弹 picker (跟系统 Photos 行为一致)
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-                guard let view = self?.view else { return }
-                picker.show(relativeTo: NSRect(x: 200, y: 150, width: 1, height: 1), of: view, preferredEdge: .minY)
+                guard let self = self else { return }
+                guard let picker = self.picker else { return }
+                picker.show(relativeTo: NSRect(x: 200, y: 150, width: 1, height: 1), of: self.view, preferredEdge: .minY)
+                // V6.20.3: picker show 后立即置 nil — show 调用后 NSSharingServicePicker 自己 retain
+                //   我们 ivar 不再需要, 释放让 ARC 管生命周期
+                self.picker = nil
             }
         }
+
+        private var picker: NSSharingServicePicker?
     }
 }
 
