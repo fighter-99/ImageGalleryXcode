@@ -88,9 +88,17 @@ struct RecycleBinServiceIntegrationTests {
         )
         let context = container.mainContext
 
+        // V6.14.7: 真建临时文件 + defer cleanup — V6.08 设计 (跟 V6.13.1 permanentDelete 同根)
+        //   purge 先删文件, 失败 → 保留 DB 记录让用户重试 (避免孤儿文件)
+        //   之前用不存在的 /tmp 路径 → delete 失败 → DB 记录保留 → 测期待 "找不到" 失败
+        //   production 不改, test 改跟 V6.13.1 一致
+        let photoURL = URL(fileURLWithPath: "/tmp/RecycleBinPurgeTest_\(UUID().uuidString).jpg")
+        FileManager.default.createFile(atPath: photoURL.path, contents: Data())
+        defer { try? FileManager.default.removeItem(at: photoURL) }
+
         let photo = Photo(
             filename: "p.jpg",
-            fileURL: URL(fileURLWithPath: "/tmp/RecycleBinPurgeTest_\(UUID().uuidString).jpg"),
+            fileURL: photoURL,
             fileSize: 0, width: 0, height: 0
         )
         context.insert(photo)

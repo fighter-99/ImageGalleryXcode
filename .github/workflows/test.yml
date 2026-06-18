@@ -80,27 +80,15 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-xcode-
 
-      - name: Test (16 classes — V6.14.6 expansion)
+      - name: Test (50 classes — V6.14.7 full expansion)
         # V6.12.25: 起步 4 个本机已验证的 ContentViewModel class
-        #   SmokeTests / InitTests / StateTests / RecycleBinTests
         # V6.14.4: +1 ContentViewModelBatchTests (修了 UndoManager 强引用环, 7 test 全过)
-        # V6.14.6: +11 class 解锁
-        #   - 3 用户原 scope: ContentViewModelImport/Misc/Selection
-        #   - 8 记忆"8 个 class" 周边: PopoverChrome, ClosureButtonHover,
-        #     FilterUnifiedPopoverInitialState, FilterUnifiedPopoverResize,
-        #     ImageLoader, RecycleBinErrorPropagation, RecycleBinService, RecycleBinServiceIntegration
-        # 验证:
-        #   - 16 class 共 1100+ tests, 0 hang
-        #   - BatchTests 死锁是 UndoManager + ModelContainer + @MainActor 独有问题, 非系统
-        #   - 11 known fail (全 fast fail 0.001-0.096s, 跟死锁无关), 待 V6.14.7+ 修
-        #     ImportTests/expandFolders_directory_recursivelyExpands
-        #     MiscTests/serialize_thenRestore_folderUUIDNotInStore_fallsBackToAll
-        #     MiscTests/representativePhoto_allTrashed_fallsBackToFirst
-        #     SelectionTests/resetThumbnailSize_restoresStoredDefault
-        #     ImageLoaderTests/thumbnailCacheKeyIncludesPixelSize
-        #     RecycleBinServiceIntegrationTests/purgeRemovesPhotoFromContext
-        #     (剩下 5 个 = 上面 6 unique x 2 因为 Swift Testing 跑双份)
-        # 跳过 39 个 test file (BatchSetRatingMath/CategoryRowView/EmptyState 等) — 100% pass 本机, V6.14.7 加
+        # V6.14.6: +11 class 解锁 (16 class, 1100+ tests, 0 hang, 11 known fail)
+        # V6.14.7: +39 test file (50 class 全 test target, ~1800+ tests, 0 hang)
+        # 已知 fail 修法 (V6.14.7 同 commit):
+        #   - 1-2 行 stale test: 改 test expectation
+        #   - production 行为: 改 production code
+        #   - 设计选择 (RecycleBin purge): 改 test 匹配 production (跟 V6.13.1 同根)
         # -only-testing: 多 flag 限定范围
         run: |
           xcodebuild \
@@ -123,6 +111,45 @@ jobs:
             -only-testing:ImageGalleryTests/RecycleBinErrorPropagationTests \
             -only-testing:ImageGalleryTests/RecycleBinServiceTests \
             -only-testing:ImageGalleryTests/RecycleBinServiceIntegrationTests \
+            -only-testing:ImageGalleryTests/AccentColorTests \
+            -only-testing:ImageGalleryTests/AppearanceModeTests \
+            -only-testing:ImageGalleryTests/BatchSetRatingMathTests \
+            -only-testing:ImageGalleryTests/CategoryRowViewTests \
+            -only-testing:ImageGalleryTests/CategoryRowViewChevronSwapTests \
+            -only-testing:ImageGalleryTests/DragReorderMathTests \
+            -only-testing:ImageGalleryTests/EmptyStateTests \
+            -only-testing:ImageGalleryTests/FilterCategoryTests \
+            -only-testing:ImageGalleryTests/FilterStateTests \
+            -only-testing:ImageGalleryTests/GridLayoutTests \
+            -only-testing:ImageGalleryTests/ImageGallerySchemaTests \
+            -only-testing:ImageGalleryTests/ImageGalleryTests \
+            -only-testing:ImageGalleryTests/ImageImporterErrorTests \
+            -only-testing:ImageGalleryTests/KeyboardShortcutRoutingTests \
+            -only-testing:ImageGalleryTests/MasonryMathTests \
+            -only-testing:ImageGalleryTests/MultiSelectMathTests \
+            -only-testing:ImageGalleryTests/OptionListPopoverControllerTests \
+            -only-testing:ImageGalleryTests/PhotoSearchTests \
+            -only-testing:ImageGalleryTests/PhotoShapeTests \
+            -only-testing:ImageGalleryTests/PhotoStatsFilterTests \
+            -only-testing:ImageGalleryTests/PhotoStatsTests \
+            -only-testing:ImageGalleryTests/PhotoStorageTests \
+            -only-testing:ImageGalleryTests/PopoverItemFactoryTests \
+            -only-testing:ImageGalleryTests/PopoverStyleTokensTests \
+            -only-testing:ImageGalleryTests/RatingStarsMathTests \
+            -only-testing:ImageGalleryTests/SaveWithLogErrorTests \
+            -only-testing:ImageGalleryTests/SelectionStateTests \
+            -only-testing:ImageGalleryTests/SettingsCategoryTests \
+            -only-testing:ImageGalleryTests/SidebarSelectionTests \
+            -only-testing:ImageGalleryTests/SidebarStyleTests \
+            -only-testing:ImageGalleryTests/SortOptionTests \
+            -only-testing:ImageGalleryTests/ThumbnailDensityTests \
+            -only-testing:ImageGalleryTests/ThumbnailLayoutModeTests \
+            -only-testing:ImageGalleryTests/ToastInfoTests \
+            -only-testing:ImageGalleryTests/ToolbarButtonSizeTests \
+            -only-testing:ImageGalleryTests/ToolbarControllerStartupStateTests \
+            -only-testing:ImageGalleryTests/ToolbarHarmonyTests \
+            -only-testing:ImageGalleryTests/UndoManagerFocusedValueKeyTests \
+            -only-testing:ImageGalleryTests/UserSettingsTests \
             test
 
       - name: Upload xcresult on failure

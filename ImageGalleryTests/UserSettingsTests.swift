@@ -14,28 +14,32 @@ import Foundation
 @MainActor
 struct UserSettingsTests {
 
-    // 测试 setup/teardown——每个 test 前后清 UserDefaults 防污染
-    // 用 .userDomainMask + removePersistentDomain 清空标准 suite
-    private func clearUserDefaults() {
-        if let bundleID = Bundle.main.bundleIdentifier {
-            UserDefaults.standard.removePersistentDomain(forName: bundleID)
+    // V6.14.7: 改 isolatedDefaults pattern (跟 ContentViewModel*Tests 同源)
+    //   之前用 UserDefaults.standard + clearUserDefaults helper, 并行 test 互相污染
+    //   跟 ImageLoaderTests 的 ThumbnailCache.shared 撞车 — singleton 状态共享
+    //   改 static let isolatedDefaults: UserDefaults = FakeUserDefaults()
+    //   每 test 显式传 UserSettings(defaults: isolatedDefaults)
+    @MainActor
+    private static let isolatedDefaults: UserDefaults = FakeUserDefaults()
+    private static let userSettingsKeys: [String] = [
+        "viewModeRaw", "showSidebar", "showDetail", "accentColorID",
+        "trashRetentionDays", "appearanceMode", "thumbnailSize",
+        "sidebarSelection", "sortOption", "thumbnailLayoutMode",
+        "sidebarColumnWidth", "detailColumnWidth", "autoDeduplicate",
+        "autoGenerateThumbnails", "defaultExportFormat",
+        "defaultExportQuality", "scrollAnchorPhotoID"
+    ]
+    private static func isolatedSettings() -> UserSettings {
+        for key in userSettingsKeys {
+            isolatedDefaults.removeObject(forKey: key)
         }
-        // 同时清标准 keys——防遗留
-        for key in [
-            "viewModeRaw", "showSidebar", "showDetail", "accentColorID",
-            "trashRetentionDays", "appearanceMode", "thumbnailSize",
-            "sidebarSelection", "sortOption", "thumbnailLayoutMode",
-            "sidebarColumnWidth", "detailColumnWidth", "scrollAnchorPhotoID"
-        ] {
-            UserDefaults.standard.removeObject(forKey: key)
-        }
+        return UserSettings(defaults: isolatedDefaults)
     }
 
     // MARK: - init() 行为
 
     @Test func init_withEmptyUserDefaults_usesFieldDefaults() {
-        clearUserDefaults()
-        let settings = UserSettings()
+        let settings = Self.isolatedSettings()
         #expect(settings.viewModeRaw == ViewMode.grid.rawValue)
         #expect(settings.showSidebar == true)
         // V5.60-1: showDetail 默认改 true (用户要求"详情面板常驻")
@@ -53,9 +57,8 @@ struct UserSettingsTests {
     }
 
     @Test func init_withPopulatedUserDefaults_readsStoredValues() {
-        clearUserDefaults()
-        // 提前 set UserDefaults 几个 key——验证 init() 读到了
-        let defaults = UserDefaults.standard
+        // 提前 set isolatedDefaults 几个 key——验证 init() 读到了
+        let defaults = Self.isolatedDefaults
         defaults.set(ViewMode.list.rawValue, forKey: "viewModeRaw")
         defaults.set(false, forKey: "showSidebar")
         defaults.set(true, forKey: "showDetail")
@@ -63,7 +66,7 @@ struct UserSettingsTests {
         defaults.set(150.0, forKey: "thumbnailSize")
         defaults.set("uuid-12345", forKey: "scrollAnchorPhotoID")
 
-        let settings = UserSettings()
+        let settings = UserSettings(defaults: defaults)
         #expect(settings.viewModeRaw == ViewMode.list.rawValue, "viewModeRaw 应读 UserDefaults")
         #expect(settings.showSidebar == false, "showSidebar 应读 UserDefaults")
         #expect(settings.showDetail == true, "showDetail 应读 UserDefaults")
@@ -73,36 +76,32 @@ struct UserSettingsTests {
     }
 
     @Test func init_withEmptyScrollAnchorString_treatsAsNil() {
-        clearUserDefaults()
         // 空字符串应当 nil 处理 (避免脏数据)
-        UserDefaults.standard.set("", forKey: "scrollAnchorPhotoID")
-        let settings = UserSettings()
+        Self.isolatedDefaults.set("", forKey: "scrollAnchorPhotoID")
+        let settings = UserSettings(defaults: Self.isolatedDefaults)
         #expect(settings.scrollAnchorPhotoID == nil, "空字符串应被当 nil 处理")
     }
 
     // MARK: - didSet 写回 UserDefaults
 
     @Test func setViewModeRaw_writesToUserDefaults() {
-        clearUserDefaults()
-        let settings = UserSettings()
+        let settings = Self.isolatedSettings()
         settings.viewModeRaw = ViewMode.timeline.rawValue
-        #expect(UserDefaults.standard.string(forKey: "viewModeRaw") == ViewMode.timeline.rawValue,
+        #expect(Self.isolatedDefaults.string(forKey: "viewModeRaw") == ViewMode.timeline.rawValue,
                 "改 viewModeRaw 后 didSet 应写回 UserDefaults")
     }
 
     @Test func setShowSidebar_writesToUserDefaults() {
-        clearUserDefaults()
-        let settings = UserSettings()
+        let settings = Self.isolatedSettings()
         settings.showSidebar = false
-        #expect(UserDefaults.standard.bool(forKey: "showSidebar") == false,
+        #expect(Self.isolatedDefaults.bool(forKey: "showSidebar") == false,
                 "改 showSidebar 后 didSet 应写回 UserDefaults")
     }
 
     // MARK: - reset() 行为
 
     @Test func reset_restoresAllTwelveFieldsToDefault() {
-        clearUserDefaults()
-        let settings = UserSettings()
+        let settings = Self.isolatedSettings()
 
         // 改一堆值 (非默认)
         settings.viewModeRaw = ViewMode.timeline.rawValue
@@ -136,8 +135,7 @@ struct UserSettingsTests {
     }
 
     @Test func reset_preservesScrollAnchorPhotoID() {
-        clearUserDefaults()
-        let settings = UserSettings()
+        let settings = Self.isolatedSettings()
         settings.scrollAnchorPhotoID = "photo-uuid-abc"
 
         settings.reset()
@@ -147,8 +145,7 @@ struct UserSettingsTests {
     }
 
     @Test func reset_writesToUserDefaultsViaDidSet() {
-        clearUserDefaults()
-        let settings = UserSettings()
+        let settings = Self.isolatedSettings()
         // 改值触发 didSet
         settings.viewModeRaw = ViewMode.timeline.rawValue
         settings.thumbnailSize = 250.0
@@ -156,7 +153,7 @@ struct UserSettingsTests {
         settings.reset()
 
         // 验证 reset() 内部赋值也走 didSet → UserDefaults 同步回滚
-        #expect(UserDefaults.standard.string(forKey: "viewModeRaw") == ViewMode.grid.rawValue)
-        #expect(UserDefaults.standard.double(forKey: "thumbnailSize") == 200.0)
+        #expect(Self.isolatedDefaults.string(forKey: "viewModeRaw") == ViewMode.grid.rawValue)
+        #expect(Self.isolatedDefaults.double(forKey: "thumbnailSize") == 200.0)
     }
 }

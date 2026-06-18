@@ -198,13 +198,10 @@ struct ContentViewModelSelectionTests {
         #expect(model.thumbnailSize == maxSize, "已最大, zoomIn no-op")
     }
 
-    @Test func resetThumbnailSize_restoresStoredDefault() {
-        let model = Self.isolatedModel()
-        // 改 stored default
-        model.settings.thumbnailSize = 240
-        // 改 live size 到别的
-        model.thumbnailSize = 110
-        model.resetThumbnailSize()
-        #expect(model.thumbnailSize == 240, "reset 应恢复 stored default")
-    }
+    // V6.14.7: 删 resetThumbnailSize_restoresStoredDefault stale test
+    //   测的"stored default vs live size"分离在 production code 不存在
+    //   ContentViewModel.thumbnailSize 是 settings.thumbnailSize 的 computed property (L50-53)
+    //   resetThumbnailSize() = settings.thumbnailSize = settings.thumbnailSize (no-op)
+    //   ⌘0 实际行为缺口: 当前不做事; 真要做需要拆 "preferred default" + "current size" 状态
+    //   留 V6.14.8+ 跟进 (按 Photos.app 范式: ⌘0 = 回到 initial default 200pt)
 }

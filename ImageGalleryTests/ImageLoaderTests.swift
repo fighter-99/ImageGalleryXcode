@@ -18,7 +18,9 @@ struct ImageLoaderTests {
     @Test func thumbnailCacheKeyIncludesPixelSize() {
         // V5.17: 验证不同 maxPixelSize 生成不同 cache key
         // 600px 旧 entry 与 1200px 新 entry 共存不冲突
-        let url = URL(fileURLWithPath: "/tmp/test_image.jpg")
+        // V6.14.7: 用 UUID 唯一 URL — ThumbnailCache.shared 是 singleton, 并行 test 共享
+        //   之前固定 "/tmp/test_image.jpg" 跟 thumbnailCacheKeyIncludesURL 撞, flaky fail
+        let url = URL(fileURLWithPath: "/tmp/cache_key_\(UUID().uuidString).jpg")
         let _ = ThumbnailCache.shared  // 确保 init 触发
 
         // 通过 ImageLoader 间接验 key（不能直接调 private makeKey）
@@ -39,8 +41,9 @@ struct ImageLoaderTests {
 
     @Test func thumbnailCacheKeyIncludesURL() {
         // V5.17: 不同 URL 独立缓存
-        let url1 = URL(fileURLWithPath: "/tmp/cache_test_a.jpg")
-        let url2 = URL(fileURLWithPath: "/tmp/cache_test_b.jpg")
+        // V6.14.7: 用 UUID 唯一 URL 防并行 test 污染
+        let url1 = URL(fileURLWithPath: "/tmp/cache_test_\(UUID().uuidString)_a.jpg")
+        let url2 = URL(fileURLWithPath: "/tmp/cache_test_\(UUID().uuidString)_b.jpg")
         let imgA = NSImage(size: NSSize(width: 10, height: 10))
         ThumbnailCache.shared.set(imgA, url: url1, maxPixelSize: 600)
 

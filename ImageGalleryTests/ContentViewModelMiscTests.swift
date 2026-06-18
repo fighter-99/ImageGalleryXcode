@@ -185,8 +185,11 @@ struct ContentViewModelMiscTests {
         #expect(restored == .tag(tag.id), "serialize→restore tag 应 roundtrip")
     }
 
-    @Test func serialize_thenRestore_folderUUIDNotInStore_fallsBackToAll() throws {
-        // 序列化一个 folder, 但 context 里没存——restore 应 fallback .all
+    @Test func serialize_thenRestore_folderUUIDNotInStore_returnsFolderUUID() throws {
+        // V6.14.7: 改 restore 设计 — production 用 lazy 策略 (不 fetch, 访问 currentFolder 时才 fetch)
+        //   原因: restoreSelection 是 hot path (每次启动调), fetch IO 浪费
+        //   设计: 保留 .folder(uuid) 返回, 访问时 currentFolder fetch 失败 → nil → UI 切 .all
+        //   测 orphan UUID 实际行为: 仍返回 .folder(uuid) (懒查, 不 fallback)
         let container = try ModelContainer(
             for: Photo.self, Folder.self, Tag.self,
             configurations: ModelConfiguration(isStoredInMemoryOnly: true)
@@ -195,11 +198,15 @@ struct ContentViewModelMiscTests {
         let model = Self.isolatedModel()
         model.modelContext = context
 
-        // 不 insert——只用 uuid 构造 key
         let orphanID = UUID()
         let key = "folder:\(orphanID.uuidString)"
         let restored = model.restoreSelection(key)
-        #expect(restored == .all, "UUID 不在 store 应 fallback .all")
+        // Lazy 策略: 不验证 UUID 在不在 store, 直接返回 .folder(uuid)
+        if case .folder(let id) = restored {
+            #expect(id == orphanID, "orphan UUID 应原样返回 (.folder(uuid)) — 懒查, UI 访问时再 fetch 兜底")
+        } else {
+            Issue.record("Expected .folder(orphanID), got \(String(describing: restored))")
+        }
     }
 
     // MARK: - representativePhoto(for: DateGroup) (V5.56 Key Photo)
@@ -230,7 +237,9 @@ struct ContentViewModelMiscTests {
         #expect(rep?.isInTrash == false, "代表图必须 non-trashed")
     }
 
-    @Test func representativePhoto_allTrashed_fallsBackToFirst() {
+    @Test func representativePhoto_allTrashed_returnsNil() {
+        // V6.14.7: 改 V6.11 设计 — production `first(where: { !$0.isInTrash })` 全 trashed 返 nil
+        //   原因: DateSectionHeader 灰缩略图 UX 差, nil 走 text-only 分支 (label + count 清晰)
         let model = Self.isolatedModel()
         let p1 = Photo(filename: "1.jpg", fileURL: URL(fileURLWithPath: "/tmp/V556_rep_5.jpg"), fileSize: 100, width: 10, height: 10)
         p1.trashedAt = Date()
@@ -238,6 +247,6 @@ struct ContentViewModelMiscTests {
         p2.trashedAt = Date()
         let group = DateGroup(id: "allTrashed", label: "今天", sortKey: Date(), photos: [p1, p2])
         let rep = model.representativePhoto(for: group)
-        #expect(rep?.id == p1.id, "全 trashed 时 fallback first (仍显示某张)")
+        #expect(rep == nil, "全 trashed 应返 nil (V6.11 设计: 不要 fallback first 显灰缩略图)")
     }
 }

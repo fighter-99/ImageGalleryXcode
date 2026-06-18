@@ -180,7 +180,7 @@ struct ContentViewModelImportTests {
         try FileManager.default.createDirectory(at: tmpDir, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: tmpDir) }
 
-        // 在 tmpDir 下创建 2 个子文件 + 1 个子目录（递归会找到 2 个文件）
+        // 在 tmpDir 下创建 2 个子文件 + 1 个子目录（递归会找到 3 个文件）
         let f1 = tmpDir.appendingPathComponent("a.jpg")
         let f2 = tmpDir.appendingPathComponent("b.jpg")
         let subDir = tmpDir.appendingPathComponent("sub")
@@ -191,10 +191,13 @@ struct ContentViewModelImportTests {
         FileManager.default.createFile(atPath: f3.path, contents: Data())
 
         let result = ContentViewModel.expandFolders([tmpDir])
+        // V6.14.7: 改用 basename 验证 — production expandFolders 用 resolvingSymlinksInPath
+        //   做 visited, result URL path 跟 test f1 (unresolved) 的 URL.== 不一定 match
+        //   (e.g. /var/folders/.../a.jpg vs /private/var/folders/.../a.jpg)
+        //   basenames 不受 symlink 解析影响, 是稳的验证方式
+        let resultBasenames = Set(result.map { $0.lastPathComponent })
         #expect(result.count == 3, "应递归找到 3 个文件")
-        #expect(result.contains(f1))
-        #expect(result.contains(f2))
-        #expect(result.contains(f3))
+        #expect(resultBasenames == ["a.jpg", "b.jpg", "c.jpg"], "应找到 3 个 jpg 文件 (a/b/c)")
     }
 
     @Test func handleDrop_providersArray_returnsTrue() throws {

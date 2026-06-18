@@ -126,33 +126,37 @@ struct OptionListPopoverControllerTests {
     //   V5.96 stored property 赋值不触发 AppKit 重绘——用户报告: 工具栏更新, popover 视觉冻结
     //   V5.97 didSet → refreshSelectionVisuals() 立即遍历 stackView 子视图
     @Test func settingCurrentItemRefreshesRowVisuals() {
+        // V6.14.7: 重写 — V6.12.14 删 .square 加 .list, 现 2 case (.squareFit / .list)
+        //   之前 V5.97 写的 filter 都用 .squareFit (应该是 .square vs .squareFit), setter 写 .squareFit
+        //   (跟初始同值, didSet 不触发) → no-op, 测期待新选中=旧选中矛盾
         let vc = OptionListPopoverController<ThumbnailLayoutMode>(currentItem: .squareFit)
         _ = vc.view  // 强制 loadView 跑, 才有 stackView 跟 subviews
 
-        // 初始: .square 选中, .squareFit 取消
+        // 初始: .squareFit 选中, .list 取消
         let initialStates = vc._rowStatesForTesting
-        let initSquare = try? #require(initialStates.first { $0.item == .squareFit })
+        #expect(initialStates.count == 2, "V6.12.14: 2 case layoutMode 应出 2 row")
         let initFit = try? #require(initialStates.first { $0.item == .squareFit })
-        #expect(initSquare?.isCheckmarkHidden == false, "V5.97: 初始 .square ✓ 应显示")
-        #expect(initSquare?.hasSelectionBackground == true, "V5.97: 初始 .square bg 应有 accent")
-        #expect(initSquare?.iconTintIsAccent == true, "V5.97: 初始 .square icon 应 accent")
-        #expect(initFit?.isCheckmarkHidden == true, "V5.97: 初始 .squareFit ✓ 应隐藏")
-        #expect(initFit?.hasSelectionBackground == false, "V5.97: 初始 .squareFit bg 应为空")
-        #expect(initFit?.iconTintIsAccent == false, "V5.97: 初始 .squareFit icon 应 labelColor")
+        let initList = try? #require(initialStates.first { $0.item == .list })
+        #expect(initFit?.isCheckmarkHidden == false, "V5.97: 初始 .squareFit ✓ 应显示")
+        #expect(initFit?.hasSelectionBackground == true, "V5.97: 初始 .squareFit bg 应有 accent")
+        #expect(initFit?.iconTintIsAccent == true, "V5.97: 初始 .squareFit icon 应 accent")
+        #expect(initList?.isCheckmarkHidden == true, "V5.97: 初始 .list ✓ 应隐藏")
+        #expect(initList?.hasSelectionBackground == false, "V5.97: 初始 .list bg 应为空")
+        #expect(initList?.iconTintIsAccent == false, "V5.97: 初始 .list icon 应 labelColor")
 
-        // 切到 .squareFit——didSet → refreshSelectionVisuals() 同步刷新
-        vc.currentItem = .squareFit
+        // 切到 .list——didSet → refreshSelectionVisuals() 同步刷新
+        vc.currentItem = .list
 
-        #expect(vc.currentItem == .squareFit, "V5.97: setter 应存新值")
+        #expect(vc.currentItem == .list, "V5.97: setter 应存新值")
         let updatedStates = vc._rowStatesForTesting
-        let afterSquare = try? #require(updatedStates.first { $0.item == .squareFit })
         let afterFit = try? #require(updatedStates.first { $0.item == .squareFit })
-        #expect(afterSquare?.isCheckmarkHidden == true, "V5.97: 旧选中 ✓ 应隐藏")
-        #expect(afterSquare?.hasSelectionBackground == false, "V5.97: 旧选中 bg 应清空")
-        #expect(afterSquare?.iconTintIsAccent == false, "V5.97: 旧选中 icon 应变 labelColor")
-        #expect(afterFit?.isCheckmarkHidden == false, "V5.97: 新选中 ✓ 应显示")
-        #expect(afterFit?.hasSelectionBackground == true, "V5.97: 新选中 bg 应有 accent")
-        #expect(afterFit?.iconTintIsAccent == true, "V5.97: 新选中 icon 应变 accent")
+        let afterList = try? #require(updatedStates.first { $0.item == .list })
+        #expect(afterFit?.isCheckmarkHidden == true, "V5.97: 旧选中 ✓ 应隐藏")
+        #expect(afterFit?.hasSelectionBackground == false, "V5.97: 旧选中 bg 应清空")
+        #expect(afterFit?.iconTintIsAccent == false, "V5.97: 旧选中 icon 应变 labelColor")
+        #expect(afterList?.isCheckmarkHidden == false, "V5.97: 新选中 ✓ 应显示")
+        #expect(afterList?.hasSelectionBackground == true, "V5.97: 新选中 bg 应有 accent")
+        #expect(afterList?.iconTintIsAccent == true, "V5.97: 新选中 icon 应变 accent")
     }
 
     // V5.97 invariant: 4 档 density 刷新也工作——验证 for 循环对多 row 正确
