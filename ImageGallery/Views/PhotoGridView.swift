@@ -535,6 +535,8 @@ struct PhotoGridView: View {
             }
             .animation(Animations.medium, value: photos.count)
         }
+        // V6.17.0.4: 圈选激活时禁 ScrollView 滚动 — 避免 content 跟 mouse 错位
+        .scrollDisabled(isMarqueeActive)
         // V5.61-1: .scrollPosition(id: $scrollAnchorID) 自动追踪顶部可见 item
         .scrollPosition(id: $scrollAnchorID)
         // V5.61-1: onChange 写回 model (auto-save)——SwiftUI 每次滚动变化都触发
@@ -566,6 +568,10 @@ struct PhotoGridView: View {
     ) -> some View {
         // V5.61-1: 改用 .scrollPosition(id:)——同 date grouped 模式
         //   masonryRowsView 内部用 ForEach 渲染 Photo, swiftUI 自动找 .id 锚点
+        // V6.17.0.4: .scrollDisabled(isMarqueeActive) — 圈选激活时 ScrollView 不滚动
+        //   之前同时拖 scroll + marquee → content 跟着 scroll 动, rect (在 content 空间) 跟
+        //   mouse (在 screen 空间) 错位 → 视觉滞后 / 准确度差
+        //   disable scroll 后, content 不动, rect 跟 mouse 1:1 对齐
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 masonryRowsView(
@@ -609,6 +615,8 @@ struct PhotoGridView: View {
             }
             .animation(Animations.medium, value: photos.count)
         }
+        // V6.17.0.4: 圈选激活时禁 ScrollView 滚动 — 避免 content 跟 mouse 错位
+        .scrollDisabled(isMarqueeActive)
         // V5.61-1: masonryRowsView 内部 Photo 渲染用 .id(photo.id) 锚定
         .scrollPosition(id: $scrollAnchorID)
         .onChange(of: scrollAnchorID) { _, new in

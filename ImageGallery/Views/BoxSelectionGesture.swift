@@ -52,6 +52,10 @@ extension View {
         selection: Binding<SelectionState>,
         cellFrames: [CellFrame]
     ) -> some View {
+        // V6.17.0.4: 仍用 simultaneousGesture — cell 的 .draggable 不被挡 (P3.1.2 item drag)
+        //   scroll disable 在 caller (masonry funcs) 加 — 圈选时 ScrollView .scrollDisabled(true)
+        //   之前没 disable scroll → 拖动时 content 跟着 scroll, rect (在 content 空间) 跟 mouse
+        //   (在 screen 空间) 错位 → 用户感觉 rect 不跟手 / 准确度差
         simultaneousGesture(
             DragGesture(minimumDistance: 4, coordinateSpace: .named("com.iridescent.ImageGallery.photoGrid"))
                 .onChanged { value in
