@@ -38,6 +38,10 @@ struct PhotoGridView: View {
     // 双向绑定
     // V3.6.52: 3 个绑定合并为 1 个 SelectionState binding——单一真相源
     @Binding var selection: SelectionState
+    // V6.17.0: 矩形圈选 state — 移到 PhotoGridView 内部 (cell frames 在 grid-local 坐标,
+    //   gesture 跟 cell frames 同一坐标系才能 hit test)
+    @Binding var isMarqueeActive: Bool
+    @Binding var marqueeRect: CGRect?
 
     // 筛选条件
     let folder: Folder?
@@ -318,6 +322,17 @@ struct PhotoGridView: View {
             let rowSpacing: CGFloat = Spacing.md    // V5.39.1: 8 → 12 (Spacing.md)
             let cellSpacing: CGFloat = 8            // V5.37: 4 → 8 保持
 
+            // V6.17.0: 算 cell frames — 给矩形圈选 hit test 用
+            //   用同一套 layout params (cellSize/cellSpacing/rowSpacing/padding)
+            //   跟下方 masonryRowsView 计算完全一致, frame 位置精准
+            let cellFrames = computeCellFrames(
+                availableWidth: availableWidth,
+                rowHeight: rowHeight,
+                rowSpacing: rowSpacing,
+                cellSpacing: cellSpacing,
+                gridPadding: gridHorizontalPadding
+            )
+
             // V4.37.1: 条件分支——isDateBased 时按日期分组, 否则平铺
             Group {
                 if sortOption.isDateBased {
@@ -338,7 +353,91 @@ struct PhotoGridView: View {
                     )
                 }
             }
+            // V6.17.0: 矩形圈选 gesture 挂 photoGrid 根 — 跟 cell frames 同坐标系
+            //   用 .local (GeometryReader 内), 跟 cellFrames 完全对齐
+            .marqueeSelectionGesture(
+                isMarqueeActive: $isMarqueeActive,
+                marqueeRect: $marqueeRect,
+                selection: $selection,
+                cellFrames: cellFrames
+            )
         }
+    }
+
+    // V6.17.0: 计算 cell 在 photoGrid 局部坐标的 frame — 给 marquee hit test 用
+    //   跟 masonryRowsView 用同一 GridLayout, 保证位置完全一致
+    //   支持 date grouped (带 section header) + flat 两种 layout
+    private func computeCellFrames(
+        availableWidth: CGFloat,
+        rowHeight: CGFloat,
+        rowSpacing: CGFloat,
+        cellSpacing: CGFloat,
+        gridPadding: CGFloat
+    ) -> [CellFrame] {
+        let cellSize = SquareLayout.cellSize(
+            availableWidth: availableWidth,
+            rowHeight: rowHeight,
+            cellSpacing: cellSpacing
+        )
+        var result: [CellFrame] = []
+        // date header 高度 (DateSectionHeader 32pt key photo + label + Spacing.xl gap)
+        // V5.56: DateSectionHeader 32pt; LazyVStack spacing 是 Spacing.xl
+        // V6.17.0: 32 + 4 (header padding) + Spacing.xl (section gap) = 估算
+        //   简化估算: 实际渲染可能有 padding 微差, V1 接受 ±5pt 误差
+        let dateHeaderHeight: CGFloat = 32 + 4 + Spacing.xl
+
+        if sortOption.isDateBased {
+            // V5.32: 缓存, 不再每 render 重算
+            let groups = cachedDateGroups
+            var y: CGFloat = gridPadding
+            for group in groups {
+                y += dateHeaderHeight
+                let rows = GridLayout(
+                    availableWidth: availableWidth,
+                    rowHeight: cellSize,
+                    cellSpacing: cellSpacing,
+                    layoutMode: layoutMode
+                ).computeRows(from: group.photos)
+                for row in rows {
+                    var x: CGFloat = gridPadding
+                    for item in row.items {
+                        result.append(CellFrame(
+                            id: item.id,
+                            frame: CGRect(x: x, y: y, width: item.width, height: row.rowHeight)
+                        ))
+                        x += item.width + cellSpacing
+                    }
+                    y += row.rowHeight + rowSpacing
+                }
+            }
+        } else {
+            let items = photos.map { photo in
+                PhotoGridItem(
+                    id: photo.id,
+                    aspectRatio: GridLayout.aspectRatio(of: photo),
+                    width: 0
+                )
+            }
+            let rows = GridLayout(
+                availableWidth: availableWidth,
+                rowHeight: cellSize,
+                cellSpacing: cellSpacing,
+                layoutMode: layoutMode
+            ).computeRows(from: items)
+            var y: CGFloat = gridPadding
+            for row in rows {
+                var x: CGFloat = gridPadding
+                for item in row.items {
+                    result.append(CellFrame(
+                        id: item.id,
+                        frame: CGRect(x: x, y: y, width: item.width, height: row.rowHeight)
+                    ))
+                    x += item.width + cellSpacing
+                }
+                y += row.rowHeight + rowSpacing
+            }
+        }
+        return result
     }
 
     // V5.16: masonry 日期分组布局
@@ -598,6 +697,8 @@ struct PhotoGridView: View {
 #Preview {
     PhotoGridView(
         selection: .constant(SelectionState()),
+        isMarqueeActive: .constant(false),
+        marqueeRect: .constant(nil),
         folder: nil,
         tag: nil,
         searchText: "",

@@ -56,10 +56,16 @@ struct PhotoGridPane: View {
     let onReorder: () -> Void
     // V5.61-1: 滚动位置变化回调——透传 PhotoGridView.scrollAnchorID 变化到 ContentView 写回 model
     let onScrollAnchorChange: (String) -> Void
+    // V6.17.0: 矩形圈选 state 透传 (跟 selection 同路径, gesture 挂在 PhotoGridView 内部)
+    let isMarqueeActive: Binding<Bool>
+    let marqueeRect: Binding<CGRect?>
 
     var body: some View {
         PhotoGridView(
             selection: $selection,
+            // V6.17.0: 矩形圈选 state 紧跟 selection (init 参数顺序)
+            isMarqueeActive: isMarqueeActive,
+            marqueeRect: marqueeRect,
             folder: folder,
             tag: tag,
             searchText: searchText,

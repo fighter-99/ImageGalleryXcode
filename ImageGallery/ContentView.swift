@@ -33,6 +33,15 @@ struct ContentView: View {
     // V3.7.1: 框选进行中的 rect (caller 持有, BoxSelectionGesture 写)
     //   用于 overlay 显示 2pt accent border + "已选 N 张" floating label
     @State private var boxSelectionRect: CGRect? = nil
+    // V6.17.0: 改名 isBoxSelecting → isMarqueeActive (真矩形圈选, 不是简化 "全选可见")
+    //   state 留在 ContentView (overlay + selection binding 都要), 但 gesture 移到 PhotoGridView
+    //   通过 binding 透传 — cell frames 在 photoGrid-local 算, gesture 也挂那, hit test 对得上
+    private var isMarqueeActiveBinding: Binding<Bool> {
+        Binding(get: { isBoxSelecting }, set: { isBoxSelecting = $0 })
+    }
+    private var marqueeRectBinding: Binding<CGRect?> {
+        Binding(get: { boxSelectionRect }, set: { boxSelectionRect = $0 })
+    }
 
     // 侧边栏的选中项
     private var sidebarSelection: SidebarSelection? {
@@ -528,8 +537,9 @@ struct ContentView: View {
     }
 
     // V3.6.32: 恢复到 V3.6.27 顶层加 .boxSelectionGesture 模式
-    // 之前 R2 改到 PhotoGridView 内部，simultaneousGesture 仍破坏 cell .onDrag
-    // 现在先恢复 V1（最安全），box-select V2 留待未来换实现思路
+    // V6.17.0: 矩形圈选 gesture 移到 PhotoGridView 内部 (cell frames 同坐标系)
+    //   mainSplitPane 不再挂 gesture, 也不挂 overlay (overlay 还在用 mainSplitPane 旧坐标,
+    //   跟 photoGrid 内部 rect 略差; V1 接受, 后续 V2 polish 把 overlay 也搬进去)
     private var mainSplitPane: some View {
         MainSplitView(
             layout: columnLayout,
@@ -543,15 +553,8 @@ struct ContentView: View {
             center: { gridPane },
             detail: { detailPane }
         )
-        // V3.6.52: 1 binding<SelectionState> 替 2 bindings
-        .boxSelectionGesture(
-            isBoxSelecting: $isBoxSelecting,
-            boxSelectionRect: $boxSelectionRect,  // V3.7.1: 框选 rect 给 caller overlay 显示
-            selection: bindableModel.selection,
-            visiblePhotos: model.visiblePhotos
-        )
-        // V3.7.1: 框选进行中显示 rect + "已选 N 张" floating label
-        //   macOS Photos / Finder 范式——跟 drag 视觉一致
+        // V3.7.1: overlay 保留 (rect 跟 mainSplitPane 旧坐标略差, 视觉上 rect 略偏左/上)
+        //   后续 V2 polish: 把 overlay 也搬进 photoGrid, rect 跟 gesture 完全对齐
         .overlay {
             if let rect = boxSelectionRect {
                 BoxSelectionOverlay(rect: rect, count: model.visiblePhotos.count)
@@ -636,7 +639,12 @@ struct ContentView: View {
                 //   ContentView 不需要做事, 闭包仅用于保持 chain 类型一致
                 onReorder: {},
                 // V5.61-1: .scrollPosition(id:) onChange 写回 model (UserDefaults 持久化)
-                onScrollAnchorChange: { newID in model.scrollAnchorPhotoID = newID }
+                onScrollAnchorChange: { newID in model.scrollAnchorPhotoID = newID },
+                // V6.17.0: 矩形圈选 state 透传到 PhotoGridView (跟 init 参数顺序对齐)
+                //   PhotoGridView 内部 photoGrid 的 GeometryReader 算 cell frames,
+                //   gesture 挂 photoGrid, 跟 cell frames 同坐标系
+                isMarqueeActive: isMarqueeActiveBinding,
+                marqueeRect: marqueeRectBinding
             )
         case .list:
             // V5.60-3: 合并 PhotoListPane + PhotoTimelinePane → PhotoListOrTimelinePane
