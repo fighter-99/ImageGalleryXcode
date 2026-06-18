@@ -12,8 +12,10 @@ import Combine  // V4.36.x: 保留——HistoryStore/ImageGalleryUndoManager 等
 import os  // V6.08: ModelContainer 启动失败 log
 
 // MARK: - P4.2: 通知名 (File 菜单 ⌘⇧R → ContentView batchRenameSheet 监听)
+// V6.19.0 (P0 #1): 加 .shareRequested 通知 (File 菜单 ⌘⇧S → ContentView 弹 NSSharingServicePicker)
 extension Notification.Name {
     static let showBatchRenameSheet = Notification.Name("com.iridescent.ImageGallery.showBatchRenameSheet")
+    static let shareRequested = Notification.Name("com.iridescent.ImageGallery.shareRequested")
 }
 
 // AppDelegate：处理应用层 macOS 事件
@@ -230,6 +232,13 @@ struct ImageGalleryApp: App {
                     NotificationCenter.default.post(name: .showBatchRenameSheet, object: nil)
                 }
                 .keyboardShortcut("r", modifiers: [.command, .shift])
+                // V6.19.0 (P0 #1): 多图分享 — ⌘⇧S (跟 P4.2 批量重命名同 pattern)
+                //   走 NotificationCenter → ContentView 弹 NSSharingServicePicker (AirDrop/Messages/Mail)
+                //   单图分享走 cell context menu ShareLink (Photos.app 范式)
+                Button("分享…") {
+                    NotificationCenter.default.post(name: .shareRequested, object: nil)
+                }
+                .keyboardShortcut("s", modifiers: [.command, .shift])
             }
             // macOS 原生 View 菜单（在 View 菜单里加 Toggle 项）
             // V5.59-3: 3 Toggle + 3 Button 改用 $sharedSettings.X 替代已删的 3 userDefaults bindings

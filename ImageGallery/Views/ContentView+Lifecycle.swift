@@ -182,6 +182,8 @@ extension View {
                 showingSheet: bindableModel.showingNewSmartFolderSheet,
                 pendingFilter: model.pendingSmartFolderFilter ?? .empty
             )
+            // V6.19.0 (P0 #1): 分享 sheet — File 菜单 ⌘⇧S 触发 NSSharingServicePicker
+            .shareSheet(model: model)
             .onChange(of: filterState.activeCount) { _, count in
                 ToolbarController.shared.filterActiveCount = count
             }
@@ -247,6 +249,79 @@ extension View {
                 guard !selection.isEmpty else { return }
                 showingBatchRename.wrappedValue = true
             }
+    }
+}
+
+// MARK: - V6.19.0 (P0 #1): 分享 sheet (NSSharingServicePicker 多图)
+//
+// Photos.app 范式: File 菜单 ⌘⇧S → 弹 NSSharingServicePicker (AirDrop / Messages / Mail / Add to Photos)
+// 单图分享走 cell context menu ShareLink (V6.19.0 加), 不进此 sheet
+// 走 NotificationCenter 触发 (跟 P4.2 batchRenameSheet 同模式)
+extension View {
+    @MainActor
+    func shareSheet(model: ContentViewModel) -> some View {
+        self
+            .sheet(isPresented: bindable(model.sharingURLs != nil)) {
+                if let urls = model.sharingURLs, !urls.isEmpty {
+                    SharePickerView(urls: urls)
+                        .frame(minWidth: 400, minHeight: 300)
+                }
+            }
+            // V6.19.0: File 菜单 ⌘⇧S 通过通知触发 sheet
+            //   model.shareSelectedURLs() 拿选中 + 单图 fallback, 无选给 toast 提示
+            .onReceive(NotificationCenter.default.publisher(for: .shareRequested)) { _ in
+                let urls = model.shareSelectedURLs()
+                guard !urls.isEmpty else { return }
+                model.sharingURLs = urls
+            }
+    }
+
+    private func bindable(_ isPresent: Bool) -> Binding<Bool> {
+        Binding(
+            get: { isPresent },
+            set: { _ in }
+        )
+    }
+}
+
+// V6.19.0 (P0 #1): NSSharingServicePicker SwiftUI wrapper
+//   NSSharingServicePicker 是 AppKit-only, 用 NSViewControllerRepresentable 包
+//   onAppear 自动调 picker.show() 弹系统 share UI
+struct SharePickerView: NSViewControllerRepresentable {
+    let urls: [URL]
+
+    func makeNSViewController(context: Context) -> NSViewController {
+        let controller = SharePickerController(urls: urls)
+        return controller
+    }
+
+    func updateNSViewController(_ nsViewController: NSViewController, context: Context) {}
+
+    final class SharePickerController: NSViewController {
+        let urls: [URL]
+
+        init(urls: [URL]) {
+            self.urls = urls
+            super.init(nibName: nil, bundle: nil)
+        }
+
+        required init?(coder: NSCoder) { fatalError() }
+
+        override func loadView() {
+            view = NSView(frame: NSRect(x: 0, y: 0, width: 400, height: 300))
+        }
+
+        override func viewDidAppear() {
+            super.viewDidAppear()
+            // 弹 NSSharingServicePicker — AirDrop / Messages / Mail / Save / Add to Photos
+            //   sheet 容器是 NSView, picker show relativeTo view
+            let picker = NSSharingServicePicker(items: urls)
+            // 0.1s 延迟让 sheet 动画完成再弹 picker (跟系统 Photos 行为一致)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+                guard let view = self?.view else { return }
+                picker.show(relativeTo: NSRect(x: 200, y: 150, width: 1, height: 1), of: view, preferredEdge: .minY)
+            }
+        }
     }
 }
 

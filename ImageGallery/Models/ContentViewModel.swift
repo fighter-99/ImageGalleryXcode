@@ -65,6 +65,9 @@ final class ContentViewModel {
     var showingBatchDeleteConfirm = false
     /// P4.2: 批量重命名 sheet — mini toolbar "重命名" 按钮 / File 菜单 ⌘⇧R 触发
     var showingBatchRenameSheet = false
+    /// V6.19.0 (P0 #1): 分享 picker — File 菜单 ⌘⇧S / NSSharingServicePicker host
+    ///   nil = picker hidden, 非空 = sheet 显示并弹 NSSharingServicePicker (AirDrop/Messages/Mail)
+    var sharingURLs: [URL]?
     /// P4.1.1: 智能文件夹创建 sheet — sidebar Library section header "+" 触发
     var showingNewSmartFolderSheet = false
     /// P4.1.1: sheet 打开时快照当前 filter — 避免 sheet 打开后用户改 toolbar filter 干扰预览
@@ -570,6 +573,23 @@ final class ContentViewModel {
         }
         pasteboard.writeObjects(urls as [NSURL])
         showToast(urls.count == 1 ? "已复制 1 张图片" : "已复制 \(urls.count) 张图片", type: .success)
+    }
+
+    /// V6.19.0 (P0 #1): 多图分享 — NSSharingServicePicker (Photos.app 范式)
+    ///   返回 URL 数组给 caller 显示 picker (SwiftUI .popover, 跟 ShareLink 单图互补)
+    ///   selection 空 / 单图时退化为 ShareLink 单图 cell 菜单 (CellContextMenuModifier)
+    ///   无 selection 时给提示 toast, 不报错
+    func shareSelectedURLs() -> [URL] {
+        let urls: [URL]
+        if !selection.selectedIDs.isEmpty {
+            urls = selection.selectedPhotos(in: visiblePhotos).map { $0.fileURL }
+        } else if let photo = singleSelectedPhoto {
+            urls = [photo.fileURL]
+        } else {
+            showToast("请先选择要分享的图片", type: .info)
+            return []
+        }
+        return urls
     }
 
     /// 进入沉浸式查看

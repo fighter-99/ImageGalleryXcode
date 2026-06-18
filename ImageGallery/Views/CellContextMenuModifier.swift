@@ -94,6 +94,20 @@ struct CellContextMenuModifier: ViewModifier {
                 Label(Copy.revealInFinder, systemImage: "folder")
             }
 
+            // V6.19.0 (P0 #1): 单图分享 — ShareLink (macOS 13+ SwiftUI 原生)
+            //   自动出 AirDrop / Messages / Mail / Save / Add to Photos 等 services
+            //   preview 用 Image(systemName: "photo") 占位 (SharePreview 必须有 icon,
+            //   加载真实 thumbnail 在 menu 构造时阻塞主线程)
+            ShareLink(
+                item: photo.fileURL,
+                preview: SharePreview(
+                    photo.filename,
+                    image: Image(systemName: "photo")
+                )
+            ) {
+                Label("分享", systemImage: "square.and.arrow.up")
+            }
+
             Divider()
 
             // V5.7: 砍"收藏"按钮——合并到评分（5 星 = 收藏）
