@@ -185,11 +185,14 @@ extension View {
             // V6.19.0 (P0 #1): 分享 sheet — File 菜单 ⌘⇧E 触发 NSSharingServicePicker
             .shareSheet(model: model)
             // V6.19.5 (P0 #16): File 菜单 ⌘⇧N (新文件夹) + Edit > Speech (开始朗读) 监听
+            // V6.20.0 (code audit fix #1): ⌘⇧N 之前调 model.createFolderFromAlert() 是 bug
+            //   createFolderFromAlert() 内部 trim 空 name 后早返 (newFolderName 默认 "")
+            //   → 用户按 ⌘⇧N 菜单什么都没发生 (silent failure)
+            //   修: 跟 ⌘N hidden button / SidebarView "+" 按钮同路径 — 弹 alert dialog
+            //   同时清空 model.newFolderName (跟 SidebarView L188 同步, 避免上次 name 残留)
             .onReceive(NotificationCenter.default.publisher(for: .newFolderRequested)) { _ in
-                // 跟 ContentKeyboardShortcuts.onNewFolder 同路径 — 触发 model.createFolderFromAlert()
-                // model 暴露给 caller 通过 parameter, 但这里 model 在 closure 不可直接访问
-                // 解法: 直接触发 model.createFolderFromAlert()
-                model.createFolderFromAlert()
+                model.newFolderName = ""
+                model.showingNewFolderAlert = true
             }
             .onReceive(NotificationCenter.default.publisher(for: .speakRequested)) { _ in
                 model.speakSelection()

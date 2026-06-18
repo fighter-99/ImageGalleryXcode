@@ -228,9 +228,10 @@ struct ImageGalleryApp: App {
                     RecentPhotosMenu()
                 }
                 // V6.19.5 (P0 #16): 新文件夹 (菜单 + ⌘⇧N, Photos 范式)
-                //   跟现有 ⌘N hidden button (ContentKeyboardShortcuts) 同路径 — 触发 model.createFolderFromAlert()
-                //   双 trigger 不冲突: ⌘N = hidden button (走 onNewFolder closure),
-                //   ⌘⇧N = menu button (走 NotificationCenter), 都触发 model.createFolderFromAlert()
+                //   跟现有 ⌘N hidden button (ContentKeyboardShortcuts) 同路径 — 弹新建文件夹 alert
+                //   V6.20.0 (code audit fix #1): 之前误调 model.createFolderFromAlert() (它 trim 空 name 早返) → silent failure
+                //   现在走 NotificationCenter → ContentView+Lifecycle 设 model.showingNewFolderAlert = true (同 ⌘N)
+                //   双 trigger 不冲突: ⌘N = hidden button (走 onNewFolder closure), ⌘⇧N = menu button (走 NotificationCenter)
                 Button("新文件夹") {
                     NotificationCenter.default.post(name: .newFolderRequested, object: nil)
                 }

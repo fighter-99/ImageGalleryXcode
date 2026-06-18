@@ -399,7 +399,9 @@ struct ContentView: View {
                 hasPurgedExpiredTrash: $hasPurgedExpiredTrash,
                 showingNewFolderAlert: Binding(get: { showingNewFolderAlert }, set: { showingNewFolderAlert = $0 }),
                 onImport: { model.startImport() },
-                onNewFolder: { showingNewFolderAlert = true },
+                // V6.20.0 (code audit fix #1 + #9): 3 个入口 (⌘N hidden button / ⌘⇧N 菜单 / SidebarView "+") 都清空 newFolderName
+                //   避免上次 name 残留; 之前 ContentView 路径不清, SidebarView 清, 两路不一致
+                onNewFolder: { model.newFolderName = ""; showingNewFolderAlert = true },
                 onResetFilters: { model.resetFilters() },
                 onCopy: { model.copyToPasteboard() },
                 onToggleSortDirection: { model.toggleSortDirection() },
@@ -764,19 +766,12 @@ struct ContentView: View {
     //   batchSetRating/batchExport/uniqueDestinationForBatchExport/performOnSelectedTrash/
     //   restoreSelectedFromTrash/permanentDeleteSelected/emptyTrash/keepNewestPerDuplicateGroup/
     //   serializeSelection/restoreSelection)——caller 走 model.X() 闭包
-    //   保留: supportedImageExtensions static (拖拽逻辑), expandFolders static (PhotoGridView 兼容)
     //   保留: 全部业务注释
-
-    /// V4.49.0: 支持的图像扩展名——拖入时先过滤,避免非图片文件进 importer
-    /// 跟 ImageImporter.supportedExtensions 保持一致
-    private static let supportedImageExtensions: Set<String> = [
-        "jpg", "jpeg", "png", "heic", "heif", "tiff", "tif", "gif", "bmp", "webp"
-    ]
-
-    /// V4.49.0: 递归展开文件夹——返回所有文件 URL
-    ///   Photos.app 行为：拖入文件夹 = 导入该文件夹 + 子文件夹的图片
-    ///   跳隐藏文件 (.DS_Store 等)
-    private static func expandFolders(_ urls: [URL]) -> [URL] { Self.expandFolders(urls) }
+    //
+    // V6.20.0 (code audit fix #2 + #10): 删 supportedImageExtensions static + expandFolders static
+    //   两者都是死代码 (0 caller, ContentViewModel 已有同 signature 实现)
+    //   expandFolders `Self.expandFolders(urls)` = 自己 → 无限递归, 任何未来 caller 直接 stack overflow
+    //   拖入逻辑用 ContentViewModel.supportedImageExtensions / ContentViewModel.expandFolders (有 symlink 防护)
 }
 
 #Preview {
