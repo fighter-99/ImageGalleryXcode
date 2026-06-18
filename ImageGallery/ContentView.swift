@@ -398,40 +398,40 @@ struct ContentView: View {
                 accentColor: model.accentColor,
                 hasPurgedExpiredTrash: $hasPurgedExpiredTrash,
                 showingNewFolderAlert: Binding(get: { showingNewFolderAlert }, set: { showingNewFolderAlert = $0 }),
-                onImport: startImport,
+                onImport: { model.startImport() },
                 onNewFolder: { showingNewFolderAlert = true },
-                onResetFilters: resetFilters,
-                onCopy: copyToPasteboard,
-                onToggleSortDirection: toggleSortDirection,
+                onResetFilters: { model.resetFilters() },
+                onCopy: { model.copyToPasteboard() },
+                onToggleSortDirection: { model.toggleSortDirection() },
                 // V6.13.3: 工具栏 sidebar toggle 触发 withAnimation 包裹
                 //   配合 MainSplitView 的 .transition(.move + .opacity) 实现 0.3s 滑动
                 //   之前硬切——MainSplitView line 75 transition 仍触发但 toggle 本身没 anim 驱动
                 onToggleSidebar: { withAnimation(Animations.medium) { showSidebar.toggle() } },
-                onSetRating: { rating in batchSetRating(rating) },
-                onDelete: handleDelete,
-                onPrev: goPrev,
-                onNext: goNext,
+                onSetRating: { model.batchSetRating($0) },
+                onDelete: { model.handleDelete() },
+                onPrev: { model.goPrev() },
+                onNext: { model.goNext() },
                 onSelectAll: { selection = selection.settingAll(in: model.visiblePhotos) },
-                onZoomIn: zoomIn,
-                onZoomOut: zoomOut,
-                onResetZoom: resetThumbnailSize,
-                onExport: batchExport,
-                onReturn: enterImmersiveFromSelection,
-                onSpace: showQuickLook,
-                onBatchDelete: batchDelete,
-                onCreateFolder: createFolderFromAlert,
-                onEmptyTrash: emptyTrash,
-                onConfirmSkipDuplicates: confirmSkipDuplicates,
-                onConfirmImportAllDuplicates: confirmImportAllDuplicates,
-                onCancelDuplicateImport: cancelDuplicateImport,
+                onZoomIn: { model.zoomIn() },
+                onZoomOut: { model.zoomOut() },
+                onResetZoom: { model.resetThumbnailSize() },
+                onExport: { model.batchExport() },
+                onReturn: { model.enterImmersiveFromSelection() },
+                onSpace: { model.showQuickLook() },
+                onBatchDelete: { model.batchDelete() },
+                onCreateFolder: { model.createFolderFromAlert() },
+                onEmptyTrash: { model.emptyTrash() },
+                onConfirmSkipDuplicates: { model.confirmSkipDuplicates() },
+                onConfirmImportAllDuplicates: { model.confirmImportAllDuplicates() },
+                onCancelDuplicateImport: { model.cancelDuplicateImport() },
                 onSelectionEscape: { selection = .empty },
-                onRestoreSelection: { restoreSelection(model.settings.sidebarSelection) },
-                onSerializeSidebarSelection: { serializeSelection($0) },
-                onClearSelectionOnFilterChange: { clearSelectionOnFilterChange() },
+                onRestoreSelection: { model.restoreSelection(model.settings.sidebarSelection) },
+                onSerializeSidebarSelection: { model.serializeSelection($0) },
+                onClearSelectionOnFilterChange: { model.clearSelectionOnFilterChange() },
                 onSyncTitlebarAccessory: { syncTitlebarAccessory(isActive: $0) },
                 onToggleShowDetail: { showDetail = $0 },
-                onPurgeExpiredTrashOnStartup: { purgeExpiredTrashOnStartup() },
-                onCheckStorage: { checkStorage() },
+                onPurgeExpiredTrashOnStartup: { model.purgeExpiredTrashOnStartup() },
+                onCheckStorage: { model.checkStorage() },
                 onMigrateFavoriteToRating: { Photo.migrateFavoriteToRating(in: allPhotos, context: modelContext) }
             )
     }
@@ -454,41 +454,21 @@ struct ContentView: View {
     // V5.52-4: 走 Copy 字典
 
 
-    // V4.11.0: 检查 Application Support/ImageGallery/Photos/ 目录可写性
-    //   失败时填 storageErrorMessage 触发 detail panel 错误态
-    //   用户可点重试按钮再次检测（磁盘腾出空间 / 权限恢复后）
-    //   PhotoStorage.verifyStorage() 是 v3.6 写但从未调用的死代码——v4.11.0 接入
-    private func checkStorage() -> Void { model.checkStorage() }
-
-    // ⌘N 触发的创建文件夹
-    private func createFolderFromAlert() -> Void { model.createFolderFromAlert() }
-
-    // 隐藏的快捷键按钮（.background 注入，不可见但响应快捷键）
-    // 切换当前排序方向（在同字段的 asc/desc 之间切换）
-    private func toggleSortDirection() -> Void { model.toggleSortDirection() }
+    // V6.19.3 (P0 #13): 删 7 个 1-line forwarder (checkStorage/createFolderFromAlert/
+    //   toggleSortDirection/copyToPasteboard/enterImmersive/enterImmersiveFromSelection/
+    //   resetFilters)——caller 走 model.X() 闭包, 节省 7 行净代码 + 文档
+    //   保留: syncTitlebarAccessory (有内部 logic) + 注释 (shareSelected 已删 + immersive 注释)
 
     // V5.52-8: 删 shareSelected (dead code, 0 caller)
     //   NSSharingServicePicker 路径从未被 wire 进来——V3.6.52 之后用 selection.selectedPhotos
     //   现如要加 share, 直接走 macOS 系统菜单 (Finder > Share) 或 toolbar 按钮
-
-    // 复制到剪贴板（支持多选）
-    private func copyToPasteboard() -> Void { model.copyToPasteboard() }
-
-    // 进入沉浸式查看（双击图片触发）
-    private func enterImmersive(_ photo: Photo) -> Void { model.enterImmersive(photo) }
-
-    // V4.49.1: ⌘↩ Return 触发的进入沉浸式——从 model.singleSelectedPhoto 派发
-    //   Photos.app 标准：Return 键进入全屏查看当前选中
-    //   仅在单选时触发——多选/无选不响应
-    private func enterImmersiveFromSelection() -> Void { model.enterImmersiveFromSelection() }
-
-    // 清除所有筛选
-    private func resetFilters() -> Void { model.resetFilters() }
+    // V6.19.0 (P0 #1): 走 NSSharingServicePicker (多图) + ShareLink (单图 cell 菜单)
 
     // V5.59-2: 拆出 helper 函数, 避免 .onChange(of: showDetail) body 复杂导致 type-check 超时
+    // V6.19.3 (P0 #13): titlebarAccessoryTooltip 1-line forwarder 删了, 这里直接走 model.X
     private func syncTitlebarAccessory(isActive: Bool) {
         titlebarAccessory?.setActive(isActive)
-        let tooltip = titlebarAccessoryTooltip(isActive: isActive)
+        let tooltip = model.titlebarAccessoryTooltip(isActive: isActive)
         titlebarAccessory?.setTooltip(tooltip)
     }
 
@@ -557,7 +537,7 @@ struct ContentView: View {
             showDetail: Binding(get: { showDetail }, set: { showDetail = $0 }),
             isDropTargeted: $isDropTargeted,
             isBoxSelecting: $isBoxSelecting,
-            onDrop: handleDrop,
+            onDrop: { providers in model.handleDrop(providers: providers) },
             sidebar: { sidebarPane },
             center: { gridPane },
             detail: { detailPane }
@@ -628,18 +608,18 @@ struct ContentView: View {
                 // V4.36.6: visiblePhotos 改 computed property, 此 callback 不再需要
                 //   保留参数避免破坏 PhotoGridPane 签名——传 noop
                 onVisiblePhotosChange: { _ in },
-                onImport: startImport,
+                onImport: { model.startImport() },
                 onBatchDelete: { showingBatchDeleteConfirm = true },
                 onClearMultiSelect: { selection = .empty },
-                onDoubleTap: enterImmersive,
-                onClearFilters: { resetFilters() },
+                onDoubleTap: { model.enterImmersive($0) },
+                onClearFilters: { model.resetFilters() },
                 onExportComplete: { count in
-                    showToast("已导出 \(count) 张图片", type: .success)
+                    model.showToast("已导出 \(count) 张图片", type: .success)
                 },
                 // V5.39.6: 拖入导入——从 Finder 拖文件/文件夹到 grid 直接导入
                 //   走 ImageImporter.importURLs (同 NSOpenPanel 路径), 含 progress 跟踪 + toast 反馈
                 //   filter 文件/文件夹筛选交给 ImageImporter.collectFiles 内部处理
-                onDropImport: handleDropImport,
+                onDropImport: { model.handleDropImport($0) },
                 // V5.39.7: 重排回调——no-op (PhotoGridView 内部 @State trigger 已处理刷新)
                 //   透传 onReorder 闭包到 cell → 调时增 reorderRefreshTrigger → .onChange → recomputePhotos
                 //   ContentView 不需要做事, 闭包仅用于保持 chain 类型一致
@@ -674,8 +654,8 @@ struct ContentView: View {
                 sortOption: sortOption,
                 photos: model.visiblePhotos,
                 kind: .list,
-                onTap: handleTap,
-                onDoubleTap: enterImmersive
+                onTap: { model.handleTap($0) },
+                onDoubleTap: { model.enterImmersive($0) }
             )
         case .timeline:
             PhotoListOrTimelinePane(
@@ -697,8 +677,8 @@ struct ContentView: View {
                 sortOption: sortOption,
                 photos: model.visiblePhotos,
                 kind: .timeline,
-                onTap: handleTap,
-                onDoubleTap: enterImmersive
+                onTap: { model.handleTap($0) },
+                onDoubleTap: { model.enterImmersive($0) }
             )
         }
     }
@@ -716,39 +696,39 @@ struct ContentView: View {
             duplicateGroupCount: model.filterInDuplicates ? model.duplicateGroupCount : nil,
             folders: folders,
             allTags: allTags,
-            onDelete: deleteSinglePhoto,
-            onPrev: goPrev,
-            onNext: goNext,
+            onDelete: { model.deleteSinglePhoto() },
+            onPrev: { model.goPrev() },
+            onNext: { model.goNext() },
             canPrev: model.canPrev,
             canNext: model.canNext,
             currentIndex: model.currentIndex,
             totalCount: model.visiblePhotos.count,
             // V3.5.19：多选 batch 动作从原 PhotoGridView.multiSelectTopBar 搬过来
-            onBatchMove: { folder in batchMove(to: folder) },
-            onBatchAddTag: { tag in batchAddTag(tag) },
+            onBatchMove: { model.batchMove(to: $0) },
+            onBatchAddTag: { model.batchAddTag($0) },
             // V5.7: 砍 onBatchToggleFavorite——多选面板的"收藏"按钮移除
             // V5.12: 加 onBatchSetRating——多选批量评分
-            onBatchSetRating: { rating in batchSetRating(rating) },
-            onBatchExport: batchExport,
+            onBatchSetRating: { model.batchSetRating($0) },
+            onBatchExport: { model.batchExport() },
             onBatchDelete: { showingBatchDeleteConfirm = true },
             // V3.6.52: 单字段 assignment 替 2 字段 pair
             onClearSelection: { selection = .empty },
             // V3.6 NEW: 回收站模式
             sidebarSelection: sidebarSelection,
             retentionDays: retentionDays,
-            onTrashRestore: restoreSelectedFromTrash,
-            onTrashPermanentDelete: permanentDeleteSelected,
+            onTrashRestore: { model.restoreSelectedFromTrash() },
+            onTrashPermanentDelete: { model.permanentDeleteSelected() },
             // V3.6.6: 改弹二次确认（不再直接调 emptyTrash）
             onEmptyTrash: { showingEmptyTrashConfirm = true },
             // V4.9.0: 回收站空时切回"全部"视图
             onExitTrash: { sidebarSelection = .all },
             // V3.6.15: 重复图清理（一键保留每组最新）
-            onKeepNewestPerDuplicateGroup: keepNewestPerDuplicateGroup,
+            onKeepNewestPerDuplicateGroup: { model.keepNewestPerDuplicateGroup() },
             // V4.11.0: 存储不可写错误（nil = OK）
             storageError: storageErrorMessage,
-            onRetryStorage: checkStorage,
+            onRetryStorage: { model.checkStorage() },
             // V6.08: 详情面板错误回调 (rename 失败等) — show toast
-            onError: { message in showToast(message, type: .error) }
+            onError: { model.showToast($0, type: .error) }
         )
     }
 
@@ -768,168 +748,35 @@ struct ContentView: View {
         )
     }
 
-    /// V5.13: 入队 Toast（V4.36.x 单 in-flight 改 queue）
-    /// - 自动 dismiss：用 scheduleDismiss 单点维护 task
-    /// - 错误 toast 用 .long duration（5s）让用户看清
-    private func enqueueToast(_ message: String, type: ToastView.ToastType = .info, duration: ToastInfo.Duration = .normal) -> Void { model.enqueueToast(message, type: type, duration: duration) }
+    // V6.19.3 (P0 #13): 删 14 个 1-line forwarder (enqueueToast/scheduleDismiss/showToast/
+    //   handleDelete/handleTap/goPrev/goNext/zoomIn/zoomOut/resetThumbnailSize/
+    //   showQuickLook/titlebarAccessoryTooltip/purgeExpiredTrashOnStartup/startImport)——caller 走 model.X() 闭包
+    //   保留: 全部注释 (业务背景, 未来 reader 看 V4.x 历史)
 
-    /// V5.13: dismiss task 单点维护
-    /// - 每次启动新 task 取消上一个（防 race）
-    /// - 队列空时停；非空时按队首 duration 续 task
-    private func scheduleDismiss(after seconds: TimeInterval) -> Void { model.scheduleDismiss(after: seconds) }
-
-    /// 兼容旧 showToast 调用（V4.36.x 8 处 call site 保持 0 改动）
-    ///   Day 5 错误 toast 改用 enqueueToast(message, type: .error, duration: .long)
-    private func showToast(_ message: String, type: ToastView.ToastType = .info) -> Void { model.showToast(message, type: type) }
-
-
-    // 处理 Delete 键
-    private func handleDelete() -> Void { model.handleDelete() }
-
-    // V4.36.6: 从 PhotoGridView.handleTap 抽出到 ContentView——3 视图共用
-    //   旧版 tap 处理逻辑在 PhotoGridView 内, List/Timeline 视图无法复用
-    //   现在 3 视图都传 onTap: handleTap 闭包, 选中行为完全一致
-    private func handleTap(_ photo: Photo) -> Void { model.handleTap(photo) }
-
-    // ─── 上一张 / 下一张 ───
-    // V3.6.52: 用 selection.selectingSingle(_:) 替 2 字段手工赋值
-    private func goPrev() -> Void { model.goPrev() }
-
-    private func goNext() -> Void { model.goNext() }
-
-    // ─── V4.0.0.6: 缩放快捷键（⌘+ / ⌘-）───
-    // 缩放搬到侧栏顶部后，必须配快捷键——否则要"绕到侧栏才能缩"
-    // 参考 macOS Photos.app / Preview：⌘+ / ⌘- 缩略图大小
-    private func zoomIn() -> Void { model.zoomIn() }
-
-    private func zoomOut() -> Void { model.zoomOut() }
-
-    // V4.15.0: ⌘0 reset zoom——macOS Photos/Finder 标准快捷键
-    //   恢复 thumbnailSize 到用户偏好（storedThumbnailSize from @AppStorage）
-    //   不硬编码 170——尊重用户在 Settings 设的 default
-    //   （与 ⌘+ / ⌘- 配合——缩放后可一键 reset 回默认）
-    private func resetThumbnailSize() -> Void { model.resetThumbnailSize() }
-
-    // V4.37.1: 触发 Quick Look——复用于 ⌘Y 菜单 / toolbar 按钮 / 空格键
-    //   抽出 onSpace 闭包逻辑（避免 3 处重复 currentVisibleURLs + firstIndex 计算）
-    // V5.42: 改走 enterImmersiveFromSelection()——跟双击 / ⌘↩ Return 同路径
-    //   - 修 'No items selected' bug（QLPreviewPanel 路径 URL 不可达）
-    //   - 4 个入口 (⌘Y / 工具栏 / 空格 / 双击) 行为完全一致
-    //   - 镜像 Photos.app 行为：Spacebar 选中照片进沉浸式
     // V5.42: 旧 QLPreviewPanel 实现删除（QuickLookPreviewController.swift + QuickLookBridge）
-    private func showQuickLook() -> Void { model.showQuickLook() }
-
-    // V4.37.4: titlebar accessory tooltip——反映当前 showDetail 状态
-    //   加 ⌘I 快捷键提示——用户 hover 时发现 macOS Photos 标准快捷键
-    //   仿 V4.36.x Filter 按钮 "筛选 (N)" 动态 tooltip 模式
-    private func titlebarAccessoryTooltip(isActive: Bool) -> String { model.titlebarAccessoryTooltip(isActive: isActive) }
-
-    // ─── 启动时清理过期回收站项（V3.6 NEW）───
-    private func purgeExpiredTrashOnStartup() -> Void { model.purgeExpiredTrashOnStartup() }
-
-    // ─── 启动导入 ───
-    private func startImport() -> Void { model.startImport() }
+    // V6.19.0 (P0 #7): ⌘Y 走 Immersive (跟 Photos.app 一致), 不恢复 QLPreviewPanel
 
     // ─── 拖入导入 (V5.39.6 NEW) ───
     /// Finder 拖文件 / 文件夹到 grid 任何位置直接导入
-    ///   - 走 ImageImporter 内部 collectFiles 递归展开文件夹
-    ///   - 走 runImportWithDuplicateCheck 同 NSOpenPanel 路径 (fileHash 重复检测 + 进度反馈)
-    ///   - 空 urls 直接 return (用户拖了非图片文件)
-    private func handleDropImport(_ urls: [URL]) -> Void { model.handleDropImport(urls) }
+    // V6.19.3 (P0 #13): 删 22 个 1-line forwarder (handleDropImport/runImportWithDuplicateCheck/
+    //   confirmSkipDuplicates/confirmImportAllDuplicates/cancelDuplicateImport/importPhotos/
+    //   handleDrop/clearSelectionOnFilterChange/deleteSinglePhoto/batchDelete/batchMove/batchAddTag/
+    //   batchSetRating/batchExport/uniqueDestinationForBatchExport/performOnSelectedTrash/
+    //   restoreSelectedFromTrash/permanentDeleteSelected/emptyTrash/keepNewestPerDuplicateGroup/
+    //   serializeSelection/restoreSelection)——caller 走 model.X() 闭包
+    //   保留: supportedImageExtensions static (拖拽逻辑), expandFolders static (PhotoGridView 兼容)
+    //   保留: 全部业务注释
 
-    /// V3.6.24: 扫现有 photo + 算新 url fileHash，弹 dialog 让用户选
-    /// V3.6.27: 改用 async 版本（后台 actor 算 SHA256，不阻塞 main thread）
-    private func runImportWithDuplicateCheck(urls: [URL]) -> Void { model.runImportWithDuplicateCheck(urls: urls) }
-
-    // V3.6.24: 重复检测 dialog 的动态 title
-    // V5.52-4: 实现搬到 ContentViewModel.duplicateDialogTitle
-
-    private func confirmSkipDuplicates() -> Void { model.confirmSkipDuplicates() }
-
-    private func confirmImportAllDuplicates() -> Void { model.confirmImportAllDuplicates() }
-
-    private func cancelDuplicateImport() -> Void { model.cancelDuplicateImport() }
-
-    /// V3.6.24: 实际跑导入（dialog 确认后调用，或无重复时直接调）
-    /// V5.13: 接 ImportResult——成功 1 个 success toast + 失败 N 个 error toasts
-    /// V5.15: 进度用 inserted/failureCount 显示；混合结果合并 1 个 summary toast
-    private func importPhotos(urls: [URL]) -> Void { model.importPhotos(urls: urls) }
-
-    // ─── 拖拽导入 ───
     /// V4.49.0: 支持的图像扩展名——拖入时先过滤,避免非图片文件进 importer
     /// 跟 ImageImporter.supportedExtensions 保持一致
     private static let supportedImageExtensions: Set<String> = [
         "jpg", "jpeg", "png", "heic", "heif", "tiff", "tif", "gif", "bmp", "webp"
     ]
 
-    private func handleDrop(providers: [NSItemProvider]) -> Bool { model.handleDrop(providers: providers) }
-
     /// V4.49.0: 递归展开文件夹——返回所有文件 URL
     ///   Photos.app 行为：拖入文件夹 = 导入该文件夹 + 子文件夹的图片
     ///   跳隐藏文件 (.DS_Store 等)
     private static func expandFolders(_ urls: [URL]) -> [URL] { Self.expandFolders(urls) }
-
-    // V4.1.0 l: 切换侧栏 section 时清选中（避免"选中的照片不在新 section"）
-    private func clearSelectionOnFilterChange() -> Void { model.clearSelectionOnFilterChange() }
-
-    // ─── 删除单张（V3.6：走 RecycleBinService，不再调 undoManager）───
-    private func deleteSinglePhoto() -> Void { model.deleteSinglePhoto() }
-
-    // ─── 批量删除（V3.6：走 RecycleBinService，不再调 undoManager）───
-    private func batchDelete() -> Void { model.batchDelete() }
-
-    // V3.5.19：从 PhotoGridView 搬上来的 4 个 batch 方法
-    // 原因：multi-select 顶部栏被移到详情面板里，详情面板的 MultiSelectDetailView
-    // 需要直接调用这些方法。
-
-    // ─── 批量移动到文件夹 ───
-    private func batchMove(to folder: Folder?) -> Void { model.batchMove(to: folder) }
-
-    // ─── 批量加标签 ───
-    private func batchAddTag(_ tag: Tag) -> Void { model.batchAddTag(tag) }
-
-    // V5.12: 批量评分
-    //   - 多选 N 张 → onBatchSetRating(M) 一次设 M 星
-    //   - M = 0 表示清除评分
-    //   - 与详情页 RatingStarsView 共用同一 photo.rating 字段
-    //   - ⌘0-⌘5 快捷键也走同一函数（ContentKeyboardShortcuts.onSetRating）
-    private func batchSetRating(_ rating: Int) -> Void { model.batchSetRating(rating) }
-
-    // ─── 批量导出 ───
-    private func batchExport() -> Void { model.batchExport() }
-
-    /// 避免导出时文件名冲突
-    private func uniqueDestinationForBatchExport(for url: URL) -> URL { model.uniqueDestinationForBatchExport(for: url) }
-
-    // ─── V5.7: 砍 batchToggleFavorite()——多选面板的"收藏"按钮已移除 ───
-
-    // ─── 回收站操作（V3.6 NEW）───
-
-    /// 在 visiblePhotos ∩ selectedIDs 上执行 trash 操作（3 个 batch 方法的共用骨架）
-    /// - Parameters:
-    ///   - operation: 实际的 SwiftData 变更（recycle / restore / purge）
-    ///   - message: toast 消息生成器（接收处理数量）
-    ///   - type: toast 类型（默认 .info；恢复用 .success）
-    /// V5.13: 注入 onError → RecycleBinService 失败时 toast
-    private func performOnSelectedTrash(_ operation: (RecycleBinService, [Photo]) -> Void, message: (Int) -> String, type: ToastView.ToastType = .info) -> Void { model.performOnSelectedTrash(operation, message: message, type: type) }
-
-    /// 恢复选中的照片（从回收站 → 图库）
-    private func restoreSelectedFromTrash() -> Void { model.restoreSelectedFromTrash() }
-
-    /// 永久删除选中的照片（文件 + SwiftData）
-    private func permanentDeleteSelected() -> Void { model.permanentDeleteSelected() }
-
-    /// 清空回收站（永久删除所有 trashed 项；不走 selectedIDs）
-    private func emptyTrash() -> Void { model.emptyTrash() }
-
-    /// V3.6.15 NEW: 重复图清理 — 每组保留 importedAt 最新的，其他移到回收站
-    private func keepNewestPerDuplicateGroup() -> Void { model.keepNewestPerDuplicateGroup() }
-
-    // ─── 序列化 SidebarSelection ───
-    private func serializeSelection(_ selection: SidebarSelection?) -> String { model.serializeSelection(selection) }
-
-    // ─── 恢复 SidebarSelection ───
-    private func restoreSelection(_ key: String) -> SidebarSelection? { model.restoreSelection(key) }
 }
 
 #Preview {
