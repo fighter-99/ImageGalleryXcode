@@ -553,13 +553,8 @@ struct ContentView: View {
             center: { gridPane },
             detail: { detailPane }
         )
-        // V3.7.1: overlay 保留 (rect 跟 mainSplitPane 旧坐标略差, 视觉上 rect 略偏左/上)
-        //   后续 V2 polish: 把 overlay 也搬进 photoGrid, rect 跟 gesture 完全对齐
-        .overlay {
-            if let rect = boxSelectionRect {
-                BoxSelectionOverlay(rect: rect, count: model.visiblePhotos.count)
-            }
-        }
+        // V6.17.0.2: overlay 搬进 photoGrid — rect 跟 overlay 同 space (photoGrid),
+        //   视觉精准跟手 (用户报告 V6.17.0.1 矩形不跟手就是这里)
         // P3.1.3: 选完 mini toolbar — 4 action (Tag / Move / Export / Delete)
         //   选非空时浮在 content 顶部, 走 macOS Photos / Finder 范式
         //   regular material + accent color, 跟系统级 toolbar 视觉一致

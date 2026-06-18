@@ -361,6 +361,21 @@ struct PhotoGridView: View {
                 selection: $selection,
                 cellFrames: cellFrames
             )
+            // V6.17.0.2: 矩形 overlay 也搬进 photoGrid — rect 跟 overlay 都在 photoGrid space
+            //   之前 overlay 在 mainSplitPane (ContentView), rect 是 photoGrid space,
+            //   两个 space 错位 → 矩形视觉不跟手 (用户报告)
+            //   现在 overlay 跟 rect 同 space, 矩形跟鼠标精准
+            .overlay {
+                if let rect = marqueeRect {
+                    // count = 当前 rect 内的 cell 数 (跟 hit test 同逻辑, 视觉一致)
+                    let count = cellFrames.filter { cell in
+                        let centerX = cell.frame.midX
+                        let centerY = cell.frame.midY
+                        return rect.contains(CGPoint(x: centerX, y: centerY))
+                    }.count
+                    BoxSelectionOverlay(rect: rect, count: count)
+                }
+            }
         }
     }
 
