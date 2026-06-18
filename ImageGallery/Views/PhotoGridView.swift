@@ -512,6 +512,9 @@ struct PhotoGridView: View {
             .padding(.horizontal, gridHorizontalPadding)
             // V6.17.0.1: photoGrid coord space 挂 LazyVStack — 跟 cell frames 同空间
             .coordinateSpace(.photoGrid)
+            // V6.17.2: 透传 isMarqueeActive 到 cell — sub-view @Environment 消费
+            //   圈选时 .draggable 返 nil, 修 "cell drag preview 跟 marquee rect 同时显示" 视觉冲突
+            .environment(\.isMarqueeActive, isMarqueeActive)
             // V6.17.0.3: gesture + overlay 都搬进 LazyVStack (在 ScrollView 内)
             //   之前在 Group (外面) 跟 cell frames 不同 space → 视觉滞后
             //   现在都在 photoGrid space, rect 跟 cell 精准对齐
@@ -592,6 +595,9 @@ struct PhotoGridView: View {
             // V6.17.0.1: photoGrid coord space 挂 VStack — 跟 cell frames 同空间
             //   跟 .padding 一起挂 (named space 覆盖 VStack + padding 的整体)
             .coordinateSpace(.photoGrid)
+            // V6.17.2: 透传 isMarqueeActive 到 cell — sub-view @Environment 消费
+            //   圈选时 .draggable 返 nil, 修视觉冲突
+            .environment(\.isMarqueeActive, isMarqueeActive)
             // V6.17.0.3: gesture + overlay 都搬进 VStack — 之前在 Group (外面),
             //   rect 跟 overlay 不同 space → 视觉滞后
             //   现在都在 photoGrid space, rect 跟 cell 精准对齐
