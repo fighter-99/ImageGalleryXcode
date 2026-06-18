@@ -255,6 +255,9 @@ final class UserSettings {
         // V6.12.16: language 也 reset 到默认 (.zhHans)
         language = Language.zhHans.rawValue
         defaultExportQuality = 0.9
+        // V6.21.4 (audit fix #3): hasShownMarqueeHint 也 reset — "恢复全部为默认" 应该包括 UX hint flag
+        //   之前 reset 漏掉, 用户清空库后无法重新触发 MarqueeHintView (audit #5 related)
+        hasShownMarqueeHint = false
         // scrollAnchorPhotoID 不在 reset 范围——是 per-window 状态
     }
 }

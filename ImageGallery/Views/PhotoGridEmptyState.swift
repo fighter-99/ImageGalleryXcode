@@ -76,11 +76,12 @@ struct PhotoGridEmptyState: View {
             )
         }
         // 首次启动 (无任何 filter) → "导入图片"
-        // V6.21.2 (Phase 1.3 UX polish): 主 CTA label 加快捷键提示 ⌘O
-        //   macOS 标准: primary action 显示快捷键 (类似 Finder/Photos 菜单)
+        // V6.21.4 (audit fix #7): label 拼接而非 hardcoded "(⌘O)"
+        //   之前 Copy.importActionWithShortcut = "导入图片 (⌘O)" 在 xcstrings 里 hardcode
+        //   现在 caller 拼接: "\(importAction) (⌘O)" — 翻译时只翻译 "导入图片", ⌘O 永远正确
         if showImport {
             return PhotoGridEmptyCTA(
-                label: Copy.importActionWithShortcut,  // "导入图片 (⌘O)"
+                label: "\(Copy.importAction) (⌘O)",  // 拼接主 CTA + 系统快捷键
                 systemImage: "square.and.arrow.down",
                 onTap: onImport
             )
@@ -103,15 +104,8 @@ struct PhotoGridEmptyState: View {
                 onTap: { onClearFilters() }
             )
         }
-        // V6.21.2 (Phase 1.3 UX polish): 首次启动 → 副 CTA "拖入图片"
-        //   提示用户 drag-drop 也可导入 (跟主 CTA "导入图片 ⌘O" 互补)
-        if showImport {
-            return PhotoGridEmptyCTA(
-                label: Copy.dragPhotosHere,
-                systemImage: "arrow.down.to.line.compact",
-                onTap: {}  // 无 action — 只是提示
-            )
-        }
+        // V6.21.4 (audit fix #6): 删副 CTA "拖入图片" 死按钮 — 之前 onTap: {} 点了没反应
+        //   现在依赖 hintStartImport 文案 ("拖入图片，或点击'导入图片'开始添加") 包含 drag-drop 信息
         return nil
     }
 

@@ -262,10 +262,10 @@ enum Copy {
     static let clearSearch = String(localized: "clearSearch", defaultValue: "清除搜索")
     /// 跟 toolbarImport("导入") 区别——空状态 CTA 是完整短语
     static let importAction = String(localized: "importAction", defaultValue: "导入图片")
-    // V6.21.2 (Phase 1.3 UX polish): 主 CTA label 加 ⌘O 快捷键提示 — macOS 标准 pattern
-    static let importActionWithShortcut = String(localized: "importActionWithShortcut", defaultValue: "导入图片 (⌘O)")
-    // V6.21.2 (Phase 1.3 UX polish): 副 CTA "拖入图片" 提示 drag-drop
-    static let dragPhotosHere = String(localized: "dragPhotosHere", defaultValue: "拖入图片")
+    // V6.21.4 (audit fix #7): 删 hardcoded "(⌘O)" — 应该由 caller 拼接 (避免 i18n 风险)
+    //   主 CTA label 现在用 "\(Copy.importAction) (⌘O)" 在 PhotoGridEmptyState 拼接
+    // V6.21.4 (audit fix #6): 删 dragPhotosHere — 副 CTA "拖入图片" 死按钮改回 visual hint
+    //   hintStartImport 已经有 "拖入图片，或点击'导入图片'开始添加" 文案
     static let viewAll = String(localized: "viewAll", defaultValue: "查看全部")
     // V6.11: ActiveFiltersBar fallback 文案入库 (folderName 查不到 / tagName 查不到时)
     static let unknownFolder = String(localized: "unknownFolder", defaultValue: "未知文件夹")

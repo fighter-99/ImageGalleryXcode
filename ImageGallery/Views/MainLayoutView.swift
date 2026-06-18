@@ -55,8 +55,10 @@ struct MainLayoutView<PathBar: View, Split: View, StatusBarView: View>: View {
         immersiveIndex: Binding<Int>,
         visiblePhotos: [Photo],
         onImmersiveDismiss: @escaping () -> Void,
-        // V6.21.1: toast close button → caller 移除 toastQueue 队首
-        onToastDismiss: @escaping () -> Void = {}
+        // V6.21.4 (audit fix #8): 删默认 `{}` — 漏传 silent fail 隐患
+        //   caller 必须传, 否则 nil pointer / 编译错误强制修复
+        //   之前默认 `{}` 让 caller 漏传时 button 点了没反应, 用户感知 "X 不工作"
+        onToastDismiss: @escaping () -> Void
     ) {
         self.pathBar = pathBar()
         self.split = split()
@@ -84,7 +86,7 @@ struct MainLayoutView<PathBar: View, Split: View, StatusBarView: View>: View {
         //   onToastDismiss 闭包: 用户点 X 主动 dismiss, 不等 duration auto-dismiss
         .overlay(alignment: .top) {
             if let toast = toastQueue.first {
-                ToastView(message: toast.message, type: toast.type, onDismiss: onToastDismiss)
+                ToastView(message: toast.message, type: toast.type, duration: toast.duration.seconds, onDismiss: onToastDismiss)
                     .padding(.top, 8)
                     .transition(.move(edge: .top).combined(with: .opacity))
             }

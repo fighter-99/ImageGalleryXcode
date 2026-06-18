@@ -41,10 +41,15 @@ struct ToastView: View {
 
     let message: String
     let type: ToastType
+    /// V6.21.4: duration 参数 — progress bar countdown 用 (之前 V6.21.1 hardcode 1 不动)
+    let duration: TimeInterval
     /// V6.21.1: close button 闭包 — caller (MainLayoutView) 调 enqueueToast 的反向操作, 把 toastQueue.removeFirst()
     let onDismiss: () -> Void
 
     @Environment(\.colorScheme) private var colorScheme
+    // V6.21.4 (audit fix #1): @State progress — duration 内 1.0 → 0.0 真动画
+    //   之前 V6.21.1 ProgressView(value: 1) hardcode static, bar 永远 100% 不动
+    @State private var progress: Double = 1
 
     var body: some View {
         VStack(spacing: 6) {
@@ -69,16 +74,17 @@ struct ToastView: View {
             .padding(.horizontal, 16)
             .padding(.top, 10)
             .padding(.bottom, 4)
-            // V6.21.1: progress indicator — duration 内从满到空
-            //   简化: Capsule 进度条 (不用 GeometryReader), SwiftUI 自动 width
-            //   ProgressView + tint color = Photos 风格
-            ProgressView(value: 1)
+            // V6.21.4 (audit fix #1): 真正 progress 动画 — duration 内从 1.0 → 0.0
+            //   @State progress + .task(id: duration) — view 出现时启动 task, 50ms 间隔更新
+            //   toast 主动 dismiss (close button) → task 自动 cancel (isCancelled)
+            ProgressView(value: progress)
                 .progressViewStyle(.linear)
                 .tint(type.tint)
                 .scaleEffect(x: 1, y: 0.5, anchor: .leading)
                 .opacity(0.6)
                 .frame(height: 2)
                 .padding(.horizontal, 4)
+                .animation(.linear(duration: 0.05), value: progress)
         }
         .padding(.horizontal, 16)
         .padding(.bottom, 8)
@@ -93,18 +99,27 @@ struct ToastView: View {
             radius: colorScheme == .dark ? 14 : 10,
             y: 4
         )
-        // V6.21.1: progress animation — ToastInfo.Duration 秒后 SwiftUI .animation 自动驱动
-        //   MainLayoutView 用 .animation(_, value: toastQueue.first) 触发
-        //   ProgressView(value:) 内部支持 animated value change → bar 从满到空
+        // V6.21.4 (audit fix #1): progress countdown task — duration 秒内 progress 1 → 0
+        //   task(id: duration) view 出现时启动, 消失时自动 cancel (toast 主动 dismiss / 队列下一 toast)
+        //   50ms tick 平衡精度 + CPU (避免 16ms 触发过度)
+        .task(id: duration) {
+            let start = Date()
+            while !Task.isCancelled {
+                let elapsed = Date().timeIntervalSince(start)
+                progress = max(0, 1 - elapsed / duration)
+                if progress <= 0 { break }
+                try? await Task.sleep(nanoseconds: 50_000_000)
+            }
+        }
     }
 }
 
 #Preview {
     VStack(spacing: 12) {
-        ToastView(message: "已导入 12 张图片", type: .success, onDismiss: {})
-        ToastView(message: "复制失败：磁盘空间不足", type: .error, onDismiss: {})
-        ToastView(message: "已切换到「旅行」文件夹", type: .info, onDismiss: {})
-        ToastView(message: "复制 0 张图片 — selection 为空", type: .warning, onDismiss: {})
+        ToastView(message: "已导入 12 张图片", type: .success, duration: 2.5, onDismiss: {})
+        ToastView(message: "复制失败：磁盘空间不足", type: .error, duration: 5.0, onDismiss: {})
+        ToastView(message: "已切换到「旅行」文件夹", type: .info, duration: 2.5, onDismiss: {})
+        ToastView(message: "复制 0 张图片 — selection 为空", type: .warning, duration: 2.5, onDismiss: {})
     }
     .padding()
     .frame(width: 400)
