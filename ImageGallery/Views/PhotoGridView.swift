@@ -529,13 +529,8 @@ struct PhotoGridView: View {
             )
             .overlay {
                 if let rect = marqueeRect {
-                    // count = 当前 rect 内的 cell 数 (跟 hit test 同逻辑, 视觉一致)
-                    let count = cellFrames.filter { cell in
-                        let centerX = cell.frame.midX
-                        let centerY = cell.frame.midY
-                        return rect.contains(CGPoint(x: centerX, y: centerY))
-                    }.count
-                    BoxSelectionOverlay(rect: rect, count: count)
+                    // V6.22.9: 删 count — "已选 N 张" 误导用户以为实时选中
+                    BoxSelectionOverlay(rect: rect)
                 }
             }
             .animation(Animations.medium, value: photos.count)
@@ -612,13 +607,8 @@ struct PhotoGridView: View {
             )
             .overlay {
                 if let rect = marqueeRect {
-                    // count = 当前 rect 内的 cell 数 (跟 hit test 同逻辑, 视觉一致)
-                    let count = cellFrames.filter { cell in
-                        let centerX = cell.frame.midX
-                        let centerY = cell.frame.midY
-                        return rect.contains(CGPoint(x: centerX, y: centerY))
-                    }.count
-                    BoxSelectionOverlay(rect: rect, count: count)
+                    // V6.22.9: 删 count — "已选 N 张" 误导用户以为实时选中
+                    BoxSelectionOverlay(rect: rect)
                 }
             }
             .animation(Animations.medium, value: photos.count)
