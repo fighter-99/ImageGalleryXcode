@@ -76,9 +76,11 @@ struct PhotoGridEmptyState: View {
             )
         }
         // 首次启动 (无任何 filter) → "导入图片"
+        // V6.21.2 (Phase 1.3 UX polish): 主 CTA label 加快捷键提示 ⌘O
+        //   macOS 标准: primary action 显示快捷键 (类似 Finder/Photos 菜单)
         if showImport {
             return PhotoGridEmptyCTA(
-                label: Copy.importAction,
+                label: Copy.importActionWithShortcut,  // "导入图片 (⌘O)"
                 systemImage: "square.and.arrow.down",
                 onTap: onImport
             )
@@ -99,6 +101,15 @@ struct PhotoGridEmptyState: View {
             return PhotoGridEmptyCTA(
                 label: Copy.viewAll,
                 onTap: { onClearFilters() }
+            )
+        }
+        // V6.21.2 (Phase 1.3 UX polish): 首次启动 → 副 CTA "拖入图片"
+        //   提示用户 drag-drop 也可导入 (跟主 CTA "导入图片 ⌘O" 互补)
+        if showImport {
+            return PhotoGridEmptyCTA(
+                label: Copy.dragPhotosHere,
+                systemImage: "arrow.down.to.line.compact",
+                onTap: {}  // 无 action — 只是提示
             )
         }
         return nil
