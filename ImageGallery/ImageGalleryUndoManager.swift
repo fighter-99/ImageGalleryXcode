@@ -5,19 +5,25 @@
 //  V3.5 Phase 1 Step 4：撤销/重做管理器。
 //  V3.6：删除走回收站（RecycleBinService），撤销管理器只服务于其他写操作。
 //
-//  设计要点：
-//  - 基于 Foundation UndoManager
-//  - 使用 Swift 5.9+ @Observable（自动观察）
-//  - 写操作（移动/打标签/重命名等）前调用 registerAction
-//  - 工具栏 ↶ / ↷ 按钮观察 canUndo / canRedo
+//  V6.14.10：重做 — 不用 Foundation.UndoManager, 改自写 stack
+//    原因: V6.14.4 发现 Foundation.UndoManager.registerUndo(withTarget:) 跟 Swift Testing
+//    @MainActor + ModelContainer + run loop 组合死锁 (BatchTests 60s+ 超时)
+//    自写 stack 避开 run loop 交互 (Foundation.UndoManager 观察主 run loop 的
+//    NSWindowWillClose / NSWindowDidResignKey notifications, 测试环境不跑这个循环 → 死锁)
 //
-//  V3.6 之后支持的撤销操作：
+//  设计要点：
+//  - 自写 [Entry] undo/redo stack, 50 步限制
+//  - @MainActor + @Observable (同 V3.5)
+//  - API 跟旧版兼容: registerAction / undo / redo / canUndo / canRedo / 描述
+//  - 接受调用方传 action + undo 闭包, 不强捕获 self (调用方用 [weak self])
+//
+//  当前支持的撤销操作：
 //  - 重命名
 //  - 打标签
 //  - 收藏切换
-//  - 移动到文件夹
+//  - 移动到文件夹 (V6.14.10 恢复 batchMove / performMove undo)
 //
-//  V3.6 不再支持（被回收站取代）：
+//  当前不支持（被回收站取代）：
 //  - 删除照片（→ 移到回收站；恢复从回收站恢复）
 //
 
@@ -34,11 +40,20 @@ final class ImageGalleryUndoManager {
     private(set) var undoDescription: String = ""
     private(set) var redoDescription: String = ""
 
-    private let undoManager = UndoManager()
+    // V6.14.10: 自写 stack, 不用 Foundation.UndoManager
+    //   entry 持 3 个闭包: 描述 + undo + redo
+    //   强引用环仍存在 (caller 闭包可能捕获 self), 但 50 步上限, 不无限增长
+    //   关键差异: 无 run loop 交互, 测试环境不卡
+    private struct Entry {
+        let description: String
+        let undo: () -> Void
+        let redo: () -> Void
+    }
+    private var undoStack: [Entry] = []
+    private var redoStack: [Entry] = []
+    private let maxLevels: Int = 50
 
     init() {
-        undoManager.levelsOfUndo = 50  // 最多保留 50 步
-        undoManager.groupsByEvent = false
         updateState()
     }
 
@@ -47,21 +62,22 @@ final class ImageGalleryUndoManager {
     ///   - description: 操作描述（显示在工具栏 tooltip）
     ///   - action: 实际执行的操作
     ///   - undo: 反向操作（撤销时执行）
+    ///
+    /// **V6.14.10 注意**: 调用方应使用 `[weak self]` 捕获 self, 避免强引用环。
+    ///   旧版 Foundation.UndoManager 也有这问题, 但加上 run loop 交互 → 死锁。
+    ///   新版无 run loop 交互, 但 retain cycle 仍存在 (测试内存会涨, 50 步上限安全)。
     func registerAction(
         description: String,
         action: @escaping () -> Void,
         undo: @escaping () -> Void
     ) {
-        // 注册反向操作
-        undoManager.registerUndo(withTarget: self) { manager in
-            undo()
-            // 注册 redo：执行原 action
-            manager.undoManager.registerUndo(withTarget: manager) { manager2 in
-                action()
-                manager2.registerAction(description: description, action: action, undo: undo)
-            }
+        let entry = Entry(description: description, undo: undo, redo: action)
+        undoStack.append(entry)
+        if undoStack.count > maxLevels {
+            undoStack.removeFirst()
         }
-        undoManager.setActionName(description)
+        // 任何新 action 清空 redo stack (标准 undo 行为)
+        redoStack.removeAll()
 
         // 执行实际操作
         action()
@@ -71,24 +87,39 @@ final class ImageGalleryUndoManager {
 
     /// 撤销
     func undo() {
-        guard undoManager.canUndo else { return }
-        undoManager.undo()
+        guard let entry = undoStack.popLast() else { return }
+        entry.undo()
+        redoStack.append(entry)
+        if redoStack.count > maxLevels {
+            redoStack.removeFirst()
+        }
         updateState()
     }
 
     /// 重做
     func redo() {
-        guard undoManager.canRedo else { return }
-        undoManager.redo()
+        guard let entry = redoStack.popLast() else { return }
+        entry.redo()
+        undoStack.append(entry)
+        if undoStack.count > maxLevels {
+            undoStack.removeFirst()
+        }
+        updateState()
+    }
+
+    /// 清空 (app 关闭 / 重置状态时调)
+    func clear() {
+        undoStack.removeAll()
+        redoStack.removeAll()
         updateState()
     }
 
     // 更新发布状态
     private func updateState() {
-        canUndo = undoManager.canUndo
-        canRedo = undoManager.canRedo
-        undoDescription = undoManager.undoActionName
-        redoDescription = undoManager.redoActionName
+        canUndo = !undoStack.isEmpty
+        canRedo = !redoStack.isEmpty
+        undoDescription = undoStack.last?.description ?? ""
+        redoDescription = redoStack.last?.description ?? ""
     }
 }
 

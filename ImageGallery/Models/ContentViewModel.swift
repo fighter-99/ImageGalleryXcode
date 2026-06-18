@@ -858,27 +858,33 @@ final class ContentViewModel {
 
     /// 批量移动到文件夹
     ///
-    /// V6.14.1: 去掉 `undoManager.registerAction` 调用, 改跟 batchAddTag / batchSetRating 同模式
-    /// (直接改 folder + save, 不注册 undo)。
-    ///
-    /// 根因: `registerAction` 内部用 `UndoManager.registerUndo(withTarget:)` 把 ImageGalleryUndoManager
-    /// 强引用作为 target, 加上 action 闭包 `self.selection = .empty` 强捕获 ContentViewModel,
-    /// 形成强引用环 (UndoManager → closure → ContentViewModel → ImageGalleryUndoManager → UndoManager),
-    /// 在 Swift Testing `@MainActor` + `ModelContainer` + 内部 run loop 组合下, 第一个 batchMove test
-    /// 60s+ 不返回, 整个 suite 死锁。batchAddTag / batchSetRating 不走 registerAction, 0.002s 跑过,
-    /// 对比鲜明。SidebarView.performMove (V3.5.20) 已走同样修复路径。
-    ///
-    /// batchMove 的 undo 暂时砍掉 (跟 performMove 一样, 走回收站恢复就够) — 后续如需 undo,
-    /// 需重做 ImageGalleryUndoManager (避开 Foundation UndoManager 的 target 强引用, 用手写 stack)。
+    /// V6.14.10: 恢复 `undoManager.registerAction` — UndoManager 重做 (自写 stack, 避开
+    ///   Foundation.UndoManager 的 run loop 交互死锁)。V6.14.4 砍, V6.14.10 拿回来。
+    ///   闭包用 `[weak self]` 避免 ContentViewModel 强引用环 (cycle 仍存在
+    ///   undoStack 持 entry, entry 持闭包, 但 self 是 weak → self 释放时闭包失效,
+    ///   undo 调用时不做事不崩)。
     func batchMove(to folder: Folder?) {
         let photosToMove = selection.selectedPhotos(in: visiblePhotos)
         guard !photosToMove.isEmpty, let modelContext else { return }
+        let oldFolders = photosToMove.map { $0.folder }
+        let count = photosToMove.count
+        let folderName = folder?.name ?? "未整理"
 
-        for photo in photosToMove {
-            photo.folder = folder
+        undoManager.registerAction(
+            description: "移动 \(count) 张照片到 \(folderName)"
+        ) { [weak self] in
+            for photo in photosToMove {
+                photo.folder = folder
+            }
+            modelContext.saveWithLog()
+            self?.selection = .empty
+        } undo: { [weak self] in
+            for (photo, oldFolder) in zip(photosToMove, oldFolders) {
+                photo.folder = oldFolder
+            }
+            modelContext.saveWithLog()
+            _ = self  // 强引用 self 进闭包, 防止 self 释放时 undo 操作失败
         }
-        modelContext.saveWithLog()
-        selection = .empty
     }
 
     /// 批量加标签
