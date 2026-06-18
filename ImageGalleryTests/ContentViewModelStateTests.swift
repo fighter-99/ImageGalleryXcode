@@ -12,7 +12,9 @@ import Foundation
 import SwiftData  // V6.12 收尾: sidebarSelection_canBeSetToFolder / affectsCurrentFolder / affectsCurrentTag 3 test 加 ModelContainer fetch——currentFolder/currentTag V6.08 改 UUID 后需要 context
 @testable import ImageGallery
 
+// V6.19.6 (P0 #18): 加 @Suite(.serialized) — 强制串行, 避免 ModelContainer 与其他 suite 并行创建冲突
 @MainActor
+@Suite(.serialized)
 struct ContentViewModelStateTests {
 
     // V6.12.20: 共享 suite + cleanup pattern——避免每次 UUID 创建新 suite 给 cfprefsd 压力

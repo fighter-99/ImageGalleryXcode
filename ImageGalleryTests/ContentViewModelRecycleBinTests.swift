@@ -13,7 +13,9 @@ import Foundation
 import SwiftData
 @testable import ImageGallery
 
+// V6.19.6 (P0 #18): 加 @Suite(.serialized) — 强制串行, 避免 ModelContainer 与其他 suite 并行创建冲突
 @MainActor
+@Suite(.serialized)
 struct ContentViewModelRecycleBinTests {
 
     // V6.12.20: 共享 suite + cleanup pattern (避开 UserDefaults.standard 跨 test 污染)
