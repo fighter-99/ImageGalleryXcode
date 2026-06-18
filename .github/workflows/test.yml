@@ -80,18 +80,27 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-xcode-
 
-      - name: Test (5 critical classes)
-        # V6.12.25: 只跑 4 个本机已验证的 ContentViewModel class
+      - name: Test (16 classes — V6.14.6 expansion)
+        # V6.12.25: 起步 4 个本机已验证的 ContentViewModel class
         #   SmokeTests / InitTests / StateTests / RecycleBinTests
-        #   V6.12.20-21 isolatedModel + FakeUserDefaults 修过后这 4 个 class
-        #   80%+ pass (3 unique fail = 1 stale test + 2 production bug)
-        #   跳过的 class: Batch/Import/Misc/Selection/RecycleBinErrorPropagation/ImageLoader 等
-        #   这些有 130+ stale test 跑超 20 min, V6.13 修
-        # V6.14.1: 加 BatchTests (5 class 一起跑 < 2 sec)
-        #   之前 7 test hang 10+ min 根因: batchMove 调 undoManager.registerAction
-        #   跟 Foundation UndoManager + ContentViewModel 形成强引用环, 在
-        #   Swift Testing @MainActor + ModelContainer 组合下死锁
-        #   修法: batchMove 改跟 batchAddTag/batchSetRating 同模式, 不走 registerAction
+        # V6.14.4: +1 ContentViewModelBatchTests (修了 UndoManager 强引用环, 7 test 全过)
+        # V6.14.6: +11 class 解锁
+        #   - 3 用户原 scope: ContentViewModelImport/Misc/Selection
+        #   - 8 记忆"8 个 class" 周边: PopoverChrome, ClosureButtonHover,
+        #     FilterUnifiedPopoverInitialState, FilterUnifiedPopoverResize,
+        #     ImageLoader, RecycleBinErrorPropagation, RecycleBinService, RecycleBinServiceIntegration
+        # 验证:
+        #   - 16 class 共 1100+ tests, 0 hang
+        #   - BatchTests 死锁是 UndoManager + ModelContainer + @MainActor 独有问题, 非系统
+        #   - 11 known fail (全 fast fail 0.001-0.096s, 跟死锁无关), 待 V6.14.7+ 修
+        #     ImportTests/expandFolders_directory_recursivelyExpands
+        #     MiscTests/serialize_thenRestore_folderUUIDNotInStore_fallsBackToAll
+        #     MiscTests/representativePhoto_allTrashed_fallsBackToFirst
+        #     SelectionTests/resetThumbnailSize_restoresStoredDefault
+        #     ImageLoaderTests/thumbnailCacheKeyIncludesPixelSize
+        #     RecycleBinServiceIntegrationTests/purgeRemovesPhotoFromContext
+        #     (剩下 5 个 = 上面 6 unique x 2 因为 Swift Testing 跑双份)
+        # 跳过 39 个 test file (BatchSetRatingMath/CategoryRowView/EmptyState 等) — 100% pass 本机, V6.14.7 加
         # -only-testing: 多 flag 限定范围
         run: |
           xcodebuild \
@@ -103,6 +112,17 @@ jobs:
             -only-testing:ImageGalleryTests/ContentViewModelStateTests \
             -only-testing:ImageGalleryTests/ContentViewModelRecycleBinTests \
             -only-testing:ImageGalleryTests/ContentViewModelBatchTests \
+            -only-testing:ImageGalleryTests/ContentViewModelImportTests \
+            -only-testing:ImageGalleryTests/ContentViewModelMiscTests \
+            -only-testing:ImageGalleryTests/ContentViewModelSelectionTests \
+            -only-testing:ImageGalleryTests/PopoverChromeTests \
+            -only-testing:ImageGalleryTests/ClosureButtonHoverTests \
+            -only-testing:ImageGalleryTests/FilterUnifiedPopoverInitialStateTests \
+            -only-testing:ImageGalleryTests/FilterUnifiedPopoverResizeTests \
+            -only-testing:ImageGalleryTests/ImageLoaderTests \
+            -only-testing:ImageGalleryTests/RecycleBinErrorPropagationTests \
+            -only-testing:ImageGalleryTests/RecycleBinServiceTests \
+            -only-testing:ImageGalleryTests/RecycleBinServiceIntegrationTests \
             test
 
       - name: Upload xcresult on failure
