@@ -117,6 +117,15 @@ final class UserSettings {
         didSet { defaults.set(defaultExportQuality, forKey: "defaultExportQuality") }
     }
 
+    // MARK: - V6.21.0 (Phase 1.1 UX polish): 用户偏好 — 是否显示过 marquee hint
+
+    /// V6.21.0: 是否已显示过 marquee selection hint
+    ///   true = 已显示 (用户看过或 dismiss 过), 永久隐藏
+    ///   false = 第一次启动 + 库有内容 + selection 空 → 显示 floating hint
+    var hasShownMarqueeHint: Bool = false {
+        didSet { defaults.set(hasShownMarqueeHint, forKey: "hasShownMarqueeHint") }
+    }
+
     /// 详情列宽持久化
     var detailColumnWidth: Double = 360 {
         didSet { defaults.set(detailColumnWidth, forKey: "detailColumnWidth") }

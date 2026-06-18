@@ -499,6 +499,14 @@ struct ContentView: View {
             visiblePhotos: model.visiblePhotos,
             onImmersiveDismiss: { immersivePhoto = nil }
         )
+        // V6.21.0 (Phase 1.1 UX polish): 圈选启动 → dismiss marquee hint
+        //   isBoxSelecting 由 ContentView @State 持有, mainSplitPane 传 $isBoxSelecting 给 MainSplitView
+        //   BoxSelectionGesture 启动时 set true → 这里 onChange 触发 → dismiss hint
+        .onChange(of: isBoxSelecting) { _, new in
+            if new && !model.settings.hasShownMarqueeHint {
+                model.settings.hasShownMarqueeHint = true
+            }
+        }
     }
 
     // V3.5.17：PathBar 已禁用（用户偏好）
@@ -556,6 +564,23 @@ struct ContentView: View {
                     .transition(.move(edge: .top).combined(with: .opacity))
             }
         }
+        // V6.21.0 (Phase 1.1 UX polish): 圈选功能发现性提示 — first-run floating tip
+        //   显示条件: 库有内容 + selection 空 + 用户没看过提示
+        //   dismiss 路径: 1) 点 "知道了" → settings.hasShownMarqueeHint = true
+        //                 2) 首次拖动 (BoxSelectionGesture onChanged) → 同上
+        //   V6.17.1 plain left-drag 圈选是核心交互, 但用户不知道有 — 这是发现性缺口
+        .overlay(alignment: .center) {
+            if !model.settings.hasShownMarqueeHint
+                && model.selection.selectedIDs.isEmpty
+                && !model.allPhotos.isEmpty {
+                MarqueeHintView(onDismiss: {
+                    model.settings.hasShownMarqueeHint = true
+                })
+                .transition(.scale(scale: 0.85).combined(with: .opacity))
+            }
+        }
+        .animation(.easeInOut(duration: 0.25), value: model.settings.hasShownMarqueeHint)
+        .animation(.easeInOut(duration: 0.25), value: model.allPhotos.isEmpty)
         .animation(.easeInOut(duration: 0.2), value: model.isMultiSelect)
         .animation(.easeInOut(duration: 0.2), value: model.selection.selectedIDs.isEmpty)
     }
