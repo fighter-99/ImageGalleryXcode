@@ -112,6 +112,15 @@ struct MainSplitView<Sidebar: View, Center: View, Detail: View>: View {
                     Rectangle()
                         .fill(Material.dropOverlay)
                         .opacity(0.95)
+                    // V6.19.1 (P0 #9): 4pt accent dashed border 让 drop 区域更明显
+                    //   跟 Finder / Photos drop overlay 视觉一致 (Photos 拖入时也有 accent outline)
+                    //   8-4 dash pattern, 跟 Photos.app 内部 drag feedback 一致
+                    RoundedRectangle(cornerRadius: 12)
+                        .strokeBorder(
+                            Color.accentColor,
+                            style: StrokeStyle(lineWidth: 4, dash: [8, 4])
+                        )
+                        .padding(8)
                     VStack(spacing: 12) {
                         Image(systemName: "square.and.arrow.down.fill")
                             .font(Typography.emptyStateIconLarge)
