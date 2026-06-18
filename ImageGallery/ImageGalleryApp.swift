@@ -11,6 +11,11 @@ import SwiftData
 import Combine  // V4.36.x: 保留——HistoryStore/ImageGalleryUndoManager 等用 @Published
 import os  // V6.08: ModelContainer 启动失败 log
 
+// MARK: - P4.2: 通知名 (File 菜单 ⌘⇧R → ContentView batchRenameSheet 监听)
+extension Notification.Name {
+    static let showBatchRenameSheet = Notification.Name("com.iridescent.ImageGallery.showBatchRenameSheet")
+}
+
 // AppDelegate：处理应用层 macOS 事件
 // V3.7.1 重写: 自实现窗口 frame 持久化 (替换 V6.12.6 的 setFrameAutosaveName, 不 work)
 //   - 原因: setFrameAutosaveName 在 SwiftUI Scene 创建的 NSWindow 不生效
@@ -217,6 +222,14 @@ struct ImageGalleryApp: App {
                 Menu(Copy.openRecent) {
                     RecentPhotosMenu()
                 }
+                // P4.2: 批量重命名 — ⌘⇧R
+                //   走 NotificationCenter 通知 ContentView 弹 sheet (跟 V3.5.D .openSettingsRequested 同模式)
+                //   ContentView+Lifecycle.batchRenameSheet 内 onReceive 监听
+                Divider()
+                Button(Copy.batchRenameTitle + "…") {
+                    NotificationCenter.default.post(name: .showBatchRenameSheet, object: nil)
+                }
+                .keyboardShortcut("r", modifiers: [.command, .shift])
             }
             // macOS 原生 View 菜单（在 View 菜单里加 Toggle 项）
             // V5.59-3: 3 Toggle + 3 Button 改用 $sharedSettings.X 替代已删的 3 userDefaults bindings

@@ -12,9 +12,10 @@
 import SwiftUI
 import SwiftData
 
-/// P3.1.3: 选完动作条 — 选 N 张图时浮出, 4 个 batch action
+/// P3.1.3: 选完动作条 — 选 N 张图时浮出, 5 个 batch action
 ///   - Tag: 弹 tag picker popover (用 model.allTags)
 ///   - Move: 弹 folder picker menu (用 model.folders)
+///   - Rename (P4.2): 弹 batch rename sheet
 ///   - Export: 直接调 batchExport() (已有 file panel)
 ///   - Delete: 弹确认 dialog (showingBatchDeleteConfirm)
 struct SelectionMiniToolbar: View {
@@ -63,6 +64,14 @@ struct SelectionMiniToolbar: View {
                 Label("移动", systemImage: "folder")
             }
             .help("移动到文件夹")
+
+            // P4.2: Rename — sheet (模板批量重命名)
+            Button {
+                model.showingBatchRenameSheet = true
+            } label: {
+                Label(Copy.batchRenameTitle, systemImage: "pencil.and.list.clipboard")
+            }
+            .help("按模板批量重命名 (⌘⇧R)")
 
             // Export — 直接调 (内部 file panel)
             Button {

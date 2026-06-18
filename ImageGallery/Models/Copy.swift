@@ -230,6 +230,20 @@ enum Copy {
     /// 文件重命名失败 (DetailView.renamePhoto 磁盘 moveItem 失败)
     static func renameFailed(_ filename: String) -> String { String.localizedStringWithFormat(String(localized: "renameFailed", defaultValue: "重命名失败：%@"), filename) }
 
+    // MARK: - P4.2: 批量重命名
+    /// File 菜单项 + mini toolbar 按钮共用
+    static let batchRenameTitle = String(localized: "batchRenameTitle", defaultValue: "批量重命名")
+    /// Sheet 模板输入框 placeholder
+    static let batchRenameTemplatePlaceholder = String(localized: "batchRenameTemplatePlaceholder", defaultValue: "photo_{n:3}")
+    /// Sheet 标题 — "重命名 N 张照片" (printf 插值, 见 [[swift-stringlocalized-pitfalls]])
+    static func batchRenameSheetTitle(_ count: Int) -> String { String.localizedStringWithFormat(String(localized: "batchRenameSheetTitle", defaultValue: "重命名 %lld 张照片"), count) }
+    /// Sheet preview 尾巴 — "等 N 个" (前 3 张之外的提示)
+    static func batchRenamePreviewSuffix(_ count: Int) -> String { String.localizedStringWithFormat(String(localized: "batchRenamePreviewSuffix", defaultValue: "等 %lld 个"), count) }
+    /// Sheet 模板语法提示
+    static let batchRenameTokenHint = String(localized: "batchRenameTokenHint", defaultValue: "可用占位符：{n} 序列号 · {n:N} 零填充 · {originalName} 原文件名")
+    /// Apply 按钮
+    static let apply = String(localized: "apply", defaultValue: "应用")
+
     // MARK: - V6.08: PhotoGridEmptyState 文案 (整个文件 hardcoded → Copy 字典)
     /// CTA 主/次按钮
     static let clearSearch = String(localized: "clearSearch", defaultValue: "清除搜索")

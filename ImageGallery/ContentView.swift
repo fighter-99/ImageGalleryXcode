@@ -102,6 +102,11 @@ struct ContentView: View {
         get { model.showingBatchDeleteConfirm }
         nonmutating set { model.showingBatchDeleteConfirm = newValue }
     }
+    // P4.2: 批量重命名 sheet — mini toolbar Rename 按钮 / File menu ⌘⇧R 触发
+    private var showingBatchRenameSheet: Bool {
+        get { model.showingBatchRenameSheet }
+        nonmutating set { model.showingBatchRenameSheet = newValue }
+    }
 
     // V3.6.6: 清空回收站二次确认（防误操作：永久删除所有 trashed 项）
     // V3.6.6: 清空回收站二次确认（防误操作：永久删除所有 trashed 项）

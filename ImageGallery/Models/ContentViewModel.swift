@@ -63,6 +63,8 @@ final class ContentViewModel {
         set { settings.sortOption = newValue.rawValue }
     }
     var showingBatchDeleteConfirm = false
+    /// P4.2: 批量重命名 sheet — mini toolbar "重命名" 按钮 / File 菜单 ⌘⇧R 触发
+    var showingBatchRenameSheet = false
     var showingEmptyTrashConfirm = false
     var importDuplicateCheck: ImageImporter.DuplicateCheckResult? = nil
     var pendingImportURLs: [URL] = []
@@ -899,6 +901,105 @@ final class ContentViewModel {
             }
         }
         modelContext.saveWithLog()
+    }
+
+    // MARK: - P4.2: 批量重命名
+    /// 模板: {n} {n:N} {originalName} (见 BatchRenameTemplate)
+    /// - 规划阶段: render + uniquify (within-batch + on-disk 双层)
+    /// - 执行阶段: 走 undoManager.registerAction, 单步撤销整批
+    /// - 错误处理: per-photo try, 失败计数, 单次 toast 汇总 (V6.08 教训: 不静默)
+    func batchRename(template: String) {
+        let photos = selection.selectedPhotos(in: visiblePhotos)
+        guard !photos.isEmpty, let modelContext else { return }
+        let trimmed = template.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else { return }
+
+        // Plan: 渲染 + 去重, 收集 (photo, oldURL, oldFilename, newBase, newExt)
+        struct Plan {
+            let photo: Photo
+            let oldURL: URL
+            let oldFilename: String
+            let newBase: String
+            let newExt: String
+        }
+        var plans: [Plan] = []
+        var reserved = Set<String>()
+
+        for (i, photo) in photos.enumerated() {
+            let oldURL = photo.fileURL
+            let oldFilename = photo.filename
+            let ext = oldURL.pathExtension
+            let originalBase = oldURL.deletingPathExtension().lastPathComponent
+
+            // 1) render
+            guard let rendered = try? BatchRenameTemplate.render(
+                template: trimmed, index: i + 1, totalCount: photos.count,
+                originalFilename: originalBase
+            ) else { continue }
+
+            // 2) skip self-rename (template produces same name as original)
+            if rendered == originalBase && ext == oldURL.pathExtension {
+                reserved.insert("\(rendered).\(ext)")
+                continue
+            }
+
+            // 3) uniquify (within-batch + on-disk)
+            let (finalBase, finalExt) = BatchRenameTemplate.uniquify(
+                baseName: rendered, ext: ext, existingReserved: reserved,
+                onDiskCheck: { name in
+                    let candidateURL = oldURL.deletingLastPathComponent()
+                        .appendingPathComponent(name)
+                    return FileManager.default.fileExists(atPath: candidateURL.path)
+                }
+            )
+            reserved.insert("\(finalBase).\(finalExt)")
+            plans.append(Plan(
+                photo: photo, oldURL: oldURL, oldFilename: oldFilename,
+                newBase: finalBase, newExt: finalExt
+            ))
+        }
+
+        guard !plans.isEmpty else { return }
+        let count = plans.count
+
+        undoManager.registerAction(
+            description: "批量重命名 \(count) 张照片"
+        ) { [weak self] in
+            var errors = 0
+            for p in plans {
+                let newURL = p.oldURL.deletingLastPathComponent()
+                    .appendingPathComponent("\(p.newBase).\(p.newExt)")
+                do {
+                    try FileManager.default.moveItem(at: p.oldURL, to: newURL)
+                    p.photo.filename = "\(p.newBase).\(p.newExt)"
+                    p.photo.fileURL = newURL
+                } catch { errors += 1 }
+            }
+            modelContext.saveWithLog()
+            if errors > 0 {
+                self?.enqueueToast("部分重命名失败：\(errors) 张", type: .error, duration: .long)
+            } else {
+                self?.showToast("已重命名 \(count) 张照片", type: .success)
+            }
+            _ = self
+        } undo: { [weak self] in
+            var undoErrors = 0
+            // 反向撤销 — 撤销顺序避开 forward 时的写写依赖
+            for p in plans.reversed() {
+                let newURL = p.oldURL.deletingLastPathComponent()
+                    .appendingPathComponent("\(p.newBase).\(p.newExt)")
+                do {
+                    try FileManager.default.moveItem(at: newURL, to: p.oldURL)
+                    p.photo.filename = p.oldFilename
+                    p.photo.fileURL = p.oldURL
+                } catch { undoErrors += 1 }
+            }
+            modelContext.saveWithLog()
+            if undoErrors > 0 {
+                self?.enqueueToast("部分撤销失败：\(undoErrors) 张", type: .error, duration: .long)
+            }
+            _ = self
+        }
     }
 
     /// V5.12: 批量评分

@@ -165,6 +165,13 @@ extension View {
             )
             .applySettingsChrome(tintColor: accentColor.color)
             .exposeUndoManager(undoManager)
+            // P4.2: 批量重命名 sheet + 通知监听
+            .batchRenameSheet(
+                model: model,
+                selection: selection,
+                visiblePhotos: visiblePhotos,
+                showingBatchRename: bindableModel.showingBatchRenameSheet
+            )
             .onChange(of: filterState.activeCount) { _, count in
                 ToolbarController.shared.filterActiveCount = count
             }
@@ -194,6 +201,40 @@ extension View {
             .onChange(of: allPhotos) { _, new in model.allPhotos = new }
             .onChange(of: folders) { _, new in model.folders = new }
             .onChange(of: allTags) { _, new in model.allTags = new }
+    }
+}
+
+// MARK: - P4.2: 批量重命名 sheet
+//
+// Photos.app 范式: 弹 sheet, 模板实时 preview, Apply 调 ContentViewModel.batchRename
+// File 菜单 ⌘⇧R 通过 NotificationCenter 触发 (绕过 menu 不能直接拿 SwiftUI state 的限制,
+//   跟 V3.5.D .openSettingsRequested 同模式 — memory: V3.5.D 通知方案)
+extension View {
+    @MainActor
+    func batchRenameSheet(
+        model: ContentViewModel,
+        selection: SelectionState,
+        visiblePhotos: [Photo],
+        showingBatchRename: Binding<Bool>
+    ) -> some View {
+        self
+            .sheet(isPresented: showingBatchRename) {
+                // 实时从 visiblePhotos 解析选中 (跟上一次 selection.selectedPhotos(in: visiblePhotos) 一致)
+                let selectedPhotos = visiblePhotos.filter { selection.selectedIDs.contains($0.id) }
+                BatchRenameSheet(
+                    photos: selectedPhotos,
+                    onApply: { template in
+                        // 直接调 model, 跟 batchMove 一样不通过 closure 包装
+                        model.batchRename(template: template)
+                    }
+                )
+            }
+            // P4.2: File 菜单 ⌘⇧R 通过通知触发 sheet
+            //   收到通知 → 设 showingBatchRename = true (跟 V3.5.D .openSettingsRequested 同模式)
+            .onReceive(NotificationCenter.default.publisher(for: .showBatchRenameSheet)) { _ in
+                guard !selection.isEmpty else { return }
+                showingBatchRename.wrappedValue = true
+            }
     }
 }
 
