@@ -27,6 +27,7 @@ import SwiftUI
 import SwiftData
 import UniformTypeIdentifiers
 import AVFoundation  // V6.19.5 (P0 #16): speakSelection() AVSpeechSynthesizer
+import os  // V6.22.5: batch rename catch 加 Logger.imageIO (bug-scan MED → fix)
 import ImageIO  // V6.22.1 (P2 #2): rotateSelected EXIF read/write
 
 /// V5.52: ContentView 的业务模型——@MainActor @Observable 单一根
@@ -1170,7 +1171,13 @@ final class ContentViewModel {
                     try FileManager.default.moveItem(at: p.oldURL, to: newURL)
                     p.photo.filename = "\(p.newBase).\(p.newExt)"
                     p.photo.fileURL = newURL
-                } catch { errors += 1 }
+                } catch {
+                    // V6.22.5: 加 os_log 替空 catch (V6.22.4 bug-scan 报 MED)
+                    //   errors 计数器保留——用于 toast "部分重命名失败：N 张"
+                    //   logger 加诊断线索——Console.app 可看具体哪张失败 + 原因
+                    Logger.imageIO.error("batchRename 失败: \(p.oldURL.lastPathComponent, privacy: .public) → \(newURL.lastPathComponent, privacy: .public) — \(error.localizedDescription, privacy: .public)")
+                    errors += 1
+                }
             }
             modelContext.saveWithLog()
             if errors > 0 {
@@ -1189,7 +1196,11 @@ final class ContentViewModel {
                     try FileManager.default.moveItem(at: newURL, to: p.oldURL)
                     p.photo.filename = p.oldFilename
                     p.photo.fileURL = p.oldURL
-                } catch { undoErrors += 1 }
+                } catch {
+                    // V6.22.5: 加 os_log (跟 forward 对称)
+                    Logger.imageIO.error("batchRename undo 失败: \(newURL.lastPathComponent, privacy: .public) → \(p.oldURL.lastPathComponent, privacy: .public) — \(error.localizedDescription, privacy: .public)")
+                    undoErrors += 1
+                }
             }
             modelContext.saveWithLog()
             if undoErrors > 0 {

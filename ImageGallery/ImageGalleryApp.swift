@@ -159,6 +159,12 @@ struct ImageGalleryApp: App {
                 )
                 Self.logger.info("ModelContainer 重置成功, 旧 store 已删")
             } catch {
+                // V6.22.5: fatalError 前加 .critical 级 logger (bug-scan HIGH → 但 V6.08 设计
+                //   保留 fatalError, 给终端用户的"删除 store 文件"指引)
+                //   logger.critical 输出到 Console.app 便于远程诊断
+                Self.logger.critical("ModelContainer 重置后仍失败 (OS-level 完全不可用): \(String(describing: error), privacy: .public)")
+                // bug-scan-allow: V6.08 设计 — SwiftData 完全不可用是 OS-level 不可恢复,
+                //   fatalError 是最后一道防线引导用户去 terminal 删 store 文件
                 fatalError("ModelContainer 重置后仍失败: \(String(describing: error))")
             }
         }

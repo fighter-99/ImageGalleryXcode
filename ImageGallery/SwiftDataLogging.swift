@@ -48,6 +48,13 @@ extension Logger {
         subsystem: "com.iridescent.ImageGallery",
         category: "popoverDebug"
     )
+
+    /// V6.22.5: 图片导入流程诊断 (替 ImageImporter.swift 8 个 print)
+    ///   Console.app 过滤 subsystem "com.iridescent.ImageGallery" + category "importer" 可看
+    static let importer = Logger(
+        subsystem: "com.iridescent.ImageGallery",
+        category: "importer"
+    )
 }
 
 // MARK: - SwiftData ModelContext 统一错误处理

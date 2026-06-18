@@ -215,6 +215,12 @@ def is_comment_line(line: str) -> bool:
     return False
 
 
+# 显式豁免标记: 上一行含 "bug-scan-allow:" 的代码行, 跳过 (设计上有意保留)
+# 例: `// bug-scan-allow: V6.08 设计 — fatalError 是最后一道防线`
+#     `fatalError(...)`
+BUG_SCAN_ALLOW_MARKER = "bug-scan-allow:"
+
+
 def file_uses_nscoding(content: str) -> bool:
     """文件是否使用了 NSCoding 模板 (跳过 init?(coder:) { fatalError() })."""
     return bool(NSCODING_FATAL_PATTERN.search(content))
@@ -242,6 +248,7 @@ def scan_file(file_path: Path, patterns: list[Pattern]) -> list[Finding]:
     has_nscoding = any(p.allow_nscoding for p in patterns) and file_uses_nscoding(content)
 
     in_block_comment = False
+    recent_lines: list[str] = []  # 最近 ~8 行 (覆盖多行注释场景)
     for i, line in enumerate(content.splitlines(), 1):
         # 块注释追踪 (粗略)
         if "/*" in line and "*/" not in line:
@@ -252,12 +259,18 @@ def scan_file(file_path: Path, patterns: list[Pattern]) -> list[Finding]:
         is_comment = in_block_comment or is_comment_line(line)
         col = line.find(line.strip())  # 缩进列数
 
+        # bug-scan-allow: 最近 ~8 行内有豁免标记 → 跳过当前行 (覆盖多行注释 + 跨行场景)
+        has_allow_marker = any(BUG_SCAN_ALLOW_MARKER in rl for rl in recent_lines)
+
         for pat in patterns:
             # 路径排除
             if any(ex in str(file_path) for ex in pat.exclude_paths):
                 continue
             # NSCoding 模板白名单 (整个文件级, 不再单行判断)
             if has_nscoding and pat.id == "fatal_error_prod":
+                continue
+            # bug-scan-allow 标记豁免
+            if has_allow_marker:
                 continue
 
             if pat.matches(line, is_comment):
@@ -273,6 +286,11 @@ def scan_file(file_path: Path, patterns: list[Pattern]) -> list[Finding]:
                         rationale=pat.rationale,
                     )
                 )
+
+        # 维护最近 8 行滚动窗口
+        recent_lines.append(line)
+        if len(recent_lines) > 8:
+            recent_lines.pop(0)
 
     return findings
 

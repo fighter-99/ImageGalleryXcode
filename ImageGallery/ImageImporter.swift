@@ -9,6 +9,7 @@ import Foundation
 import ImageIO
 import CryptoKit
 import SwiftData
+import os  // V6.22.5: 替 8 个 print, 用 Logger.importer
 
 // 导入进度信息
 // V5.15: 加 inserted + failureCount 字段——UI 显示"X/Y · N 失败"更准确
@@ -190,9 +191,11 @@ struct ImageImporter {
     /// V5.13: 返回 ImportResult——inserted 数 + failures [(URL, Error)]，调用方接 toast
     @discardableResult
     func importURLs(_ urls: [URL]) -> ImportResult {
-        print("📥 importURLs 收到 \(urls.count) 个 URL")
+        // V6.22.5: 替 print → Logger.importer (8 个 print 全替换)
+        //   .debug 级 (默认不显示, 只有 Console.app 启用 Info 才出)
+        Logger.importer.debug("importURLs 收到 \(urls.count, privacy: .public) 个 URL")
         for url in urls {
-            print("   - \(url.path)")
+            Logger.importer.debug("  - \(url.path, privacy: .public)")
         }
 
         // 1. 先收集所有要导入的文件（递归文件夹）
@@ -201,9 +204,9 @@ struct ImageImporter {
             collectFiles(at: url, into: &allFiles)
         }
 
-        print("📂 展开后共 \(allFiles.count) 个文件")
+        Logger.importer.debug("展开后共 \(allFiles.count, privacy: .public) 个文件")
         for (i, file) in allFiles.enumerated() {
-            print("   [\(i+1)/\(allFiles.count)] \(file.lastPathComponent)")
+            Logger.importer.debug("  [\(i+1)/\(allFiles.count)] \(file.lastPathComponent, privacy: .public)")
         }
 
         let total = allFiles.count
@@ -267,7 +270,7 @@ struct ImageImporter {
     /// V5.13: 返回 Optional<Error>——nil = 成功（或不支持格式跳过），非 nil = 失败
     private func importSingleImage(at url: URL) -> Error? {
         guard supportedExtensions.contains(url.pathExtension.lowercased()) else {
-            print("⏭️ 跳过不支持的格式: \(url.lastPathComponent)")
+            Logger.importer.debug("跳过不支持的格式: \(url.lastPathComponent, privacy: .public)")
             return nil  // 不支持格式 = 跳过而非失败
         }
 
@@ -277,7 +280,7 @@ struct ImageImporter {
         do {
             destURL = try storage.importFile(from: url)
         } catch {
-            print("❌ 复制失败: \(url.lastPathComponent) - \(error.localizedDescription)")
+            Logger.importer.error("复制失败: \(url.lastPathComponent, privacy: .public) - \(error.localizedDescription, privacy: .public)")
             return error
         }
 
@@ -304,10 +307,10 @@ struct ImageImporter {
         modelContext.insert(photo)
         do {
             try modelContext.save()
-            print("✅ 已导入: \(url.lastPathComponent)")
+            Logger.importer.info("已导入: \(url.lastPathComponent, privacy: .public)")
             return nil
         } catch {
-            print("❌ 保存失败: \(error.localizedDescription)")
+            Logger.importer.error("保存失败: \(error.localizedDescription, privacy: .public)")
             return error
         }
     }
