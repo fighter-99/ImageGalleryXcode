@@ -3910,6 +3910,17 @@
         }
       }
     },
+    "sidebarSectionSmartFolders" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "智能文件夹"
+          }
+        }
+      }
+    },
     "sidebarSectionTags" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -5161,9 +5172,6 @@
 
     },
     "导出选中照片" : {
-
-    },
-    "已选 %lld 张" : {
 
     },
     "开始使用" : {

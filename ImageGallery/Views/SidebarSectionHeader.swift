@@ -31,9 +31,33 @@ struct SidebarSectionHeader: View {
 
     /// P4.1.1 NEW: header 右侧 "+" 按钮 (跟 section 主题一致, e.g. 智能文件夹创建)
     ///   V1: nil = 不显示按钮 (向后兼容现有 4 个 caller)
+    /// V6.23 (回滚): 移除 addAction — 改成 chevron 模式 (menuItems), 跟智能文件夹创建入口统一
+    ///   现在 header 创建入口靠 menuItems (chevron 点击出 menu), 不再有 + button
     var addAction: (() -> Void)? = nil
     /// P4.1.1 NEW: "+" 按钮的可访问性标签 + help tooltip
     var addAccessibilityLabel: String = "新建"
+
+    /// V6.23 NEW: chevron menu 模式 — 提供菜单项数组后, 点击 chevron 出 menu (不再 toggle 展开)
+    ///   用于智能文件夹 section: 菜单 = [新建智能文件夹, 展开/折叠]
+    ///   设计理由: smart folder 创建是 power user 动作, 走 menu 降低误触 (跟 Photos Smart Albums 一致)
+    ///   nil 或空数组 = 标准 toggle 模式 (默认所有 section)
+    var menuItems: [HeaderMenuItem] = []
+
+    /// V6.23 NEW: menu item 数据 — 标题 + SF Symbol + 回调
+    struct HeaderMenuItem: Identifiable {
+        let id = UUID()
+        let label: String
+        let systemImage: String?
+        let action: () -> Void
+
+        // V6.23: 显式 init — Swift 默认 memberwise init 不包含有默认值的参数, 但系统默认 init 也不接受 label/systemImage/action 顺序
+        //   提供显式 init 让 caller 可用 init(label:..., systemImage:..., action:...) — call site 更清晰
+        init(label: String, systemImage: String? = nil, action: @escaping () -> Void) {
+            self.label = label
+            self.systemImage = systemImage
+            self.action = action
+        }
+    }
 
     // V6.21.3 (Phase 1.4 UX polish): hover state — 整个 header 区域轻微 background tint
     //   之前整个 header 区域可点击切换折叠 (V4.1.0) 但 hover 无视觉反馈, 跟 SidebarRow 不一致
@@ -46,7 +70,10 @@ struct SidebarSectionHeader: View {
         count: Int? = nil,
         isExpanded: Binding<Bool> = .constant(true),
         addAction: (() -> Void)? = nil,
-        addAccessibilityLabel: String = "新建"
+        addAccessibilityLabel: String = "新建",
+        // V6.23 NEW: chevron menu 模式 (智能文件夹 section 用)
+        //   非空时 chevron 点击出 menu, 不再 toggle 展开
+        menuItems: [HeaderMenuItem] = []
     ) {
         self.title = title
         self.icon = icon
@@ -54,6 +81,7 @@ struct SidebarSectionHeader: View {
         self._isExpanded = isExpanded
         self.addAction = addAction
         self.addAccessibilityLabel = addAccessibilityLabel
+        self.menuItems = menuItems
     }
 
     /// V4.1.0 便利构造：可折叠 + 自动持久化（推荐用这个）
@@ -106,11 +134,41 @@ struct SidebarSectionHeader: View {
             }
 
             // V4.1.0 NEW: chevron（▶ → ▼ 旋转）
-            Image(systemName: "chevron.right")
-                .font(SidebarStyle.headerFont)
-                .foregroundStyle(isHovered ? .primary : SidebarStyle.headerColor)
-                .rotationEffect(.degrees(isExpanded ? 90 : 0))
-                .animation(Animations.interactive, value: isExpanded)
+            // V6.23: menu 模式 — 提供 menuItems 时点击 chevron 出 menu (不再 toggle 展开)
+            //   智能文件夹 section 用这模式: 菜单 [新建智能文件夹, 展开/折叠]
+            if menuItems.isEmpty {
+                // 标准模式: 点击 chevron toggle 展开
+                Image(systemName: "chevron.right")
+                    .font(SidebarStyle.headerFont)
+                    .foregroundStyle(isHovered ? .primary : SidebarStyle.headerColor)
+                    .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                    .animation(Animations.interactive, value: isExpanded)
+            } else {
+                // Menu 模式: 点击 chevron 出 menu
+                //   .borderlessButton 风格让 chevron 看起来跟之前一样 (只是点击行为变)
+                //   .menuIndicator(.hidden) 隐藏 menu 自带的小箭头 (不想要 menu 暗示 chevron 还能 toggle)
+                Menu {
+                    ForEach(menuItems) { item in
+                        Button {
+                            item.action()
+                        } label: {
+                            if let sysImg = item.systemImage {
+                                Label(item.label, systemImage: sysImg)
+                            } else {
+                                Text(item.label)
+                            }
+                        }
+                    }
+                } label: {
+                    Image(systemName: "chevron.right")
+                        .font(SidebarStyle.headerFont)
+                        .foregroundStyle(isHovered ? .primary : SidebarStyle.headerColor)
+                        .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                        .animation(Animations.interactive, value: isExpanded)
+                }
+                .menuStyle(.borderlessButton)
+                .menuIndicator(.hidden)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, SidebarStyle.headerPaddingHorizontal)
@@ -125,7 +183,10 @@ struct SidebarSectionHeader: View {
         .contentShape(Rectangle())  // 让整个 header 区域可点击
         .onTapGesture {
             // V4.1.0: 点击切换折叠
-            isExpanded.toggle()
+            // V6.23: menu 模式下不 toggle (chevron 自己处理点击)
+            if menuItems.isEmpty {
+                isExpanded.toggle()
+            }
         }
         // V6.22.2 (P2 #8): VoiceOver 标签 — section header hint
         //   hint 描述折叠状态 + 操作 ("单击切换折叠, 当前已展开 / 已折叠")

@@ -94,6 +94,9 @@ enum Copy {
     static let sidebarRecentlyDeleted = String(localized: "sidebarRecentlyDeleted", defaultValue: "回收站")
     // section header
     static let sidebarSectionLibrary = String(localized: "sidebarSectionLibrary", defaultValue: "我的图馆")
+    // V6.23 (Bug fix): 智能文件夹独立 section — 之前跟"我的图馆"合并, "+" 在 Library header 语义错位
+    //   Photos.app 范式: Smart Albums 独立 section, 跟 Library 平级; Folders/Tags 也是独立 section
+    static let sidebarSectionSmartFolders = String(localized: "sidebarSectionSmartFolders", defaultValue: "智能文件夹")
     static let sidebarSectionFolders = String(localized: "sidebarSectionFolders", defaultValue: "我的文件夹")
     static let sidebarSectionTags = String(localized: "sidebarSectionTags", defaultValue: "标签")
     static let sidebarSectionRecycleBin = String(localized: "sidebarSectionRecycleBin", defaultValue: "最近删除")

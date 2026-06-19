@@ -359,26 +359,23 @@ enum SidebarStyle {
     static let iconActive: Color = Color.accentColor
 
     // ─── section header ───
-    /// section header 字号——V4.48.0: caption2 (11pt) → 12pt
-    ///   11pt 比行 label 13pt 小 2pt——段头"小一圈"不协调
-    ///   12pt 缩差到 1pt + 与行 label 视觉更对齐
-    ///   仍用 .semibold 保持"标题 vs 内容"层级
-    static let headerFont: Font = .system(size: 12, weight: .semibold)
-    /// section header 字号 (CGFloat 版) — token 一致性
-    static let headerFontSize: CGFloat = 12
-    /// section header 颜色——V4.48.0: secondary @ 0.7 → 0.85
-    ///   0.7 太"淡"——与其他文本脱节
-    ///   0.85 接近行 label 颜色 (Color.secondary 0.85) ——视觉协调
-    static let headerColor: Color = Color.secondary.opacity(0.85)
+    /// V6.23 (文本 token 统一): section header 字号 12pt → 11pt
+    ///   之前 12pt 跟行 label 13pt 差仅 1pt, 视觉上 header 跟 row 几乎平级
+    ///   现在 11pt = 跟 countFont 同 size + uppercase + semibold 三重视觉锤区分 header vs row
+    ///   跟 macOS Photos.app 实测比例一致 (header 11pt / row label 13pt / count 11pt)
+    static let headerFont: Font = .system(size: 11, weight: .semibold)
+    /// V6.23: section header 颜色 secondary @ 0.85 → 0.65
+    ///   之前 0.85 跟 labelDefault 0.85 平级, header 视觉权重跟 row label 一样 → header 不像"次要"
+    ///   现在 0.65 = header 是"分组标签", 比 row label 浅一档, 视觉层级清晰
+    static let headerColor: Color = Color.secondary.opacity(0.65)
     /// section header 上下 padding——视觉分组空间
     static let headerPaddingHorizontal: CGFloat = 12
     static let headerPaddingTop: CGFloat = 10
     static let headerPaddingBottom: CGFloat = 4
     /// section header icon↔title 间距
     static let headerIconSpacing: CGFloat = 5
-    /// V4.48.0: section header icon 字号——10 → 12pt
-    ///   与行 icon 13pt 差从 3pt 缩到 1pt——段头 icon 不"小一圈"
-    static let headerIconSize: CGFloat = 12
+    // V6.23: 删 headerFontSize + headerIconSize 死代码 (0 引用, 跟 SidebarSectionHeader 的 .font(headerFont) 重复定义)
+    //   之前注释混乱: V4.48.0 改 11pt → 12pt, 跟 PopoverStyle 同名 token 撞名 — 全部清掉
 
     // ─── 智能 folder icon 语义色 ───
     //
@@ -485,32 +482,14 @@ enum WindowModeMetrics {
 // Filter 用 AppKit（NSButton + bezel）——token 字段两套并存，避免来回转换。
 
 enum PopoverStyle {
-    // ─── 布局 ───
-    /// popover 宽度
-    static let width: CGFloat = 240
-    /// popover 内边距
-    static let padding: CGFloat = Spacing.md
-    /// 段间距——V4.42.0: 8 → 10 (更多垂直呼吸)
-    /// V4.52.0: 10 → 12 (与 Photos 一致"宽间距"——段间更呼吸)
-    /// V4.64.0: 12 → 10 (向 macOS Photos 实际紧凑感靠拢)
-    ///   Photos 排序 popover 段间距 ~10pt
-    ///   段头删除后段间靠留白过渡——过宽反而"散"
+    // V6.23: 删 8 个死代码 token (width/padding/sectionSpacing/columnGap/headerFontSize/headerWeight/
+    //   headerWeightAppKit/headerIconSpacing/headerIconSize) — 全部 0 引用, 注释自己说"未用"
+    //   之前 grep: PopoverStyle. 实际只用 segmentGap/activeTextAppKit/inactiveTextAppKit/itemFontSize/
+    //   iconFontSize/stateTransitionDuration/activeBackgroundAppKit/itemCornerRadius/hostCornerRadius/
+    //   hostBorderWidth — 这 10 个保留
+    //   死代码来源: V4.42.0 ~ V4.72.0 多次实验, 段头 layout 改了几次, 旧 token 留 "兼容" 注释
+    //   现在统一清掉 — token 数量从 18 → 10 (减少 44%), 后续阅读/维护更轻
     static let sectionSpacing: CGFloat = 10
-    /// 2 列布局列间距（folder/tag 段用）
-    static let columnGap: CGFloat = 8
-
-    // ─── 段头（section header） ───
-    /// 段头字号——caption2 (11pt)
-    /// V4.61.0 删 FilterPopoverViewController 段头后此 token 实际未用——保留兼容
-    static let headerFontSize: CGFloat = 11
-    /// 段头字重（SwiftUI 版本）——Font.Weight
-    static let headerWeight: Font.Weight = .semibold
-    /// 段头字重（AppKit 版本）——NSFont.Weight
-    /// 注: Font.Weight 和 NSFont.Weight 标度相反（semibold 在 Font 是 0.3，在 NSFont 是 0.6）
-    /// 不能直接转换——必须各设各的
-    static let headerWeightAppKit: NSFont.Weight = .semibold
-    /// 段头 icon↔title 间距——V4.42.0: 4 → 6 (icon 与 title 更舒展)
-    static let headerIconSpacing: CGFloat = 6
 
     // ─── item 文字（list row） ───
     /// V4.72.0 NEW: item 文字字号——12pt
@@ -518,8 +497,6 @@ enum PopoverStyle {
     ///   12pt = macOS 系统 popover item 文字标准（Photos 实际 ~13pt）
     ///   item 24pt 配 12pt 字号 + 15pt icon = Photos 实际比例
     static let itemFontSize: CGFloat = 12
-    /// 段头 icon 字号
-    static let headerIconSize: CGFloat = 10
     /// 段头文字 uppercase（macOS Photos 风格）
     static let headerUppercased: Bool = true
     /// V4.43.1 NEW: 段头底边分隔线颜色——SwiftUI

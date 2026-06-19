@@ -57,7 +57,9 @@ final class FilterUnifiedPopoverController: NSViewController {
     private static let preferredWidth: CGFloat = 280
     private static let maxHeight: CGFloat = 600
     private static let sectionContentPadding: CGFloat = 12  // V5.63-4: 8→12——与 CategoryRowView 12pt mainStack leading 对齐
-    private static let outerPadding: CGFloat = PopoverStyle.padding  // 12pt
+    // V6.23 (token 清理): outerPadding 从 PopoverStyle.padding (已删) 改 hardcode 12pt
+    //   跟 sectionContentPadding 同值, 之前 2 个 token 共享 12 是过度抽象
+    private static let outerPadding: CGFloat = 12
     private static let sectionSpacing: CGFloat = 0
     // V5.63-2: scroller 宽度——contentInsets.right 用, 防止 chevron 被遮挡
     private static let scrollerInset: CGFloat = 15
