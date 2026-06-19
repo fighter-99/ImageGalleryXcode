@@ -204,6 +204,13 @@ enum Copy {
     static let toolbarToggleSidebar = String(localized: "toolbarToggleSidebar", defaultValue: "切换侧边栏")
     static let toolbarExport = String(localized: "toolbarExport", defaultValue: "导出")
     static let toolbarImport = String(localized: "toolbarImport", defaultValue: "导入")
+    // V6.24 (P0 #3): 工具栏快捷键提示 — hover 时显示 "导入 (⌘O)" 风格, 跟 Photos.app 范式一致
+    //   之前 tooltip 只显示按钮名, 不显示快捷键, Power user 永远记不得快捷键, 新用户不知道有快捷键
+    //   现在所有 toolbar item 走统一 helper: tooltip = "label\n(快捷键)"
+    static let toolbarShortcutImport = "⌘O"
+    static let toolbarShortcutDelete = "⌘⌫"
+    static let toolbarShortcutQuickLook = "⌘Y"
+    static let toolbarShortcutToggleSidebar = "⌃⌘S"
     static let layoutMode = String(localized: "layoutMode", defaultValue: "布局模式")
     static let thumbnailSize = String(localized: "thumbnailSize", defaultValue: "缩略图大小")
     static let sort = String(localized: "sort", defaultValue: "排序")

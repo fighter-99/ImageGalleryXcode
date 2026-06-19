@@ -220,7 +220,8 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
                 image: "sidebar.leading",
                 // V4.14.0: 本地化——之前 V4.8.0 硬编码英文，hover tooltip + Customize Toolbar 面板显示英文
                 label: Copy.toolbarToggleSidebar,
-                action: #selector(handleToggleSidebar)
+                action: #selector(handleToggleSidebar),
+                shortcut: Copy.toolbarShortcutToggleSidebar  // V6.24: ⌃⌘S
             )
         // V5.7: 砍 .favorite case——工具栏 ❤ 收藏按钮移除
         case .quickLook:  // V4.37.1 NEW
@@ -230,28 +231,32 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
                 id: id,
                 image: "eye",
                 label: Copy.quickLook,
-                action: #selector(handleShowQuickLook)
+                action: #selector(handleShowQuickLook),
+                shortcut: Copy.toolbarShortcutQuickLook  // V6.24: ⌘Y
             )
         case .export:
             item = makeSimpleItem(
                 id: id,
                 image: "square.and.arrow.up",
                 label: Copy.toolbarExport,
-                action: #selector(handleBatchExport)
+                action: #selector(handleBatchExport),
+                shortcut: nil  // V6.24: export 用 ⌘⇧E (share sheet), 不是 toolbar 主快捷键, 不显示
             )
         case .delete:
             item = makeSimpleItem(
                 id: id,
                 image: "trash",
                 label: Copy.delete,
-                action: #selector(handleDelete)
+                action: #selector(handleDelete),
+                shortcut: Copy.toolbarShortcutDelete  // V6.24: ⌘⌫
             )
         case .importItem:
             item = makeSimpleItem(
                 id: id,
                 image: "square.and.arrow.down",
                 label: Copy.toolbarImport,
-                action: #selector(handleImport)
+                action: #selector(handleImport),
+                shortcut: Copy.toolbarShortcutImport  // V6.24: ⌘O
             )
         case .filter:  // V4.36.x NEW + V4.54.0 状态感知升级
             // V4.36.x: 回归 NSButton 风格——与其他 5 actions 完全一致
@@ -362,11 +367,14 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
 
     // MARK: - Item 工厂
 
-    private func makeSimpleItem(id: Identifier, image: String, label: String, action: Selector) -> NSToolbarItem {
+    private func makeSimpleItem(id: Identifier, image: String, label: String, action: Selector, shortcut: String? = nil) -> NSToolbarItem {
         let item = NSToolbarItem(itemIdentifier: id.nsIdentifier)
         item.label = ""  // V4.8.3: 空 label + displayMode = .iconOnly 双重保险隐藏文字
         item.paletteLabel = label  // Customize Toolbar 面板仍显示 label
-        item.toolTip = label
+        // V6.24 (P0 #3): tooltip 加快捷键提示 — "label\n(⌘O)" 风格, Photos.app 范式
+        //   之前只显示按钮名, Power user 记不得快捷键, 新用户不知道有快捷键
+        //   nil 时不换行, 保持之前行为
+        item.toolTip = shortcut.map { "\(label)\n(\($0))" } ?? label
         item.image = NSImage(systemSymbolName: image, accessibilityDescription: label)
         item.target = self
         item.action = action
@@ -387,7 +395,8 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
         //   V5.9.7 注释 "圆形 pill 跟其他 5 按钮统一" 但实际 5 按钮是 .recessed, 现治本
         //   macOS Photos 风格——9 按钮全 .circular
         button.bezelStyle = .circular
-        button.toolTip = label
+        // V6.24: 按钮 tooltip 也加快捷键 — item.tooltip 显示 toolbar hover, button.tooltip 显示更近距离 hover
+        button.toolTip = item.toolTip
         button.isBordered = true
         // V6.22.10 (XCUITest): accessibilityIdentifier 在 NSButton 上 (NSToolbarItem 没这个属性)
         //   importItem 设 "toolbar.importButton" — ImportTest 找按钮用
