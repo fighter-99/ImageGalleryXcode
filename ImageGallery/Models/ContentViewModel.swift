@@ -873,6 +873,19 @@ final class ContentViewModel {
 
     /// ─── 启动导入 ───
     func startImport() {
+        // V6.22.10 (XCUITest): launch arg bypass NSOpenPanel
+        //   NSOpenPanel.runModal() 阻塞 + 不能被 XCUITest 模拟
+        //   launch arg "-uitest-import-dir <path>" → 读目录里所有图片直接 import
+        //   生产行为不变 (NSOpenPanel 仍走默认路径)
+        if let dir = uitestImportDirectory {
+            let urls = collectImageURLs(in: dir)
+            if !urls.isEmpty {
+                importProgress = ImportProgress(current: 0, total: 0, isImporting: true)
+                runImportWithDuplicateCheck(urls: urls)
+            }
+            return
+        }
+
         let panel = NSOpenPanel()
         panel.title = "选择图片或文件夹"
         panel.allowsMultipleSelection = true
@@ -884,6 +897,25 @@ final class ContentViewModel {
 
         importProgress = ImportProgress(current: 0, total: 0, isImporting: true)
         runImportWithDuplicateCheck(urls: panel.urls)
+    }
+
+    // V6.22.10 (XCUITest): launch arg 解析 helper
+    private var uitestImportDirectory: String? {
+        let args = ProcessInfo.processInfo.arguments
+        guard let idx = args.firstIndex(of: "-uitest-import-dir"),
+              idx + 1 < args.count else { return nil }
+        return args[idx + 1]
+    }
+
+    // V6.22.10 (XCUITest): 读目录里所有图片 URL
+    private func collectImageURLs(in dirPath: String) -> [URL] {
+        let dir = URL(fileURLWithPath: dirPath)
+        let imageExts: Set<String> = ["jpg", "jpeg", "png", "heic", "heif", "tiff", "tif", "bmp", "gif", "webp"]
+        let fm = FileManager.default
+        guard let contents = try? fm.contentsOfDirectory(at: dir, includingPropertiesForKeys: nil) else {
+            return []
+        }
+        return contents.filter { imageExts.contains($0.pathExtension.lowercased()) }
     }
 
     /// Finder 拖入导入

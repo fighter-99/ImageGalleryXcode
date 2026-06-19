@@ -202,3 +202,46 @@ jobs:
           name: xcresult-${{ github.run_id }}
           path: ~/Library/Developer/Xcode/DerivedData/ImageGallery-*/Logs/Test/*.xcresult
           retention-days: 7
+
+  uitest:
+    name: UI Test (XCUITest smoke)
+    # V6.22.10: Layer 2 e2e 自动化 — 4 个 smoke flow (launch + 3 个 follow-up skip)
+    #   跑 XCUITest target, 防 V6.22.6-9 类 UX regression
+    #   macos-latest (需要 GUI session), 20 min timeout
+    #   跟 build job 同 DerivedData cache key (pbxproj 改 → cache miss → 重 build)
+    runs-on: macos-latest
+    timeout-minutes: 20
+    needs: build
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache DerivedData
+        # V6.22.10: 跟 build/test job 同一 cache key — 复用 build 产物
+        #   pbxproj 改 → cache miss → 全量 build (本 commit 改了 pbxproj)
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Developer/Xcode/DerivedData/ImageGallery-*
+          key: ${{ runner.os }}-xcode-${{ hashFiles('**/*.xcodeproj/project.pbxproj') }}
+          restore-keys: |
+            ${{ runner.os }}-xcode-
+
+      - name: UI Test (XCUITest smoke — AppLaunchTest + 3 skipped)
+        # V6.22.10: 当前 1 个 test pass (AppLaunchTest), 3 个 skip (V6.22.11 follow-up)
+        #   CI gate: pass 或 skip 都算 OK, fail 算 fail
+        run: |
+          xcodebuild \
+            -project ImageGallery.xcodeproj \
+            -scheme ImageGallery \
+            -destination 'platform=macOS' \
+            -only-testing:ImageGalleryUITests \
+            test
+
+      - name: Upload xcresult on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: uitest-xcresult-${{ github.run_id }}
+          path: ~/Library/Developer/Xcode/DerivedData/ImageGallery-*/Logs/Test/*.xcresult
+          retention-days: 7

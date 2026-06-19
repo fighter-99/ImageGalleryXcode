@@ -389,6 +389,12 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
         button.bezelStyle = .circular
         button.toolTip = label
         button.isBordered = true
+        // V6.22.10 (XCUITest): accessibilityIdentifier 在 NSButton 上 (NSToolbarItem 没这个属性)
+        //   importItem 设 "toolbar.importButton" — ImportTest 找按钮用
+        //   其他 item 不设 (XCUIElementQuery 用 label 也行, 不强制)
+        if id == .importItem {
+            button.setAccessibilityIdentifier("toolbar.importButton")
+        }
         button.setContentHuggingPriority(.defaultLow, for: .horizontal)
         item.view = button
 

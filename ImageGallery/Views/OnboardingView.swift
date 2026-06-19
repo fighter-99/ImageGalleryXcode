@@ -73,6 +73,7 @@ struct OnboardingView: View {
                     hasSeenOnboarding = true
                 }
                 .buttonStyle(.borderless)
+                .accessibilityIdentifier("onboarding.skipButton")  // V6.22.10 (XCUITest)
 
                 Spacer()
 
@@ -93,6 +94,7 @@ struct OnboardingView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .keyboardShortcut(.defaultAction)
+                .accessibilityIdentifier("onboarding.startButton")  // V6.22.10 (XCUITest)
             }
             .padding(20)
         }

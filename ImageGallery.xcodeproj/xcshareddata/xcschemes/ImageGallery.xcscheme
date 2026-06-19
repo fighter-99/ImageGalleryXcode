@@ -41,6 +41,17 @@
                ReferencedContainer = "container:ImageGallery.xcodeproj">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "AB12CD34EF56AB12CD34EF01"
+               BuildableName = "ImageGalleryUITests.xctest"
+               BlueprintName = "ImageGalleryUITests"
+               ReferencedContainer = "container:ImageGallery.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction
