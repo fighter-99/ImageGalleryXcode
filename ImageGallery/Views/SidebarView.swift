@@ -193,13 +193,15 @@ struct SidebarView: View {
                     count: smartFolders.count,
                     isExpanded: $isSmartFoldersExpanded,
                     // V6.23 (用户决策方案 2+B2): chevron menu 模式
+                    // V6.23.1: 加 .divider — action 跟 toggle 视觉分层 (新建 vs 展开/折叠)
                     menuItems: [
-                        SidebarSectionHeader.HeaderMenuItem(
+                        .action(
                             label: "新建智能文件夹",
                             systemImage: "sparkles",
                             action: { onCreateSmartFolder() }
                         ),
-                        SidebarSectionHeader.HeaderMenuItem(
+                        .divider,
+                        .action(
                             // V6.23: dynamic label — 跟 Photos 一样显示当前状态
                             label: isSmartFoldersExpanded ? "折叠" : "展开",
                             systemImage: isSmartFoldersExpanded ? "chevron.up" : "chevron.down",

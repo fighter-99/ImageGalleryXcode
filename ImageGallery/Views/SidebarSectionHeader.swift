@@ -44,18 +44,17 @@ struct SidebarSectionHeader: View {
     var menuItems: [HeaderMenuItem] = []
 
     /// V6.23 NEW: menu item 数据 — 标题 + SF Symbol + 回调
-    struct HeaderMenuItem: Identifiable {
-        let id = UUID()
-        let label: String
-        let systemImage: String?
-        let action: () -> Void
+    /// V6.23.1: 改 enum 支持 `.divider` case — action 跟 toggle 视觉分层
+    ///   enum 比 struct + flag 更清晰 (Swift 模式匹配自然)
+    enum HeaderMenuItem: Identifiable {
+        case action(label: String, systemImage: String? = nil, action: () -> Void)
+        case divider
 
-        // V6.23: 显式 init — Swift 默认 memberwise init 不包含有默认值的参数, 但系统默认 init 也不接受 label/systemImage/action 顺序
-        //   提供显式 init 让 caller 可用 init(label:..., systemImage:..., action:...) — call site 更清晰
-        init(label: String, systemImage: String? = nil, action: @escaping () -> Void) {
-            self.label = label
-            self.systemImage = systemImage
-            self.action = action
+        var id: String {
+            switch self {
+            case .action: return "action-\(UUID().uuidString)"
+            case .divider: return "divider-\(UUID().uuidString)"
+            }
         }
     }
 
@@ -145,26 +144,30 @@ struct SidebarSectionHeader: View {
                     .animation(Animations.interactive, value: isExpanded)
             } else {
                 // Menu 模式: 点击 chevron 出 menu
-                //   .borderlessButton 风格让 chevron 看起来跟之前一样 (只是点击行为变)
+                // V6.23.1: icon 改 ellipsis.circle — 跟标准 chevron (toggle) 视觉区分
+                //   删 rotationEffect (menu 模式点击不是 toggle, 旋转动画误导用户)
                 //   .menuIndicator(.hidden) 隐藏 menu 自带的小箭头 (不想要 menu 暗示 chevron 还能 toggle)
                 Menu {
                     ForEach(menuItems) { item in
-                        Button {
-                            item.action()
-                        } label: {
-                            if let sysImg = item.systemImage {
-                                Label(item.label, systemImage: sysImg)
-                            } else {
-                                Text(item.label)
+                        switch item {
+                        case .divider:
+                            Divider()
+                        case let .action(label, systemImage, action):
+                            Button {
+                                action()
+                            } label: {
+                                if let systemImage {
+                                    Label(label, systemImage: systemImage)
+                                } else {
+                                    Text(label)
+                                }
                             }
                         }
                     }
                 } label: {
-                    Image(systemName: "chevron.right")
+                    Image(systemName: "ellipsis.circle")
                         .font(SidebarStyle.headerFont)
                         .foregroundStyle(isHovered ? .primary : SidebarStyle.headerColor)
-                        .rotationEffect(.degrees(isExpanded ? 90 : 0))
-                        .animation(Animations.interactive, value: isExpanded)
                 }
                 .menuStyle(.borderlessButton)
                 .menuIndicator(.hidden)
