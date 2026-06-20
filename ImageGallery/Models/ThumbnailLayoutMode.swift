@@ -55,12 +55,13 @@ enum ThumbnailLayoutMode: Int, CaseIterable, Identifiable {
         //   "按比例" 名字误导 (用户以为是按 image 原比例渲染, 实际是按 1:1 网格 letterbox)
         //   跟 Photos.app / Finder / ViewMode.grid 命名一致
         //   之前 V5.47 '按比例' 是相对 .masonry '按比例满行'——V5.47 砍了 .masonry 后名字失去对比
-        case .squareFit: return "网格"
+        // V6.37.1: 走 Copy 字典让 zh-Hant/en 也能本地化
+        case .squareFit: return Copy.layoutModeSquareFit
         // V6.12.14: 新增 '列表' displayName
         //   用户 4 次请求 '布局模式加列表选项'——V6.12.14 落地
         //   语义上跟 ViewMode.list 重复——但用户视角: layout picker 有 list 就能切到 list 视图
         //   内部实现: 选中 .list → ContentViewModel 切 viewMode = .list
-        case .list:       return "列表"
+        case .list:       return Copy.layoutModeList
         }
     }
 

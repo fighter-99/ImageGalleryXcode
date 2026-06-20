@@ -35,9 +35,9 @@ enum Language: String, CaseIterable, Identifiable {
     ///   .en    picker label = "English"
     var displayName: String {
         switch self {
-        case .zhHans: return "简体中文"
-        case .zhHant: return "繁體中文"
-        case .en:    return "English"
+        case .zhHans: return Copy.languageZhHans
+        case .zhHant: return Copy.languageZhHant
+        case .en:    return Copy.languageEn
         }
     }
 }

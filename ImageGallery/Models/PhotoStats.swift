@@ -293,32 +293,32 @@ enum PhotoStats {
             .sorted { $0.sortKey > $1.sortKey }
     }
 
-    /// V4.37.0: 单张照片的 bucket 判定
+    /// V4.37.0: 单张照片的 bucket 判定 — V6.37.1 label 走 Copy 让 zh-Hant/en 翻译
     private static func bucketKey(for date: Date, now: Date, calendar: Calendar) -> (key: String, label: String, sortKey: Date) {
         if calendar.isDateInToday(date) {
-            return ("today", "今天", now)
+            return ("today", Copy.dateSectionToday, now)
         }
         if calendar.isDateInYesterday(date) {
             let yesterday = calendar.date(byAdding: .day, value: -1, to: now) ?? now
-            return ("yesterday", "昨天", yesterday)
+            return ("yesterday", Copy.dateSectionYesterday, yesterday)
         }
         // 本周（7 天内但不是今天/昨天）
         if let weekAgo = calendar.date(byAdding: .day, value: -7, to: now), date > weekAgo {
-            return ("thisWeek", "本周", date)
+            return ("thisWeek", Copy.dateSectionThisWeek, date)
         }
         // 本月（同月但不在 7 天内）
         if calendar.isDate(date, equalTo: now, toGranularity: .month) {
-            return ("thisMonth", "本月", date)
+            return ("thisMonth", Copy.dateSectionThisMonth, date)
         }
         // 当前年内其他月
         let year = calendar.component(.year, from: date)
         let currentYear = calendar.component(.year, from: now)
         if year == currentYear {
             let month = calendar.component(.month, from: date)
-            return ("\(year)-\(month)", "\(month) 月", date)
+            return ("\(year)-\(month)", Copy.dateSectionMonthLabel(month), date)
         }
         // 往年
-        return ("\(year)", "\(year) 年", date)
+        return ("\(year)", Copy.dateSectionYearLabel(year), date)
     }
 }
 

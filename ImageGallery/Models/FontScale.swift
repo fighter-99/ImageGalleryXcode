@@ -32,13 +32,13 @@ enum FontScale: String, CaseIterable, Identifiable, Hashable {
     /// 默认值 — 切换 settings 时用
     static var defaultValue: FontScale { .default }
 
-    /// UI 显示名 (i18n)
+    /// UI 显示名 (i18n, V6.37.1 走 Copy)
     var displayName: String {
         switch self {
-        case .compact: return "紧凑"
-        case .default: return "默认"
-        case .relaxed: return "舒适"
-        case .large:   return "超大"
+        case .compact: return Copy.fontScaleCompact
+        case .default: return Copy.fontScaleDefault
+        case .relaxed: return Copy.fontScaleRelaxed
+        case .large:   return Copy.fontScaleLarge
         }
     }
 

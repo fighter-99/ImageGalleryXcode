@@ -34,13 +34,13 @@ enum ThumbnailDensity: String, CaseIterable, Identifiable {
         }
     }
 
-    /// 中文标签
+    /// 本地化标签（V6.37.1 走 Copy）
     var label: String {
         switch self {
-        case .compact: return "极小"
-        case .small:   return "小"
-        case .medium:  return "中"
-        case .large:   return "大"
+        case .compact: return Copy.thumbnailDensityCompact
+        case .small:   return Copy.thumbnailDensitySmall
+        case .medium:  return Copy.thumbnailDensityMedium
+        case .large:   return Copy.thumbnailDensityLarge
         }
     }
 

@@ -39,9 +39,9 @@ enum PhotoShape: String, CaseIterable, Identifiable, Hashable, Codable {
 
     var label: String {
         switch self {
-        case .landscape: return "横图"
-        case .portrait: return "竖图"
-        case .square: return "方形"
+        case .landscape: return Copy.photoShapeLandscape
+        case .portrait: return Copy.photoShapePortrait
+        case .square: return Copy.photoShapeSquare
         }
     }
 }

@@ -30,18 +30,18 @@ enum AccentColor: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
-    /// 用户可见的中文名（SettingsView 中显示）
+    /// 用户可见的本地化名（SettingsView 中显示，V6.37.1 走 Copy）
     var displayName: String {
         switch self {
-        case .system:   return "跟随系统"
-        case .blue:     return "蓝色"
-        case .purple:   return "紫色"
-        case .pink:     return "粉色"
-        case .red:      return "红色"
-        case .orange:   return "橙色"
-        case .yellow:   return "黄色"
-        case .green:    return "绿色"
-        case .graphite: return "石墨色"
+        case .system:   return Copy.accentColorSystem
+        case .blue:     return Copy.accentColorBlue
+        case .purple:   return Copy.accentColorPurple
+        case .pink:     return Copy.accentColorPink
+        case .red:      return Copy.accentColorRed
+        case .orange:   return Copy.accentColorOrange
+        case .yellow:   return Copy.accentColorYellow
+        case .green:    return Copy.accentColorGreen
+        case .graphite: return Copy.accentColorGraphite
         }
     }
 

@@ -411,4 +411,64 @@ enum Copy {
     static let titlebarInfoLabel = String(localized: "titlebarInfoLabel", defaultValue: "信息面板")
     static let titlebarInfoTooltipShow = String(localized: "titlebarInfoTooltipShow", defaultValue: "显示信息面板 (⌘I)")
     static let titlebarInfoTooltipHide = String(localized: "titlebarInfoTooltipHide", defaultValue: "隐藏信息面板 (⌘I)")
+
+    // MARK: - V6.37.1: 模型枚举 displayName
+    // AccentColor — 强调色 9 个 case
+    static let accentColorSystem = String(localized: "accentColorSystem", defaultValue: "跟随系统")
+    static let accentColorBlue = String(localized: "accentColorBlue", defaultValue: "蓝色")
+    static let accentColorPurple = String(localized: "accentColorPurple", defaultValue: "紫色")
+    static let accentColorPink = String(localized: "accentColorPink", defaultValue: "粉色")
+    static let accentColorRed = String(localized: "accentColorRed", defaultValue: "红色")
+    static let accentColorOrange = String(localized: "accentColorOrange", defaultValue: "橙色")
+    static let accentColorYellow = String(localized: "accentColorYellow", defaultValue: "黄色")
+    static let accentColorGreen = String(localized: "accentColorGreen", defaultValue: "绿色")
+    static let accentColorGraphite = String(localized: "accentColorGraphite", defaultValue: "石墨色")
+
+    // AppearanceMode — 外观 3 个 case
+    static let appearanceModeSystem = String(localized: "appearanceModeSystem", defaultValue: "跟随系统")
+    static let appearanceModeLight = String(localized: "appearanceModeLight", defaultValue: "浅色")
+    static let appearanceModeDark = String(localized: "appearanceModeDark", defaultValue: "深色")
+
+    // PhotoShape — 形状 3 个 case (filter popover / sidebar)
+    static let photoShapeLandscape = String(localized: "photoShapeLandscape", defaultValue: "横图")
+    static let photoShapePortrait = String(localized: "photoShapePortrait", defaultValue: "竖图")
+    static let photoShapeSquare = String(localized: "photoShapeSquare", defaultValue: "方形")
+
+    // FontScale — 字体大小 4 档
+    static let fontScaleCompact = String(localized: "fontScaleCompact", defaultValue: "紧凑")
+    static let fontScaleDefault = String(localized: "fontScaleDefault", defaultValue: "默认")
+    static let fontScaleRelaxed = String(localized: "fontScaleRelaxed", defaultValue: "舒适")
+    static let fontScaleLarge = String(localized: "fontScaleLarge", defaultValue: "超大")
+
+    // Language — Settings picker 3 种
+    static let languageZhHans = String(localized: "languageZhHans", defaultValue: "简体中文")
+    static let languageZhHant = String(localized: "languageZhHant", defaultValue: "繁體中文")
+    static let languageEn = String(localized: "languageEn", defaultValue: "English")
+
+    // TrashRetentionDays — `\(rawValue) 天` (Int → %lld)
+    static func trashRetentionDays(_ days: Int) -> String {
+        String.localizedStringWithFormat(String(localized: "trashRetentionDays", defaultValue: "%lld 天"), days)
+    }
+
+    // ThumbnailLayoutMode — 缩略图布局 2 个 case
+    static let layoutModeSquareFit = String(localized: "layoutModeSquareFit", defaultValue: "网格")
+    static let layoutModeList = String(localized: "layoutModeList", defaultValue: "列表")
+
+    // ThumbnailDensity — 缩略图密度 4 档
+    static let thumbnailDensityCompact = String(localized: "thumbnailDensityCompact", defaultValue: "极小")
+    static let thumbnailDensitySmall = String(localized: "thumbnailDensitySmall", defaultValue: "小")
+    static let thumbnailDensityMedium = String(localized: "thumbnailDensityMedium", defaultValue: "中")
+    static let thumbnailDensityLarge = String(localized: "thumbnailDensityLarge", defaultValue: "大")
+
+    // PhotoStats — 日期分组 6 个 (其中 2 个 Int → %lld)
+    static let dateSectionToday = String(localized: "dateSectionToday", defaultValue: "今天")
+    static let dateSectionYesterday = String(localized: "dateSectionYesterday", defaultValue: "昨天")
+    static let dateSectionThisWeek = String(localized: "dateSectionThisWeek", defaultValue: "本周")
+    static let dateSectionThisMonth = String(localized: "dateSectionThisMonth", defaultValue: "本月")
+    static func dateSectionMonthLabel(_ month: Int) -> String {
+        String.localizedStringWithFormat(String(localized: "dateSectionMonthLabel", defaultValue: "%lld 月"), month)
+    }
+    static func dateSectionYearLabel(_ year: Int) -> String {
+        String.localizedStringWithFormat(String(localized: "dateSectionYearLabel", defaultValue: "%lld 年"), year)
+    }
 }

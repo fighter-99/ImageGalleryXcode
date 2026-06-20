@@ -16,7 +16,9 @@ enum TrashRetentionDays: Int, CaseIterable, Identifiable {
     case ninetyDays = 90
 
     var id: Int { rawValue }
-    var displayName: String { "\(rawValue) 天" }
+    /// V6.37.1: 走 Copy.trashRetentionDays(days:) — printf %lld 而非 Swift 字符串插值
+    ///   之前 "\(rawValue) 天" 直接 Swift 字面拼接, zh-Hant 不能改 word order
+    var displayName: String { Copy.trashRetentionDays(rawValue) }
 
     static var defaultValue: TrashRetentionDays { .thirtyDays }
 }
