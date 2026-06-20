@@ -122,7 +122,8 @@ struct SidebarRow: View {
 
     /// V6.22.2 (P2 #8): VoiceOver hint — 描述 sidebar item 角色 (display all / filter / etc.)
     ///   简单 fallback: "显示 sidebar item" + icon name 让盲人用户理解操作
+    ///   V6.37.4: 走 Copy.sidebarRowShowLabel(name:) — printf %@ 而非 Swift 插值
     private var accessibilityHint: String {
-        "显示 \(label)"
+        Copy.sidebarRowShowLabel(label)
     }
 }

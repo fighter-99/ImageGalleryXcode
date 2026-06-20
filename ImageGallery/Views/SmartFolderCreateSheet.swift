@@ -45,11 +45,12 @@ struct SmartFolderCreateSheet: View {
     /// 4 维 filter 摘要 — 跟 P4.2 live preview 同风格
     private var filterSummaryParts: [String] {
         let f = initialFilter
+        // V6.37.4: 走 Copy — printf %lld 而非 Swift 字符串插值, zh-Hant 可重排语序
         return [
-            f.folders.isEmpty ? nil : "\(f.folders.count) 文件夹",
-            f.tags.isEmpty ? nil : "\(f.tags.count) 标签",
-            f.shapes.isEmpty ? nil : "\(f.shapes.count) 形状",
-            f.minRating > 0 ? "≥\(f.minRating) 星" : nil
+            f.folders.isEmpty ? nil : Copy.smartFolderFolderCount(f.folders.count),
+            f.tags.isEmpty ? nil : Copy.smartFolderTagCount(f.tags.count),
+            f.shapes.isEmpty ? nil : Copy.smartFolderShapeCount(f.shapes.count),
+            f.minRating > 0 ? Copy.smartFolderMinRating(f.minRating) : nil
         ].compactMap { $0 }
     }
 

@@ -571,4 +571,46 @@ enum Copy {
     static let shortcutsZoomOut = String(localized: "shortcutsZoomOut", defaultValue: "缩小缩略图")
     static let shortcutsResetZoom = String(localized: "shortcutsResetZoom", defaultValue: "重置缩略图大小")
     static let shortcutsOpenSettings = String(localized: "shortcutsOpenSettings", defaultValue: "设置")
+
+    // MARK: - V6.37.4: 侧栏 + 智能文件夹
+    // SidebarSectionHeader — 新建按钮 a11y + 折叠/展开 hint
+    static let sidebarAddAccessibility = String(localized: "sidebarAddAccessibility", defaultValue: "新建")
+    static let sidebarAccessibilityCollapse = String(localized: "sidebarAccessibilityCollapse", defaultValue: "单击折叠")
+    static let sidebarAccessibilityExpand = String(localized: "sidebarAccessibilityExpand", defaultValue: "单击展开")
+    // SidebarRow — a11y label (含 %@)
+    static func sidebarRowShowLabel(_ name: String) -> String {
+        String.localizedStringWithFormat(String(localized: "sidebarRowShowLabel", defaultValue: "显示 %@"), name)
+    }
+    // SidebarView — 智能文件夹 section 菜单 + 列表项
+    static let sidebarNewSmartFolder = String(localized: "sidebarNewSmartFolder", defaultValue: "新建智能文件夹")
+    static let sidebarCollapse = String(localized: "sidebarCollapse", defaultValue: "折叠")
+    static let sidebarExpand = String(localized: "sidebarExpand", defaultValue: "展开")
+    static let sidebarDeleteSmartFolder = String(localized: "sidebarDeleteSmartFolder", defaultValue: "删除智能文件夹")
+    // SmartFolderCreateSheet — 4 维 filter 摘要 (含 %lld)
+    static func smartFolderFolderCount(_ count: Int) -> String {
+        String.localizedStringWithFormat(String(localized: "smartFolderFolderCount", defaultValue: "%lld 文件夹"), count)
+    }
+    static func smartFolderTagCount(_ count: Int) -> String {
+        String.localizedStringWithFormat(String(localized: "smartFolderTagCount", defaultValue: "%lld 标签"), count)
+    }
+    static func smartFolderShapeCount(_ count: Int) -> String {
+        String.localizedStringWithFormat(String(localized: "smartFolderShapeCount", defaultValue: "%lld 形状"), count)
+    }
+    static func smartFolderMinRating(_ rating: Int) -> String {
+        String.localizedStringWithFormat(String(localized: "smartFolderMinRating", defaultValue: "≥%lld 星"), rating)
+    }
+    // SmartFolder enum — 13 个 icon displayName
+    static let smartFolderIconStar = String(localized: "smartFolderIconStar", defaultValue: "星标")
+    static let smartFolderIconHeart = String(localized: "smartFolderIconHeart", defaultValue: "喜欢")
+    static let smartFolderIconFlame = String(localized: "smartFolderIconFlame", defaultValue: "热门")
+    static let smartFolderIconLeaf = String(localized: "smartFolderIconLeaf", defaultValue: "自然")
+    static let smartFolderIconStarCircle = String(localized: "smartFolderIconStarCircle", defaultValue: "精选")
+    static let smartFolderIconHeartCircle = String(localized: "smartFolderIconHeartCircle", defaultValue: "收藏")
+    static let smartFolderIconBookmark = String(localized: "smartFolderIconBookmark", defaultValue: "书签")
+    static let smartFolderIconTag = String(localized: "smartFolderIconTag", defaultValue: "标签")
+    static let smartFolderIconFolder = String(localized: "smartFolderIconFolder", defaultValue: "文件夹")
+    static let smartFolderIconPhotoStack = String(localized: "smartFolderIconPhotoStack", defaultValue: "相册")
+    static let smartFolderIconSun = String(localized: "smartFolderIconSun", defaultValue: "明亮")
+    static let smartFolderIconMoon = String(localized: "smartFolderIconMoon", defaultValue: "夜景")
+    static let smartFolderIconSparkle = String(localized: "smartFolderIconSparkle", defaultValue: "精选集")
 }

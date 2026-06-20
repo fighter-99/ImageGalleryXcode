@@ -197,14 +197,14 @@ struct SidebarView: View {
                     // V6.23.1: 加 .divider — action 跟 toggle 视觉分层 (新建 vs 展开/折叠)
                     menuItems: [
                         .action(
-                            label: "新建智能文件夹",
+                            label: Copy.sidebarNewSmartFolder,
                             systemImage: "sparkles",
                             action: { onCreateSmartFolder() }
                         ),
                         .divider,
                         .action(
                             // V6.23: dynamic label — 跟 Photos 一样显示当前状态
-                            label: isSmartFoldersExpanded ? "折叠" : "展开",
+                            label: isSmartFoldersExpanded ? Copy.sidebarCollapse : Copy.sidebarExpand,
                             systemImage: isSmartFoldersExpanded ? "chevron.up" : "chevron.down",
                             action: { isSmartFoldersExpanded.toggle() }
                         ),
@@ -613,7 +613,7 @@ struct SidebarView: View {
             Button(role: .destructive) {
                 deleteSmartFolder(sf)
             } label: {
-                Label("删除智能文件夹", systemImage: "trash")
+                Label(Copy.sidebarDeleteSmartFolder, systemImage: "trash")
             }
         }
     }

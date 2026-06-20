@@ -35,7 +35,7 @@ struct SidebarSectionHeader: View {
     ///   现在 header 创建入口靠 menuItems (chevron 点击出 menu), 不再有 + button
     var addAction: (() -> Void)? = nil
     /// P4.1.1 NEW: "+" 按钮的可访问性标签 + help tooltip
-    var addAccessibilityLabel: String = "新建"
+    var addAccessibilityLabel: String = Copy.sidebarAddAccessibility
 
     /// V6.23 NEW: chevron menu 模式 — 提供菜单项数组后, 点击 chevron 出 menu (不再 toggle 展开)
     ///   用于智能文件夹 section: 菜单 = [新建智能文件夹, 展开/折叠]
@@ -69,7 +69,7 @@ struct SidebarSectionHeader: View {
         count: Int? = nil,
         isExpanded: Binding<Bool> = .constant(true),
         addAction: (() -> Void)? = nil,
-        addAccessibilityLabel: String = "新建",
+        addAccessibilityLabel: String = Copy.sidebarAddAccessibility,
         // V6.23 NEW: chevron menu 模式 (智能文件夹 section 用)
         //   非空时 chevron 点击出 menu, 不再 toggle 展开
         menuItems: [HeaderMenuItem] = []
@@ -194,7 +194,7 @@ struct SidebarSectionHeader: View {
         // V6.22.2 (P2 #8): VoiceOver 标签 — section header hint
         //   hint 描述折叠状态 + 操作 ("单击切换折叠, 当前已展开 / 已折叠")
         .accessibilityLabel(title)
-        .accessibilityHint(isExpanded ? "单击折叠" : "单击展开")
+        .accessibilityHint(isExpanded ? Copy.sidebarAccessibilityCollapse : Copy.sidebarAccessibilityExpand)
         .accessibilityAddTraits(isExpanded ? [] : [.isHeader])
         // V6.21.3: hover 检测 — onHover 跟 SidebarRow 同 pattern
         .onHover { hovering in

@@ -6327,6 +6327,78 @@
         }
       }
     },
+    "sidebarAccessibilityCollapse" : {
+      "comment" : "V6.37.4: Copy.sidebarAccessibilityCollapse → 单击折叠",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click to collapse"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "单击折叠"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "按一下收合"
+          }
+        }
+      }
+    },
+    "sidebarAccessibilityExpand" : {
+      "comment" : "V6.37.4: Copy.sidebarAccessibilityExpand → 单击展开",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click to expand"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "单击展开"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "按一下展開"
+          }
+        }
+      }
+    },
+    "sidebarAddAccessibility" : {
+      "comment" : "V6.37.4: Copy.sidebarAddAccessibility → 新建",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新建"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新增"
+          }
+        }
+      }
+    },
     "sidebarAll" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -6334,6 +6406,30 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "全部"
+          }
+        }
+      }
+    },
+    "sidebarCollapse" : {
+      "comment" : "V6.37.4: Copy.sidebarCollapse → 折叠",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collapse"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "折叠"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "收合"
           }
         }
       }
@@ -6362,6 +6458,30 @@
         }
       }
     },
+    "sidebarDeleteSmartFolder" : {
+      "comment" : "V6.37.4: Copy.sidebarDeleteSmartFolder → 删除智能文件夹",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete Smart Folder"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除智能文件夹"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刪除智慧型資料夾"
+          }
+        }
+      }
+    },
     "sidebarDuplicates" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -6373,6 +6493,30 @@
         }
       }
     },
+    "sidebarExpand" : {
+      "comment" : "V6.37.4: Copy.sidebarExpand → 展开",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expand"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "展开"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "展開"
+          }
+        }
+      }
+    },
     "sidebarLargeFiles" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -6380,6 +6524,30 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "大图（>5MB）"
+          }
+        }
+      }
+    },
+    "sidebarNewSmartFolder" : {
+      "comment" : "V6.37.4: Copy.sidebarNewSmartFolder → 新建智能文件夹",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Smart Folder"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新建智能文件夹"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新增智慧型資料夾"
           }
         }
       }
@@ -6402,6 +6570,30 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "回收站"
+          }
+        }
+      }
+    },
+    "sidebarRowShowLabel" : {
+      "comment" : "V6.37.4: Copy.sidebarRowShowLabel → 显示 %@",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示 %@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示 %@"
           }
         }
       }
@@ -6529,6 +6721,222 @@
         }
       }
     },
+    "smartFolderFolderCount" : {
+      "comment" : "V6.37.4: Copy.smartFolderFolderCount → %lld 文件夹",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld folders"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 文件夹"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 資料夾"
+          }
+        }
+      }
+    },
+    "smartFolderIconBookmark" : {
+      "comment" : "V6.37.4: Copy.smartFolderIconBookmark → 书签",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bookmark"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "书签"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "書籤"
+          }
+        }
+      }
+    },
+    "smartFolderIconFlame" : {
+      "comment" : "V6.37.4: Copy.smartFolderIconFlame → 热门",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hot"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "热门"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "熱門"
+          }
+        }
+      }
+    },
+    "smartFolderIconFolder" : {
+      "comment" : "V6.37.4: Copy.smartFolderIconFolder → 文件夹",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Folder"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "文件夹"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "資料夾"
+          }
+        }
+      }
+    },
+    "smartFolderIconHeart" : {
+      "comment" : "V6.37.4: Copy.smartFolderIconHeart → 喜欢",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Liked"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "喜欢"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "喜歡"
+          }
+        }
+      }
+    },
+    "smartFolderIconHeartCircle" : {
+      "comment" : "V6.37.4: Copy.smartFolderIconHeartCircle → 收藏",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Favorites"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "收藏"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "收藏"
+          }
+        }
+      }
+    },
+    "smartFolderIconLeaf" : {
+      "comment" : "V6.37.4: Copy.smartFolderIconLeaf → 自然",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nature"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自然"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自然"
+          }
+        }
+      }
+    },
+    "smartFolderIconMoon" : {
+      "comment" : "V6.37.4: Copy.smartFolderIconMoon → 夜景",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Night"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "夜景"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "夜景"
+          }
+        }
+      }
+    },
+    "smartFolderIconPhotoStack" : {
+      "comment" : "V6.37.4: Copy.smartFolderIconPhotoStack → 相册",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Album"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "相册"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "相簿"
+          }
+        }
+      }
+    },
     "smartFolderIconSection" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -6536,6 +6944,150 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "图标"
+          }
+        }
+      }
+    },
+    "smartFolderIconSparkle" : {
+      "comment" : "V6.37.4: Copy.smartFolderIconSparkle → 精选集",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Highlights"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "精选集"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "精選集"
+          }
+        }
+      }
+    },
+    "smartFolderIconStar" : {
+      "comment" : "V6.37.4: Copy.smartFolderIconStar → 星标",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Starred"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "星标"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "星號"
+          }
+        }
+      }
+    },
+    "smartFolderIconStarCircle" : {
+      "comment" : "V6.37.4: Copy.smartFolderIconStarCircle → 精选",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Featured"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "精选"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "精選"
+          }
+        }
+      }
+    },
+    "smartFolderIconSun" : {
+      "comment" : "V6.37.4: Copy.smartFolderIconSun → 明亮",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bright"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "明亮"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "明亮"
+          }
+        }
+      }
+    },
+    "smartFolderIconTag" : {
+      "comment" : "V6.37.4: Copy.smartFolderIconTag → 标签",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tag"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "标签"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "標籤"
+          }
+        }
+      }
+    },
+    "smartFolderMinRating" : {
+      "comment" : "V6.37.4: Copy.smartFolderMinRating → ≥%lld 星",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "≥%lld stars"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "≥%lld 星"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "≥%lld 星"
           }
         }
       }
@@ -6551,6 +7103,30 @@
         }
       }
     },
+    "smartFolderShapeCount" : {
+      "comment" : "V6.37.4: Copy.smartFolderShapeCount → %lld 形状",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld shapes"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 形状"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 形狀"
+          }
+        }
+      }
+    },
     "smartFolderSheetTitle" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -6558,6 +7134,30 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "新建智能文件夹"
+          }
+        }
+      }
+    },
+    "smartFolderTagCount" : {
+      "comment" : "V6.37.4: Copy.smartFolderTagCount → %lld 标签",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld tags"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 标签"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 標籤"
           }
         }
       }

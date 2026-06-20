@@ -92,22 +92,22 @@ enum SmartFolderIcon: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
-    /// 显示名 (UI 提示用)
+    /// 显示名 (UI 提示用, V6.37.4 走 Copy)
     var displayName: String {
         switch self {
-        case .star: return "星标"
-        case .heart: return "喜欢"
-        case .flame: return "热门"
-        case .leaf: return "自然"
-        case .starCircle: return "精选"
-        case .heartCircle: return "收藏"
-        case .bookmark: return "书签"
-        case .tag: return "标签"
-        case .folder: return "文件夹"
-        case .photoStack: return "相册"
-        case .sun: return "明亮"
-        case .moon: return "夜景"
-        case .sparkle: return "精选集"
+        case .star: return Copy.smartFolderIconStar
+        case .heart: return Copy.smartFolderIconHeart
+        case .flame: return Copy.smartFolderIconFlame
+        case .leaf: return Copy.smartFolderIconLeaf
+        case .starCircle: return Copy.smartFolderIconStarCircle
+        case .heartCircle: return Copy.smartFolderIconHeartCircle
+        case .bookmark: return Copy.smartFolderIconBookmark
+        case .tag: return Copy.smartFolderIconTag
+        case .folder: return Copy.smartFolderIconFolder
+        case .photoStack: return Copy.smartFolderIconPhotoStack
+        case .sun: return Copy.smartFolderIconSun
+        case .moon: return Copy.smartFolderIconMoon
+        case .sparkle: return Copy.smartFolderIconSparkle
         }
     }
 }
