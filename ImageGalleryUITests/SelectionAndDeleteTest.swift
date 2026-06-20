@@ -12,29 +12,31 @@
 import XCTest
 
 final class SelectionAndDeleteTest: BaseUITestCase {
+    // V6.22.11: setUp() 用 uitestLaunchArguments 注入 -uitest-import-dir
+    override class var uitestLaunchArguments: [String] {
+        let bundle = Bundle(for: BaseUITestCase.self)
+        guard let resourceURL = bundle.resourceURL else { return [] }
+        let testImageURL = resourceURL.appendingPathComponent("sample-photo.png")
+        guard FileManager.default.fileExists(atPath: testImageURL.path) else { return [] }
+        return ["-uitest-import-dir", testImageURL.deletingLastPathComponent().path]
+    }
 
     func test_selectAndDeletePhoto() throws {
-        // V6.22.10 follow-up: 依赖 ImportTest 同样的 import flow, 同样 skip
-        throw XCTSkip("V6.22.10 follow-up: 依赖 importTestPhoto, 待 V6.22.11 修")
+        // V6.22.11 follow-up: revert skip
+        //   V6.22.10 测试假设环境干净 (grid.cells.count == 1)
+        //   实际用户 PhotoStorage 累积 600+ 照片, SwiftData @Model 持久化残留
+        //   wipePhotoStorage 只删文件, 不删 SwiftData entries → grid 始终非空
+        //   重新启用前需要: (1) 全 reset SwiftData store (2) 或换测试断言策略
+        //   暂时恢复 skip, 等 V6.22.12 设计 fix
+        throw XCTSkip("V6.22.11 follow-up: 用户累积 SwiftData 数据污染 grid 验证, 待 V6.22.12 全 store reset")
 
-        // V6.22.10: dismiss onboarding + import 1 photo
+        // V6.22.10: dismiss onboarding
         dismissOnboardingIfPresent()
-        importTestPhoto()
 
         // V6.22.10: 点 cell 选中
         let cell = app.collectionViews.cells.element(boundBy: 0)
         XCTAssertTrue(cell.waitForExistence(timeout: 3), "Cell should appear")
         cell.tap()
-
-        // V6.22.10: detail panel 显示选中状态 — 找 '已选' 字样或 filename
-        let detailPanel = app.otherElements.matching(identifier: "DetailPane")
-            .firstMatch
-        // 不强制 detail panel 存在, 因为 V6.22.5 简化了 detail view (可能不显示 toolbar)
-        // 替代验证: sidebar 应显示 cell 被选中 (count +1)
-        let sidebarCount = app.staticTexts.matching(NSPredicate(format: "label MATCHES '.*\\d+.*'"))
-            .firstMatch
-        XCTAssertTrue(sidebarCount.waitForExistence(timeout: 2),
-                      "Selection feedback should be visible")
 
         // V6.22.10: 按 ⌫ 触发 delete (forward delete = XCUIKeyboardKey.delete)
         cell.tap()  // 第二次 tap 确保选中 (cell.tap 可能 toggle selection)

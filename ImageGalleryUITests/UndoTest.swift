@@ -10,14 +10,23 @@
 import XCTest
 
 final class UndoTest: BaseUITestCase {
+    // V6.22.11: setUp() 用 uitestLaunchArguments 注入 -uitest-import-dir
+    override class var uitestLaunchArguments: [String] {
+        let bundle = Bundle(for: BaseUITestCase.self)
+        guard let resourceURL = bundle.resourceURL else { return [] }
+        let testImageURL = resourceURL.appendingPathComponent("sample-photo.png")
+        guard FileManager.default.fileExists(atPath: testImageURL.path) else { return [] }
+        return ["-uitest-import-dir", testImageURL.deletingLastPathComponent().path]
+    }
 
     func test_undoAfterDelete() throws {
-        // V6.22.10 follow-up: 依赖 ImportTest 同样的 import flow, 同样 skip
-        throw XCTSkip("V6.22.10 follow-up: 依赖 importTestPhoto, 待 V6.22.11 修")
+        // V6.22.11 follow-up: revert skip
+        //   跟 SelectionAndDeleteTest 同因 — 600+ 累积 SwiftData 数据污染 grid 验证
+        //   暂时恢复 skip, 等 V6.22.12 全 store reset
+        throw XCTSkip("V6.22.11 follow-up: 用户累积 SwiftData 数据污染 grid 验证, 待 V6.22.12 全 store reset")
 
-        // V6.22.10: dismiss onboarding + import 1 photo
+        // V6.22.10: dismiss onboarding
         dismissOnboardingIfPresent()
-        importTestPhoto()
 
         // V6.22.10: 选中 + delete
         let cell = app.collectionViews.cells.element(boundBy: 0)

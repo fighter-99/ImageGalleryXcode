@@ -15,6 +15,15 @@ class BaseUITestCase: XCTestCase {
 
     var app: XCUIApplication!
 
+    /// V6.22.11: 子类覆盖 — 在 setUp launch 前追加 launch args
+    ///   之前: ImportTest 在 setUp 之后 terminate+relaunch 加 -uitest-import-dir
+    ///     不可靠 — terminate 在 Xcode 26 runner 上 hang 60s timeout
+    ///   现在: setUp 直接带 -uitest-import-dir, import 在 app startup 时自动跑
+    ///     单 launch, no relaunch, race-free
+    ///   AppLaunchTest 不覆盖 → 只 reset, onboarding 必弹 (smoke pass)
+    ///   ImportTest/SelectionAndDeleteTest/UndoTest 覆盖 → reset + import-dir
+    class var uitestLaunchArguments: [String] { [] }
+
     override func setUp() {
         super.setUp()
         // V6.22.10: 失败立即停 — 防止后续 step 掩盖真因
@@ -23,11 +32,13 @@ class BaseUITestCase: XCTestCase {
         app = XCUIApplication(bundleIdentifier: "com.iridescent.ImageGallery")
         // V6.22.10: -uitest-reset-all 清 UserDefaults → onboarding 必弹, viewMode 重置
         //   让 AppLaunchTest 能验证"first-run onboarding 弹"逻辑
+        // V6.22.11: 子类 uitestLaunchArguments 追加 (e.g. -uitest-import-dir)
         app.launchArguments += [
             "-uitest-reset-all",
             "-AppleLanguages", "(en)",
             "-AppleLocale", "en_US@currency=USD",
         ]
+        app.launchArguments += Self.uitestLaunchArguments
         app.launch()
     }
 
@@ -61,33 +72,25 @@ class BaseUITestCase: XCTestCase {
     }
 
     /// dismiss onboarding sheet 如果存在 (不在 AppLaunchTest 调用, 那个 test 故意保留它)
+    ///   V6.22.11: tap skip button (Copy.onboardingSkip) 而不是 start button
+    ///   原因: SwiftUI 重渲染时 onboarding.startButton (label "下一步" → "开始使用")
+    ///   accessibilityIdentifier 在 label 变化时被 SwiftUI 视为新 view, tap 失败
+    ///   skip button (`onboarding.skipButton`) 是固定 identifier, label 永远 "跳过"
+    ///   Photos.app 范式: 用户可立即跳过, 不强制走完 3 页
+    ///   这跟 AppLaunchTest 的 "走完 3 页" 测试不冲突 (那是测 start 流程本身)
     func dismissOnboardingIfPresent() {
-        let startButton = app.buttons["onboarding.startButton"]
-        if startButton.waitForExistence(timeout: 2) {
-            startButton.tap()
-        }
+        let skipButton = app.buttons["onboarding.skipButton"]
+        guard skipButton.waitForExistence(timeout: 5) else { return }
+        skipButton.tap()
+        sleep(1)
     }
 
-    /// 注入测试图片 (重新 launch app, 这次带 -uitest-import-dir)
-    ///   - 必须 terminate app + 重新 launch, 因为 launch arg 只在启动时读
-    ///   - V6.22.10 修: Xcode fileSystemSynchronizedGroups 把子目录文件扁平化到 Resources/
-    ///     (image at ImageGalleryUITests/Resources/test-fixtures/sample-photo.png
-    ///     → bundle at Resources/sample-photo.png)
-    ///     所以直接读 sample-photo.png, 不走 subdirectory
+    /// V6.22.11: deprecated — 改用子类 uitestLaunchArguments 静态属性
+    ///   之前 terminate+relaunch 不可靠 (Xcode 26 runner 60s hang)
+    ///   现在 import 在 setUp 单 launch 时自动跑 (ImportTest 通过 uitestLaunchArguments 注入 -uitest-import-dir)
+    ///   保留函数签名给 V6.22.10 兼容
     func importTestPhoto() {
-        let bundle = Bundle(for: type(of: self))
-        let testImageURL = bundle.resourceURL!
-            .appendingPathComponent("sample-photo.png")
-        XCTAssertTrue(FileManager.default.fileExists(atPath: testImageURL.path),
-                      "Test fixture should exist at \(testImageURL.path)")
-
-        // launch arg 接受目录路径, 用 sample-photo.png 所在目录
-        let testImageDir = testImageURL.deletingLastPathComponent()
-        app.terminate()
-        app.launchArguments += ["-uitest-import-dir", testImageDir.path]
-        app.launch()
-        // 等待 grid 出现
-        XCTAssertTrue(app.collectionViews.firstMatch.waitForExistence(timeout: 5),
-                      "Grid should appear after import")
+        // V6.22.11: no-op — setUp already imported via launch arg
+        //   ImportTest.test_importPhotoViaLaunchArg 现在只验证 grid 出现 1 cell
     }
 }

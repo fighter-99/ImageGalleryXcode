@@ -238,6 +238,23 @@ extension View {
                 //   ModelContainer.fetch 拉最近 50 张 (按 importedAt 降序)
                 //   失败 URL (data 损坏 / 文件删) ImageLoader.warmupThumbnails 内部跳过
                 await Self.warmupRecentThumbnails(context: modelContext, count: 50)
+                // V6.22.11 (XCUITest): launch arg auto-trigger — single launch 测试 fix
+                //   之前 V6.22.10: -uitest-import-dir 只在 startImport() 入口检查, 测试需 tap import 按钮
+                //   现在: ContentView .task 自动 trigger (onAppear 后 1 次), 测试 launch 后自动 import
+                //   prod 完全 noop (无 launch arg 时直接 return)
+                let args = ProcessInfo.processInfo.arguments
+                guard let idx = args.firstIndex(of: "-uitest-import-dir"),
+                      idx + 1 < args.count else { return }
+                let dir = args[idx + 1]
+                let dirURL = URL(fileURLWithPath: dir)
+                let imageExts: Set<String> = ["jpg", "jpeg", "png", "heic", "heif", "tiff", "tif", "bmp", "gif", "webp"]
+                guard let contents = try? FileManager.default.contentsOfDirectory(at: dirURL, includingPropertiesForKeys: nil) else { return }
+                let urls = contents.filter { imageExts.contains($0.pathExtension.lowercased()) }
+                guard !urls.isEmpty else { return }
+                // V6.22.11: 直接调 importPhotos 跳过 duplicate check dialog (测试不要 dialog)
+                //   runImportWithDuplicateCheck 走 async checkDuplicatesAsync 会弹 dialog 阻塞测试
+                model.importVM.importProgress = ImportProgress(current: 0, total: 0, isImporting: true)
+                model.importVM.importPhotos(urls: urls)
             }
             // V6.28: .onChange 推 model.grid
             .onChange(of: allPhotos) { _, new in model.grid.allPhotos = new }
@@ -348,6 +365,35 @@ extension View {
         await Task(priority: .background) {
             await ImageLoader.warmupThumbnails(urls: urls, maxPixelSize: 200)
         }.value
+    }
+
+    /// V6.22.11 (XCUITest): launch arg auto-trigger
+    ///   - 在 .task 末尾调, 保证 model.modelContext 已 set
+    ///   - prod 完全 noop (无 -uitest-import-dir 时直接 return)
+    ///   - standalone func 接收 model 参数 (extension View scope 拿不到 model)
+    private func uitestAutoImportIfNeeded(model: ContentViewModel) {
+        let args = ProcessInfo.processInfo.arguments
+        NSLog("V6.22.11: uitestAutoImportIfNeeded entered, args=\(args)")
+        guard let idx = args.firstIndex(of: "-uitest-import-dir"),
+              idx + 1 < args.count else {
+            NSLog("V6.22.11: no -uitest-import-dir in args, skip")
+            return
+        }
+        let dir = args[idx + 1]
+        NSLog("V6.22.11: import dir = \(dir)")
+        let dirURL = URL(fileURLWithPath: dir)
+        let imageExts: Set<String> = ["jpg", "jpeg", "png", "heic", "heif", "tiff", "tif", "bmp", "gif", "webp"]
+        guard let contents = try? FileManager.default.contentsOfDirectory(at: dirURL, includingPropertiesForKeys: nil) else {
+            NSLog("V6.22.11: cannot list dir contents")
+            return
+        }
+        let urls = contents.filter { imageExts.contains($0.pathExtension.lowercased()) }
+        NSLog("V6.22.11: found \(urls.count) images in dir: \(urls.map { $0.lastPathComponent })")
+        guard !urls.isEmpty else { return }
+        // V6.22.11: 调 ImportViewModel.runImportWithDuplicateCheck 走 async 检查 + import
+        model.importVM.importProgress = ImportProgress(current: 0, total: 0, isImporting: true)
+        model.importVM.runImportWithDuplicateCheck(urls: urls)
+        NSLog("V6.22.11: runImportWithDuplicateCheck called with \(urls.count) urls")
     }
 }
 
