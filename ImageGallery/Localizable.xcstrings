@@ -3630,6 +3630,39 @@
         }
       }
     },
+    "settingsResetConfirmAction" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "恢复默认"
+          }
+        }
+      }
+    },
+    "settingsResetConfirmMessage" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "这将清空你所有的偏好设置（默认排序、视图模式、缩略图大小、外观模式等）。"
+          }
+        }
+      }
+    },
+    "settingsResetConfirmTitle" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "恢复全部为默认？"
+          }
+        }
+      }
+    },
     "settingsRetentionLabel" : {
       "comment" : "V6.12.18: Copy.settingsRetentionLabel → 保留时长",
       "extractionState" : "manual",
@@ -5186,6 +5219,12 @@
     "按模板批量重命名 (⌘⇧R)" : {
 
     },
+    "撤销" : {
+
+    },
+    "撤销 (⌘Z)" : {
+
+    },
     "新文件夹" : {
 
     },
@@ -5207,7 +5246,13 @@
     "模板会产生 %lld 个重名 — Apply 时会自动加 _1 _2 后缀" : {
 
     },
+    "界面文字" : {
+
+    },
     "知道了" : {
+
+    },
+    "视图" : {
 
     },
     "移到回收站" : {
@@ -5220,6 +5265,9 @@
 
     },
     "给选中照片加标签" : {
+
+    },
+    "编辑" : {
 
     },
     "设置" : {

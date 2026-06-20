@@ -105,10 +105,11 @@ struct SidebarStyleTests {
     }
 
     @Test func headerColorIsTertiaryEquivalent() {
-        // V4.48.0: 0.7 → 0.85 opacity（与行 label 颜色接近，视觉协调）
-        //   0.7 太"淡"——段头"小一圈"不协调
-        //   0.85 接近 Color.secondary.opacity(0.85) 模拟
-        let expected = Color.secondary.opacity(0.85)
+        // V6.23.0: 0.85 → 0.65 opacity (跟 labelDefault 0.85 拉开差 — 视觉层级清晰)
+        //   之前 V4.48.0 写 0.85 跟 labelDefault 撞色, 段头"小一圈"不协调
+        //   V6.23 改 0.65 拉低 header opacity, 让 label/row 是视觉锤
+        //   production token (SidebarStyle.headerColor) 已跟 V6.23 同步 0.65
+        let expected = Color.secondary.opacity(0.65)
         #expect(SidebarStyle.headerColor == expected)
     }
 
