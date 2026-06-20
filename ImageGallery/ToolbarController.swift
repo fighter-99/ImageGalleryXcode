@@ -111,6 +111,14 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
     ///   ContentView 设置时 return NSHostingView(rootView: FilterToolbarButton(...))
     var filterButtonViewProvider: (() -> NSView)?
 
+    /// V6.29.2: filter button + badge 视图引用 (updateFilterBadge 更新)
+    ///   container: 容纳 button + 红点 badge 的 NSView (用作 item.view)
+    ///   button: NSButton (click target, icon update)
+    ///   badgeLabel: NSTextField (右上小红点 + 数字, count==0 隐藏)
+    @ObservationIgnored private var filterButtonContainer: NSView?
+    @ObservationIgnored private var filterButton: NSButton?
+    @ObservationIgnored private var filterBadgeLabel: NSTextField?
+
     // MARK: - 状态桥接
 
     /// 4 actions 的 enabled 状态
@@ -438,9 +446,45 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
         button.setContentHuggingPriority(.defaultLow, for: .horizontal)
         // V4.54.0: 初值同步 icon——setActive 时再切
         updateFilterButtonImage(button: button)
-        item.view = button
+        // V6.29.2: wrap button in container view + add badge overlay (右上小红点 + count)
+        //   NSToolbarItem.view 直接设 NSButton 不能加 overlay, 用 NSView 容器
+        let container = NSView(frame: NSRect(x: 0, y: 0, width: 28, height: 22))
+        button.frame = container.bounds
+        button.autoresizingMask = [.width, .height]
+        container.addSubview(button)
+        let badge = makeFilterBadgeLabel()
+        container.addSubview(badge)
+        item.view = container
+        // V6.29.2: 存引用, updateFilterBadge 更新 badge 文本/可见
+        filterButtonContainer = container
+        filterButton = button
+        filterBadgeLabel = badge
 
         return item
+    }
+
+    /// V6.29.2: 创建 filter button badge (右上小红点 + count 数字)
+    ///   Photos.app / Mail 等 macOS 标准: 小红圆角矩形 + 白字, 右上角叠在 icon 上
+    ///   count==0 时通过 updateFilterBadge 隐藏 (默认隐藏)
+    private func makeFilterBadgeLabel() -> NSTextField {
+        let badge = NSTextField(labelWithString: "")
+        badge.font = NSFont.systemFont(ofSize: 9, weight: .bold)
+        badge.textColor = .white
+        badge.backgroundColor = .systemRed
+        badge.drawsBackground = true
+        badge.isBezeled = false
+        badge.isEditable = false
+        badge.isSelectable = false
+        badge.alignment = .center
+        badge.wantsLayer = true
+        badge.layer?.cornerRadius = 7
+        badge.layer?.masksToBounds = true
+        badge.isHidden = true
+        // 右上角, 尺寸根据 count 自适应 (1 位 / 2 位)
+        // 容器 28x22, button 占满, badge 在 (18, 14) 起点, 12x12 默认
+        badge.frame = NSRect(x: 16, y: 12, width: 14, height: 14)
+        badge.autoresizingMask = [.minXMargin, [.minYMargin]]
+        return badge
     }
 
     /// V5.9.2: 通用工具栏按钮 item 工厂——popover-承载类按钮走 NSButton
@@ -931,9 +975,23 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
     ///   V4.36.x: 改 tooltip "筛选 (N)"
     ///   V4.54.0: 同时调 updateFilterButtonImage 切 icon (outline ↔ fill.circle) + tint 强调色
     ///   V4.8.3: displayMode = .iconOnly 不显示 title，故用 tooltip 显示 "筛选 (N)"
+    /// V6.29.2: 加 badge label 同步 — 右上小红点 + count, filterIsActive 时显示
     private func updateFilterBadge() {
         guard let item = itemCache[Identifier.filter.nsIdentifier] else { return }
         item.toolTip = filterActiveCount > 0 ? Copy.filterWithCount(filterActiveCount) : Copy.filter
         updateFilterButtonImage()  // V4.54.0: 同步 icon + tint
+        // V6.29.2: badge label — count>0 显示数字, 否则隐藏
+        if let badge = filterBadgeLabel {
+            if filterActiveCount > 0 {
+                badge.stringValue = "\(filterActiveCount)"
+                badge.isHidden = false
+                // 自适应宽度 (1 位 / 2 位 / 3 位)
+                let charWidth: CGFloat = 7
+                let width = max(14, charWidth * CGFloat("\(filterActiveCount)".count) + 4)
+                badge.frame = NSRect(x: 28 - width + 2, y: 12, width: width, height: 14)
+            } else {
+                badge.isHidden = true
+            }
+        }
     }
 }
