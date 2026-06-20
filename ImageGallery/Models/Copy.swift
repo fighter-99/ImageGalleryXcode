@@ -471,4 +471,19 @@ enum Copy {
     static func dateSectionYearLabel(_ year: Int) -> String {
         String.localizedStringWithFormat(String(localized: "dateSectionYearLabel", defaultValue: "%lld 年"), year)
     }
+
+    // MARK: - V6.37.2: 详情面板
+    // DetailView 顶部导航按钮 .help tooltip
+    static let detailPrevHelp = String(localized: "detailPrevHelp", defaultValue: "上一张 (←)")
+    static let detailNextHelp = String(localized: "detailNextHelp", defaultValue: "下一张 (→)")
+    // DetailView undo description (含 tag.name / filename 插值, %@)
+    static func undoRemoveTag(_ tagName: String) -> String {
+        String.localizedStringWithFormat(String(localized: "undoRemoveTag", defaultValue: "移除标签 %@"), tagName)
+    }
+    static func undoRename(_ filename: String) -> String {
+        String.localizedStringWithFormat(String(localized: "undoRename", defaultValue: "重命名为 %@"), filename)
+    }
+    static func undoAddTag(_ tagName: String) -> String {
+        String.localizedStringWithFormat(String(localized: "undoAddTag", defaultValue: "添加标签 %@"), tagName)
+    }
 }

@@ -1424,6 +1424,30 @@
         }
       }
     },
+    "detailNextHelp" : {
+      "comment" : "V6.37.2: Copy.detailNextHelp → 下一张 (→)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next (→)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下一张 (→)"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下一張 (→)"
+          }
+        }
+      }
+    },
     "detailNoRating" : {
       "comment" : "V6.12.18: Copy.detailNoRating → 未评分",
       "extractionState" : "manual",
@@ -1444,6 +1468,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "未評分"
+          }
+        }
+      }
+    },
+    "detailPrevHelp" : {
+      "comment" : "V6.37.2: Copy.detailPrevHelp → 上一张 (←)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Previous (←)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上一张 (←)"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上一張 (←)"
           }
         }
       }
@@ -5749,6 +5797,78 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "復原"
+          }
+        }
+      }
+    },
+    "undoRemoveTag" : {
+      "comment" : "V6.37.2: Copy.undoRemoveTag → 移除标签 %@",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove tag %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移除标签 %@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移除標籤 %@"
+          }
+        }
+      }
+    },
+    "undoRename" : {
+      "comment" : "V6.37.2: Copy.undoRename → 重命名为 %@",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rename to %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重命名为 %@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重新命名為 %@"
+          }
+        }
+      }
+    },
+    "undoAddTag" : {
+      "comment" : "V6.37.2: Copy.undoAddTag → 添加标签 %@",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add tag %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加标签 %@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加標籤 %@"
           }
         }
       }

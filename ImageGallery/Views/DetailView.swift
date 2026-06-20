@@ -259,7 +259,7 @@ struct DetailView: View {
         // 导航覆盖层：← / 索引 / →
         .overlay(alignment: .bottom) {
             HStack(spacing: 0) {
-                detailNavButton(systemName: "chevron.left", help: "上一张 (←)") {
+                detailNavButton(systemName: "chevron.left", help: Copy.detailPrevHelp) {
                     onPrev()
                 }
                 .disabled(!canPrev)
@@ -279,7 +279,7 @@ struct DetailView: View {
 
                 Spacer(minLength: 0)
 
-                detailNavButton(systemName: "chevron.right", help: "下一张 (→)") {
+                detailNavButton(systemName: "chevron.right", help: Copy.detailNextHelp) {
                     onNext()
                 }
                 .disabled(!canNext)
@@ -482,7 +482,7 @@ struct DetailView: View {
     // ─── 移除标签（V3.5 Phase 2：支持撤销）───
     private func removeTag(_ tag: Tag) {
         undoManager?.registerAction(
-            description: "移除标签 \(tag.name)"
+            description: Copy.undoRemoveTag(tag.name)
         ) {
             photo.tags.removeAll { $0.id == tag.id }
             modelContext.saveWithLog()
@@ -508,7 +508,7 @@ struct DetailView: View {
         }
 
         undoManager?.registerAction(
-            description: "重命名为 \(trimmed)"
+            description: Copy.undoRename(trimmed)
         ) {
             // V6.08: 文件 rename 失败不能静默——之前 try? + 写 SwiftData → 孤儿文件
             //   失败: 不更新 photo.filename/fileURL, 弹 toast 通知用户
@@ -555,7 +555,7 @@ struct DetailView: View {
 
         // V3.5 Phase 2：注册撤销
         undoManager?.registerAction(
-            description: "添加标签 \(tagToAdd.name)"
+            description: Copy.undoAddTag(tagToAdd.name)
         ) {
             photo.tags.append(tagToAdd)
             modelContext.saveWithLog()
