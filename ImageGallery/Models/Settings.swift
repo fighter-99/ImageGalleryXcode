@@ -160,6 +160,19 @@ final class UserSettings {
         set { language = newValue.rawValue }
     }
 
+    // MARK: - V6.33.1: Dynamic Type / 字体大小用户偏好
+    //   macOS 14+ SwiftUI Dynamic Type — 用户可调 4 档 (紧凑/默认/舒适/超大)
+    //   .dynamicTypeSize 环境值影响所有用 semantic font (.body/.caption/.title 等) 的 Text
+    //   现有 Typography token 多用 Font.system(size: X) — 不响应 dynamicTypeSize
+    //   后续 V6.34 慢慢把 Typography 迁 semantic font, 这次先建基础设施
+    var fontScale: String = FontScale.defaultValue.rawValue {
+        didSet { defaults.set(fontScale, forKey: "fontScale") }
+    }
+    var appFontScale: FontScale {
+        get { FontScale(rawValue: fontScale) ?? .defaultValue }
+        set { fontScale = newValue.rawValue }
+    }
+
     // MARK: - V5.58-1: init() 从 UserDefaults 读 13 字段
     //
     // V5.52-2 漏的 init-from-UserDefaults——之前 UserSettings 永远从硬编码默认开始,

@@ -256,6 +256,25 @@ private struct GeneralSettingsView: View {
                 Spacer()  // V5.95: menu picker 不撑满, 留 trailing 视觉缓冲
             }
         }
+
+        // V6.33.1: 字体大小 4 档 — 用户对 macOS 没系统级 Dynamic Type 的补充
+        //   对应 FontScale → DynamicTypeSize, 透过 ContentView .environment 注入
+        SettingsSection(
+            title: "字体大小",
+            subtitle: "调整 app 内所有文字大小。macOS 没系统级 Dynamic Type 设置, 这是 in-app 入口。"
+        ) {
+            HStack(alignment: .center, spacing: Spacing.md) {
+                Text("界面文字")
+                    .frame(width: SettingsMetrics.labelColumnWidth, alignment: .leading)
+                Picker("", selection: $settings.appFontScale) {
+                    ForEach(FontScale.allCases) { scale in
+                        Text(scale.displayName).tag(scale)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+            }
+        }
         // V6.04: 通用 page 只剩"默认排序"1 个 section——视图模式搬到外观
         //   IA 角度: 排序跟内容组织有关, 留在通用; 显示模式/布局跟外观有关, 搬走
     }

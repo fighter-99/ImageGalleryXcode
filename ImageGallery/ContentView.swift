@@ -367,6 +367,9 @@ struct ContentView: View {
 
     var body: some View {
         mainLayout
+            // V6.33.1: Dynamic Type 注入 — 用户选的 fontScale 走 .dynamicTypeSize 环境
+            //   只影响用 semantic font 的 view (V6.34 慢慢把 Typography 迁 semantic)
+            .environment(\.dynamicTypeSize, model.settings.appFontScale.dynamicTypeSize)
             // V4.10.0: 6 个 chrome modifier 打包（title/subtitle/colorScheme/WindowAccessor/NSToolbar sync）
             // V5.24: 加 layoutMode + thumbnailSize 参数——传给 windowChromeAndToolbar 推 NSToolbar segment/slider
             // V5.39.3: 加 sortOption 参数——推 NSToolbar sortMenu 按钮 (image 跟 sortOption 走)
