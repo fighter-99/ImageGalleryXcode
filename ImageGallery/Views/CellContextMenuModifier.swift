@@ -46,15 +46,15 @@ struct CellContextMenuModifier: ViewModifier {
                     Button {
                         onRotateLeft()
                     } label: {
-                        Label("向左旋转", systemImage: "rotate.left")
+                        Label(Copy.contextMenuRotateLeft, systemImage: "rotate.left")
                     }
                     Button {
                         onRotateRight()
                     } label: {
-                        Label("向右旋转", systemImage: "rotate.right")
+                        Label(Copy.contextMenuRotateRight, systemImage: "rotate.right")
                     }
                 } label: {
-                    Label("旋转", systemImage: "rotate.right")
+                    Label(Copy.contextMenuRotateSubmenu, systemImage: "rotate.right")
                 }
 
                 // V5.7: 砍"收藏"按钮——合并到评分（5 星 = 收藏）
@@ -87,7 +87,7 @@ struct CellContextMenuModifier: ViewModifier {
                     Label(Copy.ratingCategory, systemImage: photo.rating > 0 ? "star.fill" : "star")
                 }
             } label: {
-                Label("视图", systemImage: "eye")
+                Label(Copy.contextMenuViewSubmenu, systemImage: "eye")
             }
 
             // MARK: - V6.29.3: 编辑组 — 数据操作 (移动 + 标签 + 复制 + Finder)
@@ -163,7 +163,7 @@ struct CellContextMenuModifier: ViewModifier {
                     Label(Copy.revealInFinder, systemImage: "folder")
                 }
             } label: {
-                Label("编辑", systemImage: "square.and.pencil")
+                Label(Copy.contextMenuEdit, systemImage: "square.and.pencil")
             }
 
             // MARK: - V6.29.3: 分享 (standalone — macOS ShareLink 范式)
@@ -176,7 +176,7 @@ struct CellContextMenuModifier: ViewModifier {
                     image: Image(systemName: "photo")
                 )
             ) {
-                Label("分享", systemImage: "square.and.arrow.up")
+                Label(Copy.contextMenuShare, systemImage: "square.and.arrow.up")
             }
 
             Divider()

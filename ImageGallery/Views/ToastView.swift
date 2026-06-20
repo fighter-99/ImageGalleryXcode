@@ -79,13 +79,13 @@ struct ToastView: View {
                         undoAction()
                         onDismiss()
                     } label: {
-                        Text("撤销")
+                        Text(Copy.undo)
                             .font(.callout.weight(.semibold))
                             .foregroundStyle(Color.accentColor)
                             .padding(.horizontal, 6)
                     }
                     .buttonStyle(.plain)
-                    .help("撤销 (⌘Z)")
+                    .help(Copy.toastUndoHelp)
                 }
                 // V6.21.1: close button — 用户主动 dismiss (不等 auto)
                 //   .buttonStyle(.plain) 避免 macOS 自动应用 bordered 样式
@@ -95,7 +95,7 @@ struct ToastView: View {
                         .foregroundStyle(.secondary)
                 }
                 .buttonStyle(.plain)
-                .help("关闭")
+                .help(Copy.toastCloseHelp)
             }
             .padding(.horizontal, 16)
             .padding(.top, 10)

@@ -613,4 +613,31 @@ enum Copy {
     static let smartFolderIconSun = String(localized: "smartFolderIconSun", defaultValue: "明亮")
     static let smartFolderIconMoon = String(localized: "smartFolderIconMoon", defaultValue: "夜景")
     static let smartFolderIconSparkle = String(localized: "smartFolderIconSparkle", defaultValue: "精选集")
+
+    // MARK: - V6.37.5: 选中操作条 + Toast + 上下文菜单
+    // SelectionMiniToolbar — 5 action label + .help tooltip
+    //   注: 复用 Copy.tagLabel / Copy.delete / Copy.selectedCount / Copy.sidebarUnfiled / Copy.create
+    //     "未整理" → Copy.sidebarUnfiled ("待整理") — 跟 sidebar 命名统一
+    //     "X 张已选" → Copy.selectedCount(_:) ("已选 X 张") — 跟既有格式统一
+    static let miniToolbarTagHelp = String(localized: "miniToolbarTagHelp", defaultValue: "给选中照片加标签")
+    static let miniToolbarMove = String(localized: "miniToolbarMove", defaultValue: "移动")
+    static let miniToolbarMoveHelp = String(localized: "miniToolbarMoveHelp", defaultValue: "移动到文件夹")
+    static let miniToolbarRenameHelp = String(localized: "miniToolbarRenameHelp", defaultValue: "按模板批量重命名 (⌘⇧R)")
+    static let miniToolbarExport = String(localized: "miniToolbarExport", defaultValue: "导出")
+    static let miniToolbarExportHelp = String(localized: "miniToolbarExportHelp", defaultValue: "导出选中照片")
+    static let miniToolbarDeleteHelp = String(localized: "miniToolbarDeleteHelp", defaultValue: "移到回收站")
+    static let miniToolbarAddTagTitle = String(localized: "miniToolbarAddTagTitle", defaultValue: "加标签")
+    static let miniToolbarEmptyTags = String(localized: "miniToolbarEmptyTags", defaultValue: "还没有标签")
+    static let miniToolbarNewTagPlaceholder = String(localized: "miniToolbarNewTagPlaceholder", defaultValue: "新标签")
+    // ToastView — undo/close .help (含 ⌘Z glyph)
+    //   注: 复用 Copy.undo ("撤销") 给主 Text, .help 单独走新 key 保留快捷键 glyph
+    static let toastUndoHelp = String(localized: "toastUndoHelp", defaultValue: "撤销 (⌘Z)")
+    static let toastCloseHelp = String(localized: "toastCloseHelp", defaultValue: "关闭")
+    // CellContextMenuModifier — 3 tier 分组 (视图 / 编辑 / 分享) + 旋转 submenu
+    static let contextMenuRotateLeft = String(localized: "contextMenuRotateLeft", defaultValue: "向左旋转")
+    static let contextMenuRotateRight = String(localized: "contextMenuRotateRight", defaultValue: "向右旋转")
+    static let contextMenuRotateSubmenu = String(localized: "contextMenuRotateSubmenu", defaultValue: "旋转")
+    static let contextMenuViewSubmenu = String(localized: "contextMenuViewSubmenu", defaultValue: "视图")
+    static let contextMenuEdit = String(localized: "contextMenuEdit", defaultValue: "编辑")
+    static let contextMenuShare = String(localized: "contextMenuShare", defaultValue: "分享")
 }
