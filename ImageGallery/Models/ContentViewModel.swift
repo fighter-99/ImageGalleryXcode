@@ -59,7 +59,6 @@ import SwiftUI
 import SwiftData
 import UniformTypeIdentifiers
 import os  // 启动清理 / Trash retention log (V6.22.5)
-import ImageIO  // importPhotos 用 CGImageSource
 
 /// V6.28: ContentView 的业务模型 — Core + Import, Grid 拆到 GridViewModel
 @MainActor
@@ -85,8 +84,7 @@ final class ContentViewModel {
     /// V5.59-2: init 时从 settings.sidebarSelection 反序列化
     var sidebarSelection: SidebarSelection? = nil
     var filterState = FilterState()
-    /// V3.6 导入进度 (V5.53 搬过来——startImport/importPhotos 都需要)
-    var importProgress: ImportProgress? = nil
+    /// V6.28.1: importProgress 迁 ImportViewModel.importProgress
     var titlebarAccessory: TitlebarAccessoryController? = nil
     var toastQueue: [ToastInfo] = []
     var toastTask: Task<Void, Never>? = nil
@@ -114,10 +112,11 @@ final class ContentViewModel {
     var sidebarDragStartWidth: CGFloat = 220
     var detailDragStartWidth: CGFloat = 360
 
-    // MARK: - V6.28: Import 字段
+    // MARK: - V6.28.1: Import 子模型
 
-    var importDuplicateCheck: ImageImporter.DuplicateCheckResult? = nil
-    var pendingImportURLs: [URL] = []
+    /// V6.28.1: Import 业务 — 启动 / 拖入 / 重复检测 / 批量导入 / 进度
+    ///   caller 走 model.importVM.startImport() / model.importVM.importProgress 等
+    let importVM: ImportViewModel
 
     // MARK: - Settings 镜像 wrapper
 
@@ -193,7 +192,7 @@ final class ContentViewModel {
             model.grid.handleDelete()
         }
         controller.onImport = { [model = self] in
-            model.startImport()
+            model.importVM.startImport()
         }
         // V4.37.1: ⌘Y Quick Look——复用 showQuickLook()（与空格键同路径）
         controller.onQuickLook = { [model = self] in
@@ -369,199 +368,7 @@ final class ContentViewModel {
         service.purgeExpired(retentionDays: days.rawValue)
     }
 
-    // MARK: - 导入业务 (V6.28 仍 ContentViewModel——phase 2 拆 ImportViewModel)
-
-    /// ─── 启动导入 ───
-    func startImport() {
-        // V6.22.10 (XCUITest): launch arg bypass NSOpenPanel
-        if let dir = uitestImportDirectory {
-            let urls = collectImageURLs(in: dir)
-            if !urls.isEmpty {
-                importProgress = ImportProgress(current: 0, total: 0, isImporting: true)
-                runImportWithDuplicateCheck(urls: urls)
-            }
-            return
-        }
-
-        let panel = NSOpenPanel()
-        panel.title = "选择图片或文件夹"
-        panel.allowsMultipleSelection = true
-        panel.canChooseDirectories = true
-        panel.canChooseFiles = true
-        panel.allowedContentTypes = [.image]
-
-        guard panel.runModal() == .OK else { return }
-
-        importProgress = ImportProgress(current: 0, total: 0, isImporting: true)
-        runImportWithDuplicateCheck(urls: panel.urls)
-    }
-
-    // V6.22.10 (XCUITest): launch arg 解析 helper
-    private var uitestImportDirectory: String? {
-        let args = ProcessInfo.processInfo.arguments
-        guard let idx = args.firstIndex(of: "-uitest-import-dir"),
-              idx + 1 < args.count else { return nil }
-        return args[idx + 1]
-    }
-
-    // V6.22.10 (XCUITest): 读目录里所有图片 URL
-    private func collectImageURLs(in dirPath: String) -> [URL] {
-        let dir = URL(fileURLWithPath: dirPath)
-        let imageExts: Set<String> = ["jpg", "jpeg", "png", "heic", "heif", "tiff", "tif", "bmp", "gif", "webp"]
-        let fm = FileManager.default
-        guard let contents = try? fm.contentsOfDirectory(at: dir, includingPropertiesForKeys: nil) else {
-            return []
-        }
-        return contents.filter { imageExts.contains($0.pathExtension.lowercased()) }
-    }
-
-    /// Finder 拖入导入
-    func handleDropImport(_ urls: [URL]) {
-        guard !urls.isEmpty else { return }
-        runImportWithDuplicateCheck(urls: urls)
-    }
-
-    /// V3.6.24: 扫现有 photo + 算新 url fileHash
-    /// V3.6.27: 改用 async 版本
-    /// V6.11: [weak self] + guard let self——V6.10 C4 修了 importPhotos, runImportWithDuplicateCheck 同 pattern 漏
-    func runImportWithDuplicateCheck(urls: [URL]) {
-        Task { @MainActor [weak self] in
-            guard let self else { return }
-            guard let modelContext else { return }
-            let check = await ImageImporter.checkDuplicatesAsync(
-                newURLs: urls,
-                in: modelContext
-            ) { [weak self] current, total in
-                self?.importProgress = ImportProgress(current: current, total: total, isImporting: true)
-            }
-            importProgress = nil
-            if check.hasDuplicates {
-                pendingImportURLs = urls
-                importDuplicateCheck = check
-            } else {
-                importPhotos(urls: urls)
-            }
-        }
-    }
-
-    func confirmSkipDuplicates() {
-        let existing = Set(importDuplicateCheck?.existing ?? [])
-        let newURLs = pendingImportURLs.filter { !existing.contains($0) }
-        importDuplicateCheck = nil
-        pendingImportURLs = []
-        if !newURLs.isEmpty { importPhotos(urls: newURLs) }
-    }
-
-    func confirmImportAllDuplicates() {
-        let allURLs = pendingImportURLs
-        importDuplicateCheck = nil
-        pendingImportURLs = []
-        importPhotos(urls: allURLs)
-    }
-
-    func cancelDuplicateImport() {
-        importDuplicateCheck = nil
-        pendingImportURLs = []
-    }
-
-    /// V3.6.24: 实际跑导入
-    /// V5.15: 接 4 参数 onProgress + 合并 summary toast
-    /// V6.10: [self] → [weak self]
-    /// V6.28: currentFolder 走 grid.currentFolder (Core 不再持该字段)
-    func importPhotos(urls: [URL]) {
-        importProgress = ImportProgress(current: 0, total: 0, isImporting: true)
-        guard let modelContext else { return }
-        let importer = ImageImporter(modelContext: modelContext, folder: grid.currentFolder) { [weak self] current, total, inserted, failureCount in
-            Task { @MainActor in
-                guard let self else { return }
-                self.importProgress = ImportProgress(
-                    current: current, total: total,
-                    inserted: inserted, failureCount: failureCount,
-                    isImporting: true
-                )
-                if current >= total && total > 0 {
-                    try? await Task.sleep(nanoseconds: 1_500_000_000)
-                    if let p = self.importProgress, p.current >= p.total {
-                        self.importProgress = nil
-                    }
-                }
-            }
-        }
-        let result = importer.importURLs(urls)
-        if result.inserted > 0 && result.hasFailures {
-            enqueueToast("已导入 \(result.inserted) 张，\(result.failureCount) 张失败", type: .info)
-        } else if result.inserted > 0 {
-            enqueueToast("已导入 \(result.inserted) 张图片", type: .success)
-        }
-        for (url, _) in result.failures where result.inserted == 0 {
-            enqueueToast("导入失败：\(url.lastPathComponent)", type: .error, duration: .long)
-        }
-    }
-
-    /// V4.49.0: 拖入时支持的图像扩展名
-    static let supportedImageExtensions: Set<String> = [
-        "jpg", "jpeg", "png", "heic", "heif", "tiff", "tif", "gif", "bmp", "webp"
-    ]
-
-    /// Finder 拖拽导入
-    func handleDrop(providers: [NSItemProvider]) -> Bool {
-        let group = DispatchGroup()
-        let lock = NSLock()
-        var urls: [URL] = []
-
-        for provider in providers {
-            group.enter()
-            provider.loadDataRepresentation(forTypeIdentifier: "public.file-url") { data, _ in
-                defer { group.leave() }
-                guard let data = data,
-                      let url = URL(dataRepresentation: data, relativeTo: nil) else { return }
-                let expanded = Self.expandFolders([url])
-                lock.lock()
-                urls.append(contentsOf: expanded)
-                lock.unlock()
-            }
-        }
-
-        group.notify(queue: .main) {
-            let imageURLs = urls.filter { Self.supportedImageExtensions.contains($0.pathExtension.lowercased()) }
-            guard !imageURLs.isEmpty else { return }
-            self.runImportWithDuplicateCheck(urls: imageURLs)
-        }
-
-        return true
-    }
-
-    /// V4.49.0: 递归展开文件夹
-    static func expandFolders(_ urls: [URL]) -> [URL] {
-        // V6.09: 防 symlink 循环——contentsOfDirectory + 递归无 cycle 检测
-        var visited = Set<URL>()
-        var result: [URL] = []
-        expandFolders(urls, into: &result, visited: &visited)
-        return result
-    }
-
-    private static func expandFolders(_ urls: [URL], into result: inout [URL], visited: inout Set<URL>) {
-        let fileManager = FileManager.default
-        for url in urls {
-            let canonical = url.standardizedFileURL.resolvingSymlinksInPath()
-            if visited.contains(canonical) { continue }
-            visited.insert(canonical)
-
-            var isDir: ObjCBool = false
-            guard fileManager.fileExists(atPath: url.path, isDirectory: &isDir) else { continue }
-            if isDir.boolValue {
-                if let contents = try? fileManager.contentsOfDirectory(
-                    at: url,
-                    includingPropertiesForKeys: [.isRegularFileKey],
-                    options: [.skipsHiddenFiles]
-                ) {
-                    expandFolders(contents, into: &result, visited: &visited)
-                }
-            } else {
-                result.append(url)
-            }
-        }
-    }
+    // MARK: - V6.28.1: 导入业务 (startImport/handleDropImport/importPhotos) 迁 ImportViewModel
 
     // MARK: - SidebarSelection 序列化 (V3.6 启动恢复)
 
@@ -624,6 +431,7 @@ final class ContentViewModel {
     /// V5.59-1: 接受 settings 参数 (默认 nil, body 内 fallback 新实例——避免 default expr 不能调 @MainActor init)
     ///   ImageGalleryApp 传 sharedSettings 引用进来, 实现 ContentView/menu/SettingsView 共享
     /// V6.28: 创建 GridViewModel (共享 settings/undoManager) + 设 weak core back-ref
+    /// V6.28.1: 创建 ImportViewModel + 设 weak core back-ref + wire toast callback
     init(settings: UserSettings? = nil) {
         let s = settings ?? UserSettings()
         let um = ImageGalleryUndoManager()
@@ -632,10 +440,16 @@ final class ContentViewModel {
         // GridViewModel 共享 settings + undoManager (同实例)——用本地 um 而非 self.undoManager
         // 避免 init order trap (self.grid 赋值时 self 未完整初始化)
         self.grid = GridViewModel(settings: s, undoManager: um)
-        // weak back-ref (避免 retain cycle — ContentViewModel 持 grid strong, grid 持 core weak)
+        // V6.28.1: ImportViewModel — 单独 init, 后 wire (同 GridViewModel pattern)
+        self.importVM = ImportViewModel()
+        // weak back-ref (避免 retain cycle — ContentViewModel 持 grid/importVM strong, 它们持 core weak)
         self.grid.core = self
-        // wire toast callback (GridViewModel 的 toast 走 Core 的 enqueueToast)
+        self.importVM.core = self
+        // wire toast callback (子模型的 toast 走 Core 的 enqueueToast)
         self.grid.enqueueToastHandler = { [weak self] message, type, duration in
+            self?.enqueueToast(message, type: type, duration: duration)
+        }
+        self.importVM.enqueueToastHandler = { [weak self] message, type, duration in
             self?.enqueueToast(message, type: type, duration: duration)
         }
     }

@@ -162,8 +162,8 @@ extension View {
                 showingEmptyTrash: bindableGrid.showingEmptyTrashConfirm,
                 onConfirmEmptyTrash: onEmptyTrash,
                 showingDuplicateCheck: Binding(
-                    get: { model.importDuplicateCheck != nil },
-                    set: { if !$0 { model.importDuplicateCheck = nil } }
+                    get: { model.importVM.importDuplicateCheck != nil },
+                    set: { if !$0 { model.importVM.importDuplicateCheck = nil } }
                 ),
                 duplicateDialogTitle: duplicateDialogTitle,
                 onConfirmSkipDuplicates: onConfirmSkipDuplicates,

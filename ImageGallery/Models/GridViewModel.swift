@@ -323,8 +323,9 @@ final class GridViewModel {
     }
 
     /// V4.0.0: 重复检测 dialog title
+    /// V6.28.1: importDuplicateCheck 迁 ImportViewModel — 走 core?.importVM.importDuplicateCheck
     var duplicateDialogTitle: String {
-        guard let check = core?.importDuplicateCheck else { return "" }
+        guard let check = core?.importVM.importDuplicateCheck else { return "" }
         return "发现 \(check.existing.count) 张已存在 / \(check.newCount) 张新文件"
     }
 

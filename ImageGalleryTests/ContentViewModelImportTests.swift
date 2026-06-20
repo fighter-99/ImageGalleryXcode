@@ -47,7 +47,7 @@ struct ContentViewModelImportTests {
         model.modelContext = context
 
         // 模拟 dialog 已打开 + 有待导入 urls
-        model.pendingImportURLs = [
+        model.importVM.pendingImportURLs = [
             URL(fileURLWithPath: "/tmp/dup1.jpg"),
             URL(fileURLWithPath: "/tmp/dup2.jpg")
         ]
@@ -57,12 +57,12 @@ struct ContentViewModelImportTests {
             newCount: 1,
             totalCount: 2
         )
-        model.importDuplicateCheck = fakeCheck
+        model.importVM.importDuplicateCheck = fakeCheck
 
-        model.cancelDuplicateImport()
+        model.importVM.cancelDuplicateImport()
 
-        #expect(model.importDuplicateCheck == nil)
-        #expect(model.pendingImportURLs.isEmpty == true)
+        #expect(model.importVM.importDuplicateCheck == nil)
+        #expect(model.importVM.pendingImportURLs.isEmpty == true)
     }
 
     @Test func confirmSkipDuplicates_filtersOutDuplicates() throws {
@@ -79,17 +79,17 @@ struct ContentViewModelImportTests {
         let existing = [dupURL]
         let all = [dupURL, newURL]
         // 模拟 dialog state
-        model.pendingImportURLs = all
-        model.importDuplicateCheck = ImageImporter.DuplicateCheckResult(
+        model.importVM.pendingImportURLs = all
+        model.importVM.importDuplicateCheck = ImageImporter.DuplicateCheckResult(
             existing: existing, newCount: 1, totalCount: 2
         )
 
         // 没真正 import photos (因为 fileURLs 是 /tmp 假路径)——会失败但不影响
         // 这 test 主要验证 confirmSkipDuplicates 清理了 dialog state
-        model.confirmSkipDuplicates()
+        model.importVM.confirmSkipDuplicates()
 
-        #expect(model.importDuplicateCheck == nil)
-        #expect(model.pendingImportURLs.isEmpty == true)
+        #expect(model.importVM.importDuplicateCheck == nil)
+        #expect(model.importVM.pendingImportURLs.isEmpty == true)
     }
 
     @Test func confirmImportAllDuplicates_clearsDialogState() throws {
@@ -101,15 +101,15 @@ struct ContentViewModelImportTests {
         let model = Self.isolatedModel()
         model.modelContext = context
 
-        model.pendingImportURLs = [URL(fileURLWithPath: "/tmp/V554_1.jpg")]
-        model.importDuplicateCheck = ImageImporter.DuplicateCheckResult(
+        model.importVM.pendingImportURLs = [URL(fileURLWithPath: "/tmp/V554_1.jpg")]
+        model.importVM.importDuplicateCheck = ImageImporter.DuplicateCheckResult(
             existing: [], newCount: 1, totalCount: 1
         )
 
-        model.confirmImportAllDuplicates()
+        model.importVM.confirmImportAllDuplicates()
 
-        #expect(model.importDuplicateCheck == nil)
-        #expect(model.pendingImportURLs.isEmpty == true)
+        #expect(model.importVM.importDuplicateCheck == nil)
+        #expect(model.importVM.pendingImportURLs.isEmpty == true)
     }
 
     @Test func handleDropImport_emptyUrls_isNoOp() throws {
@@ -121,10 +121,10 @@ struct ContentViewModelImportTests {
         let model = Self.isolatedModel()
         model.modelContext = context
 
-        model.handleDropImport([])
+        model.importVM.handleDropImport([])
         // 没 url——runImportWithDuplicateCheck 不调，dialog state 保持 nil
-        #expect(model.importDuplicateCheck == nil)
-        #expect(model.pendingImportURLs.isEmpty == true)
+        #expect(model.importVM.importDuplicateCheck == nil)
+        #expect(model.importVM.pendingImportURLs.isEmpty == true)
     }
 
     @Test func runImportWithDuplicateCheck_noDuplicates_setsImportProgress() throws {
@@ -141,7 +141,7 @@ struct ContentViewModelImportTests {
         FileManager.default.createFile(atPath: tmpFile.path, contents: Data("test".utf8))
         defer { try? FileManager.default.removeItem(at: tmpFile) }
 
-        model.runImportWithDuplicateCheck(urls: [tmpFile])
+        model.importVM.runImportWithDuplicateCheck(urls: [tmpFile])
 
         // 不 await——runImportWithDuplicateCheck 是 async (后台算 SHA256)
         // 只验: 调用没崩 + dialog 状态在被 check 期间短暂 set (test 不 await)
@@ -150,7 +150,7 @@ struct ContentViewModelImportTests {
     // MARK: - 静态方法: supportedImageExtensions + expandFolders
 
     @Test func supportedImageExtensions_includesCommonFormats() {
-        let exts = ContentViewModel.supportedImageExtensions
+        let exts = ImportViewModel.supportedImageExtensions
         #expect(exts.contains("jpg"))
         #expect(exts.contains("jpeg"))
         #expect(exts.contains("png"))
@@ -162,7 +162,7 @@ struct ContentViewModelImportTests {
     }
 
     @Test func expandFolders_emptyInput_returnsEmpty() {
-        #expect(ContentViewModel.expandFolders([]).isEmpty)
+        #expect(ImportViewModel.expandFolders([]).isEmpty)
     }
 
     @Test func expandFolders_singleFile_returnsThatFile() {
@@ -170,7 +170,7 @@ struct ContentViewModelImportTests {
         FileManager.default.createFile(atPath: tmpFile.path, contents: Data())
         defer { try? FileManager.default.removeItem(at: tmpFile) }
 
-        let result = ContentViewModel.expandFolders([tmpFile])
+        let result = ImportViewModel.expandFolders([tmpFile])
         #expect(result.count == 1)
         #expect(result.first?.path == tmpFile.path)
     }
@@ -190,7 +190,7 @@ struct ContentViewModelImportTests {
         FileManager.default.createFile(atPath: f2.path, contents: Data())
         FileManager.default.createFile(atPath: f3.path, contents: Data())
 
-        let result = ContentViewModel.expandFolders([tmpDir])
+        let result = ImportViewModel.expandFolders([tmpDir])
         // V6.14.7: 改用 basename 验证 — production expandFolders 用 resolvingSymlinksInPath
         //   做 visited, result URL path 跟 test f1 (unresolved) 的 URL.== 不一定 match
         //   (e.g. /var/folders/.../a.jpg vs /private/var/folders/.../a.jpg)
@@ -211,7 +211,7 @@ struct ContentViewModelImportTests {
         let model = Self.isolatedModel()
         model.modelContext = context
 
-        let result = model.handleDrop(providers: [])
+        let result = model.importVM.handleDrop(providers: [])
         #expect(result == true, "handleDrop 应始终 return true (符合 NSDragDestination 协议)")
     }
 }

@@ -134,9 +134,9 @@ struct ContentViewModelStateTests {
     @Test func importProgress_canBeSet() {
         let model = Self.isolatedModel()
         let progress = ImportProgress(current: 5, total: 10, isImporting: true)
-        model.importProgress = progress
-        #expect(model.importProgress?.current == 5)
-        #expect(model.importProgress?.total == 10)
+        model.importVM.importProgress = progress
+        #expect(model.importVM.importProgress?.current == 5)
+        #expect(model.importVM.importProgress?.total == 10)
     }
 
     @Test func immersivePhoto_canBeSet() {

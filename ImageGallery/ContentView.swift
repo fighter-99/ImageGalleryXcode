@@ -118,12 +118,12 @@ struct ContentView: View {
     // V3.6.24: 导入时重复检测 dialog（防止 fileHash 重复的图片被再次导入）
     // V3.6.24: 导入时重复检测 dialog（防止 fileHash 重复的图片被再次导入）
     private var importDuplicateCheck: ImageImporter.DuplicateCheckResult? {
-        get { model.importDuplicateCheck }
-        nonmutating set { model.importDuplicateCheck = newValue }
+        get { model.importVM.importDuplicateCheck }
+        nonmutating set { model.importVM.importDuplicateCheck = newValue }
     }
     private var pendingImportURLs: [URL] {
-        get { model.pendingImportURLs }
-        nonmutating set { model.pendingImportURLs = newValue }
+        get { model.importVM.pendingImportURLs }
+        nonmutating set { model.importVM.pendingImportURLs = newValue }
     }
 
     // 批量移动
@@ -406,7 +406,7 @@ struct ContentView: View {
                 accentColor: model.accentColor,
                 hasPurgedExpiredTrash: $hasPurgedExpiredTrash,
                 showingNewFolderAlert: Binding(get: { showingNewFolderAlert }, set: { showingNewFolderAlert = $0 }),
-                onImport: { model.startImport() },
+                onImport: { model.importVM.startImport() },
                 // V6.20.0 (code audit fix #1 + #9): 3 个入口 (⌘N hidden button / ⌘⇧N 菜单 / SidebarView "+") 都清空 newFolderName
                 //   避免上次 name 残留; 之前 ContentView 路径不清, SidebarView 清, 两路不一致
                 onNewFolder: { model.grid.newFolderName = ""; showingNewFolderAlert = true },
@@ -431,9 +431,9 @@ struct ContentView: View {
                 onBatchDelete: { model.grid.batchDelete() },
                 onCreateFolder: { model.createFolderFromAlert() },
                 onEmptyTrash: { model.grid.emptyTrash() },
-                onConfirmSkipDuplicates: { model.confirmSkipDuplicates() },
-                onConfirmImportAllDuplicates: { model.confirmImportAllDuplicates() },
-                onCancelDuplicateImport: { model.cancelDuplicateImport() },
+                onConfirmSkipDuplicates: { model.importVM.confirmSkipDuplicates() },
+                onConfirmImportAllDuplicates: { model.importVM.confirmImportAllDuplicates() },
+                onCancelDuplicateImport: { model.importVM.cancelDuplicateImport() },
                 onSelectionEscape: { selection = .empty },
                 onRestoreSelection: { model.restoreSelection(model.settings.sidebarSelection) },
                 onSerializeSidebarSelection: { model.serializeSelection($0) },
@@ -457,8 +457,8 @@ struct ContentView: View {
     // V5.52-4: importDuplicateCheck 走 model, 这里直接构造 binding
     private var showingDuplicateCheck: Binding<Bool> {
         Binding(
-            get: { model.importDuplicateCheck != nil },
-            set: { if !$0 { model.importDuplicateCheck = nil } }
+            get: { model.importVM.importDuplicateCheck != nil },
+            set: { if !$0 { model.importVM.importDuplicateCheck = nil } }
         )
     }
 
@@ -560,7 +560,7 @@ struct ContentView: View {
             showDetail: Binding(get: { showDetail }, set: { showDetail = $0 }),
             isDropTargeted: $isDropTargeted,
             isBoxSelecting: $isBoxSelecting,
-            onDrop: { providers in model.handleDrop(providers: providers) },
+            onDrop: { providers in model.importVM.handleDrop(providers: providers) },
             sidebar: { sidebarPane },
             center: { gridPane },
             detail: { detailPane }
@@ -650,7 +650,7 @@ struct ContentView: View {
                 // V4.36.6: visiblePhotos 改 computed property, 此 callback 不再需要
                 //   保留参数避免破坏 PhotoGridPane 签名——传 noop
                 onVisiblePhotosChange: { _ in },
-                onImport: { model.startImport() },
+                onImport: { model.importVM.startImport() },
                 onBatchDelete: { showingBatchDeleteConfirm = true },
                 onClearMultiSelect: { selection = .empty },
                 // V6.22.1 (P2 #2): 旋转回调 — cell → pane → grid view 透传, 最终调 model.grid.rotateSelected
@@ -668,7 +668,7 @@ struct ContentView: View {
                 //   走 ImageImporter.importURLs (同 NSOpenPanel 路径), 含 progress 跟踪 + toast 反馈
                 //   filter 文件/文件夹筛选交给 ImageImporter.collectFiles 内部处理
                 // V6.28: handleDropImport 仍 Core (Import 业务)
-                onDropImport: { model.handleDropImport($0) },
+                onDropImport: { model.importVM.handleDropImport($0) },
                 // V5.39.7: 重排回调——no-op (PhotoGridView 内部 @State trigger 已处理刷新)
                 //   透传 onReorder 闭包到 cell → 调时增 reorderRefreshTrigger → .onChange → recomputePhotos
                 //   ContentView 不需要做事, 闭包仅用于保持 chain 类型一致
@@ -791,8 +791,8 @@ struct ContentView: View {
             totalSize: model.grid.totalSizeFormatted,
             // V3.6.52: 用 selection.selectedIDs.count 替直接字段
             selectedCount: selection.selectedIDs.count,
-            // V6.09: 导入进度从 model.importProgress 读——Core/Import
-            importProgress: model.importProgress,
+            // V6.09: 导入进度从 model.importVM.importProgress 读——Core/Import
+            importProgress: model.importVM.importProgress,
             // V5.60-7: status bar 增强——缩略图档位 + active filter count
             thumbnailSize: thumbnailSize,
             activeFilterCount: model.filterState.activeCount
@@ -820,7 +820,7 @@ struct ContentView: View {
     // V6.20.0 (code audit fix #2 + #10): 删 supportedImageExtensions static + expandFolders static
     //   两者都是死代码 (0 caller, ContentViewModel 已有同 signature 实现)
     //   expandFolders `Self.expandFolders(urls)` = 自己 → 无限递归, 任何未来 caller 直接 stack overflow
-    //   拖入逻辑用 ContentViewModel.supportedImageExtensions / ContentViewModel.expandFolders (有 symlink 防护)
+    //   拖入逻辑用 ImportViewModel.supportedImageExtensions / ImportViewModel.expandFolders (有 symlink 防护)
 }
 
 #Preview {
