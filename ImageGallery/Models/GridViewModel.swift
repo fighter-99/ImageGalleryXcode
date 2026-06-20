@@ -403,6 +403,11 @@ final class GridViewModel {
             enqueueToastHandler("请先选择要旋转的图片", .info, .normal, nil)
             return
         }
+        // V6.35.3: capture 旋转前 orientation (每张图) — undo 还原用
+        struct Snapshot { let photo: Photo; let original: PhotoOrientation? }
+        let snapshots: [Snapshot] = photos.map { photo in
+            Snapshot(photo: photo, original: readOrientation(url: photo.fileURL))
+        }
         var successCount = 0
         for photo in photos {
             // 读取当前 EXIF orientation (V6.22.1: 用 CGImageSource 读 metadata)
@@ -416,6 +421,22 @@ final class GridViewModel {
         }
         let message = successCount == 1 ? "已旋转 1 张图片" : "已旋转 \(successCount) 张图片"
         enqueueToastHandler(message, successCount == photos.count ? .success : .warning, .normal, nil)
+
+        // V6.35.3: register undo (coalesceId="rotate" — 1s 内连续旋转合并)
+        //   Photos.app 行为: 连转 5 张 = 1 个 undo, ⌘Z 一次撤销整批
+        let capturedSnapshots = snapshots
+        let capturedCount = successCount
+        let undo: () -> Void = { [weak self] in
+            guard let self else { return }
+            for snap in capturedSnapshots where snap.original != nil {
+                if let original = snap.original,
+                   PhotoRotationService.applyOrientation(original, to: snap.photo.fileURL) {
+                    PhotoRotationService.invalidateThumbnail(for: snap.photo.fileURL)
+                }
+            }
+            self.enqueueToastHandler("已撤销旋转 \(capturedCount) 张", .info, .normal, nil)
+        }
+        undoManager.registerUndoOnly(description: "旋转 \(capturedCount) 张照片", undo: undo, coalesceId: "rotate")
     }
 
     /// V6.22.1: 读 EXIF orientation — 用 CGImageSourceCopyPropertiesAtIndex
@@ -763,15 +784,32 @@ final class GridViewModel {
     }
 
     /// V5.12: 批量评分
+    /// V6.35.3: 加 undo + coalesceId="rate" — 1s 内连续评分合并 (Photos.app 行为)
     func batchSetRating(_ rating: Int) {
         let photosToRate = selection.selectedPhotos(in: visiblePhotos)
         guard !photosToRate.isEmpty, let modelContext = core?.modelContext else { return }
+        // V6.35.3: capture 原 rating — undo 还原用
+        let originalRatings = photosToRate.map { $0.rating }
         BatchSetRatingMath.applyRating(rating, count: photosToRate.count) { index, r in
             photosToRate[index].rating = r
         }
         modelContext.saveWithLog { [weak self] _ in
             self?.enqueueToastHandler("批量评分失败", .error, .long, nil)
         }
+        // V6.35.3: register undo (coalesceId="rate" — 1s 窗合并连续评分)
+        let capturedPhotos = photosToRate
+        let capturedOriginals = originalRatings
+        let capturedRating = rating
+        let undo: () -> Void = { [weak self] in
+            guard let self else { return }
+            for (index, photo) in capturedPhotos.enumerated() where index < capturedOriginals.count {
+                photo.rating = capturedOriginals[index]
+            }
+            if let modelContext = self.core?.modelContext {
+                modelContext.saveWithLog { _ in }
+            }
+        }
+        undoManager.registerUndoOnly(description: "评分 \(rating) 星", undo: undo, coalesceId: "rate")
     }
 
     /// 批量导出

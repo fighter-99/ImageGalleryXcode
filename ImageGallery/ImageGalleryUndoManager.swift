@@ -16,12 +16,16 @@
 //  - @MainActor + @Observable (同 V3.5)
 //  - API 跟旧版兼容: registerAction / undo / redo / canUndo / canRedo / 描述
 //  - 接受调用方传 action + undo 闭包, 不强捕获 self (调用方用 [weak self])
+//  - V6.35.3: 可选 coalesceId + 时间窗合并 — 连续 1s 内同 op 合并成 1 个 undo entry
+//    (Photos.app 行为: 连转 5 张图 = 1 个 undo entry, 撤销整批)
 //
 //  当前支持的撤销操作：
 //  - 重命名
 //  - 打标签
 //  - 收藏切换
 //  - 移动到文件夹 (V6.14.10 恢复 batchMove / performMove undo)
+//  - 旋转 (V6.22.1, V6.35.3 coalesceId="rotate")
+//  - 评分 (V5.x batchSetRating, V6.35.3 coalesceId="rate")
 //
 //  当前不支持（被回收站取代）：
 //  - 删除照片（→ 移到回收站；恢复从回收站恢复）
@@ -44,14 +48,19 @@ final class ImageGalleryUndoManager {
     //   entry 持 3 个闭包: 描述 + undo + redo
     //   强引用环仍存在 (caller 闭包可能捕获 self), 但 50 步上限, 不无限增长
     //   关键差异: 无 run loop 交互, 测试环境不卡
+    // V6.35.3: 加 coalesceId + timestamp — 连续同 op 合并
     private struct Entry {
         let description: String
         let undo: () -> Void
         let redo: () -> Void
+        let coalesceId: String?  // V6.35.3: 同 op 合并 key (e.g. "rotate"/"rate")
+        let timestamp: Date      // V6.35.3: 时间窗比较用
     }
     private var undoStack: [Entry] = []
     private var redoStack: [Entry] = []
     private let maxLevels: Int = 50
+    // V6.35.3: coalesce 时间窗 — 1s 内同 coalesceId 合并
+    private let coalesceWindow: TimeInterval = 1.0
 
     init() {
         updateState()
@@ -62,6 +71,8 @@ final class ImageGalleryUndoManager {
     ///   - description: 操作描述（显示在工具栏 tooltip）
     ///   - action: 实际执行的操作
     ///   - undo: 反向操作（撤销时执行）
+    ///   - coalesceId: V6.35.3 可选 — 同 id + 1s 时间窗内 entry 合并 (最后胜出)
+    ///     Photos.app 行为: 连续 rotate 5 张图 = 1 个 undo entry, ⌘Z 一次撤销整批
     ///
     /// **V6.14.10 注意**: 调用方应使用 `[weak self]` 捕获 self, 避免强引用环。
     ///   旧版 Foundation.UndoManager 也有这问题, 但加上 run loop 交互 → 死锁。
@@ -69,9 +80,23 @@ final class ImageGalleryUndoManager {
     func registerAction(
         description: String,
         action: @escaping () -> Void,
-        undo: @escaping () -> Void
+        undo: @escaping () -> Void,
+        coalesceId: String? = nil
     ) {
-        let entry = Entry(description: description, undo: undo, redo: action)
+        // V6.35.3: coalesce 逻辑 — 同 id + 1s 窗内合并
+        if let cid = coalesceId, let last = undoStack.last,
+           last.coalesceId == cid,
+           Date().timeIntervalSince(last.timestamp) < coalesceWindow {
+            // 合并: 移除 last, push 新 entry (新 undo/redo 覆盖, timestamp 刷新)
+            undoStack.removeLast()
+        }
+        let entry = Entry(
+            description: description,
+            undo: undo,
+            redo: action,
+            coalesceId: coalesceId,
+            timestamp: Date()
+        )
         undoStack.append(entry)
         if undoStack.count > maxLevels {
             undoStack.removeFirst()
@@ -92,13 +117,26 @@ final class ImageGalleryUndoManager {
     /// - Parameters:
     ///   - description: 操作描述 (显示在工具栏 tooltip / toast 撤销按钮)
     ///   - undo: 反向操作 (撤销时执行)
+    ///   - coalesceId: V6.35.3 可选 — 同 id + 1s 窗内 entry 合并
     ///
     /// **Photos.app 行为**:
     ///   - 用户点 toast [撤销] 按钮 → 直接调 undo 闭包
     ///   - 用户按 ⌘Z → pop undoStack → 调 undo 闭包 (同一效果)
     ///   - ⌘⇧Z (redo): 此 action 已发生, redo 为 no-op (entry.redo = {})
-    func registerUndoOnly(description: String, undo: @escaping () -> Void) {
-        let entry = Entry(description: description, undo: undo, redo: {})
+    func registerUndoOnly(description: String, undo: @escaping () -> Void, coalesceId: String? = nil) {
+        // V6.35.3: 同 registerAction, 加 coalesce 逻辑
+        if let cid = coalesceId, let last = undoStack.last,
+           last.coalesceId == cid,
+           Date().timeIntervalSince(last.timestamp) < coalesceWindow {
+            undoStack.removeLast()
+        }
+        let entry = Entry(
+            description: description,
+            undo: undo,
+            redo: {},
+            coalesceId: coalesceId,
+            timestamp: Date()
+        )
         undoStack.append(entry)
         if undoStack.count > maxLevels {
             undoStack.removeFirst()
