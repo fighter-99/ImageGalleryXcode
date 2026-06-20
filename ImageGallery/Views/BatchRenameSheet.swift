@@ -68,7 +68,7 @@ struct BatchRenameSheet: View {
 
             // 模板输入
             VStack(alignment: .leading, spacing: 4) {
-                Text("模板")
+                Text(Copy.batchRenameTemplateTitle)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 TextField(Copy.batchRenameTemplatePlaceholder, text: $template)
@@ -85,7 +85,7 @@ struct BatchRenameSheet: View {
             if !previews.isEmpty {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 4) {
-                        Text("预览")
+                        Text(Copy.batchRenamePreviewTitle)
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                         if photos.count > 3 {
@@ -112,7 +112,7 @@ struct BatchRenameSheet: View {
             // Within-batch collision 警告
             if withinBatchCollisionCount > 0 {
                 Label(
-                    "模板会产生 \(withinBatchCollisionCount) 个重名 — Apply 时会自动加 _1 _2 后缀",
+                    Copy.batchRenameCollisionWarning(withinBatchCollisionCount),
                     systemImage: "exclamationmark.triangle.fill"
                 )
                 .font(.caption)

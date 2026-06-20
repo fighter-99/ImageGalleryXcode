@@ -319,12 +319,7 @@ enum Copy {
     static let hintAutoImportToFolder = String(localized: "hintAutoImportToFolder", defaultValue: "导入图片后会自动放到此文件夹")
     static let hintAddTagInDetail = String(localized: "hintAddTagInDetail", defaultValue: "在详情中添加此标签")
     static let hintDuplicatesAuto = String(localized: "hintDuplicatesAuto", defaultValue: "重复图会自动出现在这里")
-    /// 回收站空状态副提示——带 retentionDays 参数
-    /// 之前 hardcoded \(TrashRetentionDays.defaultValue.rawValue) (永远 30)
-    /// 现在接受 retentionDays, 跟 settings 同步——V6.08 bug 修
-    static func hintTrashAutoPurge(days: Int) -> String {
-        "删除的图片会出现在这里，\(days) 天后自动永久清除"
-    }
+    /// V6.37.8: hintTrashAutoPurge 已迁移到 V6.37.8 MARK — printf %lld 而非 Swift 字符串插值
     static let hintStartImport = String(localized: "hintStartImport", defaultValue: "拖入图片，或点击“导入图片”开始添加")
 
     // MARK: - V6.08: ModelContainer 启动失败 (SwiftData 损坏 / schema 不兼容)
@@ -670,4 +665,21 @@ enum Copy {
     }
     static let gridTitleRecent7Days = String(localized: "gridTitleRecent7Days", defaultValue: "最近 7 天")
     static let gridTitleLargeFiles = String(localized: "gridTitleLargeFiles", defaultValue: "大图(>5MB)")
+
+    // MARK: - V6.37.8: 空态 + 圈选提示 + 批量重命名 + TrashDetail hint
+    // V6.37.8 printf 修复: hintTrashAutoPurge 原 Swift 字符串插值 '...\(days) 天...' — i18n 盲点
+    //   之前 Copy.swift:325-327 整个函数体是字面拼接, zh-Hant 不能改 word order
+    //   现在 String.localizedStringWithFormat(%lld) 走 printf, zh-Hant 翻译可调整语序
+    static func hintTrashAutoPurge(days: Int) -> String {
+        String.localizedStringWithFormat(String(localized: "hintTrashAutoPurge", defaultValue: "删除的图片会出现在这里，%lld 天后自动永久清除"), days)
+    }
+    // MarqueeHintView — 圈选提示 popover (复用 Copy.onboardingMarqueeTitle 跟 onboarding 统一)
+    static let marqueeHintSubtitle = String(localized: "marqueeHintSubtitle", defaultValue: "在空白处按下左键拖动, 选择一片区域内的所有照片")
+    static let marqueeHintDismiss = String(localized: "marqueeHintDismiss", defaultValue: "知道了")
+    // BatchRenameSheet — 模板 / 预览 section title + 重名 warning (%lld)
+    static let batchRenameTemplateTitle = String(localized: "batchRenameTemplateTitle", defaultValue: "模板")
+    static let batchRenamePreviewTitle = String(localized: "batchRenamePreviewTitle", defaultValue: "预览")
+    static func batchRenameCollisionWarning(_ count: Int) -> String {
+        String.localizedStringWithFormat(String(localized: "batchRenameCollisionWarning", defaultValue: "模板会产生 %lld 个重名 — Apply 时会自动加 _1 _2 后缀"), count)
+    }
 }

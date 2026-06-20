@@ -598,6 +598,30 @@
         }
       }
     },
+    "batchRenameCollisionWarning" : {
+      "comment" : "V6.37.8: Copy.batchRenameCollisionWarning → 模板会产生 %lld 个重名 — Apply 时会自动加 _1 _2 后缀",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Template would produce %lld duplicate names — Apply will auto-append _1 _2 suffixes."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "模板会产生 %lld 个重名 — Apply 时会自动加 _1 _2 后缀"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "範本會產生 %lld 個重名 — Apply 時會自動加 _1 _2 後綴"
+          }
+        }
+      }
+    },
     "batchRenamePreviewSuffix" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -605,6 +629,30 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "等 %lld 个"
+          }
+        }
+      }
+    },
+    "batchRenamePreviewTitle" : {
+      "comment" : "V6.37.8: Copy.batchRenamePreviewTitle → 预览",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preview"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "预览"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "預覽"
           }
         }
       }
@@ -627,6 +675,30 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "photo_{n:3}"
+          }
+        }
+      }
+    },
+    "batchRenameTemplateTitle" : {
+      "comment" : "V6.37.8: Copy.batchRenameTemplateTitle → 模板",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Template"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "模板"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "範本"
           }
         }
       }
@@ -2859,6 +2931,30 @@
         }
       }
     },
+    "hintTrashAutoPurge" : {
+      "comment" : "V6.37.8: Copy.hintTrashAutoPurge → 删除的图片会出现在这里，%lld 天后自动永久清除",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Photos deleted here are permanently removed after %lld days."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除的图片会出现在这里，%lld 天后自动永久清除"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刪除的圖片會出現在這裡，%lld 天後自動永久清除"
+          }
+        }
+      }
+    },
     "imageDimensions" : {
       "comment" : "V6.12.17: V Copy.imageDimensions → \\(width) × \\(height)",
       "extractionState" : "manual",
@@ -3503,6 +3599,54 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "為選中照片加標籤"
+          }
+        }
+      }
+    },
+    "marqueeHintDismiss" : {
+      "comment" : "V6.37.8: Copy.marqueeHintDismiss → 知道了",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Got it"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "知道了"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "知道了"
+          }
+        }
+      }
+    },
+    "marqueeHintSubtitle" : {
+      "comment" : "V6.37.8: Copy.marqueeHintSubtitle → 在空白处按下左键拖动, 选择一片区域内的所有照片",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hold left mouse button and drag over empty space to select a region of photos at once."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在空白处按下左键拖动, 选择一片区域内的所有照片"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在空白處按住左鍵拖動，選擇一片區域內的所有照片"
           }
         }
       }
