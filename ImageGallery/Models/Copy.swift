@@ -620,7 +620,7 @@ enum Copy {
     static let smartFolderIconSparkle = String(localized: "smartFolderIconSparkle", defaultValue: "精选集")
 
     // MARK: - V6.37.5: 选中操作条 + Toast + 上下文菜单
-    // SelectionMiniToolbar — 5 action label + .help tooltip
+    // ContextualSelectionBar — 5 action label + .help tooltip
     //   注: 复用 Copy.tagLabel / Copy.delete / Copy.selectedCount / Copy.sidebarUnfiled / Copy.create
     //     "未整理" → Copy.sidebarUnfiled ("待整理") — 跟 sidebar 命名统一
     //     "X 张已选" → Copy.selectedCount(_:) ("已选 X 张") — 跟既有格式统一

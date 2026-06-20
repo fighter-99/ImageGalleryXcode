@@ -1,42 +1,45 @@
 //
-//  SelectionMiniToolbar.swift
+//  ContextualSelectionBar.swift
 //  ImageGallery
 //
-//  P3.1.3: 选完 mini toolbar
-//  - macOS Photos / Finder 范式: 选非空时浮在 content 顶部
-//  - 4 action: Tag (popover picker) / Move (menu) / Export (直接) / Delete (确认弹窗)
-//  - regular material + accent color, 跟系统级 toolbar 视觉一致
-//  - 跟 P3.1.1 (框选) + P3.1.2 (multi-drag) 配套, P3.1 选区体验收官
+//  V6.38.2 (Phase 2): 选中 contextual bar — 取代 floating SelectionMiniToolbar
+//  - 位置: toolbar 下方一行 (跟 grid 顶贴齐), 占 layout 空间 (grid 内容自动下移)
+//  - 出现/消失: 选中数 0 → 1 触发 .transition (.move + .opacity)
+//  - 视觉: 44pt 标准 toolbar 高度 + bottom divider 跟 grid 分隔
+//  - 范式: Photos.app 选中 contextual bar (选中时 toolbar 下方滑出)
+//  - 之前: SelectionMiniToolbar .overlay 浮层 (Phase 1 之前的产物, 跟 grid 内容重叠风险)
 //
 
 import SwiftUI
 import SwiftData
 
-/// P3.1.3: 选完动作条 — 选 N 张图时浮出, 5 个 batch action
-///   - Tag: 弹 tag picker popover (用 model.allTags)
-///   - Move: 弹 folder picker menu (用 model.folders)
-///   - Rename (P4.2): 弹 batch rename sheet
-///   - Export: 直接调 batchExport() (已有 file panel)
-///   - Delete: 弹确认 dialog (showingBatchDeleteConfirm)
-struct SelectionMiniToolbar: View {
+/// V6.38.2: 选中 contextual bar — 嵌在 gridPane 顶部 VStack
+///  - 选中数 > 0: 显示 (layout shift 让 grid 内容下移)
+///  - 选中数 == 0: 整行隐藏 (grid 内容上移)
+///  - 5 actions: Tag / Move / Rename / Export / Delete (跟 Photos.app 一致)
+///  - 高度 44pt 跟 NSToolbar 对齐, 视觉连贯
+struct ContextualSelectionBar: View {
     @Bindable var model: ContentViewModel
-    @Environment(\.colorScheme) private var colorScheme
     @State private var showTagPicker = false
     @State private var showMovePicker = false
 
+    private static let barHeight: CGFloat = 44
+
     var body: some View {
-        HStack(spacing: 4) {
-            // 选中 N 张提示 — V6.28: selection 在 model.grid
+        // 顶 row: 选中数 + 5 action buttons
+        HStack(spacing: 8) {
+            // 选中数 — "X 张已选" + checkmark icon (跟 StatusBar 风格统一)
             HStack(spacing: 4) {
                 Image(systemName: "checkmark.circle.fill")
                     .foregroundStyle(Color.accentColor)
                 Text(Copy.selectedCount(model.grid.selection.selectedIDs.count))
                     .font(.callout.weight(.medium))
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
+            .padding(.leading, 12)
 
-            Divider().frame(height: 18)
+            Divider()
+                .frame(height: 24)
+                .padding(.horizontal, 4)
 
             // Tag — popover picker
             Button {
@@ -65,7 +68,7 @@ struct SelectionMiniToolbar: View {
             }
             .help(Copy.miniToolbarMoveHelp)
 
-            // P4.2: Rename — sheet (模板批量重命名, V6.28: grid 业务)
+            // Rename (P4.2): sheet (模板批量重命名, V6.28: grid 业务)
             Button {
                 model.grid.showingBatchRenameSheet = true
             } label: {
@@ -73,7 +76,7 @@ struct SelectionMiniToolbar: View {
             }
             .help(Copy.miniToolbarRenameHelp)
 
-            // Export — 直接调 (内部 file panel, V6.28: grid)
+            // Export — 直接调 (内部 file panel, V6.28: grid 业务)
             Button {
                 model.grid.batchExport()
             } label: {
@@ -81,37 +84,37 @@ struct SelectionMiniToolbar: View {
             }
             .help(Copy.miniToolbarExportHelp)
 
-            // Delete — 弹确认 dialog (V6.28: grid)
+            // Delete — 弹确认 dialog (Photos.app 范式: 不静默删, 弹 confirm + undo)
             Button(role: .destructive) {
                 model.grid.showingBatchDeleteConfirm = true
             } label: {
                 Label(Copy.delete, systemImage: "trash")
             }
             .help(Copy.miniToolbarDeleteHelp)
+
+            Spacer(minLength: 0)
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .background(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(.regularMaterial)
-                // V6.16.1: 暗色模式阴影加强 — 0.1 黑阴影在深灰底上几乎不可见
-                //   浅色: 0.15 黑 (柔和, 提一下就好)
-                //   暗色: 0.5 黑 (明显抬起, 否则浮层感丢失)
-                .shadow(
-                    color: .black.opacity(colorScheme == .dark ? 0.5 : 0.15),
-                    radius: colorScheme == .dark ? 8 : 4,
-                    x: 0,
-                    y: colorScheme == .dark ? 3 : 2
-                )
-        )
+        .frame(height: Self.barHeight)
+        .padding(.trailing, 12)
+        // V6.38.2: 背景跟 main toolbar 协调 — .bar material (跟 sidebar / detail panel 同强度)
+        //   跟 NSToolbar 视觉一致, 不再是浮层 material
+        .background(.bar)
+        // V6.38.2: 底部 divider 跟 grid 分隔 — Photos.app contextual bar 风格
+        .overlay(alignment: .bottom) {
+            Divider()
+                .opacity(0.5)
+        }
     }
 }
 
-/// P3.1.3: Tag picker popover — 列出 model.allTags, 选一个就 batchAddTag
-private struct TagPickerPopover: View {
+// MARK: - V6.38.2: Tag picker popover (从 SelectionMiniToolbar 搬来)
+//  - 列出 model.allTags, 选一个就 batchAddTag
+//  - 底部加新 tag 创建 (文本框 + 创建按钮)
+//  - Photos.app contextual bar tag popover 风格
+struct TagPickerPopover: View {
     @Bindable var model: ContentViewModel
     @Environment(\.dismiss) private var dismiss
-    @State private var newTagName: String = ""
+    @State private var newTagName = ""
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -119,7 +122,6 @@ private struct TagPickerPopover: View {
                 .font(.headline)
                 .padding(.bottom, 4)
 
-            // V6.28: allTags + batchAddTag 在 model.grid
             if model.grid.allTags.isEmpty {
                 Text(Copy.miniToolbarEmptyTags)
                     .foregroundStyle(.secondary)
@@ -143,21 +145,19 @@ private struct TagPickerPopover: View {
             HStack {
                 TextField(Copy.miniToolbarNewTagPlaceholder, text: $newTagName)
                     .textFieldStyle(.roundedBorder)
-                    .onSubmit { createAndAdd() }
-                Button(Copy.create) {
-                    createAndAdd()
-                }
-                .disabled(newTagName.trimmingCharacters(in: .whitespaces).isEmpty)
+                    .onSubmit { createAndAddTag() }
+                Button(Copy.create) { createAndAddTag() }
+                    .disabled(newTagName.trimmingCharacters(in: .whitespaces).isEmpty)
             }
         }
         .padding(12)
         .frame(minWidth: 200)
     }
 
-    private func createAndAdd() {
+    private func createAndAddTag() {
         let trimmed = newTagName.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty, let modelContext = model.modelContext else { return }
-        let tag = Tag(name: trimmed)
+        let tag = Tag(name: trimmed, colorHex: "#5B8FF9")
         modelContext.insert(tag)
         try? modelContext.save()
         model.grid.batchAddTag(tag)

@@ -572,16 +572,9 @@ struct ContentView: View {
         )
         // V6.17.0.2: overlay 搬进 photoGrid — rect 跟 overlay 同 space (photoGrid),
         //   视觉精准跟手 (用户报告 V6.17.0.1 矩形不跟手就是这里)
-        // P3.1.3: 选完 mini toolbar — 4 action (Tag / Move / Export / Delete)
-        //   选非空时浮在 content 顶部, 走 macOS Photos / Finder 范式
-        //   regular material + accent color, 跟系统级 toolbar 视觉一致
-        .overlay(alignment: .top) {
-            if model.grid.isMultiSelect || !model.grid.selection.selectedIDs.isEmpty {
-                SelectionMiniToolbar(model: model)
-                    .padding(.top, 8)
-                    .transition(.move(edge: .top).combined(with: .opacity))
-            }
-        }
+        // V6.38.2 (Phase 2): SelectionMiniToolbar .overlay(alignment: .top) 移除
+        //   之前: 浮在 mainSplitPane 顶层 — 不占 layout, 跟 grid 内容重叠
+        //   现在: 嵌到 gridPane 顶部 VStack (line 637 附近), layout shift 自动让 grid 下移
         // V6.21.0 (Phase 1.1 UX polish): 圈选功能发现性提示 — first-run floating tip
         //   显示条件: 库有内容 + selection 空 + 用户没看过提示
         //   dismiss 路径: 1) 点 "知道了" → settings.hasShownMarqueeHint = true
@@ -628,8 +621,19 @@ struct ContentView: View {
     @ViewBuilder
     private var gridPane: some View {
         // V6.31.1: 包 Group → switch 多 view 转 single view, 上面 .transition / .animation 修饰才能作用
-        Group {
-            switch viewMode {
+        // V6.38.2 (Phase 2): 包 VStack 加 contextual selection bar 在顶部 — 选中时 grid 内容下移
+        //   之前: SelectionMiniToolbar .overlay(alignment: .top) 在 mainSplitPane 顶层
+        //     浮层 — 不占 layout 空间, 与 grid 内容重叠风险
+        //   现在: 内嵌到 gridPane 顶部 VStack — 选中时 grid 自动下移 44pt
+        //     跟 Photos.app contextual bar 行为一致 (layout shift, 不是 overlay)
+        //     transition .move(edge: .top) + .opacity 让出现/消失平滑
+        VStack(spacing: 0) {
+            if !model.grid.selection.selectedIDs.isEmpty || model.grid.isMultiSelect {
+                ContextualSelectionBar(model: model)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+            Group {
+                switch viewMode {
             case .grid:
                 PhotoGridPane(
                     // V6.28: selection 在 grid
@@ -741,10 +745,15 @@ struct ContentView: View {
             )
         }
         } // Group 关闭 (V6.31.1)
+        } // VStack 关闭 (V6.38.2)
         // V6.31.1: view mode 切换过渡 — crossfade + scale 0.95→1 (Photos.app 范式)
         //   .transition 只在 view 出现/消失时触发, 配合 .animation(value: viewMode) 让 SwiftUI 跑 transition
         .transition(.opacity.combined(with: .scale(scale: 0.96)))
         .animation(.easeInOut(duration: 0.3), value: viewMode)
+        // V6.38.2 (Phase 2): ContextualSelectionBar 出现/消失动画 — 选中数变化触发
+        //   .move(edge: .top) slide down + .opacity fade in (Photos.app 范式)
+        //   配合 conditional render above (line 637), selection 0→1 触发 .transition
+        .animation(.spring(response: 0.35, dampingFraction: 0.85), value: model.grid.selection.selectedIDs.isEmpty)
     }
 
     private var detailPane: some View {
