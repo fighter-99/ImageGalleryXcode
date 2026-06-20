@@ -125,16 +125,18 @@ struct PhotoRowView: View {
     /// V5.18: caption 文本——同年内 "M月d日" (5月12日), 跨年 "yyyy年M月d日"
     ///   Photos.app Days 视图 cell 下方格式——同月重复不冗余 (header 已说"5月")
     ///   跨年带年份——避免和 header "2024 年" 重复阅读歧义
+    /// V6.37.7: 改用 setLocalizedDateFormatFromTemplate——en 自动 "M/d" / "M/d/yyyy", zh 保持 "M月d日" / "yyyy年M月d日"
+    ///   之前 hardcode "zh_CN" locale + 中文字面 dateFormat — i18n 盲点, en/zh-Hant 都错
     private func dateCaptionText(for photo: Photo) -> String {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "zh_CN")
+        formatter.locale = Locale.current  // V6.37.7: 跟随系统/用户设置语言
         let calendar = Calendar.current
         let photoYear = calendar.component(.year, from: photo.importedAt)
         let currentYear = calendar.component(.year, from: Date())
         if photoYear == currentYear {
-            formatter.dateFormat = "M月d日"
+            formatter.setLocalizedDateFormatFromTemplate("Md")  // en: "M/d", zh: "M月d日"
         } else {
-            formatter.dateFormat = "yyyy年M月d日"
+            formatter.setLocalizedDateFormatFromTemplate("yyyyMd")  // en: "M/d/yyyy", zh: "yyyy年M月d日"
         }
         return formatter.string(from: photo.importedAt)
     }

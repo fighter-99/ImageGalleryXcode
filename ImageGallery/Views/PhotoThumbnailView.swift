@@ -225,7 +225,7 @@ private struct PhotoCellContent: View {
                 }
             }
             if dragCount > 1 {
-                Text("共 \(dragCount) 张")
+                Text(Copy.thumbnailDragCount(dragCount))
                     .font(.caption2.bold())
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
@@ -427,7 +427,7 @@ private struct PhotoCellContent: View {
         //   label: filename + rating + selected state (盲人用户能感知选中)
         //   hint: 描述 cell 操作 ("双击进入沉浸式 / 右键菜单")
         .accessibilityLabel(Copy.accessibilityPhotoLabel(photo.filename, rating: photo.rating, selected: isActive))
-        .accessibilityHint("单击切换选中, 双击进入沉浸式查看, 右键显示更多操作")
+        .accessibilityHint(Copy.thumbnailAccessibilityHint)
         .accessibilityAddTraits(isActive ? .isSelected : [])
         // V6.22.7 (Bug fix): 撤销 V6.22.6 highPriorityGesture — 实测证明 tap 反而覆盖 marquee
         //   之前 .onTapGesture (低优先级) drag.onEnded 跑赢 → 多选 work

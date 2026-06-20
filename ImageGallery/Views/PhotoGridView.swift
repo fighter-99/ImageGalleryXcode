@@ -246,16 +246,16 @@ struct PhotoGridView: View {
 
     private var navigationTitle: String {
         let trimmed = searchText.trimmingCharacters(in: .whitespaces)
-        if !trimmed.isEmpty { return "搜索: \(trimmed)" }
+        if !trimmed.isEmpty { return Copy.gridTitleSearch(trimmed) }
         if let folder = folder { return folder.name }
         if let tag = tag { return "#\(tag.name)" }
         // V5.8: 砍"收藏"——侧边栏无收藏入口
-        if filterUnfiled { return "待整理" }
-        if filterDuplicates { return "重复图" }
-        if filterRecent7Days { return "最近 7 天" }
-        if filterLargeFiles { return "大图(>5MB)" }
+        if filterUnfiled { return Copy.sidebarUnfiled }
+        if filterDuplicates { return Copy.sidebarDuplicates }
+        if filterRecent7Days { return Copy.gridTitleRecent7Days }
+        if filterLargeFiles { return Copy.gridTitleLargeFiles }
         if filterInTrash { return "回收站" }  // V4.36.x: 统一为"回收站"
-        return "全部"
+        return Copy.sidebarAll
     }
 
     // ─── 根据视图模式切换 ───

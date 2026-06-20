@@ -20,8 +20,8 @@ enum PhotoListOrTimelineKind {
 
     var displayName: String {
         switch self {
-        case .list:     return "列表"
-        case .timeline: return "时间线"
+        case .list:     return Copy.layoutModeList
+        case .timeline: return Copy.viewModeTimeline
         }
     }
 }

@@ -653,4 +653,21 @@ enum Copy {
     static func filterPopoverMinRating(_ rating: Int) -> String {
         String.localizedStringWithFormat(String(localized: "filterPopoverMinRating", defaultValue: "≥%lld 星"), rating)
     }
+
+    // MARK: - V6.37.7: 网格/列表/时间线 + 日期分组
+    // ViewMode enum — timeline 复用 Copy.viewModeTimeline (V6.12.17 在 '设置面板' MARK 已定义)
+    //   grid/list 复用 Copy.layoutModeSquareFit / layoutModeList (V6.37.1 已定义)
+    // PhotoThumbnailView — drag 计数 + a11y hint
+    static func thumbnailDragCount(_ count: Int) -> String {
+        String.localizedStringWithFormat(String(localized: "thumbnailDragCount", defaultValue: "共 %lld 张"), count)
+    }
+    static let thumbnailAccessibilityHint = String(localized: "thumbnailAccessibilityHint", defaultValue: "单击切换选中, 双击进入沉浸式查看, 右键显示更多操作")
+    // PhotoGridView — 6 个 grid title (3 复用 + 3 新)
+    //   复用: Copy.sidebarUnfiled ("待整理"), Copy.sidebarDuplicates ("重复图"), Copy.sidebarAll ("全部")
+    //   ViewMode.monthLabel 复用 Copy.dateSectionMonthLabel(_:) (V6.37.1 已加)
+    static func gridTitleSearch(_ query: String) -> String {
+        String.localizedStringWithFormat(String(localized: "gridTitleSearch", defaultValue: "搜索: %@"), query)
+    }
+    static let gridTitleRecent7Days = String(localized: "gridTitleRecent7Days", defaultValue: "最近 7 天")
+    static let gridTitleLargeFiles = String(localized: "gridTitleLargeFiles", defaultValue: "大图(>5MB)")
 }

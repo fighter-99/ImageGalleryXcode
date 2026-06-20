@@ -10,9 +10,6 @@
     "#%@" : {
 
     },
-    "%lld 张已选" : {
-
-    },
     "%lld." : {
 
     },
@@ -2622,6 +2619,78 @@
         }
       }
     },
+    "gridTitleLargeFiles" : {
+      "comment" : "V6.37.7: Copy.gridTitleLargeFiles → 大图(>5MB)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Large Files (>5MB)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "大图(>5MB)"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "大圖 (>5MB)"
+          }
+        }
+      }
+    },
+    "gridTitleRecent7Days" : {
+      "comment" : "V6.37.7: Copy.gridTitleRecent7Days → 最近 7 天",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recent 7 Days"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最近 7 天"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最近 7 天"
+          }
+        }
+      }
+    },
+    "gridTitleSearch" : {
+      "comment" : "V6.37.7: Copy.gridTitleSearch → 搜索: %@",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "搜索: %@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "搜尋: %@"
+          }
+        }
+      }
+    },
     "hintAddTagInDetail" : {
       "comment" : "V6.12.17: V Copy.hintAddTagInDetail → 在详情中添加此标签",
       "extractionState" : "manual",
@@ -3198,78 +3267,6 @@
         }
       }
     },
-    "minRatingStars" : {
-      "comment" : "V6.12.17: V Copy.minRatingStars → ≥ \\(n) 星",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "≥ %lld stars"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "≥ %lld 星"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "≥ %lld 星"
-          }
-        }
-      }
-    },
-    "movedDuplicates" : {
-      "comment" : "V6.12.17: V Copy.movedDuplicates → 已移到回收站 \\(count) 张重复图",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Moved %lld duplicates to Recycle Bin"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已移到回收站 %lld 张重复图"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已移到垃圾桶 %lld 張重複圖"
-          }
-        }
-      }
-    },
-    "movedToRecycleBin" : {
-      "comment" : "V6.12.17: V Copy.movedToRecycleBin → 已移到回收站（\\(retentionDays) 天后永久删除）",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Moved to Recycle Bin (permanently delete in %lld days)"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已移到回收站（%lld 天后永久删除）"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已移到垃圾桶（%lld 天後永久刪除）"
-          }
-        }
-      }
-    },
     "miniToolbarAddTagTitle" : {
       "comment" : "V6.37.5: Copy.miniToolbarAddTagTitle → 加标签",
       "extractionState" : "manual",
@@ -3506,6 +3503,78 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "為選中照片加標籤"
+          }
+        }
+      }
+    },
+    "minRatingStars" : {
+      "comment" : "V6.12.17: V Copy.minRatingStars → ≥ \\(n) 星",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "≥ %lld stars"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "≥ %lld 星"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "≥ %lld 星"
+          }
+        }
+      }
+    },
+    "movedDuplicates" : {
+      "comment" : "V6.12.17: V Copy.movedDuplicates → 已移到回收站 \\(count) 张重复图",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moved %lld duplicates to Recycle Bin"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已移到回收站 %lld 张重复图"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已移到垃圾桶 %lld 張重複圖"
+          }
+        }
+      }
+    },
+    "movedToRecycleBin" : {
+      "comment" : "V6.12.17: V Copy.movedToRecycleBin → 已移到回收站（\\(retentionDays) 天后永久删除）",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moved to Recycle Bin (permanently delete in %lld days)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已移到回收站（%lld 天后永久删除）"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已移到垃圾桶（%lld 天後永久刪除）"
           }
         }
       }
@@ -8153,6 +8222,30 @@
         }
       }
     },
+    "thumbnailAccessibilityHint" : {
+      "comment" : "V6.37.7: Copy.thumbnailAccessibilityHint → 单击切换选中, 双击进入沉浸式查看, 右键显示更多操作",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Single-click to select, double-click for immersive view, right-click for more actions"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "单击切换选中, 双击进入沉浸式查看, 右键显示更多操作"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "按一下切換選中, 雙擊進入沉浸式檢視, 右鍵顯示更多操作"
+          }
+        }
+      }
+    },
     "thumbnailDensityCompact" : {
       "comment" : "V6.37.1: Copy.thumbnailDensityCompact → 极小",
       "extractionState" : "manual",
@@ -8245,6 +8338,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "小"
+          }
+        }
+      }
+    },
+    "thumbnailDragCount" : {
+      "comment" : "V6.37.7: Copy.thumbnailDragCount → 共 %lld 张",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld photos"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "共 %lld 张"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "共 %lld 張"
           }
         }
       }
@@ -8996,40 +9113,13 @@
     "共 %lld 张" : {
 
     },
-    "关闭" : {
-
-    },
-    "分享" : {
-
-    },
     "分享…" : {
-
-    },
-    "创建" : {
-
-    },
-    "删除" : {
-
-    },
-    "加标签" : {
 
     },
     "单击切换选中, 双击进入沉浸式查看, 右键显示更多操作" : {
 
     },
-    "向右旋转" : {
-
-    },
-    "向左旋转" : {
-
-    },
     "在空白处按下左键拖动, 选择一片区域内的所有照片" : {
-
-    },
-    "导出" : {
-
-    },
-    "导出选中照片" : {
 
     },
     "开始朗读" : {
@@ -9038,28 +9128,7 @@
     "拖动鼠标框选多张照片" : {
 
     },
-    "按模板批量重命名 (⌘⇧R)" : {
-
-    },
-    "撤销" : {
-
-    },
-    "撤销 (⌘Z)" : {
-
-    },
     "新文件夹" : {
-
-    },
-    "新标签" : {
-
-    },
-    "旋转" : {
-
-    },
-    "未整理" : {
-
-    },
-    "标签" : {
 
     },
     "模板" : {
@@ -9069,27 +9138,6 @@
 
     },
     "知道了" : {
-
-    },
-    "视图" : {
-
-    },
-    "移到回收站" : {
-
-    },
-    "移动" : {
-
-    },
-    "移动到文件夹" : {
-
-    },
-    "给选中照片加标签" : {
-
-    },
-    "编辑" : {
-
-    },
-    "还没有标签" : {
 
     },
     "预览" : {

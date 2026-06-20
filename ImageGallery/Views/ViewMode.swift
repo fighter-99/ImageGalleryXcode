@@ -26,9 +26,9 @@ enum ViewMode: String, CaseIterable, Identifiable {
 
     var label: String {
         switch self {
-        case .grid: return "网格"
-        case .list: return "列表"
-        case .timeline: return "时间线"
+        case .grid: return Copy.layoutModeSquareFit
+        case .list: return Copy.layoutModeList
+        case .timeline: return Copy.viewModeTimeline
         }
     }
 }
@@ -305,7 +305,7 @@ struct TimelineYearSection: View {
     private func formatMonth(_ key: String) -> String {
         let parts = key.split(separator: "-")
         guard parts.count == 2, let month = Int(parts[1]) else { return key }
-        return "\(month) 月"
+        return Copy.dateSectionMonthLabel(month)
     }
 }
 
