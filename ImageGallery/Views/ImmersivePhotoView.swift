@@ -53,13 +53,27 @@ struct ImmersivePhotoView: View {
                         //   DesignTokens.swift:423 已定义同名 token, 本处旁路
                         .padding(WindowModeMetrics.viewerImagePadding)
                 } else {
-                    // 加载中 + 加载失败都用同一 fallback（避免加 Shimmer 复杂度）
-                    VStack(spacing: 16) {
-                        Image(systemName: "photo")
-                            .font(Typography.emptyStateIconLarge)
-                            .foregroundStyle(.secondary)
-                        Text(photo.filename)
-                            .foregroundStyle(.white)
+                    // V6.31.2: 加载中 → shimmer 骨架 (跟 PhotoThumbnailView 一致)
+                    //   加载失败 → 静态 fallback (exclamationmark.triangle + 文件名)
+                    if loadFailed {
+                        VStack(spacing: 16) {
+                            Image(systemName: "exclamationmark.triangle")
+                                .font(Typography.emptyStateIconLarge)
+                                .foregroundStyle(.secondary)
+                            Text(photo.filename)
+                                .foregroundStyle(.white)
+                        }
+                    } else {
+                        // shimmer 骨架 — 黑色背景上白点流动, 暗示"正在加载"
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 4)
+                                .fill(.white.opacity(0.05))
+                                .shimmer()
+                            Text(photo.filename)
+                                .foregroundStyle(.white.opacity(0.5))
+                                .font(.caption)
+                        }
+                        .padding(WindowModeMetrics.viewerImagePadding)
                     }
                 }
             }
