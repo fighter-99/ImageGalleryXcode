@@ -56,7 +56,9 @@ final class GridViewModel {
     @ObservationIgnored let undoManager: ImageGalleryUndoManager
 
     /// V6.28: toast callback — Core 的 enqueueToast (避免重复 toast queue 实现)
-    @ObservationIgnored var enqueueToastHandler: (String, ToastView.ToastType, ToastInfo.Duration) -> Void = { _, _, _ in }
+    /// V6.29.1: 加 undoAction 参数 (破坏性操作 Photos.app 撤销范式)
+    ///   Swift 限制: 函数/闭包类型不能有 argument labels, 用 `_ undoAction:` 标记 (跟函数参数一样)
+    @ObservationIgnored var enqueueToastHandler: (String, ToastView.ToastType, ToastInfo.Duration, _ undoAction: (() -> Void)?) -> Void = { _, _, _, _ in }
 
     // MARK: - Grid 业务字段
 
@@ -369,7 +371,7 @@ final class GridViewModel {
             return item
         }
         pasteboard.writeObjects(items)
-        enqueueToastHandler(urls.count == 1 ? "已复制 1 张图片" : "已复制 \(urls.count) 张图片", .success, .normal)
+        enqueueToastHandler(urls.count == 1 ? "已复制 1 张图片" : "已复制 \(urls.count) 张图片", .success, .normal, nil)
     }
 
     /// V6.19.0 (P0 #1): 多图分享 — NSSharingServicePicker (Photos.app 范式)
@@ -383,7 +385,7 @@ final class GridViewModel {
         } else if let photo = singleSelectedPhoto {
             urls = [photo.fileURL]
         } else {
-            enqueueToastHandler("请先选择要分享的图片", .info, .normal)
+            enqueueToastHandler("请先选择要分享的图片", .info, .normal, nil)
             return []
         }
         return urls
@@ -398,7 +400,7 @@ final class GridViewModel {
     func rotateSelected(clockwise: Bool) {
         let photos = selection.selectedPhotos(in: visiblePhotos)
         guard !photos.isEmpty else {
-            enqueueToastHandler("请先选择要旋转的图片", .info, .normal)
+            enqueueToastHandler("请先选择要旋转的图片", .info, .normal, nil)
             return
         }
         var successCount = 0
@@ -413,7 +415,7 @@ final class GridViewModel {
             }
         }
         let message = successCount == 1 ? "已旋转 1 张图片" : "已旋转 \(successCount) 张图片"
-        enqueueToastHandler(message, successCount == photos.count ? .success : .warning, .normal)
+        enqueueToastHandler(message, successCount == photos.count ? .success : .warning, .normal, nil)
     }
 
     /// V6.22.1: 读 EXIF orientation — 用 CGImageSourceCopyPropertiesAtIndex
@@ -433,7 +435,7 @@ final class GridViewModel {
     func speakSelection() {
         let photos = selection.selectedPhotos(in: visiblePhotos)
         guard !photos.isEmpty else {
-            enqueueToastHandler("请先选择要朗读的图片", .info, .normal)
+            enqueueToastHandler("请先选择要朗读的图片", .info, .normal, nil)
             return
         }
         let message: String
@@ -563,24 +565,52 @@ final class GridViewModel {
     }
 
     /// V3.6: 删除单张 = 移到回收站
+    /// V6.29.1: undo = restore from trash (Photos.app 撤销范式)
     func deleteSinglePhoto() {
-        guard let photo = singleSelectedPhoto, let modelContext = core?.modelContext else { return }
-        RecycleBinService(
-            storage: .shared,
-            modelContext: modelContext,
-            onError: { [weak self] error in
-                self?.enqueueToastHandler("移到回收站失败：\(error.localizedDescription)", .error, .long)
-            }
-        ).recycle(photo)
-        selection = .empty
-        enqueueToastHandler("已移到回收站（\(settings.trashRetentionDays) 天后永久删除）", .info, .normal)
+        guard let photo = singleSelectedPhoto else { return }
+        let count = performOnSelectedTrash({ svc, photos in svc.recycle(photos[0]) })
+        guard count > 0 else { return }
+        let capturedPhoto = photo
+        let undo: () -> Void = { [weak self] in
+            guard let self else { return }
+            guard let modelContext = self.core?.modelContext else { return }
+            RecycleBinService(storage: .shared, modelContext: modelContext).restore(capturedPhoto)
+        }
+        // 同步: undoManager push + toast undoAction (⌘Z + 点 [撤销] 都能恢复)
+        undoManager.registerUndoOnly(description: "删除 1 张照片", undo: undo)
+        enqueueToastHandler(
+            "已移到回收站（\(settings.trashRetentionDays) 天后永久删除）",
+            .info,
+            .normal,
+            undo
+        )
     }
 
     /// V3.6: 批量删除
+    /// V6.29.1: undo = 全部 restore from trash (Photos.app 撤销范式)
     func batchDelete() {
-        performOnSelectedTrash(
-            { svc, photos in photos.forEach { svc.recycle($0) } },
-            message: { "已移到回收站 \($0) 张" }
+        // 提前 capture photos (performOnSelectedTrash 会清 selection)
+        let photos = selection.selectedPhotos(in: visiblePhotos)
+        guard !photos.isEmpty else { return }
+        let count = performOnSelectedTrash({ svc, photos in photos.forEach { svc.recycle($0) } })
+        guard count > 0 else { return }
+        let capturedPhotos = photos
+        let undo: () -> Void = { [weak self] in
+            guard let self else { return }
+            guard let modelContext = self.core?.modelContext else { return }
+            let service = RecycleBinService(storage: .shared, modelContext: modelContext)
+            for photo in capturedPhotos {
+                service.restore(photo)
+            }
+            self.enqueueToastHandler("已恢复 \(capturedPhotos.count) 张图片", .success, .normal, nil)
+        }
+        // 同步: undoManager push + toast undoAction
+        undoManager.registerUndoOnly(description: "删除 \(count) 张照片", undo: undo)
+        enqueueToastHandler(
+            "已移到回收站 \(count) 张",
+            .info,
+            .normal,
+            undo
         )
     }
 
@@ -705,9 +735,9 @@ final class GridViewModel {
             }
             modelContext.saveWithLog()
             if errors > 0 {
-                self?.enqueueToastHandler("部分重命名失败：\(errors) 张", .error, .long)
+                self?.enqueueToastHandler("部分重命名失败：\(errors) 张", .error, .long, nil)
             } else {
-                self?.enqueueToastHandler("已重命名 \(count) 张照片", .success, .normal)
+                self?.enqueueToastHandler("已重命名 \(count) 张照片", .success, .normal, nil)
             }
             _ = self
         } undo: { [weak self] in
@@ -726,7 +756,7 @@ final class GridViewModel {
             }
             modelContext.saveWithLog()
             if undoErrors > 0 {
-                self?.enqueueToastHandler("部分撤销失败：\(undoErrors) 张", .error, .long)
+                self?.enqueueToastHandler("部分撤销失败：\(undoErrors) 张", .error, .long, nil)
             }
             _ = self
         }
@@ -740,7 +770,7 @@ final class GridViewModel {
             photosToRate[index].rating = r
         }
         modelContext.saveWithLog { [weak self] _ in
-            self?.enqueueToastHandler("批量评分失败", .error, .long)
+            self?.enqueueToastHandler("批量评分失败", .error, .long, nil)
         }
     }
 
@@ -771,11 +801,11 @@ final class GridViewModel {
                 }
                 successCount += 1
             } catch {
-                enqueueToastHandler("导出失败：\(photo.filename)", .error, .long)
+                enqueueToastHandler("导出失败：\(photo.filename)", .error, .long, nil)
             }
         }
         if successCount > 0 {
-            enqueueToastHandler("已导出 \(successCount) 张图片", .success, .normal)
+            enqueueToastHandler("已导出 \(successCount) 张图片", .success, .normal, nil)
         }
     }
 
@@ -797,13 +827,14 @@ final class GridViewModel {
 
     /// 在 visiblePhotos ∩ selectedIDs 上执行 trash 操作
     /// V5.13: 注入 onError
+    /// V6.29.1: 不显示 toast, 由 caller 自己决定 (e.g. batchDelete 走 undo toast, permanentDeleteSelected 走普通 toast)
+    ///   返回操作的照片数 (caller 用来生成 toast message / undo description)
+    @discardableResult
     func performOnSelectedTrash(
-        _ operation: (RecycleBinService, [Photo]) -> Void,
-        message: (Int) -> String,
-        type: ToastView.ToastType = .info
-    ) {
+        _ operation: (RecycleBinService, [Photo]) -> Void
+    ) -> Int {
         let photos = selection.selectedPhotos(in: visiblePhotos)
-        guard !photos.isEmpty, let modelContext = core?.modelContext else { return }
+        guard !photos.isEmpty, let modelContext = core?.modelContext else { return 0 }
         let service = RecycleBinService(
             storage: .shared,
             modelContext: modelContext,
@@ -812,30 +843,33 @@ final class GridViewModel {
                     Copy.recycleBinOperationFailed(error.localizedDescription),
                     .error,
                     .long
-                )
+                , nil)
             }
         )
         operation(service, photos)
         let count = photos.count
         selection = .empty
-        enqueueToastHandler(message(count), type, .normal)
+        return count
     }
 
-    /// 恢复选中的照片
+    /// 恢复选中的照片 (从回收站)
+    /// V6.29.1: 不走 undo toast (V1 简化: 恢复操作少, ⌘Z 不需要做撤销恢复的反向)
+    ///   走普通 success toast
     func restoreSelectedFromTrash() {
-        performOnSelectedTrash(
-            { svc, photos in photos.forEach { svc.restore($0) } },
-            message: { "已恢复 \($0) 张图片" },
-            type: .success
-        )
+        let count = performOnSelectedTrash({ svc, photos in photos.forEach { svc.restore($0) } })
+        if count > 0 {
+            enqueueToastHandler("已恢复 \(count) 张图片", .success, .normal, nil)
+        }
     }
 
     /// 永久删除选中的照片
+    /// V6.29.1: 不走 undo toast (永久删除无法恢复, 文件已从磁盘删除)
+    ///   走普通 toast
     func permanentDeleteSelected() {
-        performOnSelectedTrash(
-            { svc, photos in svc.purgeAll(photos) },
-            message: { "已永久删除 \($0) 张图片" }
-        )
+        let count = performOnSelectedTrash({ svc, photos in svc.purgeAll(photos) })
+        if count > 0 {
+            enqueueToastHandler("已永久删除 \(count) 张图片", .info, .normal, nil)
+        }
     }
 
     /// 清空回收站
@@ -846,12 +880,12 @@ final class GridViewModel {
             storage: .shared,
             modelContext: modelContext,
             onError: { [weak self] error in
-                self?.enqueueToastHandler("清空回收站失败：\(error.localizedDescription)", .error, .long)
+                self?.enqueueToastHandler("清空回收站失败：\(error.localizedDescription)", .error, .long, nil)
             }
         ).purgeAll(trashed)
         let count = trashed.count
         selection = .empty
-        enqueueToastHandler("已清空回收站（\(count) 张）", .info, .normal)
+        enqueueToastHandler("已清空回收站（\(count) 张）", .info, .normal, nil)
     }
 
     /// V3.6.15: 重复图清理
@@ -863,10 +897,10 @@ final class GridViewModel {
             storage: .shared,
             modelContext: modelContext,
             onError: { [weak self] error in
-                self?.enqueueToastHandler("批量移到回收站失败：\(error.localizedDescription)", .error, .long)
+                self?.enqueueToastHandler("批量移到回收站失败：\(error.localizedDescription)", .error, .long, nil)
             }
         )
         for photo in purgeable { service.recycle(photo) }
-        enqueueToastHandler("已移到回收站 \(purgeable.count) 张重复图", .info, .normal)
+        enqueueToastHandler("已移到回收站 \(purgeable.count) 张重复图", .info, .normal, nil)
     }
 }

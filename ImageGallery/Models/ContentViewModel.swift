@@ -213,8 +213,15 @@ final class ContentViewModel {
     }
 
     /// V5.13: Toast 队列
-    func enqueueToast(_ message: String, type: ToastView.ToastType = .info, duration: ToastInfo.Duration = .normal) {
-        let info = ToastInfo(message: message, type: type, duration: duration)
+    /// V6.29.1: 加 undoAction 参数 — 破坏性操作可撤回 (Photos.app 范式)
+    ///   undoAction 同时 push 到 ImageGalleryUndoManager (⌘Z 也能撤销同一操作)
+    func enqueueToast(
+        _ message: String,
+        type: ToastView.ToastType = .info,
+        duration: ToastInfo.Duration = .normal,
+        undoAction: (() -> Void)? = nil
+    ) {
+        let info = ToastInfo(message: message, type: type, duration: duration, undoAction: undoAction)
         toastQueue.append(info)
         if toastQueue.count == 1 {
             scheduleDismiss(after: info.duration.seconds)
@@ -246,8 +253,14 @@ final class ContentViewModel {
     }
 
     /// 兼容旧 showToast 调用
-    func showToast(_ message: String, type: ToastView.ToastType = .info) {
-        enqueueToast(message, type: type, duration: .normal)
+    /// V6.29.1: 支持 undoAction (透传给 enqueueToast)
+    func showToast(
+        _ message: String,
+        type: ToastView.ToastType = .info,
+        duration: ToastInfo.Duration = .normal,
+        undoAction: (() -> Void)? = nil
+    ) {
+        enqueueToast(message, type: type, duration: duration, undoAction: undoAction)
     }
 
     /// ─── 启动时清理过期回收站项（V3.6 NEW）───
@@ -315,6 +328,14 @@ final class ContentViewModel {
         }
     }
 
+    /// V6.29.1: 子模型 toast 桥接 setter — 拆出 init 中的 inline 闭包赋值, 避免
+    ///   Swift type-checker 在 4-arg + Optional<() -> Void> 闭包推断 timeout
+    ///   (V6.28 3-arg 版本 inline 没问题; 加 undoAction 后 inline 触发 "failed to produce diagnostic")
+    func wireToastHandler(_ forward: @escaping (String, ToastView.ToastType, ToastInfo.Duration, (() -> Void)?) -> Void) {
+        self.grid.enqueueToastHandler = forward
+        self.importVM.enqueueToastHandler = forward
+    }
+
     // MARK: - Init
 
     /// V5.52-1 起步: 无参 init——modelContext 由 .task 注入
@@ -323,6 +344,7 @@ final class ContentViewModel {
     /// V6.28: 创建 GridViewModel (共享 settings/undoManager) + 设 weak core back-ref
     /// V6.28.1: 创建 ImportViewModel + 设 weak core back-ref + wire toast callback
     /// V6.28.2: 创建 WindowViewModel (共享 settings) + 设 weak core back-ref
+    /// V6.29.1: wireToastHandler 拆出 — 避免 Swift type-checker 在 init 内 inline 闭包 timeout
     init(settings: UserSettings? = nil) {
         let s = settings ?? UserSettings()
         let um = ImageGalleryUndoManager()
@@ -340,11 +362,10 @@ final class ContentViewModel {
         self.importVM.core = self
         self.windowVM.core = self
         // wire toast callback (子模型的 toast 走 Core 的 enqueueToast)
-        self.grid.enqueueToastHandler = { [weak self] message, type, duration in
-            self?.enqueueToast(message, type: type, duration: duration)
-        }
-        self.importVM.enqueueToastHandler = { [weak self] message, type, duration in
-            self?.enqueueToast(message, type: type, duration: duration)
+        // V6.29.1: 加 undoAction 参数; 拆出 wireToastHandler 方法避免 init 内 inline 闭包 type-check timeout
+        self.wireToastHandler { [weak self] message, type, duration, undoAction in
+            guard let self else { return }
+            self.enqueueToast(message, type: type, duration: duration, undoAction: undoAction)
         }
     }
 }

@@ -44,7 +44,8 @@ final class ImportViewModel {
     @ObservationIgnored weak var core: ContentViewModel?
 
     /// V6.28.1: toast callback — Core 的 enqueueToast (避免重复 toast queue 实现)
-    @ObservationIgnored var enqueueToastHandler: (String, ToastView.ToastType, ToastInfo.Duration) -> Void = { _, _, _ in }
+    /// V6.29.1: 加 undoAction 参数 (破坏性操作 Photos.app 撤销范式, 跟 GridViewModel 一致)
+    @ObservationIgnored var enqueueToastHandler: (String, ToastView.ToastType, ToastInfo.Duration, _ undoAction: (() -> Void)?) -> Void = { _, _, _, _ in }
 
     // MARK: - Import 状态字段
 
@@ -181,12 +182,12 @@ final class ImportViewModel {
         }
         let result = importer.importURLs(urls)
         if result.inserted > 0 && result.hasFailures {
-            enqueueToastHandler("已导入 \(result.inserted) 张，\(result.failureCount) 张失败", .info, .normal)
+            enqueueToastHandler("已导入 \(result.inserted) 张，\(result.failureCount) 张失败", .info, .normal, nil)
         } else if result.inserted > 0 {
-            enqueueToastHandler("已导入 \(result.inserted) 张图片", .success, .normal)
+            enqueueToastHandler("已导入 \(result.inserted) 张图片", .success, .normal, nil)
         }
         for (url, _) in result.failures where result.inserted == 0 {
-            enqueueToastHandler("导入失败：\(url.lastPathComponent)", .error, .long)
+            enqueueToastHandler("导入失败：\(url.lastPathComponent)", .error, .long, nil)
         }
     }
 

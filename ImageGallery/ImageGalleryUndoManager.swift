@@ -85,6 +85,29 @@ final class ImageGalleryUndoManager {
         updateState()
     }
 
+    /// V6.29.1: 注册已完成的 action 的 undo (用于 toast 撤销场景)
+    ///   vs `registerAction(action:)` 是 action 立即执行, 此 API 用于 action 已执行完毕
+    ///   (例如: batchDelete 已 recycle photos 后, 再 push 一个 undo 闭包进 undoStack)
+    ///
+    /// - Parameters:
+    ///   - description: 操作描述 (显示在工具栏 tooltip / toast 撤销按钮)
+    ///   - undo: 反向操作 (撤销时执行)
+    ///
+    /// **Photos.app 行为**:
+    ///   - 用户点 toast [撤销] 按钮 → 直接调 undo 闭包
+    ///   - 用户按 ⌘Z → pop undoStack → 调 undo 闭包 (同一效果)
+    ///   - ⌘⇧Z (redo): 此 action 已发生, redo 为 no-op (entry.redo = {})
+    func registerUndoOnly(description: String, undo: @escaping () -> Void) {
+        let entry = Entry(description: description, undo: undo, redo: {})
+        undoStack.append(entry)
+        if undoStack.count > maxLevels {
+            undoStack.removeFirst()
+        }
+        // 任何新 entry 清空 redo stack (标准 undo 行为)
+        redoStack.removeAll()
+        updateState()
+    }
+
     /// 撤销
     func undo() {
         guard let entry = undoStack.popLast() else { return }

@@ -86,9 +86,16 @@ struct MainLayoutView<PathBar: View, Split: View, StatusBarView: View>: View {
         //   onToastDismiss 闭包: 用户点 X 主动 dismiss, 不等 duration auto-dismiss
         .overlay(alignment: .top) {
             if let toast = toastQueue.first {
-                ToastView(message: toast.message, type: toast.type, duration: toast.duration.seconds, onDismiss: onToastDismiss)
-                    .padding(.top, 8)
-                    .transition(.move(edge: .top).combined(with: .opacity))
+                // V6.29.1: 透传 toast.undoAction → ToastView 显示 [撤销] 按钮 (Photos.app 范式)
+                ToastView(
+                    message: toast.message,
+                    type: toast.type,
+                    duration: toast.duration.seconds,
+                    onDismiss: onToastDismiss,
+                    undoAction: toast.undoAction
+                )
+                .padding(.top, 8)
+                .transition(.move(edge: .top).combined(with: .opacity))
             }
         }
         .animation(Animations.springGentle, value: toastQueue.first)
