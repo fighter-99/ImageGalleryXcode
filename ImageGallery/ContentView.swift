@@ -618,22 +618,26 @@ struct ContentView: View {
     //   旧版 gridPane 只返回 PhotoGridPane, viewMode 在 popover 切换无效
     //   新版 switch viewMode → 3 个 Pane 之一, 都用 visiblePhotos (PhotoStats.filtered)
     //   共享 filter helper 保证 3 视图显示完全一致的内容
+    // V6.31.1: 加 transition modifier — view mode 切换 crossfade + scale 0.95→1 (Photos.app 范式)
+    //   配合 .animation(value: viewMode) 让 transition 真触发
     @ViewBuilder
     private var gridPane: some View {
-        switch viewMode {
-        case .grid:
-            PhotoGridPane(
-                // V6.28: selection 在 grid
-                selection: bindableGrid.selection,
-                folder: model.grid.currentFolder,
-                tag: model.grid.currentTag,
-                searchText: searchText,
-                // V5.8: 砍 filterFavorites
-                filterUnfiled: model.grid.filterUnfiled,
-                filterDuplicates: model.grid.filterDuplicates,
-                filterRecent7Days: model.grid.filterRecent7Days,
-                filterLargeFiles: model.grid.filterLargeFiles,
-                filterInTrash: model.grid.filterInTrash,
+        // V6.31.1: 包 Group → switch 多 view 转 single view, 上面 .transition / .animation 修饰才能作用
+        Group {
+            switch viewMode {
+            case .grid:
+                PhotoGridPane(
+                    // V6.28: selection 在 grid
+                    selection: bindableGrid.selection,
+                    folder: model.grid.currentFolder,
+                    tag: model.grid.currentTag,
+                    searchText: searchText,
+                    // V5.8: 砍 filterFavorites
+                    filterUnfiled: model.grid.filterUnfiled,
+                    filterDuplicates: model.grid.filterDuplicates,
+                    filterRecent7Days: model.grid.filterRecent7Days,
+                    filterLargeFiles: model.grid.filterLargeFiles,
+                    filterInTrash: model.grid.filterInTrash,
                 // V4.36.x: 工具栏筛选 4 维
                 selectedFolderIDs: filterState.folders,
                 selectedTagIDs: filterState.tags,
@@ -731,6 +735,11 @@ struct ContentView: View {
                 onDoubleTap: { model.grid.enterImmersive($0) }
             )
         }
+        } // Group 关闭 (V6.31.1)
+        // V6.31.1: view mode 切换过渡 — crossfade + scale 0.95→1 (Photos.app 范式)
+        //   .transition 只在 view 出现/消失时触发, 配合 .animation(value: viewMode) 让 SwiftUI 跑 transition
+        .transition(.opacity.combined(with: .scale(scale: 0.96)))
+        .animation(.easeInOut(duration: 0.3), value: viewMode)
     }
 
     private var detailPane: some View {
