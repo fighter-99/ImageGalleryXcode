@@ -21,6 +21,8 @@ extension View {
         colorScheme: ColorScheme?,
         selection: SelectionState,
         searchText: String,
+        // V6.38.1 (Phase 1): model 透传 — 之前调用方导入进度直接读 model.importVM.importProgress
+        model: ContentViewModel,
         // V5.24: 加 layoutMode + thumbnailSize 参数——windowChromeAndToolbar 自身不持有
         //   状态，需 caller 传入以同步到 NSToolbar segment/slider
         // V5.39.3: 加 sortOption 参数——推 NSToolbar sortMenu 按钮 (image 跟 sortOption 走)
@@ -53,6 +55,10 @@ extension View {
             )
             // V4.8.1: SwiftUI @State searchText 变化 → 同步到 NSSearchField
             .syncNSToolbarSearchField(text: searchText)
+            // V6.38.1 (Phase 1): 导入进度变化 → ToolbarController.importProgress
+            //   之前: 底部 status bar 显示 "导入 X/Y" (跟按钮物理分离)
+            //   现在: Import 按钮本身变 filled circle + 显示 "导入 X/Y"
+            .syncNSToolbarImportProgress(progress: model.importVM.importProgress)
             // V5.39.3: 3 个 NSMenu 按钮状态同步——layoutMode + density + sortOption
             //   替代 V5.24 syncNSToolbarDensity + V5.33 砍掉的 syncNSToolbarLayoutMode
             //   1 个 modifier 推 3 个 onChange, 简化 body 链

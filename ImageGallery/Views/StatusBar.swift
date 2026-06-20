@@ -17,14 +17,19 @@ import SwiftUI
 struct StatusBar: View {
     let totalCount: Int
     let totalSize: String
-    let selectedCount: Int
-    // V5.15: 导入进度——nil 表示未在导入
-    let importProgress: ImportProgress?
-    // V5.60-7: 缩略图大小 (CGFloat) + active filter count (Int)——Photos 风格 status bar 增强
+    // V5.60-7: 缩略图大小 (CGFloat) — 唯一保留的全局 meta
+    //   删 (V6.38.1): selectedCount / activeFilterCount / importProgress
+    //   理由: 重复 — 选中数/筛选条件数/导入进度都搬到触发按钮附近
     let thumbnailSize: CGFloat
-    let activeFilterCount: Int
 
     var body: some View {
+        // V6.38.1 (Phase 1): StatusBar 简化 — 只保留全局 meta
+        //   删: 选中数 (V5.60-7), 筛选条件数 (V5.60-7), 导入进度 (V5.15)
+        //   理由: 3 处跟其他 surface 重复
+        //     - 选中数 → SelectionMiniToolbar 已显示 ("X 张已选")
+        //     - 筛选条件数 → ToolbarController filter button badge (V6.29.2 红点 + count)
+        //     - 导入进度 → Import 按钮 progress ring (Phase 1 同时加)
+        //   Photos.app 范式: 底部状态栏只显示全局 meta,临时状态在触发它的按钮附近
         HStack(spacing: Spacing.sm) {
             // 总数
             Text(Copy.totalCount(totalCount))
@@ -39,44 +44,7 @@ struct StatusBar: View {
             separator
             Text(thumbnailSizeLabel)
 
-            // 选中数（仅在有选中时显示，更突出）
-            if selectedCount > 0 {
-                separator
-                HStack(spacing: 4) {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.caption2)
-                        .foregroundStyle(Color.accentColor)
-                    Text(Copy.selectedCount(selectedCount))
-                        .foregroundStyle(Color.accentColor)
-                }
-            }
-
             Spacer(minLength: 0)
-
-            // V5.60-7: active filter count (条件) — 当 filterState.activeCount > 0 显示
-            if activeFilterCount > 0 {
-                separator
-                HStack(spacing: 4) {
-                    Image(systemName: "line.3.horizontal.decrease.circle.fill")
-                        .font(.caption2)
-                        .foregroundStyle(Color.accentColor)
-                    Text(Copy.activeFilterBadge(activeFilterCount))
-                        .foregroundStyle(Color.accentColor)
-                }
-            }
-
-            // V5.15: 导入进度——右侧显示"导入中 8/15 · 1 失败"
-            //   比原"current/total"更准确（含 inserted/failureCount）
-            if let progress = importProgress, progress.isImporting {
-                separator
-                HStack(spacing: 4) {
-                    Image(systemName: "arrow.down.circle")
-                        .font(.caption2)
-                        .foregroundStyle(Color.accentColor)
-                    Text(progress.displayText)
-                        .foregroundStyle(Color.accentColor)
-                }
-            }
         }
         .font(Typography.captionMono)
         .foregroundStyle(.secondary)

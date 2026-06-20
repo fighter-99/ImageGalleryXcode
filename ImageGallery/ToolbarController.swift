@@ -52,6 +52,15 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
     //   提到独立 toolbar 按钮后直接闭包回调
     var onSortOptionChange: ((SortOption) -> Void)?
 
+    // V6.38.1 (Phase 1): 导入进度直接驱动 Import 按钮的 icon + title (Eagle LiveBar 范式)
+    //   之前: status bar 显示 "导入中 X/Y" 文字 — 但跟 Import 按钮物理位置分离
+    //   现在: Import 按钮 icon → "arrow.down.circle" (filled circle 表示进行中), title → "导入 X/Y"
+    //   ContentView 在 .onChange(of: model.importVM.importProgress) 调 updateImportButton
+    //   不用 NSProgressIndicator overlay (太复杂, icon swap + title 同样清晰)
+    var importProgress: ImportProgress? = nil {
+        didSet { updateImportButtonAppearance() }
+    }
+
     // MARK: - Search field 桥接
 
     /// NSSearchField 强引用——用于 SwiftUI @State → NSSearchField 同步
@@ -118,6 +127,8 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
     @ObservationIgnored private var filterButtonContainer: NSView?
     @ObservationIgnored private var filterButton: NSButton?
     @ObservationIgnored private var filterBadgeLabel: NSTextField?
+    // V6.38.1 (Phase 1): Import 按钮 NSButton 引用 — 导入进度变化时调 updateImportButtonAppearance
+    @ObservationIgnored private var importButton: NSButton?
 
     // MARK: - 状态桥接
 
@@ -411,6 +422,8 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
         //   其他 item 不设 (XCUIElementQuery 用 label 也行, 不强制)
         if id == .importItem {
             button.setAccessibilityIdentifier("toolbar.importButton")
+            // V6.38.1: 存 Import 按钮引用 — 进度变化时 updateImportButtonAppearance 改 image + title
+            importButton = button
         }
         button.setContentHuggingPriority(.defaultLow, for: .horizontal)
         item.view = button
@@ -992,6 +1005,24 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
             } else {
                 badge.isHidden = true
             }
+        }
+    }
+
+    // V6.38.1 (Phase 1): 更新 Import 按钮外观 (icon + title)
+    //   空闲: "square.and.arrow.down" + 无 title
+    //   导入中: "arrow.down.circle" (filled circle = 进行中) + "导入 X/Y" (Eagle LiveBar 范式)
+    //   完成: 还原 (importProgress.isImporting == false)
+    // 触发: ContentView.onChange(of: model.importVM.importProgress) 调 toolbar.importProgress = newValue
+    func updateImportButtonAppearance() {
+        guard let button = importButton else { return }
+        if let progress = importProgress, progress.isImporting {
+            button.image = NSImage(systemSymbolName: "arrow.down.circle",
+                                   accessibilityDescription: Copy.toolbarImport)
+            button.title = " \(progress.displayText)"
+        } else {
+            button.image = NSImage(systemSymbolName: "square.and.arrow.down",
+                                   accessibilityDescription: Copy.toolbarImport)
+            button.title = ""
         }
     }
 }

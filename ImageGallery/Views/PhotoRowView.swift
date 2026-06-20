@@ -40,11 +40,11 @@ struct PhotoRowView: View {
     let folders: [Folder]
     let allTags: [Tag]
     let retentionDays: Int
-    let onDelete: (Photo) -> Void
     let onTap: (Photo) -> Void
     let onDoubleTap: (Photo) -> Void
     // V6.22.1 (P2 #2): 旋转回调 — ContentView 传 { model.rotateSelected(clockwise:) }
     let onRotate: (Photo, Bool) -> Void
+    // V6.38.1 (Phase 1): onDelete 移除 — 删除从 cell 入口搬走, 走 ⌘⌫ → handleDelete()
 
     /// V5.21: caption 预留高度从 16 → 20pt (callout 14pt 字号调整必同步调预留高度)
     private static let captionReservedHeight: CGFloat = 20
@@ -109,7 +109,6 @@ struct PhotoRowView: View {
             // V5.39.7: 透传排序模式 + 重排回调 (拖拽重排依赖)
             sortOption: sortOption,
             onReorder: onReorder,
-            onDelete: { onDelete(photo) },
             onTap: { onTap(photo) },
             onDoubleTap: { onDoubleTap(photo) },
             // V6.22.1 (P2 #2): 旋转回调 — 转发给 ContentView's model

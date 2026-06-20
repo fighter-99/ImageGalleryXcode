@@ -89,4 +89,14 @@ extension View {
             ToolbarController.shared.setSearchText(newValue)
         }
     }
+
+    /// V6.38.1 (Phase 1): 导入进度变化 → 同步到 ToolbarController.importProgress
+    ///   之前: 进度在底部 status bar 显示 (跟 Import 按钮物理分离)
+    ///   现在: Import 按钮自己变 filled circle + 显示 "导入 X/Y" (Eagle LiveBar 范式)
+    ///   sync 触发: ToolbarController.importProgress didSet → updateImportButtonAppearance
+    func syncNSToolbarImportProgress(progress: ImportProgress?) -> some View {
+        onChange(of: progress?.isImporting) { _, _ in
+            ToolbarController.shared.importProgress = progress
+        }
+    }
 }

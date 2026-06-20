@@ -31,8 +31,7 @@ struct CellContextMenuModifier: ViewModifier {
     let allTags: [Tag]
     let modelContext: ModelContext
     let toggleTag: (Tag, Photo) -> Void
-    @Binding var showingDeleteConfirm: Bool
-    let onDelete: () -> Void
+    // V6.38.1 (Phase 1): showingDeleteConfirm + onDelete 移除 — 删除从右键菜单搬到 ⌘⌫
     // V6.22.1 (P2 #2): rotate closures — ContentView 传 { model.rotateSelected(clockwise: ...) }
     let onRotateLeft: () -> Void
     let onRotateRight: () -> Void
@@ -181,14 +180,13 @@ struct CellContextMenuModifier: ViewModifier {
 
             Divider()
 
-            // MARK: - V6.29.3: 删除 (standalone — destructive, macOS pattern)
-            //   role: .destructive 自动 macOS 红色样式
-            //   独立不分组: 误删风险高, 视觉距离其他 op 越远越安全
-            Button(role: .destructive) {
-                showingDeleteConfirm = true
-            } label: {
-                Label(Copy.delete, systemImage: "trash")
-            }
+            // V6.38.1 (Phase 1): 删除从右键菜单移除
+            //   理由: 误删风险 — 单图右键 → 删除 → 立即消失, 无 undo 缓冲
+            //   之前 V6.29.3 加 Delete 是 "完整性" 考虑, 但实际 Photos.app / Eagle 都不放
+            //   新位置: Edit 菜单 ⌘⌫ (有 keyboard shortcut, 不会误触)
+            //   单图删除流程: 选中 (⌘+click) → ⌘⌫ → confirmation dialog → 删
+            //   或: 右键 → 选 cell → 在 SelectionMiniToolbar Delete 按钮 (批量操作)
+
         }
     }
 }

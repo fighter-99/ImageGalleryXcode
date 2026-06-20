@@ -379,6 +379,8 @@ struct ContentView: View {
                 colorScheme: model.appearanceMode.colorScheme,
                 selection: selection,
                 searchText: searchText,
+                // V6.38.1 (Phase 1): model 透传 — syncNSToolbarImportProgress 读 model.importVM.importProgress
+                model: model,
                 layoutMode: layoutMode,
                 thumbnailSize: thumbnailSize,
                 sortOption: sortOption,
@@ -797,17 +799,13 @@ struct ContentView: View {
 
     private var statusBarPane: some View {
         // V3.5.6 Finder 化：Status Bar（底部信息条）
+        // V6.38.1 (Phase 1): 简化 — 只传全局 meta (总数 + 大小 + 缩略图档位)
+        //   删: selectedCount / activeFilterCount / importProgress (重复显示, 搬到触发按钮附近)
         StatusBar(
             totalCount: allPhotos.count,
             // V6.28: totalSizeFormatted 在 grid
             totalSize: model.grid.totalSizeFormatted,
-            // V3.6.52: 用 selection.selectedIDs.count 替直接字段
-            selectedCount: selection.selectedIDs.count,
-            // V6.09: 导入进度从 model.importVM.importProgress 读——Core/Import
-            importProgress: model.importVM.importProgress,
-            // V5.60-7: status bar 增强——缩略图档位 + active filter count
-            thumbnailSize: thumbnailSize,
-            activeFilterCount: model.filterState.activeCount
+            thumbnailSize: thumbnailSize
         )
     }
 

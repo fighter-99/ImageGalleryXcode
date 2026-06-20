@@ -33,7 +33,6 @@ struct PhotoGridLayoutView: View {
     let folders: [Folder]
     let allTags: [Tag]
     let retentionDays: Int
-    let onDelete: (Photo) -> Void
     let onTap: (Photo) -> Void
     let onDoubleTap: (Photo) -> Void
     // V6.22.1 (P2 #2): 旋转回调 — 透传到 PhotoRowView
@@ -62,7 +61,6 @@ struct PhotoGridLayoutView: View {
                     folders: folders,
                     allTags: allTags,
                     retentionDays: retentionDays,
-                    onDelete: onDelete,
                     onTap: onTap,
                     onDoubleTap: onDoubleTap,
                     // V6.22.1 (P2 #2): 旋转回调透传到 PhotoRowView

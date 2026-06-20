@@ -54,7 +54,6 @@ private struct PhotoCellContent: View {
     let layoutMode: ThumbnailLayoutMode
     let sortOption: SortOption
     let onReorder: () -> Void
-    let onDelete: () -> Void
     let onTap: () -> Void
     let onDoubleTap: () -> Void
     // V6.22.1 (P2 #2): 旋转闭包 — ContentView 传 { model.rotateSelected(clockwise:) }
@@ -68,8 +67,10 @@ private struct PhotoCellContent: View {
     @State private var loadFailed = false
     // V3.6.10: 键盘聚焦
     @FocusState private var isFocused: Bool
-    // V5.30: showingDeleteConfirm 跟 .confirmationDialog 一起搬 sub-view
-    @State private var showingDeleteConfirm = false
+    // V6.38.1 (Phase 1): onDelete + showingDeleteConfirm 移除 — 删除不再从 cell 触发
+    //   之前 V5.30 加: cell context menu Delete 按钮 → confirmationDialog
+    //   现在: 删除从右键菜单搬到 ⌘⌫ (Photos.app 范式), 直接走 model.grid.handleDelete() → batchDeleteConfirm / deleteSinglePhoto
+    //   cell 不再需要 per-cell delete confirm dialog
 
     // Environment
     @Environment(\.modelContext) private var modelContext
@@ -460,6 +461,7 @@ private struct PhotoCellContent: View {
             handleReorderDropDecision(items: items)
         }
         // V3.6.37: 抽 contextMenu 到独立 view (类型检查)
+        // V6.38.1 (Phase 1): showingDeleteConfirm + onDelete 移除 — 删除从右键菜单搬到 ⌘⌫
         .modifier(CellContextMenuModifier(
             photo: photo,
             folders: folders,
@@ -473,26 +475,14 @@ private struct PhotoCellContent: View {
                 }
                 modelContext.saveWithLog()
             },
-            showingDeleteConfirm: $showingDeleteConfirm,
-            onDelete: onDelete,
             // V6.22.1 (P2 #2): 旋转闭包 — 转发到 CellContextMenuModifier
             //   Cell 自身不持有 model, 走 context 调用 PhotoCellContent → ContentView → model
-            //   ContentView 在 cell 上挂 onRotateLeft/Right (跟 onDelete 同 pattern)
+            //   ContentView 在 cell 上挂 onRotateLeft/Right
             onRotateLeft: onRotateLeft,
             onRotateRight: onRotateRight
         ))
-        .confirmationDialog(
-            Copy.deleteConfirmTitle,
-            isPresented: $showingDeleteConfirm,
-            titleVisibility: .visible
-        ) {
-            Button(Copy.delete, role: .destructive) {
-                onDelete()
-            }
-            Button(Copy.cancel, role: .cancel) {}
-        } message: {
-            Text(Copy.deletePhotoConfirm)
-        }
+        // V6.38.1 (Phase 1): 删 .confirmationDialog — 删除从右键菜单搬走, 走 ⌘⌫ → model.grid.handleDelete()
+        //   不再有 per-cell confirm dialog (Photos.app 范式)
     }
 
     // MARK: - V5.19/27/6.12.8/11/6.12.12: 内 cell padding (4pt, Photos 真版)
@@ -555,12 +545,12 @@ struct PhotoThumbnailView: View {
     let layoutMode: ThumbnailLayoutMode
     let sortOption: SortOption
     let onReorder: () -> Void
-    let onDelete: () -> Void
     let onTap: () -> Void
     let onDoubleTap: () -> Void
     // V6.22.1 (P2 #2): 旋转闭包 — ContentView 传 { model.rotateSelected(clockwise:) }
     let onRotateLeft: () -> Void
     let onRotateRight: () -> Void
+    // V6.38.1 (Phase 1): onDelete 移除 — 删除从 cell 入口搬走, 走 ⌘⌫ → handleDelete()
 
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme) private var colorScheme
@@ -581,7 +571,6 @@ struct PhotoThumbnailView: View {
             layoutMode: layoutMode,
             sortOption: sortOption,
             onReorder: onReorder,
-            onDelete: onDelete,
             onTap: onTap,
             onDoubleTap: onDoubleTap,
             // V6.22.1 (P2 #2): 旋转闭包 (cell 自己没 model, 转发到 caller)

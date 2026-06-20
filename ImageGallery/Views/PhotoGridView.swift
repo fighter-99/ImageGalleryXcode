@@ -691,7 +691,6 @@ struct PhotoGridView: View {
             folders: folders,
             allTags: allTags,
             retentionDays: retentionDays,
-            onDelete: deletePhoto,
             onTap: handleTap,
             onDoubleTap: onDoubleTap,
             // V6.22.1 (P2 #2): 旋转回调 — 透传 ContentView 传的 { model.rotateSelected(clockwise:) }
@@ -725,12 +724,9 @@ struct PhotoGridView: View {
             selection = s
         }
     }
-
-    // ─── 删除 (V3.6: 走 RecycleBinService.recycle, 移到回收站) ───
-    private func deletePhoto(_ photo: Photo) {
-        RecycleBinService(storage: .shared, modelContext: modelContext).recycle(photo)
-        selection = selection.removing(photo.id)
-    }
+    // V6.38.1 (Phase 1): 删 deletePhoto(_:) — 之前 cell context menu Delete → onDelete 闭包
+    //   现在删除走 ⌘⌫ → ContentView.onDelete → model.grid.handleDelete() → batchDeleteConfirm / deleteSinglePhoto
+    //   cell 不再需要 per-photo delete 入口
 
     // MARK: - 拖拽重排数学 (V3.5.D P3: 纯函数, 便于单测)
 
