@@ -649,21 +649,25 @@ final class GridViewModel {
         let count = photosToMove.count
         let folderName = folder?.name ?? "未整理"
 
+        // V6.36.3: coalesceId="move" — 1s 内连续 batchMove 合并 (Photos.app 行为)
         undoManager.registerAction(
-            description: "移动 \(count) 张照片到 \(folderName)"
-        ) { [weak self] in
-            for photo in photosToMove {
-                photo.folder = folder
-            }
-            modelContext.saveWithLog()
-            self?.selection = .empty
-        } undo: { [weak self] in
-            for (photo, oldFolder) in zip(photosToMove, oldFolders) {
-                photo.folder = oldFolder
-            }
-            modelContext.saveWithLog()
-            _ = self  // 强引用 self 进闭包, 防止 self 释放时 undo 操作失败
-        }
+            description: "移动 \(count) 张照片到 \(folderName)",
+            action: { [weak self] in
+                for photo in photosToMove {
+                    photo.folder = folder
+                }
+                modelContext.saveWithLog()
+                self?.selection = .empty
+            },
+            undo: { [weak self] in
+                for (photo, oldFolder) in zip(photosToMove, oldFolders) {
+                    photo.folder = oldFolder
+                }
+                modelContext.saveWithLog()
+                _ = self  // 强引用 self 进闭包, 防止 self 释放时 undo 操作失败
+            },
+            coalesceId: "move"
+        )
     }
 
     /// 批量加标签
@@ -737,50 +741,55 @@ final class GridViewModel {
         guard !plans.isEmpty else { return }
         let count = plans.count
 
+        // V6.36.3: coalesceId="rename" — 1s 内连续 batchRename 合并
+        //   用 labeled closure 参数 (action/undo 显式 label) — coalesceId 必须在末位
+        //   trailing closure 语法只能用在最后一个 closure 参数, 多个 closure 必须 labeled
         undoManager.registerAction(
-            description: "批量重命名 \(count) 张照片"
-        ) { [weak self] in
-            var errors = 0
-            for p in plans {
-                let newURL = p.oldURL.deletingLastPathComponent()
-                    .appendingPathComponent("\(p.newBase).\(p.newExt)")
-                do {
-                    try FileManager.default.moveItem(at: p.oldURL, to: newURL)
-                    p.photo.filename = "\(p.newBase).\(p.newExt)"
-                    p.photo.fileURL = newURL
-                } catch {
-                    // V6.22.5: 加 os_log 替空 catch (V6.22.4 bug-scan 报 MED)
-                    Logger.imageIO.error("batchRename 失败: \(p.oldURL.lastPathComponent, privacy: .public) → \(newURL.lastPathComponent, privacy: .public) — \(error.localizedDescription, privacy: .public)")
-                    errors += 1
+            description: "批量重命名 \(count) 张照片",
+            action: { [weak self] in
+                var errors = 0
+                for p in plans {
+                    let newURL = p.oldURL.deletingLastPathComponent()
+                        .appendingPathComponent("\(p.newBase).\(p.newExt)")
+                    do {
+                        try FileManager.default.moveItem(at: p.oldURL, to: newURL)
+                        p.photo.filename = "\(p.newBase).\(p.newExt)"
+                        p.photo.fileURL = newURL
+                    } catch {
+                        Logger.imageIO.error("batchRename 失败: \(p.oldURL.lastPathComponent, privacy: .public) → \(newURL.lastPathComponent, privacy: .public) — \(error.localizedDescription, privacy: .public)")
+                        errors += 1
+                    }
                 }
-            }
-            modelContext.saveWithLog()
-            if errors > 0 {
-                self?.enqueueToastHandler("部分重命名失败：\(errors) 张", .error, .long, nil)
-            } else {
-                self?.enqueueToastHandler("已重命名 \(count) 张照片", .success, .normal, nil)
-            }
-            _ = self
-        } undo: { [weak self] in
-            var undoErrors = 0
-            for p in plans.reversed() {
-                let newURL = p.oldURL.deletingLastPathComponent()
-                    .appendingPathComponent("\(p.newBase).\(p.newExt)")
-                do {
-                    try FileManager.default.moveItem(at: newURL, to: p.oldURL)
-                    p.photo.filename = p.oldFilename
-                    p.photo.fileURL = p.oldURL
-                } catch {
-                    Logger.imageIO.error("batchRename undo 失败: \(newURL.lastPathComponent, privacy: .public) → \(p.oldURL.lastPathComponent, privacy: .public) — \(error.localizedDescription, privacy: .public)")
-                    undoErrors += 1
+                modelContext.saveWithLog()
+                if errors > 0 {
+                    self?.enqueueToastHandler("部分重命名失败：\(errors) 张", .error, .long, nil)
+                } else {
+                    self?.enqueueToastHandler("已重命名 \(count) 张照片", .success, .long, nil)
                 }
-            }
-            modelContext.saveWithLog()
-            if undoErrors > 0 {
-                self?.enqueueToastHandler("部分撤销失败：\(undoErrors) 张", .error, .long, nil)
-            }
-            _ = self
-        }
+                _ = self
+            },
+            undo: { [weak self] in
+                var undoErrors = 0
+                for p in plans.reversed() {
+                    let newURL = p.oldURL.deletingLastPathComponent()
+                        .appendingPathComponent("\(p.newBase).\(p.newExt)")
+                    do {
+                        try FileManager.default.moveItem(at: newURL, to: p.oldURL)
+                        p.photo.filename = p.oldFilename
+                        p.photo.fileURL = p.oldURL
+                    } catch {
+                        Logger.imageIO.error("batchRename undo 失败: \(newURL.lastPathComponent, privacy: .public) → \(p.oldURL.lastPathComponent, privacy: .public) — \(error.localizedDescription, privacy: .public)")
+                        undoErrors += 1
+                    }
+                }
+                modelContext.saveWithLog()
+                if undoErrors > 0 {
+                    self?.enqueueToastHandler("部分撤销失败：\(undoErrors) 张", .error, .long, nil)
+                }
+                _ = self
+            },
+            coalesceId: "rename"
+        )
     }
 
     /// V5.12: 批量评分
