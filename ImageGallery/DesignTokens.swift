@@ -197,20 +197,24 @@ enum Typography {
 
     /// V5.45 NEW: 详情面板小标签 (DetailView "标签"/"删除" 等字段标题)
     ///   - 比 caption (11pt) 大 1pt + bold——视觉层级清晰
-    static let detailLabel = Font.system(size: 12, weight: .bold)
+    /// V6.33.3: semantic font — .caption.weight(.bold) (11pt bold 替代 12pt bold)
+    static let detailLabel = Font.caption.weight(.bold)
 
     /// V5.45 NEW: 日期 caption (cell 下方拍摄日期, masonry 模式)
     ///   - 同 body 13pt 但 weight: regular——cell 内信息"次要"层级
-    static let dateCaption = Font.system(size: 13, weight: .regular)
+    /// V6.33.3: semantic font — .body (跟 body 同 size, 自动响应 Dynamic Type)
+    static let dateCaption = Font.body
 
     /// V5.45 NEW: 详情面板计数 (DetailView "1 / 5" 切换计数)
     ///   - 同 title2 (22pt) 但 weight: medium——大但比 title 略轻
-    static let detailCount = Font.system(size: 22, weight: .medium)
+    /// V6.33.3: semantic font — .title2 (22pt macOS 默认), 跟 Typography.title2 一致
+    static let detailCount = Font.title2
 
     /// V6.12: 沉浸式视图索引计数 (ImmersivePhotoView "1 / 5") (Q11)
     ///   - 20pt (title3) + monospacedDigit()——翻页时数字宽度不抖
     ///   - 区别于 immersiveCount (44pt) 的"翻页箭头"图标——这里专用于小一号索引数字
-    static let immersiveIndexMono = Font.system(size: 20).monospacedDigit()
+    /// V6.33.3: semantic font — .title2.monospacedDigit() (22pt, 略大但响应 Dynamic Type)
+    static let immersiveIndexMono = Font.title2.monospacedDigit()
 
     /// V6.12: SettingsView 缩略图大小 slider 实时预览图标 (Q13)
     ///   - 100pt SF Symbol "photo" + scaleEffect 0.3..1.0 模拟缩略图大小
