@@ -252,7 +252,7 @@ struct ImageGalleryApp: App {
                 //   V6.20.0 (code audit fix #1): 之前误调 model.createFolderFromAlert() (它 trim 空 name 早返) → silent failure
                 //   现在走 NotificationCenter → ContentView+Lifecycle 设 model.showingNewFolderAlert = true (同 ⌘N)
                 //   双 trigger 不冲突: ⌘N = hidden button (走 onNewFolder closure), ⌘⇧N = menu button (走 NotificationCenter)
-                Button("新文件夹") {
+                Button(Copy.newFolder) {
                     NotificationCenter.default.post(name: .newFolderRequested, object: nil)
                 }
                 .keyboardShortcut("n", modifiers: [.command, .shift])
@@ -267,7 +267,7 @@ struct ImageGalleryApp: App {
                 // V6.19.0 (P0 #1): 多图分享 — ⌘⇧E (跟 P4.2 批量重命名同 pattern)
                 //   走 NotificationCenter → ContentView 弹 NSSharingServicePicker (AirDrop/Messages/Mail)
                 //   单图分享走 cell context menu ShareLink (Photos.app 范式)
-                Button("分享…") {
+                Button(Copy.menuShare) {
                     NotificationCenter.default.post(name: .shareRequested, object: nil)
                 }
                 .keyboardShortcut("e", modifiers: [.command, .shift])
@@ -277,7 +277,7 @@ struct ImageGalleryApp: App {
             //   AVSpeechSynthesizer 在 model.speakSelection() 实现
             CommandGroup(after: .pasteboard) {
                 Divider()
-                Button("开始朗读") {
+                Button(Copy.menuStartSpeaking) {
                     NotificationCenter.default.post(name: .speakRequested, object: nil)
                 }
             }

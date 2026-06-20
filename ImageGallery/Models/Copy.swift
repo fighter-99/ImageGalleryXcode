@@ -770,4 +770,18 @@ enum Copy {
     // Export / Import panel title
     static let exportPanelTitle = String(localized: "exportPanelTitle", defaultValue: "选择导出位置")
     static let importPanelTitle = String(localized: "importPanelTitle", defaultValue: "选择图片或文件夹")
+
+    // MARK: - V6.37.10: 根 + 导入 + 顶层视图
+    // ImageGalleryApp 菜单项 (新文件夹复用 Copy.newFolder)
+    static let menuShare = String(localized: "menuShare", defaultValue: "分享…")
+    static let menuStartSpeaking = String(localized: "menuStartSpeaking", defaultValue: "开始朗读")
+    // ImageImporter — 进度 text (4 段, 1 个无参 + 3 个插值)
+    static let importProgressIdle = String(localized: "importProgressIdle", defaultValue: "导入中...")
+    static func importProgressActive(_ inserted: Int, total: Int) -> String {
+        String.localizedStringWithFormat(String(localized: "importProgressActive", defaultValue: "导入中 %lld/%lld"), inserted, total)
+    }
+    static func importProgressFailures(_ failureCount: Int) -> String {
+        String.localizedStringWithFormat(String(localized: "importProgressFailures", defaultValue: " · %lld 失败"), failureCount)
+    }
+    static let importPreparing = String(localized: "importPreparing", defaultValue: "准备中...")
 }

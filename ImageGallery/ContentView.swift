@@ -669,7 +669,7 @@ struct ContentView: View {
                 onDoubleTap: { model.grid.enterImmersive($0) },
                 onClearFilters: { model.grid.resetFilters() },
                 onExportComplete: { count in
-                    model.showToast("已导出 \(count) 张图片", type: .success)
+                    model.showToast(Copy.exported(count), type: .success)
                 },
                 // V5.39.6: 拖入导入——从 Finder 拖文件/文件夹到 grid 直接导入
                 //   走 ImageImporter.importURLs (同 NSOpenPanel 路径), 含 progress 跟踪 + toast 反馈

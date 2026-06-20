@@ -26,17 +26,17 @@ struct ImportProgress: Equatable {
         total > 0 ? Double(current) / Double(total) : 0
     }
 
-    /// V5.15: 状态条显示用——"导入中 8/15 · 1 失败"
+    /// V6.37.10: 状态条显示用——"导入中 8/15 · 1 失败"
     var displayText: String {
-        guard total > 0 else { return "导入中..." }
-        var s = "导入中 \(inserted)/\(total)"
-        if failureCount > 0 { s += " · \(failureCount) 失败" }
+        guard total > 0 else { return Copy.importProgressIdle }
+        var s = Copy.importProgressActive(inserted, total: total)
+        if failureCount > 0 { s += Copy.importProgressFailures(failureCount) }
         return s
     }
 
     /// V5.15 之前用的 percentText——保留向后兼容
     var percentText: String {
-        guard total > 0 else { return "准备中..." }
+        guard total > 0 else { return Copy.importPreparing }
         let percent = Int(fraction * 100)
         return "\(current)/\(total) · \(percent)%"
     }

@@ -3195,6 +3195,102 @@
         }
       }
     },
+    "importPreparing" : {
+      "comment" : "V6.37.10: Copy.importPreparing → 准备中...",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preparing…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "准备中..."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "準備中..."
+          }
+        }
+      }
+    },
+    "importProgressActive" : {
+      "comment" : "V6.37.10: Copy.importProgressActive → 导入中 %lld/%lld",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importing %lld/%lld"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导入中 %lld/%lld"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯入中 %lld/%lld"
+          }
+        }
+      }
+    },
+    "importProgressFailures" : {
+      "comment" : "V6.37.10: Copy.importProgressFailures →  · %lld 失败",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : " · %lld failed"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : " · %lld 失败"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : " · %lld 失敗"
+          }
+        }
+      }
+    },
+    "importProgressIdle" : {
+      "comment" : "V6.37.10: Copy.importProgressIdle → 导入中...",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importing…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导入中..."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯入中..."
+          }
+        }
+      }
+    },
     "imported" : {
       "comment" : "V6.12.17: V Copy.imported → 已导入 \\(count) 张图片",
       "extractionState" : "manual",
@@ -3815,6 +3911,54 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "在空白處按住左鍵拖動，選擇一片區域內的所有照片"
+          }
+        }
+      }
+    },
+    "menuShare" : {
+      "comment" : "V6.37.10: Copy.menuShare → 分享…",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分享…"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分享…"
+          }
+        }
+      }
+    },
+    "menuStartSpeaking" : {
+      "comment" : "V6.37.10: Copy.menuStartSpeaking → 开始朗读",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start Speaking"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "开始朗读"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開始朗讀"
           }
         }
       }
