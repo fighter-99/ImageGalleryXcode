@@ -354,6 +354,10 @@ enum Copy {
     // SettingsView — toolbar 按钮
     static let settingsResetAll = String(localized: "settingsResetAll", defaultValue: "恢复全部为默认")
     static let settingsResetAllTooltip = String(localized: "settingsResetAllTooltip", defaultValue: "恢复全部设置为默认")
+    // V6.31.3: reset 二次确认 — 防止误触清空用户偏好
+    static let settingsResetConfirmTitle = String(localized: "settingsResetConfirmTitle", defaultValue: "恢复全部为默认？")
+    static let settingsResetConfirmMessage = String(localized: "settingsResetConfirmMessage", defaultValue: "这将清空你所有的偏好设置（默认排序、视图模式、缩略图大小、外观模式等）。")
+    static let settingsResetConfirmAction = String(localized: "settingsResetConfirmAction", defaultValue: "恢复默认")
     static let settingsHelpLabel = String(localized: "settingsHelpLabel", defaultValue: "帮助")
     static let settingsHelpTooltip = String(localized: "settingsHelpTooltip", defaultValue: "使用帮助")
     // SettingsView — picker/slider label

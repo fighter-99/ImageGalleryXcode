@@ -111,6 +111,9 @@ struct SettingsView: View {
     //   字符串 (rawValue) 而非 enum——@SceneStorage 不直接支持 enum
     @SceneStorage("settingsSelectedCategoryRaw") private var selectedCategoryRaw: String = SettingsCategory.general.rawValue
 
+    // V6.31.3: "恢复全部为默认" 二次确认 — 之前直接 destructive, 误触会清空用户偏好
+    @State private var showingResetConfirm = false
+
     private var selectedCategory: Binding<SettingsCategory> {
         Binding(
             get: { SettingsCategory(rawValue: selectedCategoryRaw) ?? .general },
@@ -179,7 +182,8 @@ struct SettingsView: View {
         .toolbar {
             ToolbarItem(placement: .automatic) {
                 Button {
-                    settings.reset()
+                    // V6.31.3: 弹确认 dialog, 避免误触清空用户偏好
+                    showingResetConfirm = true
                 } label: {
                     Label(Copy.settingsResetAll, systemImage: "arrow.counterclockwise")
                 }
@@ -191,6 +195,21 @@ struct SettingsView: View {
                 }
                 .help(Copy.settingsHelpTooltip)
             }
+        }
+        // V6.31.3: reset 确认 dialog (Photos.app 范式 — destructive 操作前确认)
+        //   之前直接 settings.reset() 会清空所有 UserSettings 偏好 (排序/视图模式/缩略图大小等)
+        //   误触风险高, 加二次确认 — 跟 V6.29.1 撤销 toast (reactive) 互补
+        .confirmationDialog(
+            Copy.settingsResetConfirmTitle,
+            isPresented: $showingResetConfirm,
+            titleVisibility: .visible
+        ) {
+            Button(Copy.settingsResetConfirmAction, role: .destructive) {
+                settings.reset()
+            }
+            Button(Copy.cancel, role: .cancel) {}
+        } message: {
+            Text(Copy.settingsResetConfirmMessage)
         }
     }
 }
