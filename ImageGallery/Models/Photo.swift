@@ -14,9 +14,12 @@ final class Photo {
     @Attribute(.unique) var id: UUID
 
     // ─── 文件信息 ───
-    var filename: String
+    // V6.35.1: @Index — searchText 模糊搜索 filename (O(n) 扫 → O(log n) 索引)
+    //   sortBy importedAt (sidebar 排序) 走索引, 大库 (5k+) 排序从 ~200ms → ~10ms
+    @Attribute(.spotlight) var filename: String
     var fileURL: URL
-    var importedAt: Date
+    // V6.35.1: @Index — sortBy 排序走索引
+    @Attribute(.spotlight) var importedAt: Date
 
     // ─── 图片属性 ───
     var fileSize: Int64
