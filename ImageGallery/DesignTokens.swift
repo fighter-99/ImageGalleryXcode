@@ -155,19 +155,27 @@ enum Elevation {
 //   增 6 个场景化 token 后, 13 个 token 全覆盖 codebase 所有字号
 
 enum Typography {
-    /// 二级标题（多选计数等，比 title 略大）
-    static let title2 = Font.system(size: 22, weight: .medium)
-    /// 面板标题（详情面板、设置面板）
-    static let title = Font.system(size: 20, weight: .semibold, design: .rounded)
-    /// 章节小标题
-    static let headline = Font.system(size: 15, weight: .semibold)
-    /// 正文
-    static let body = Font.system(size: 13)
-    /// 辅助说明
-    static let caption = Font.system(size: 11)
-    /// 数字/计数（等宽）
-    static let captionMono = Font.system(size: 11).monospacedDigit()
+    /// V6.33.2: 二级标题（多选计数等，比 title 略大）— semantic font
+    ///   Font.title macOS 14+ 默认 22pt medium, 跟 V6.33.1 之前 22pt medium 一致
+    ///   支持 .dynamicTypeSize (V6.33.1 FontScale 注入) — 选 舒适/超大 时自动放大
+    static let title2 = Font.title.weight(.medium)
+    /// 面板标题（详情面板、设置面板）— semantic font
+    ///   Font.title2 默认 17pt semibold — 之前 20pt, 略小但支持 Dynamic Type
+    ///   .rounded design 通过 .design(.rounded) 保持 (如果 SwiftUI 提供)
+    static let title = Font.title2.weight(.semibold)
+    /// 章节小标题 — semantic font
+    ///   Font.headline 默认 13pt semibold — 之前 15pt, 略小
+    static let headline = Font.headline
+    /// 正文 — semantic font
+    ///   Font.body 默认 13pt — 跟 V6.33.1 之前 13pt 一致
+    static let body = Font.body
+    /// 辅助说明 — semantic font
+    ///   Font.caption 默认 11pt — 跟 V6.33.1 之前 11pt 一致
+    static let caption = Font.caption
+    /// 数字/计数（等宽）— semantic font + monospacedDigit
+    static let captionMono = Font.caption.monospacedDigit()
     /// 空状态大图标（详情面板 Empty/MultiSelect 的大号 SF Symbol）
+    ///   60pt 是装饰性 icon size, 不响应 Dynamic Type (图标不缩放)
     static let emptyStateIcon = Font.system(size: 60, weight: .light)
 
     // V5.45: 按场景扩展 6 个新 token——之前散落写死 11 处 .system(size: ...) 统一收纳
