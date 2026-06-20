@@ -46,10 +46,10 @@ struct ContentViewModelStateTests {
     @Test func selection_canBeReplaced() {
         let model = Self.isolatedModel()
         let id = UUID()
-        model.selection = model.selection.selectingSingle(id)
-        #expect(model.selection.singleSelectedID == id)
-        model.selection = .empty
-        #expect(model.selection.isEmpty)
+        model.grid.selection = model.grid.selection.selectingSingle(id)
+        #expect(model.grid.selection.singleSelectedID == id)
+        model.grid.selection = .empty
+        #expect(model.grid.selection.isEmpty)
     }
 
     @Test func sidebarSelection_canBeSetToFolder() throws {
@@ -66,7 +66,7 @@ struct ContentViewModelStateTests {
         // V6.08: SidebarSelection 改 UUID——.folder(folder.id) 替 .folder(folder)
         model.sidebarSelection = .folder(folder.id)
         #expect(model.sidebarSelection == .folder(folder.id))
-        #expect(model.currentFolder?.id == folder.id)
+        #expect(model.grid.currentFolder?.id == folder.id)
     }
 
     @Test func filterState_canBeReplacedWithEmpty() {
@@ -83,44 +83,44 @@ struct ContentViewModelStateTests {
 
     @Test func searchText_canBeSet() {
         let model = Self.isolatedModel()
-        model.searchText = "beach"
-        #expect(model.searchText == "beach")
-        #expect(model.trimmedSearch == "beach")
+        model.grid.searchText = "beach"
+        #expect(model.grid.searchText == "beach")
+        #expect(model.grid.trimmedSearch == "beach")
     }
 
     @Test func searchText_withSurroundingSpaces_trimmedCleanly() {
         let model = Self.isolatedModel()
-        model.searchText = "  beach  "
-        #expect(model.trimmedSearch == "beach")
+        model.grid.searchText = "  beach  "
+        #expect(model.grid.trimmedSearch == "beach")
     }
 
     @Test func thumbnailSize_canBeAdjusted() {
         let model = Self.isolatedModel()
-        model.thumbnailSize = 110
-        #expect(model.thumbnailSize == 110)
-        model.thumbnailSize = 240
-        #expect(model.thumbnailSize == 240)
+        model.grid.thumbnailSize = 110
+        #expect(model.grid.thumbnailSize == 110)
+        model.grid.thumbnailSize = 240
+        #expect(model.grid.thumbnailSize == 240)
     }
 
     @Test func sortOption_canBeSet() {
         let model = Self.isolatedModel()
-        model.sortOption = .fileSizeDesc
-        #expect(model.sortOption == .fileSizeDesc)
-        model.sortOption = .importedAtAsc
-        #expect(model.sortOption == .importedAtAsc)
+        model.grid.sortOption = .fileSizeDesc
+        #expect(model.grid.sortOption == .fileSizeDesc)
+        model.grid.sortOption = .importedAtAsc
+        #expect(model.grid.sortOption == .importedAtAsc)
     }
 
     @Test func showingBatchDeleteConfirm_canBeToggled() {
         let model = Self.isolatedModel()
-        #expect(model.showingBatchDeleteConfirm == false)
-        model.showingBatchDeleteConfirm = true
-        #expect(model.showingBatchDeleteConfirm == true)
+        #expect(model.grid.showingBatchDeleteConfirm == false)
+        model.grid.showingBatchDeleteConfirm = true
+        #expect(model.grid.showingBatchDeleteConfirm == true)
     }
 
     @Test func newFolderName_canBeSet() {
         let model = Self.isolatedModel()
-        model.newFolderName = "Vacation 2024"
-        #expect(model.newFolderName == "Vacation 2024")
+        model.grid.newFolderName = "Vacation 2024"
+        #expect(model.grid.newFolderName == "Vacation 2024")
     }
 
     @Test func toastQueue_canAppend() {
@@ -146,10 +146,10 @@ struct ContentViewModelStateTests {
             fileURL: URL(fileURLWithPath: "/tmp/V554_immersive.jpg"),
             fileSize: 100, width: 10, height: 10
         )
-        model.immersivePhoto = photo
-        model.immersiveIndex = 3
-        #expect(model.immersivePhoto?.id == photo.id)
-        #expect(model.immersiveIndex == 3)
+        model.grid.immersivePhoto = photo
+        model.grid.immersiveIndex = 3
+        #expect(model.grid.immersivePhoto?.id == photo.id)
+        #expect(model.grid.immersiveIndex == 3)
     }
 
     // MARK: - Computed properties (不需要 mutation)
@@ -185,42 +185,42 @@ struct ContentViewModelStateTests {
     @Test func currentViewTitle_forAllSidebar() {
         let model = Self.isolatedModel()
         model.sidebarSelection = .all
-        #expect(model.currentViewTitle == "全部照片")
+        #expect(model.grid.currentViewTitle == "全部照片")
     }
 
     @Test func currentViewTitle_forTrashUsesRecycleBin() {
         let model = Self.isolatedModel()
         model.sidebarSelection = .recentlyDeleted
-        #expect(model.currentViewTitle == Term.recycleBin)
+        #expect(model.grid.currentViewTitle == Term.recycleBin)
     }
 
     @Test func currentViewSubtitle_empty_returnsZeroPhotos() {
         let model = Self.isolatedModel()
-        #expect(model.currentViewSubtitle.contains("0 张"))
+        #expect(model.grid.currentViewSubtitle.contains("0 张"))
     }
 
     @Test func filterUnfiled_onlyTrue_whenSidebarIsUnfiled() {
         let model = Self.isolatedModel()
         model.sidebarSelection = .unfiled
-        #expect(model.filterUnfiled == true)
+        #expect(model.grid.filterUnfiled == true)
         model.sidebarSelection = .all
-        #expect(model.filterUnfiled == false)
+        #expect(model.grid.filterUnfiled == false)
     }
 
     @Test func filterDuplicates_onlyTrue_whenSidebarIsDuplicates() {
         let model = Self.isolatedModel()
         model.sidebarSelection = .duplicates
-        #expect(model.filterDuplicates == true)
+        #expect(model.grid.filterDuplicates == true)
         model.sidebarSelection = .all
-        #expect(model.filterDuplicates == false)
+        #expect(model.grid.filterDuplicates == false)
     }
 
     @Test func filterInTrash_onlyTrue_whenSidebarIsTrash() {
         let model = Self.isolatedModel()
         model.sidebarSelection = .recentlyDeleted
-        #expect(model.filterInTrash == true)
+        #expect(model.grid.filterInTrash == true)
         model.sidebarSelection = .all
-        #expect(model.filterInTrash == false)
+        #expect(model.grid.filterInTrash == false)
     }
 
     @Test func sidebarSelection_affectsCurrentFolder() throws {
@@ -236,9 +236,9 @@ struct ContentViewModelStateTests {
         try container.mainContext.save()
         // V6.08: SidebarSelection 改 UUID——.folder(folder.id) 替 .folder(folder)
         model.sidebarSelection = .folder(folder.id)
-        #expect(model.currentFolder?.id == folder.id)
+        #expect(model.grid.currentFolder?.id == folder.id)
         model.sidebarSelection = .all
-        #expect(model.currentFolder == nil)
+        #expect(model.grid.currentFolder == nil)
     }
 
     @Test func sidebarSelection_affectsCurrentTag() throws {
@@ -254,20 +254,20 @@ struct ContentViewModelStateTests {
         try container.mainContext.save()
         // V6.08: SidebarSelection 改 UUID——.tag(tag.id) 替 .tag(tag)
         model.sidebarSelection = .tag(tag.id)
-        #expect(model.currentTag?.id == tag.id)
+        #expect(model.grid.currentTag?.id == tag.id)
         model.sidebarSelection = .all
-        #expect(model.currentTag == nil)
+        #expect(model.grid.currentTag == nil)
     }
 
     @Test func canPrev_canNext_initiallyFalse() {
         let model = Self.isolatedModel()
-        #expect(model.canPrev == false)
-        #expect(model.canNext == false)
+        #expect(model.grid.canPrev == false)
+        #expect(model.grid.canNext == false)
     }
 
     @Test func isMultiSelect_initiallyFalse() {
         let model = Self.isolatedModel()
-        #expect(model.isMultiSelect == false)
+        #expect(model.grid.isMultiSelect == false)
     }
 
     @Test func totalSizeFormatted_withEmptyAllPhotos_returnsZeroBytes() {
@@ -276,7 +276,7 @@ struct ContentViewModelStateTests {
         //   ByteCountFormatter 按 locale 选词: en "Zero KB" / zh-Hans "0 KB"
         //   改用 ByteCountFormatter 自己算期望值, locale-agnostic
         let expected = ByteCountFormatter.string(fromByteCount: 0, countStyle: .file)
-        #expect(model.totalSizeFormatted == expected)
+        #expect(model.grid.totalSizeFormatted == expected)
     }
 
     @Test func sidebarColumnWidth_canBeAdjusted() {
@@ -293,6 +293,6 @@ struct ContentViewModelStateTests {
 
     @Test func batchDeleteTitle_zeroSelected_returnsDefault() {
         let model = Self.isolatedModel()
-        #expect(model.batchDeleteTitle == Copy.deleteConfirmTitle)
+        #expect(model.grid.batchDeleteTitle == Copy.deleteConfirmTitle)
     }
 }

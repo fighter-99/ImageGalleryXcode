@@ -35,12 +35,9 @@ struct PopoverStyleTokensTests {
 
     // MARK: - PopoverStyle 布局
 
-    @Test func popoverLayoutTokensMatchVersionedDecisions() {
-        #expect(PopoverStyle.width == 240)
-        #expect(PopoverStyle.padding == Spacing.md)
-        #expect(PopoverStyle.sectionSpacing == 10)  // V4.64.0 紧凑感
-        #expect(PopoverStyle.columnGap == 8)
-    }
+    // V6.28 cleanup: popoverLayoutTokensMatchVersionedDecisions 删 (引用 V6.23 已删 dead tokens
+    //   width/padding/columnGap — 0 caller, V6.23 dead code 清理时已删 token)
+    //   sectionSpacing 仍 valid (10pt) — V4.64.0 紧凑感, 由其他 test 间接覆盖
 
     // MARK: - PopoverStyle item 高度/圆角/字号
 
@@ -54,10 +51,10 @@ struct PopoverStyleTokensTests {
 
     // MARK: - PopoverStyle 段头
 
+    // V6.28 cleanup: popoverHeaderTokens 删 3 行 (headerFontSize/headerIconSize/headerIconSpacing)
+    //   3 个 token V6.23 dead code 清理时已删 (注释自己说"未用")
+    //   保留 headerUppercased + headerSeparatorHeight 验证
     @Test func popoverHeaderTokens() {
-        #expect(PopoverStyle.headerFontSize == 11)
-        #expect(PopoverStyle.headerIconSize == 10)
-        #expect(PopoverStyle.headerIconSpacing == 6)  // V4.42.0
         #expect(PopoverStyle.headerUppercased == true)
         #expect(PopoverStyle.headerSeparatorHeight == 1)  // V4.53.0
     }

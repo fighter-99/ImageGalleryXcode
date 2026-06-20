@@ -40,20 +40,20 @@ struct ContentViewModelSmokeTests {
         let model = Self.isolatedModel()
 
         // 22 个 @State 默认值验证
-        #expect(model.selection.isEmpty == true)
+        #expect(model.grid.selection.isEmpty == true)
         #expect(model.sidebarSelection == nil)  // V5.59-2: default = nil (从 settings 反序列化, init 时 nil)
         #expect(model.filterState.isActive == false)
-        #expect(model.searchText == "")
-        #expect(model.thumbnailSize == 200)
-        #expect(model.sortOption == .filenameAsc)
-        #expect(model.showingBatchDeleteConfirm == false)
-        #expect(model.showingEmptyTrashConfirm == false)
+        #expect(model.grid.searchText == "")
+        #expect(model.grid.thumbnailSize == 200)
+        #expect(model.grid.sortOption == .filenameAsc)
+        #expect(model.grid.showingBatchDeleteConfirm == false)
+        #expect(model.grid.showingEmptyTrashConfirm == false)
         #expect(model.importDuplicateCheck == nil)
         #expect(model.pendingImportURLs.isEmpty == true)
-        #expect(model.showingNewFolderAlert == false)
-        #expect(model.newFolderName == "")
-        #expect(model.immersivePhoto == nil)
-        #expect(model.immersiveIndex == 0)
+        #expect(model.grid.showingNewFolderAlert == false)
+        #expect(model.grid.newFolderName == "")
+        #expect(model.grid.immersivePhoto == nil)
+        #expect(model.grid.immersiveIndex == 0)
         #expect(model.storageErrorMessage == nil)
         #expect(model.titlebarAccessory == nil)
         #expect(model.toastQueue.isEmpty == true)
@@ -87,8 +87,8 @@ struct ContentViewModelSmokeTests {
 
     @Test func init_allPhotosAndFoldersAndAllTagsEmpty() {
         let model = Self.isolatedModel()
-        #expect(model.allPhotos.isEmpty)
-        #expect(model.folders.isEmpty)
-        #expect(model.allTags.isEmpty)
+        #expect(model.grid.allPhotos.isEmpty)
+        #expect(model.grid.folders.isEmpty)
+        #expect(model.grid.allTags.isEmpty)
     }
 }

@@ -5,7 +5,7 @@
 //  V5.54-2: ContentViewModel 选中 + 导航 + 缩放 tests
 //  测 funcs: toggleSortDirection, resetFilters, goPrev, goNext, handleDelete, handleTap, zoomIn, zoomOut, resetThumbnailSize
 //
-//  设计: 不依赖 ModelContainer——直接 push model.allPhotos = [photo1, photo2, ...]
+//  设计: 不依赖 ModelContainer——直接 push model.grid.allPhotos = [photo1, photo2, ...]
 //  (func body 内部只读 allPhotos, 不写, 无需持久化)
 //
 
@@ -50,7 +50,7 @@ struct ContentViewModelSelectionTests {
                 height: 100
             )
         }
-        model.allPhotos = photos
+        model.grid.allPhotos = photos
         return model
     }
 
@@ -58,24 +58,24 @@ struct ContentViewModelSelectionTests {
 
     @Test func toggleSortDirection_fromAsc_flipsToDesc() {
         let model = Self.isolatedModel()
-        #expect(model.sortOption == .filenameAsc)
+        #expect(model.grid.sortOption == .filenameAsc)
         model.toggleSortDirection()
-        #expect(model.sortOption == .filenameDesc)
+        #expect(model.grid.sortOption == .filenameDesc)
     }
 
     @Test func toggleSortDirection_fromDesc_flipsToAsc() {
         let model = Self.isolatedModel()
-        model.sortOption = .filenameDesc
+        model.grid.sortOption = .filenameDesc
         model.toggleSortDirection()
-        #expect(model.sortOption == .filenameAsc)
+        #expect(model.grid.sortOption == .filenameAsc)
     }
 
     @Test func toggleSortDirection_toggleTwice_returnsToOriginal() {
         let model = Self.isolatedModel()
-        let original = model.sortOption
+        let original = model.grid.sortOption
         model.toggleSortDirection()
         model.toggleSortDirection()
-        #expect(model.sortOption == original)
+        #expect(model.grid.sortOption == original)
     }
 
     // MARK: - resetFilters
@@ -84,20 +84,20 @@ struct ContentViewModelSelectionTests {
         let model = Self.isolatedModel()
         // 预设一堆 dirty state
         model.sidebarSelection = .recent7Days
-        model.searchText = "query"
+        model.grid.searchText = "query"
         model.filterState = FilterState(folders: [UUID()], tags: [], shapes: [.square], minRating: 5)
         // 改 default sort/thumbnail（resetFilters 不应清这些——只清 filters）
-        model.sortOption = .fileSizeDesc
-        model.thumbnailSize = 240
+        model.grid.sortOption = .fileSizeDesc
+        model.grid.thumbnailSize = 240
 
-        model.resetFilters()
+        model.grid.resetFilters()
 
         #expect(model.sidebarSelection == .all)
-        #expect(model.searchText == "")
+        #expect(model.grid.searchText == "")
         #expect(model.filterState == .empty)
         // sort/thumbnail 不应被 reset
-        #expect(model.sortOption == .fileSizeDesc)
-        #expect(model.thumbnailSize == 240)
+        #expect(model.grid.sortOption == .fileSizeDesc)
+        #expect(model.grid.thumbnailSize == 240)
     }
 
     // MARK: - goPrev / goNext
@@ -105,50 +105,50 @@ struct ContentViewModelSelectionTests {
     @Test func goPrev_noSelection_isNoOp() {
         let model = makeModelWithPhotos(3)
         // 没有 selected
-        model.goPrev()
+        model.grid.goPrev()
         // selection 仍空
-        #expect(model.selection.isEmpty)
+        #expect(model.grid.selection.isEmpty)
     }
 
     @Test func goPrev_atFirstPhoto_isNoOp() {
         let model = makeModelWithPhotos(3)
         // 选中第 0 张 (最前)
-        model.selection = model.selection.selectingSingle(model.allPhotos[0].id)
-        let before = model.selection.singleSelectedID
-        model.goPrev()
+        model.grid.selection = model.grid.selection.selectingSingle(model.grid.allPhotos[0].id)
+        let before = model.grid.selection.singleSelectedID
+        model.grid.goPrev()
         // idx 已经是 0, goPrev 应该是 no-op
-        #expect(model.selection.singleSelectedID == before)
+        #expect(model.grid.selection.singleSelectedID == before)
     }
 
     @Test func goPrev_advancesToPreviousPhoto() {
         let model = makeModelWithPhotos(3)
         // 选中第 1 张（中间）
-        model.selection = model.selection.selectingSingle(model.allPhotos[1].id)
-        // 确保当前 sort 是 filenameAsc 顺序 (model.allPhotos 顺序)
+        model.grid.selection = model.grid.selection.selectingSingle(model.grid.allPhotos[1].id)
+        // 确保当前 sort 是 filenameAsc 顺序 (model.grid.allPhotos 顺序)
         // sidebarSelection = .all, filterUnfiled = false, filterDuplicates = false, filterRecent7Days = false
         // visiblePhotos 应等于 allPhotos
-        #expect(model.visiblePhotos.count == 3)
-        model.goPrev()
+        #expect(model.grid.visiblePhotos.count == 3)
+        model.grid.goPrev()
         // 应选中第 0 张
-        #expect(model.selection.singleSelectedID == model.allPhotos[0].id)
+        #expect(model.grid.selection.singleSelectedID == model.grid.allPhotos[0].id)
     }
 
     @Test func goNext_atLastPhoto_isNoOp() {
         let model = makeModelWithPhotos(3)
         // 选中最后一张
-        model.selection = model.selection.selectingSingle(model.allPhotos[2].id)
-        let before = model.selection.singleSelectedID
-        model.goNext()
+        model.grid.selection = model.grid.selection.selectingSingle(model.grid.allPhotos[2].id)
+        let before = model.grid.selection.singleSelectedID
+        model.grid.goNext()
         // 最后一张已是末尾, goNext no-op
-        #expect(model.selection.singleSelectedID == before)
+        #expect(model.grid.selection.singleSelectedID == before)
     }
 
     @Test func goNext_advancesToNextPhoto() {
         let model = makeModelWithPhotos(3)
-        model.selection = model.selection.selectingSingle(model.allPhotos[1].id)
-        model.goNext()
+        model.grid.selection = model.grid.selection.selectingSingle(model.grid.allPhotos[1].id)
+        model.grid.goNext()
         // 应选中第 2 张
-        #expect(model.selection.singleSelectedID == model.allPhotos[2].id)
+        #expect(model.grid.selection.singleSelectedID == model.grid.allPhotos[2].id)
     }
 
     // MARK: - handleDelete
@@ -156,46 +156,46 @@ struct ContentViewModelSelectionTests {
     @Test func handleDelete_noSelection_isNoOp() {
         let model = makeModelWithPhotos(2)
         // 没有 selected, handleDelete 应该是 no-op
-        model.handleDelete()
-        #expect(model.selection.isEmpty)
-        #expect(model.showingBatchDeleteConfirm == false)
+        model.grid.handleDelete()
+        #expect(model.grid.selection.isEmpty)
+        #expect(model.grid.showingBatchDeleteConfirm == false)
     }
 
     @Test func handleDelete_withMultiSelection_setsBatchConfirm() {
         let model = makeModelWithPhotos(3)
         // 多选
-        model.selection = .empty
-            .settingAll(in: [model.allPhotos[0], model.allPhotos[1]])
-        model.handleDelete()
+        model.grid.selection = .empty
+            .settingAll(in: [model.grid.allPhotos[0], model.grid.allPhotos[1]])
+        model.grid.handleDelete()
         // 应弹 batch delete confirm (不是真的删——等用户确认)
-        #expect(model.showingBatchDeleteConfirm == true)
+        #expect(model.grid.showingBatchDeleteConfirm == true)
     }
 
     // MARK: - zoomIn / zoomOut / resetThumbnailSize
 
     @Test func zoomIn_fromDefault_advancesToLarger() {
         let model = Self.isolatedModel()
-        let before = model.thumbnailSize
-        model.zoomIn()
-        #expect(model.thumbnailSize > before, "zoomIn 应增大 thumbnailSize")
+        let before = model.grid.thumbnailSize
+        model.grid.zoomIn()
+        #expect(model.grid.thumbnailSize > before, "zoomIn 应增大 thumbnailSize")
     }
 
     @Test func zoomOut_fromDefault_advancesToSmaller() {
         let model = Self.isolatedModel()
-        let before = model.thumbnailSize
-        model.zoomOut()
-        #expect(model.thumbnailSize < before, "zoomOut 应减小 thumbnailSize")
+        let before = model.grid.thumbnailSize
+        model.grid.zoomOut()
+        #expect(model.grid.thumbnailSize < before, "zoomOut 应减小 thumbnailSize")
     }
 
     @Test func zoomIn_atMax_isNoOp() {
         let model = Self.isolatedModel()
         // 设到最大
-        while let next = ThumbnailDensity.larger(than: model.thumbnailSize) {
-            model.thumbnailSize = next.size
+        while let next = ThumbnailDensity.larger(than: model.grid.thumbnailSize) {
+            model.grid.thumbnailSize = next.size
         }
-        let maxSize = model.thumbnailSize
-        model.zoomIn()
-        #expect(model.thumbnailSize == maxSize, "已最大, zoomIn no-op")
+        let maxSize = model.grid.thumbnailSize
+        model.grid.zoomIn()
+        #expect(model.grid.thumbnailSize == maxSize, "已最大, zoomIn no-op")
     }
 
     @Test func resetThumbnailSize_restoresStoredDefault() {
@@ -207,17 +207,17 @@ struct ContentViewModelSelectionTests {
         // 改 stored default
         model.settings.thumbnailSize = 240
         // 改 live size 到别的 (通过 thumbnailSize setter, 走 liveThumbnailSize)
-        model.thumbnailSize = 110
-        model.resetThumbnailSize()
-        #expect(model.thumbnailSize == 240, "⌘0 应清 live, 回到 stored default")
+        model.grid.thumbnailSize = 110
+        model.grid.resetThumbnailSize()
+        #expect(model.grid.thumbnailSize == 240, "⌘0 应清 live, 回到 stored default")
     }
 
     @Test func zoomIn_doesNotPolluteStoredDefault() {
         // V6.14.8: 验 zoom in 写 live, 不动 stored
         let model = Self.isolatedModel()
         let storedBefore = model.settings.thumbnailSize
-        model.zoomIn()
-        #expect(model.thumbnailSize != CGFloat(storedBefore),
+        model.grid.zoomIn()
+        #expect(model.grid.thumbnailSize != CGFloat(storedBefore),
                 "zoomIn 后 live 改了, 应跟 stored 不同")
         #expect(model.settings.thumbnailSize == storedBefore,
                 "zoomIn 不应污染 stored (跟 ⌘0 行为一致)")

@@ -54,14 +54,14 @@ struct ContentViewModelRecycleBinTests {
         )
         context.insert(photo)
         try context.save()
-        model.allPhotos = [photo]
-        model.selection = model.selection.selectingSingle(photo.id)
+        model.grid.allPhotos = [photo]
+        model.grid.selection = model.grid.selection.selectingSingle(photo.id)
 
-        model.deleteSinglePhoto()
+        model.grid.deleteSinglePhoto()
 
         #expect(photo.trashedAt != nil, "recycle 后 trashedAt 应非 nil")
         #expect(photo.isInTrash == true)
-        #expect(model.selection.isEmpty == true, "selection 应被清空")
+        #expect(model.grid.selection.isEmpty == true, "selection 应被清空")
     }
 
     @Test func deleteSinglePhoto_noSelection_isNoOp() throws {
@@ -79,10 +79,10 @@ struct ContentViewModelRecycleBinTests {
         )
         context.insert(photo)
         try context.save()
-        model.allPhotos = [photo]
-        model.selection = .empty  // 没选
+        model.grid.allPhotos = [photo]
+        model.grid.selection = .empty  // 没选
 
-        model.deleteSinglePhoto()
+        model.grid.deleteSinglePhoto()
         // 没 selection 时 no-op
         #expect(photo.trashedAt == nil, "无 selection 时不应被删")
     }
@@ -103,15 +103,15 @@ struct ContentViewModelRecycleBinTests {
         context.insert(p2)
         context.insert(p3)
         try context.save()
-        model.allPhotos = [p1, p2, p3]
-        model.selection = .empty.settingAll(in: [p1, p2, p3])
+        model.grid.allPhotos = [p1, p2, p3]
+        model.grid.selection = .empty.settingAll(in: [p1, p2, p3])
 
-        model.batchDelete()
+        model.grid.batchDelete()
 
         #expect(p1.trashedAt != nil)
         #expect(p2.trashedAt != nil)
         #expect(p3.trashedAt != nil)
-        #expect(model.selection.isEmpty == true)
+        #expect(model.grid.selection.isEmpty == true)
     }
 
     @Test func emptyTrash_purgesExpiredTrashedPhotos() throws {
@@ -142,9 +142,9 @@ struct ContentViewModelRecycleBinTests {
         // 标记 trashPhoto 为 60 天前（远超 30 天 default）
         trashPhoto.trashedAt = Date().addingTimeInterval(-86400 * 60)
         try context.save()
-        model.allPhotos = [trashPhoto, normalPhoto]
+        model.grid.allPhotos = [trashPhoto, normalPhoto]
 
-        model.emptyTrash()
+        model.grid.emptyTrash()
 
         // trashPhoto 应被 hard delete，normalPhoto 保留
         let remaining = try context.fetch(FetchDescriptor<Photo>())
@@ -167,11 +167,11 @@ struct ContentViewModelRecycleBinTests {
         )
         context.insert(photo)
         try context.save()
-        model.allPhotos = [photo]
+        model.grid.allPhotos = [photo]
 
         // 单张 unique photo, 不是 duplicate group
         let trashedBefore = photo.trashedAt
-        model.keepNewestPerDuplicateGroup()
+        model.grid.keepNewestPerDuplicateGroup()
         #expect(photo.trashedAt == trashedBefore, "无 duplicate 时不应被 recycle")
     }
 
@@ -190,16 +190,16 @@ struct ContentViewModelRecycleBinTests {
         )
         context.insert(photo)
         try context.save()
-        model.allPhotos = [photo]
+        model.grid.allPhotos = [photo]
 
         // recycle + 切 sidebar 到 trash 视图
-        model.selection = model.selection.selectingSingle(photo.id)
-        model.deleteSinglePhoto()
+        model.grid.selection = model.grid.selection.selectingSingle(photo.id)
+        model.grid.deleteSinglePhoto()
         #expect(photo.trashedAt != nil)
         model.sidebarSelection = .recentlyDeleted
-        model.selection = model.selection.selectingSingle(photo.id)
+        model.grid.selection = model.grid.selection.selectingSingle(photo.id)
 
-        model.restoreSelectedFromTrash()
+        model.grid.restoreSelectedFromTrash()
         #expect(photo.trashedAt == nil, "restore 后 trashedAt 应清空")
     }
 
@@ -223,15 +223,15 @@ struct ContentViewModelRecycleBinTests {
         context.insert(photo)
         try context.save()
         let photoID = photo.id
-        model.allPhotos = [photo]
+        model.grid.allPhotos = [photo]
 
         // recycle + 切到 trash + 选
-        model.selection = model.selection.selectingSingle(photo.id)
-        model.deleteSinglePhoto()
+        model.grid.selection = model.grid.selection.selectingSingle(photo.id)
+        model.grid.deleteSinglePhoto()
         model.sidebarSelection = .recentlyDeleted
-        model.selection = model.selection.selectingSingle(photo.id)
+        model.grid.selection = model.grid.selection.selectingSingle(photo.id)
 
-        model.permanentDeleteSelected()
+        model.grid.permanentDeleteSelected()
 
         // photo 应从 context 中 hard delete
         let allPhotos = try context.fetch(FetchDescriptor<Photo>())

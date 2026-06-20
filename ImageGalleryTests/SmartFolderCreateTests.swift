@@ -128,10 +128,10 @@ struct SmartFolderCreateTests {
         // 用 cache 模拟 sidebar @Query 推送 (跟 ContentView .onChange 路径一致)
         model.createSmartFolder(name: "A", iconName: "star.fill", filterState: .empty)
         let sfA = try container.mainContext.fetch(FetchDescriptor<SmartFolder>()).first
-        model.smartFoldersCache = [sfA!].compactMap { $0 }
+        model.grid.smartFoldersCache = [sfA!].compactMap { $0 }
         model.createSmartFolder(name: "B", iconName: "heart.fill", filterState: .empty)
         let sfs2 = try container.mainContext.fetch(FetchDescriptor<SmartFolder>(sortBy: [SortDescriptor(\.order)]))
-        model.smartFoldersCache = sfs2
+        model.grid.smartFoldersCache = sfs2
         model.createSmartFolder(name: "C", iconName: "flame.fill", filterState: .empty)
 
         let sfs = try container.mainContext.fetch(FetchDescriptor<SmartFolder>(sortBy: [SortDescriptor(\.order)]))
@@ -163,7 +163,7 @@ struct SmartFolderCreateTests {
         try container.mainContext.save()
         model.sidebarSelection = .smartFolder(sf.id)
 
-        #expect(model.currentSmartFolder?.id == sf.id)
+        #expect(model.grid.currentSmartFolder?.id == sf.id)
     }
 
     @Test func currentSmartFolder_deletedReturnsNil() throws {
@@ -179,7 +179,7 @@ struct SmartFolderCreateTests {
         container.mainContext.delete(sf)
         try container.mainContext.save()
 
-        #expect(model.currentSmartFolder == nil, "删后 fetch 返 nil (V6.08 dangling ref 防护)")
+        #expect(model.grid.currentSmartFolder == nil, "删后 fetch 返 nil (V6.08 dangling ref 防护)")
     }
 
     // MARK: - smartFolderFilter
@@ -195,13 +195,13 @@ struct SmartFolderCreateTests {
         try container.mainContext.save()
         model.sidebarSelection = .smartFolder(sf.id)
 
-        #expect(model.smartFolderFilter == filter)
+        #expect(model.grid.smartFolderFilter == filter)
     }
 
     @Test func smartFolderFilter_nilWhenNotActive() {
         let model = Self.isolatedModel()
         model.sidebarSelection = .all
-        #expect(model.smartFolderFilter == nil, "非 .smartFolder selection → nil")
+        #expect(model.grid.smartFolderFilter == nil, "非 .smartFolder selection → nil")
     }
 
     // MARK: - currentViewTitle
@@ -216,7 +216,7 @@ struct SmartFolderCreateTests {
         try container.mainContext.save()
         model.sidebarSelection = .smartFolder(sf.id)
 
-        #expect(model.currentViewTitle == "Vacation 2024")
+        #expect(model.grid.currentViewTitle == "Vacation 2024")
     }
 
     @Test func currentViewTitle_forDeletedSmartFolderFallback() throws {
@@ -232,7 +232,7 @@ struct SmartFolderCreateTests {
         container.mainContext.delete(sf)
         try container.mainContext.save()
 
-        #expect(model.currentViewTitle == Copy.smartFolderFallback)
+        #expect(model.grid.currentViewTitle == Copy.smartFolderFallback)
     }
 
     // MARK: - PhotoStats.filtered with smartFolderFilter

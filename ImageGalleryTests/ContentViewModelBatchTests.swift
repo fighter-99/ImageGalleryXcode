@@ -54,14 +54,14 @@ struct ContentViewModelBatchTests {
         context.insert(p1)
         context.insert(p2)
         try context.save()
-        model.allPhotos = [p1, p2]
-        model.selection = .empty.settingAll(in: [p1, p2])
+        model.grid.allPhotos = [p1, p2]
+        model.grid.selection = .empty.settingAll(in: [p1, p2])
 
-        model.batchMove(to: folder)
+        model.grid.batchMove(to: folder)
 
         #expect(p1.folder?.id == folder.id, "p1 应被移到 Vacation folder")
         #expect(p2.folder?.id == folder.id, "p2 应被移到 Vacation folder")
-        #expect(model.selection.isEmpty == true, "移动后应清空 selection")
+        #expect(model.grid.selection.isEmpty == true, "移动后应清空 selection")
     }
 
     @Test func batchMove_toNil_clearsFolderAssignment() throws {
@@ -79,10 +79,10 @@ struct ContentViewModelBatchTests {
         context.insert(folder)
         context.insert(p1)
         try context.save()
-        model.allPhotos = [p1]
-        model.selection = model.selection.selectingSingle(p1.id)
+        model.grid.allPhotos = [p1]
+        model.grid.selection = model.grid.selection.selectingSingle(p1.id)
 
-        model.batchMove(to: nil)  // 移到 "未整理"
+        model.grid.batchMove(to: nil)  // 移到 "未整理"
 
         #expect(p1.folder == nil, "移到 nil = 清除 folder 归属")
     }
@@ -101,10 +101,10 @@ struct ContentViewModelBatchTests {
         context.insert(tag)
         context.insert(p1)
         try context.save()
-        model.allPhotos = [p1]
-        model.selection = model.selection.selectingSingle(p1.id)
+        model.grid.allPhotos = [p1]
+        model.grid.selection = model.grid.selection.selectingSingle(p1.id)
 
-        model.batchAddTag(tag)
+        model.grid.batchAddTag(tag)
 
         #expect(p1.tags.contains(where: { $0.id == tag.id }), "p1 应含 tag")
     }
@@ -124,10 +124,10 @@ struct ContentViewModelBatchTests {
         context.insert(tag)
         context.insert(p1)
         try context.save()
-        model.allPhotos = [p1]
-        model.selection = model.selection.selectingSingle(p1.id)
+        model.grid.allPhotos = [p1]
+        model.grid.selection = model.grid.selection.selectingSingle(p1.id)
 
-        model.batchAddTag(tag)
+        model.grid.batchAddTag(tag)
 
         let count = p1.tags.filter { $0.id == tag.id }.count
         #expect(count == 1, "不应重复加 tag")
@@ -147,10 +147,10 @@ struct ContentViewModelBatchTests {
         context.insert(p1)
         context.insert(p2)
         try context.save()
-        model.allPhotos = [p1, p2]
-        model.selection = .empty.settingAll(in: [p1, p2])
+        model.grid.allPhotos = [p1, p2]
+        model.grid.selection = .empty.settingAll(in: [p1, p2])
 
-        model.batchSetRating(4)
+        model.grid.batchSetRating(4)
 
         #expect(p1.rating == 4)
         #expect(p2.rating == 4)
@@ -169,10 +169,10 @@ struct ContentViewModelBatchTests {
         p1.rating = 5
         context.insert(p1)
         try context.save()
-        model.allPhotos = [p1]
-        model.selection = model.selection.selectingSingle(p1.id)
+        model.grid.allPhotos = [p1]
+        model.grid.selection = model.grid.selection.selectingSingle(p1.id)
 
-        model.batchSetRating(0)
+        model.grid.batchSetRating(0)
 
         #expect(p1.rating == 0, "rating=0 应清除")
     }
@@ -191,10 +191,10 @@ struct ContentViewModelBatchTests {
         context.insert(folder)
         context.insert(p1)
         try context.save()
-        model.allPhotos = [p1]
-        model.selection = .empty  // 没选
+        model.grid.allPhotos = [p1]
+        model.grid.selection = .empty  // 没选
 
-        model.batchMove(to: folder)
+        model.grid.batchMove(to: folder)
         // 没选时 batchMove 是 no-op
         #expect(p1.folder == nil, "无 selection 时不应被移")
     }
@@ -233,10 +233,10 @@ struct ContentViewModelBatchTests {
         let p3 = Photo(filename: u3.lastPathComponent, fileURL: u3, fileSize: 100, width: 10, height: 10)
         context.insert(p1); context.insert(p2); context.insert(p3)
         try context.save()
-        model.allPhotos = [p1, p2, p3]
-        model.selection = .empty.settingAll(in: [p1, p2, p3])
+        model.grid.allPhotos = [p1, p2, p3]
+        model.grid.selection = .empty.settingAll(in: [p1, p2, p3])
 
-        model.batchRename(template: "photo_{n}")
+        model.grid.batchRename(template: "photo_{n}")
 
         // 新文件名: photo_1.jpg, photo_2.jpg, photo_3.jpg (subdir 内, 跟 /tmp 其他无关)
         #expect(p1.filename == "photo_1.jpg", "p1 应改名 photo_1.jpg, 实际: \(p1.filename)")
@@ -271,10 +271,10 @@ struct ContentViewModelBatchTests {
         let p3 = Photo(filename: u3.lastPathComponent, fileURL: u3, fileSize: 100, width: 10, height: 10)
         context.insert(p1); context.insert(p2); context.insert(p3)
         try context.save()
-        model.allPhotos = [p1, p2, p3]
-        model.selection = .empty.settingAll(in: [p1, p2, p3])
+        model.grid.allPhotos = [p1, p2, p3]
+        model.grid.selection = .empty.settingAll(in: [p1, p2, p3])
 
-        model.batchRename(template: "photo_{n:3}")
+        model.grid.batchRename(template: "photo_{n:3}")
 
         #expect(p1.filename == "photo_001.jpg", "actual: \(p1.filename)")
         #expect(p2.filename == "photo_002.jpg", "actual: \(p2.filename)")
@@ -301,10 +301,10 @@ struct ContentViewModelBatchTests {
         let p2 = Photo(filename: u2.lastPathComponent, fileURL: u2, fileSize: 100, width: 10, height: 10)
         context.insert(p1); context.insert(p2)
         try context.save()
-        model.allPhotos = [p1, p2]
-        model.selection = .empty.settingAll(in: [p1, p2])
+        model.grid.allPhotos = [p1, p2]
+        model.grid.selection = .empty.settingAll(in: [p1, p2])
 
-        model.batchRename(template: "img_{n}")
+        model.grid.batchRename(template: "img_{n}")
 
         #expect(p1.filename == "img_1.png", "应保留 .png, 实际: \(p1.filename)")
         #expect(p2.filename == "img_2.PNG", "应保留 .PNG, 实际: \(p2.filename)")
@@ -333,11 +333,11 @@ struct ContentViewModelBatchTests {
         let p1 = Photo(filename: srcURL.lastPathComponent, fileURL: srcURL, fileSize: 100, width: 10, height: 10)
         context.insert(p1)
         try context.save()
-        model.allPhotos = [p1]
-        model.selection = .empty.settingAll(in: [p1])
+        model.grid.allPhotos = [p1]
+        model.grid.selection = .empty.settingAll(in: [p1])
 
         // Template 渲染后 basename = collisionBase, ext = "jpg" → 跟 collisionURL 同名 → on-disk check = true → 应加 _1
-        model.batchRename(template: collisionBase)
+        model.grid.batchRename(template: collisionBase)
 
         #expect(p1.filename.hasSuffix(".jpg"))
         #expect(p1.filename != collisionURL.lastPathComponent, "应避开 on-disk 冲突, 实际: \(p1.filename)")
@@ -363,10 +363,10 @@ struct ContentViewModelBatchTests {
         let p1 = Photo(filename: u1.lastPathComponent, fileURL: u1, fileSize: 100, width: 10, height: 10)
         context.insert(p1)
         try context.save()
-        model.allPhotos = [p1]
-        model.selection = .empty  // 没选
+        model.grid.allPhotos = [p1]
+        model.grid.selection = .empty  // 没选
 
-        model.batchRename(template: "renamed_{n}")
+        model.grid.batchRename(template: "renamed_{n}")
 
         #expect(p1.filename == u1.lastPathComponent, "无 selection 不应被改")
     }
@@ -388,10 +388,10 @@ struct ContentViewModelBatchTests {
         let p1 = Photo(filename: u1.lastPathComponent, fileURL: u1, fileSize: 100, width: 10, height: 10)
         context.insert(p1)
         try context.save()
-        model.allPhotos = [p1]
-        model.selection = .empty.settingAll(in: [p1])
+        model.grid.allPhotos = [p1]
+        model.grid.selection = .empty.settingAll(in: [p1])
 
-        model.batchRename(template: "   ")  // 全空白 → trim 后空 → noop
+        model.grid.batchRename(template: "   ")  // 全空白 → trim 后空 → noop
 
         #expect(p1.filename == u1.lastPathComponent, "空白 template 不应触发 rename")
     }
@@ -418,10 +418,10 @@ struct ContentViewModelBatchTests {
         let p2 = Photo(filename: originalName2, fileURL: u2, fileSize: 100, width: 10, height: 10)
         context.insert(p1); context.insert(p2)
         try context.save()
-        model.allPhotos = [p1, p2]
-        model.selection = .empty.settingAll(in: [p1, p2])
+        model.grid.allPhotos = [p1, p2]
+        model.grid.selection = .empty.settingAll(in: [p1, p2])
 
-        model.batchRename(template: "renamed_{n}")
+        model.grid.batchRename(template: "renamed_{n}")
         #expect(p1.filename == "renamed_1.jpg", "rename 后: \(p1.filename)")
         #expect(p2.filename == "renamed_2.jpg", "rename 后: \(p2.filename)")
 

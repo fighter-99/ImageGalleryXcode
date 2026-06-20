@@ -48,6 +48,8 @@ extension View {
     func contentBodyModifiers(
         model: ContentViewModel,
         bindableModel: Bindable<ContentViewModel>,
+        // V6.28: bindableGrid for grid business binding (showingBatchDeleteConfirm / newFolderName / etc)
+        bindableGrid: Bindable<GridViewModel>,
         settings: UserSettings,
         modelContext: ModelContext,
         allPhotos: [Photo],
@@ -102,9 +104,10 @@ extension View {
     ) -> some View {
         self
             .appLifecycleHooks(
-                thumbnailSize: model.thumbnailSize,
+                // V6.28: thumbnailSize/sortOption 在 model.grid
+                thumbnailSize: model.grid.thumbnailSize,
                 sidebarSelection: sidebarSelection,
-                sortOption: model.sortOption,
+                sortOption: model.grid.sortOption,
                 viewModeRaw: settings.viewModeRaw,
                 onAppear: {
                     onRestoreSelection()
@@ -121,8 +124,9 @@ extension View {
                 }
             )
             .gridInputHandling(
-                canPrev: model.canPrev,
-                canNext: model.canNext,
+                // V6.28: canPrev/canNext/singleSelectedPhoto 在 model.grid
+                canPrev: model.grid.canPrev,
+                canNext: model.grid.canNext,
                 hasSelection: !selection.isEmpty,
                 onDelete: onDelete,
                 onPrev: onPrev,
@@ -131,7 +135,7 @@ extension View {
                 onSelectAll: onSelectAll,
                 onZoomIn: onZoomIn,
                 onZoomOut: onZoomOut,
-                hasSelectedPhoto: model.singleSelectedPhoto != nil,
+                hasSelectedPhoto: model.grid.singleSelectedPhoto != nil,
                 onSpace: onSpace,
                 onResetZoom: onResetZoom,
                 onExport: onExport,
@@ -147,14 +151,15 @@ extension View {
                 onSetRating: onSetRating
             )
             .batchActionDialogs(
-                showingBatchDelete: bindableModel.showingBatchDeleteConfirm,
+                // V6.28: batch delete / new folder / empty trash 都在 model.grid
+                showingBatchDelete: bindableGrid.showingBatchDeleteConfirm,
                 batchDeleteTitle: batchDeleteTitle,
                 retentionDays: model.settings.trashRetentionDays,
                 onConfirmBatchDelete: onBatchDelete,
-                showingNewFolder: bindableModel.showingNewFolderAlert,
-                newFolderName: bindableModel.newFolderName,
+                showingNewFolder: bindableGrid.showingNewFolderAlert,
+                newFolderName: bindableGrid.newFolderName,
                 onConfirmNewFolder: onCreateFolder,
-                showingEmptyTrash: bindableModel.showingEmptyTrashConfirm,
+                showingEmptyTrash: bindableGrid.showingEmptyTrashConfirm,
                 onConfirmEmptyTrash: onEmptyTrash,
                 showingDuplicateCheck: Binding(
                     get: { model.importDuplicateCheck != nil },
@@ -167,20 +172,20 @@ extension View {
             )
             .applySettingsChrome(tintColor: accentColor.color)
             .exposeUndoManager(undoManager)
-            // P4.2: 批量重命名 sheet + 通知监听
+            // P4.2: 批量重命名 sheet + 通知监听 (V6.28: showingBatchRenameSheet 在 grid)
             .batchRenameSheet(
                 model: model,
                 selection: selection,
                 visiblePhotos: visiblePhotos,
-                showingBatchRename: bindableModel.showingBatchRenameSheet
+                showingBatchRename: bindableGrid.showingBatchRenameSheet
             )
             // P4.1.1: 智能文件夹创建 sheet
-            //   sheet 入口在 SidebarView (Library section "+" 按钮), 触发 model.showingNewSmartFolderSheet
-            //   此处 host sheet — ContentView 是 model @Bindable owner
+            //   sheet 入口在 SidebarView (Library section "+" 按钮), 触发 model.grid.showingNewSmartFolderSheet
+            //   此处 host sheet — ContentView 是 model @Bindable owner (跟 batchRenameSheet 同模式)
             .smartFolderCreateSheet(
                 model: model,
-                showingSheet: bindableModel.showingNewSmartFolderSheet,
-                pendingFilter: model.pendingSmartFolderFilter ?? .empty
+                showingSheet: bindableGrid.showingNewSmartFolderSheet,
+                pendingFilter: model.grid.pendingSmartFolderFilter ?? .empty
             )
             // V6.22.3 (P2 #10): Onboarding 3-card sheet — first-run 弹, 用户 dismiss 后不再出现
             //   showingOnboarding getter 直接读 !model.settings.hasSeenOnboarding
@@ -193,13 +198,13 @@ extension View {
             //   createFolderFromAlert() 内部 trim 空 name 后早返 (newFolderName 默认 "")
             //   → 用户按 ⌘⇧N 菜单什么都没发生 (silent failure)
             //   修: 跟 ⌘N hidden button / SidebarView "+" 按钮同路径 — 弹 alert dialog
-            //   同时清空 model.newFolderName (跟 SidebarView L188 同步, 避免上次 name 残留)
+            //   同时清空 model.grid.newFolderName (跟 SidebarView L188 同步, 避免上次 name 残留)
             .onReceive(NotificationCenter.default.publisher(for: .newFolderRequested)) { _ in
-                model.newFolderName = ""
-                model.showingNewFolderAlert = true
+                model.grid.newFolderName = ""
+                model.grid.showingNewFolderAlert = true
             }
             .onReceive(NotificationCenter.default.publisher(for: .speakRequested)) { _ in
-                model.speakSelection()
+                model.grid.speakSelection()
             }
             .onChange(of: filterState.activeCount) { _, count in
                 ToolbarController.shared.filterActiveCount = count
@@ -223,9 +228,10 @@ extension View {
             //   selection 仍保留 onChange (如有别处用), 但不再影响 showDetail
             .task {
                 model.modelContext = modelContext
-                model.allPhotos = allPhotos
-                model.folders = folders
-                model.allTags = allTags
+                // V6.28: @Query cache 推 model.grid
+                model.grid.allPhotos = allPhotos
+                model.grid.folders = folders
+                model.grid.allTags = allTags
                 // V6.22.0 (P2 #12): Thumbnail warmup — 启动后批量预热最近 50 张
                 //   用户进入 grid 时立即看到缩略图 (而不是等懒加载)
                 //   .background priority 不抢主线程 + 滚动性能
@@ -233,11 +239,12 @@ extension View {
                 //   失败 URL (data 损坏 / 文件删) ImageLoader.warmupThumbnails 内部跳过
                 await Self.warmupRecentThumbnails(context: modelContext, count: 50)
             }
-            .onChange(of: allPhotos) { _, new in model.allPhotos = new }
-            .onChange(of: folders) { _, new in model.folders = new }
-            .onChange(of: allTags) { _, new in model.allTags = new }
-            // P4.1.1: smartFolders 推 model.smartFoldersCache (createSmartFolder 用 max+1 算 order)
-            .onChange(of: smartFolders) { _, new in model.smartFoldersCache = new }
+            // V6.28: .onChange 推 model.grid
+            .onChange(of: allPhotos) { _, new in model.grid.allPhotos = new }
+            .onChange(of: folders) { _, new in model.grid.folders = new }
+            .onChange(of: allTags) { _, new in model.grid.allTags = new }
+            // P4.1.1: smartFolders 推 model.grid.smartFoldersCache (createSmartFolder 用 max+1 算 order)
+            .onChange(of: smartFolders) { _, new in model.grid.smartFoldersCache = new }
     }
 }
 
@@ -261,8 +268,8 @@ extension View {
                 BatchRenameSheet(
                     photos: selectedPhotos,
                     onApply: { template in
-                        // 直接调 model, 跟 batchMove 一样不通过 closure 包装
-                        model.batchRename(template: template)
+                        // 直接调 model.grid, 跟 batchMove 一样不通过 closure 包装
+                        model.grid.batchRename(template: template)
                     }
                 )
             }
@@ -284,29 +291,30 @@ extension View {
     @MainActor
     func shareSheet(model: ContentViewModel) -> some View {
         self
-            // V6.20.0 (code audit fix #7): binding setter 在 sheet dismiss 时清空 model.sharingURLs
+            // V6.20.0 (code audit fix #7): binding setter 在 sheet dismiss 时清空 model.grid.sharingURLs
             //   之前 setter 是 _ in {} → URLs 永不清理 → 第二次 ⌘⇧E 选不同图仍弹老 URLs
             //   同时 fix: viewDidAppear 不再 fire 第二次 picker bug (sheet 重新 present 时 SwiftUI
             //   重新 make NSViewController, viewDidAppear 自然 fire — 之前 URLs 残留时 sheet 不重新 present)
+            // V6.28: sharingURLs 在 model.grid
             .sheet(isPresented: bindable(
-                model.sharingURLs != nil,
-                onDismiss: { model.sharingURLs = nil }
+                model.grid.sharingURLs != nil,
+                onDismiss: { model.grid.sharingURLs = nil }
             )) {
-                if let urls = model.sharingURLs, !urls.isEmpty {
+                if let urls = model.grid.sharingURLs, !urls.isEmpty {
                     SharePickerView(urls: urls)
                         .frame(minWidth: 400, minHeight: 300)
                 }
             }
             // V6.19.0: File 菜单 ⌘⇧S 通过通知触发 sheet
-            //   model.shareSelectedURLs() 拿选中 + 单图 fallback, 无选给 toast 提示
+            //   model.grid.shareSelectedURLs() 拿选中 + 单图 fallback, 无选给 toast 提示
             // V6.20.3 (code audit fix #15): debounce 0.3s — 快速连点 ⌘⇧S 不堆叠 sheet
             //   之前每次 onReceive 立即设 sharingURLs + 弹 sheet — 用户狂点会闪烁 sheet UI
-            //   现在 model.shouldThrottleShareRequest() 用 instance Date 状态做 throttle
+            //   现在 model.grid.shouldThrottleShareRequest() 用 instance Date 状态做 throttle
             .onReceive(NotificationCenter.default.publisher(for: .shareRequested)) { _ in
-                guard !model.shouldThrottleShareRequest() else { return }
-                let urls = model.shareSelectedURLs()
+                guard !model.grid.shouldThrottleShareRequest() else { return }
+                let urls = model.grid.shareSelectedURLs()
                 guard !urls.isEmpty else { return }
-                model.sharingURLs = urls
+                model.grid.sharingURLs = urls
             }
     }
 

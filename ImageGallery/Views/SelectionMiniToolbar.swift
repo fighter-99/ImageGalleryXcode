@@ -26,11 +26,11 @@ struct SelectionMiniToolbar: View {
 
     var body: some View {
         HStack(spacing: 4) {
-            // 选中 N 张提示
+            // 选中 N 张提示 — V6.28: selection 在 model.grid
             HStack(spacing: 4) {
                 Image(systemName: "checkmark.circle.fill")
                     .foregroundStyle(Color.accentColor)
-                Text("\(model.selection.selectedIDs.count) 张已选")
+                Text("\(model.grid.selection.selectedIDs.count) 张已选")
                     .font(.callout.weight(.medium))
             }
             .padding(.horizontal, 12)
@@ -49,15 +49,15 @@ struct SelectionMiniToolbar: View {
                 TagPickerPopover(model: model)
             }
 
-            // Move — menu picker
+            // Move — menu picker (V6.28: folders + batchMove 在 model.grid)
             Menu {
                 Button("未整理") {
-                    model.batchMove(to: nil)
+                    model.grid.batchMove(to: nil)
                 }
                 Divider()
-                ForEach(model.folders) { folder in
+                ForEach(model.grid.folders) { folder in
                     Button(folder.name) {
-                        model.batchMove(to: folder)
+                        model.grid.batchMove(to: folder)
                     }
                 }
             } label: {
@@ -65,25 +65,25 @@ struct SelectionMiniToolbar: View {
             }
             .help("移动到文件夹")
 
-            // P4.2: Rename — sheet (模板批量重命名)
+            // P4.2: Rename — sheet (模板批量重命名, V6.28: grid 业务)
             Button {
-                model.showingBatchRenameSheet = true
+                model.grid.showingBatchRenameSheet = true
             } label: {
                 Label(Copy.batchRenameTitle, systemImage: "pencil.and.list.clipboard")
             }
             .help("按模板批量重命名 (⌘⇧R)")
 
-            // Export — 直接调 (内部 file panel)
+            // Export — 直接调 (内部 file panel, V6.28: grid)
             Button {
-                model.batchExport()
+                model.grid.batchExport()
             } label: {
                 Label("导出", systemImage: "square.and.arrow.up")
             }
             .help("导出选中照片")
 
-            // Delete — 弹确认 dialog
+            // Delete — 弹确认 dialog (V6.28: grid)
             Button(role: .destructive) {
-                model.showingBatchDeleteConfirm = true
+                model.grid.showingBatchDeleteConfirm = true
             } label: {
                 Label("删除", systemImage: "trash")
             }
@@ -119,14 +119,15 @@ private struct TagPickerPopover: View {
                 .font(.headline)
                 .padding(.bottom, 4)
 
-            if model.allTags.isEmpty {
+            // V6.28: allTags + batchAddTag 在 model.grid
+            if model.grid.allTags.isEmpty {
                 Text("还没有标签")
                     .foregroundStyle(.secondary)
                     .padding(.vertical, 8)
             } else {
-                ForEach(model.allTags) { tag in
+                ForEach(model.grid.allTags) { tag in
                     Button {
-                        model.batchAddTag(tag)
+                        model.grid.batchAddTag(tag)
                         dismiss()
                     } label: {
                         Label(tag.name, systemImage: "tag.fill")
@@ -159,7 +160,7 @@ private struct TagPickerPopover: View {
         let tag = Tag(name: trimmed)
         modelContext.insert(tag)
         try? modelContext.save()
-        model.batchAddTag(tag)
+        model.grid.batchAddTag(tag)
         dismiss()
     }
 }

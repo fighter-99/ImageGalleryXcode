@@ -99,28 +99,28 @@ struct ContentViewModelMiscTests {
 
     @Test func clearSelectionOnFilterChange_emptySelection_isNoOp() {
         let model = Self.isolatedModel()
-        let before = model.selection
-        model.clearSelectionOnFilterChange()
-        #expect(model.selection == before, "空 selection 不应被改")
+        let before = model.grid.selection
+        model.grid.clearSelectionOnFilterChange()
+        #expect(model.grid.selection == before, "空 selection 不应被改")
     }
 
     @Test func clearSelectionOnFilterChange_withSingleSelection_clears() {
         let model = Self.isolatedModel()
         let id = UUID()
-        model.selection = model.selection.selectingSingle(id)
-        #expect(!model.selection.isEmpty)
-        model.clearSelectionOnFilterChange()
-        #expect(model.selection.isEmpty, "有 selection 时应清空")
+        model.grid.selection = model.grid.selection.selectingSingle(id)
+        #expect(!model.grid.selection.isEmpty)
+        model.grid.clearSelectionOnFilterChange()
+        #expect(model.grid.selection.isEmpty, "有 selection 时应清空")
     }
 
     @Test func clearSelectionOnFilterChange_withMultiSelection_clears() {
         let model = Self.isolatedModel()
         let p1 = Photo(filename: "1.jpg", fileURL: URL(fileURLWithPath: "/tmp/V554_clear_1.jpg"), fileSize: 100, width: 10, height: 10)
         let p2 = Photo(filename: "2.jpg", fileURL: URL(fileURLWithPath: "/tmp/V554_clear_2.jpg"), fileSize: 100, width: 10, height: 10)
-        model.selection = .empty.settingAll(in: [p1, p2])
-        #expect(!model.selection.isEmpty)
-        model.clearSelectionOnFilterChange()
-        #expect(model.selection.isEmpty, "多选 selection 应被清空")
+        model.grid.selection = .empty.settingAll(in: [p1, p2])
+        #expect(!model.grid.selection.isEmpty)
+        model.grid.clearSelectionOnFilterChange()
+        #expect(model.grid.selection.isEmpty, "多选 selection 应被清空")
     }
 
     // MARK: - checkStorage (PhotoStorage.shared.verifyStorage 真测——mock 不容易)
@@ -217,7 +217,7 @@ struct ContentViewModelMiscTests {
     @Test func representativePhoto_emptyGroup_returnsNil() {
         let model = Self.isolatedModel()
         let group = DateGroup(id: "empty", label: "今天", sortKey: Date(), photos: [])
-        #expect(model.representativePhoto(for: group) == nil)
+        #expect(model.grid.representativePhoto(for: group) == nil)
     }
 
     @Test func representativePhoto_allLive_returnsFirstPhoto() {
@@ -225,7 +225,7 @@ struct ContentViewModelMiscTests {
         let p1 = Photo(filename: "1.jpg", fileURL: URL(fileURLWithPath: "/tmp/V556_rep_1.jpg"), fileSize: 100, width: 10, height: 10)
         let p2 = Photo(filename: "2.jpg", fileURL: URL(fileURLWithPath: "/tmp/V556_rep_2.jpg"), fileSize: 100, width: 10, height: 10)
         let group = DateGroup(id: "live", label: "今天", sortKey: Date(), photos: [p1, p2])
-        #expect(model.representativePhoto(for: group)?.id == p1.id, "全 live 时应取 first")
+        #expect(model.grid.representativePhoto(for: group)?.id == p1.id, "全 live 时应取 first")
     }
 
     @Test func representativePhoto_firstTrashed_returnsFirstLive() {
@@ -234,7 +234,7 @@ struct ContentViewModelMiscTests {
         p1.trashedAt = Date()
         let p2 = Photo(filename: "2.jpg", fileURL: URL(fileURLWithPath: "/tmp/V556_rep_4.jpg"), fileSize: 100, width: 10, height: 10)
         let group = DateGroup(id: "mixed", label: "今天", sortKey: Date(), photos: [p1, p2])
-        let rep = model.representativePhoto(for: group)
+        let rep = model.grid.representativePhoto(for: group)
         #expect(rep?.id == p2.id, "first trashed 时应跳过取 p2")
         #expect(rep?.isInTrash == false, "代表图必须 non-trashed")
     }
@@ -248,7 +248,7 @@ struct ContentViewModelMiscTests {
         let p2 = Photo(filename: "2.jpg", fileURL: URL(fileURLWithPath: "/tmp/V556_rep_6.jpg"), fileSize: 100, width: 10, height: 10)
         p2.trashedAt = Date()
         let group = DateGroup(id: "allTrashed", label: "今天", sortKey: Date(), photos: [p1, p2])
-        let rep = model.representativePhoto(for: group)
+        let rep = model.grid.representativePhoto(for: group)
         #expect(rep == nil, "全 trashed 应返 nil (V6.11 设计: 不要 fallback first 显灰缩略图)")
     }
 }
