@@ -602,6 +602,14 @@ private struct RatingStarsView: View {
     let onSet: (Int) -> Void
 
     @State private var hoverRating: Int = 0
+    // V6.32.2: 暗色模式感知 — unfilled star opacity
+    @Environment(\.colorScheme) private var colorScheme
+
+    /// V6.32.2: 暗色下 unfilled star 用 0.65 (跟 filled yellow 形成对比)
+    /// 浅色 0.5 (跟 Color.secondary 拉开)
+    private var unfilledStarColor: Color {
+        colorScheme == .dark ? Color.secondary.opacity(0.65) : Color.secondary.opacity(0.5)
+    }
 
     /// 显示的填充范围——max(rating, hoverRating)
     /// hover 时 hoverRating > rating，星星被"推"过去，预览效果
@@ -620,7 +628,7 @@ private struct RatingStarsView: View {
                 } label: {
                     Image(systemName: n <= displayedRating ? "star.fill" : "star")
                         .font(Typography.detailCount)
-                        .foregroundStyle(n <= displayedRating ? Color.yellow : Color.secondary.opacity(0.5))
+                        .foregroundStyle(n <= displayedRating ? Color.yellow : unfilledStarColor)
                 }
                 .buttonStyle(.plain)
                 .onHover { isHovered in

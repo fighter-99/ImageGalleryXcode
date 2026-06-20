@@ -14,6 +14,13 @@ import SwiftUI
 struct OnboardingView: View {
     @Binding var hasSeenOnboarding: Bool
     @State private var currentPage = 0
+    // V6.32.2: 暗色模式感知 — inactive dot opacity
+    @Environment(\.colorScheme) private var colorScheme
+
+    /// V6.32.2: 暗色下 .secondary 更暗, 用 0.4 保持可见对比
+    private var inactiveDotColor: Color {
+        colorScheme == .dark ? Color.secondary.opacity(0.4) : Color.secondary.opacity(0.3)
+    }
 
     private static let pages: [OnboardingPage] = [
         OnboardingPage(
@@ -56,10 +63,12 @@ struct OnboardingView: View {
 
             // V6.22.3: 自定义 page indicator (macOS 适配)
             //   TabView content + 底部 dots, 类似 iOS page indicator 风格但用 SwiftUI
+            // V6.32.2: 暗色模式 — 暗色下 .secondary.opacity(0.3) 不够 visible (整体太暗),
+            //   提升到 0.4 (暗色感知 .secondary 更暗, 需要更高 opacity 才能跟选中 dot 形成对比)
             HStack(spacing: 8) {
                 ForEach(0..<Self.pages.count, id: \.self) { index in
                     Circle()
-                        .fill(index == currentPage ? Color.accentColor : Color.secondary.opacity(0.3))
+                        .fill(index == currentPage ? Color.accentColor : inactiveDotColor)
                         .frame(width: 8, height: 8)
                 }
             }
