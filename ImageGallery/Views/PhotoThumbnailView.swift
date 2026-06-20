@@ -247,6 +247,11 @@ private struct PhotoCellContent: View {
                     // V5.34: .fit → .fill——回 Photos.app Library 真版
                     // V6.12.12: 砍 .square 模式后只剩 .squareFit——永远 .fit (letterbox 不裁切)
                     loadedImageView(nsImage)
+                        // V6.34.0: selection overlay 应用到 image 而非 VStack
+                        //   之前 .overlay(cellSelectionOverlay) 在外层 VStack (含 Spacers)
+                        //   letterbox 图像只占 VStack 中间, overlay 贴到 VStack 边缘 = 容器边缘
+                        //   现在 overlay 跟 image 同一坐标系, 贴到 image 实际边缘
+                        .overlay(cellSelectionOverlay)
                 } else if loadFailed {
                     RoundedRectangle(cornerRadius: Radius.lg)
                         .fill(.quaternary)
@@ -260,11 +265,13 @@ private struct PhotoCellContent: View {
                             }
                             .foregroundStyle(.secondary)
                         }
+                        .overlay(cellSelectionOverlay)
                 } else {
                     RoundedRectangle(cornerRadius: Radius.lg)
                         .fill(.quaternary)
                         .aspectRatio(aspectRatio, contentMode: .fill)
                         .shimmer()
+                        .overlay(cellSelectionOverlay)
                 }
             }
             Spacer(minLength: 0)
@@ -372,9 +379,9 @@ private struct PhotoCellContent: View {
             // V3.6.26: 改用 .task + 异步加载，主线程不阻塞
             // V4.4.0: 三态 → 加载中 (shimmer 骨架) / 加载失败 (exclamationmark) / 已加载 (Image)
             // V6.22.7: 抽 imageOrPlaceholder helper — VStack + Group + 3-branch if/else 触发 type-check timeout
+            // V6.34.0: 移除外层 .overlay(cellSelectionOverlay) — overlay 已在 imageOrPlaceholder 内部每分支应用
+            //   避免双重 overlay 叠加 (VStack 边缘 + image 边缘)
             imageOrPlaceholder
-                // V5.98: 选中 overlay 贴 image
-                .overlay(cellSelectionOverlay)
                 .animation(Animations.standard, value: selectionState)
                 // V5.32: 600px maxPixelSize (200pt cell × 2x retina = 400px, 50% headroom)
                 .task(id: photo.id) {
