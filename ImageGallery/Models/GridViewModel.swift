@@ -283,14 +283,14 @@ final class GridViewModel {
     /// V6.08: .folder/.tag 改 UUID 存储, 名字从 modelContext fetch
     var currentViewTitle: String {
         switch core?.sidebarSelection {
-        case .all, .none:           return "全部照片"
-        case .unfiled:              return "待整理"
-        case .duplicates:           return "重复图"
-        case .recent7Days:          return "最近 7 天"
-        case .largeFiles:           return "大图（>5MB）"
+        case .all, .none:           return Copy.gridViewTitleAll
+        case .unfiled:              return Copy.sidebarUnfiled
+        case .duplicates:           return Copy.sidebarDuplicates
+        case .recent7Days:          return Copy.gridTitleRecent7Days
+        case .largeFiles:           return Copy.gridTitleLargeFiles
         case .recentlyDeleted:      return Term.recycleBin
-        case .folder:               return currentFolder?.name ?? "全部照片"
-        case .tag:                  return currentTag.map { "#\($0.name)" } ?? "全部照片"
+        case .folder:               return currentFolder?.name ?? Copy.gridViewTitleAll
+        case .tag:                  return currentTag.map { "#\($0.name)" } ?? Copy.gridViewTitleAll
         // P4.1.1: 智能文件夹标题 — 名字来自 decoded entity, 删除时 fallback "智能文件夹"
         case .smartFolder:          return currentSmartFolder?.name ?? Copy.smartFolderFallback
         }
@@ -302,9 +302,9 @@ final class GridViewModel {
         let count = visiblePhotos.count
         let bytes = visiblePhotos.reduce(Int64(0)) { $0 + $1.fileSize }
         let size = ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)
-        var s = "\(count) 张 · \(size)"
+        var s = Copy.statusCountAndSize(count, size: size)
         if let activeCount = core?.filterState.activeCount, core?.filterState.isActive == true {
-            s += " · 已筛选 (\(activeCount))"
+            s += Copy.statusFilteredSuffix(activeCount)
         }
         return s
     }
@@ -321,14 +321,14 @@ final class GridViewModel {
     /// V4.0.0: dialog 标题——批量删除 (复用 showingDuplicateCheck binding 模式)
     var batchDeleteTitle: String {
         let n = selection.selectedIDs.count
-        return n == 0 ? Copy.deleteConfirmTitle : "\(n) 张图片"
+        return n == 0 ? Copy.deleteConfirmTitle : Copy.alertDeleteNPhotos(n)
     }
 
     /// V4.0.0: 重复检测 dialog title
     /// V6.28.1: importDuplicateCheck 迁 ImportViewModel — 走 core?.importVM.importDuplicateCheck
     var duplicateDialogTitle: String {
         guard let check = core?.importVM.importDuplicateCheck else { return "" }
-        return "发现 \(check.existing.count) 张已存在 / \(check.newCount) 张新文件"
+        return Copy.duplicatesFoundBreakdown(check.existing.count, newCount: check.newCount)
     }
 
     // MARK: - Init
@@ -371,7 +371,7 @@ final class GridViewModel {
             return item
         }
         pasteboard.writeObjects(items)
-        enqueueToastHandler(urls.count == 1 ? "已复制 1 张图片" : "已复制 \(urls.count) 张图片", .success, .normal, nil)
+        enqueueToastHandler(Copy.copiedToPasteboard(urls.count), .success, .normal, nil)
     }
 
     /// V6.19.0 (P0 #1): 多图分享 — NSSharingServicePicker (Photos.app 范式)
@@ -385,7 +385,7 @@ final class GridViewModel {
         } else if let photo = singleSelectedPhoto {
             urls = [photo.fileURL]
         } else {
-            enqueueToastHandler("请先选择要分享的图片", .info, .normal, nil)
+            enqueueToastHandler(Copy.toastSelectShareFirst, .info, .normal, nil)
             return []
         }
         return urls
@@ -400,7 +400,7 @@ final class GridViewModel {
     func rotateSelected(clockwise: Bool) {
         let photos = selection.selectedPhotos(in: visiblePhotos)
         guard !photos.isEmpty else {
-            enqueueToastHandler("请先选择要旋转的图片", .info, .normal, nil)
+            enqueueToastHandler(Copy.toastSelectRotateFirst, .info, .normal, nil)
             return
         }
         // V6.35.3: capture 旋转前 orientation (每张图) — undo 还原用
@@ -419,7 +419,7 @@ final class GridViewModel {
                 successCount += 1
             }
         }
-        let message = successCount == 1 ? "已旋转 1 张图片" : "已旋转 \(successCount) 张图片"
+        let message = Copy.toastRotated(successCount)
         enqueueToastHandler(message, successCount == photos.count ? .success : .warning, .normal, nil)
 
         // V6.35.3: register undo (coalesceId="rotate" — 1s 内连续旋转合并)
@@ -434,9 +434,9 @@ final class GridViewModel {
                     PhotoRotationService.invalidateThumbnail(for: snap.photo.fileURL)
                 }
             }
-            self.enqueueToastHandler("已撤销旋转 \(capturedCount) 张", .info, .normal, nil)
+            self.enqueueToastHandler(Copy.toastUndoRotate(capturedCount), .info, .normal, nil)
         }
-        undoManager.registerUndoOnly(description: "旋转 \(capturedCount) 张照片", undo: undo, coalesceId: "rotate")
+        undoManager.registerUndoOnly(description: Copy.undoRotate(capturedCount), undo: undo, coalesceId: "rotate")
     }
 
     /// V6.22.1: 读 EXIF orientation — 用 CGImageSourceCopyPropertiesAtIndex
@@ -456,14 +456,14 @@ final class GridViewModel {
     func speakSelection() {
         let photos = selection.selectedPhotos(in: visiblePhotos)
         guard !photos.isEmpty else {
-            enqueueToastHandler("请先选择要朗读的图片", .info, .normal, nil)
+            enqueueToastHandler(Copy.toastSelectSpeakFirst, .info, .normal, nil)
             return
         }
         let message: String
         if photos.count == 1 {
-            message = "已选 1 张照片，文件名 \(photos[0].filename)"
+            message = Copy.speakOnePhoto(photos[0].filename)
         } else {
-            message = "已选 \(photos.count) 张照片，第一张 \(photos[0].filename)"
+            message = Copy.speakMultiplePhotos(photos.count, firstFilename: photos[0].filename)
         }
         let utterance = AVSpeechUtterance(string: message)
         // V6.20.3 (code audit fix #13): voice fallback chain — zh-CN → 当前 locale → en-US → system default
@@ -598,9 +598,9 @@ final class GridViewModel {
             RecycleBinService(storage: .shared, modelContext: modelContext).restore(capturedPhoto)
         }
         // 同步: undoManager push + toast undoAction (⌘Z + 点 [撤销] 都能恢复)
-        undoManager.registerUndoOnly(description: "删除 1 张照片", undo: undo)
+        undoManager.registerUndoOnly(description: Copy.undoDeleteOne, undo: undo)
         enqueueToastHandler(
-            "已移到回收站（\(settings.trashRetentionDays) 天后永久删除）",
+            Copy.movedToRecycleBin(1, retentionDays: settings.trashRetentionDays),
             .info,
             .normal,
             undo
@@ -623,12 +623,12 @@ final class GridViewModel {
             for photo in capturedPhotos {
                 service.restore(photo)
             }
-            self.enqueueToastHandler("已恢复 \(capturedPhotos.count) 张图片", .success, .normal, nil)
+            self.enqueueToastHandler(Copy.toastRestored(capturedPhotos.count), .success, .normal, nil)
         }
         // 同步: undoManager push + toast undoAction
-        undoManager.registerUndoOnly(description: "删除 \(count) 张照片", undo: undo)
+        undoManager.registerUndoOnly(description: Copy.undoDeleteMany(count), undo: undo)
         enqueueToastHandler(
-            "已移到回收站 \(count) 张",
+            Copy.toastMovedToRecycleBinCount(count),
             .info,
             .normal,
             undo
@@ -647,11 +647,11 @@ final class GridViewModel {
         guard !photosToMove.isEmpty, let modelContext = core?.modelContext else { return }
         let oldFolders = photosToMove.map { $0.folder }
         let count = photosToMove.count
-        let folderName = folder?.name ?? "未整理"
+        let folderName = folder?.name ?? Copy.folderNameUnfiledFallback
 
         // V6.36.3: coalesceId="move" — 1s 内连续 batchMove 合并 (Photos.app 行为)
         undoManager.registerAction(
-            description: "移动 \(count) 张照片到 \(folderName)",
+            description: Copy.undoMoveToFolder(count, folderName: folderName),
             action: { [weak self] in
                 for photo in photosToMove {
                     photo.folder = folder
@@ -745,7 +745,7 @@ final class GridViewModel {
         //   用 labeled closure 参数 (action/undo 显式 label) — coalesceId 必须在末位
         //   trailing closure 语法只能用在最后一个 closure 参数, 多个 closure 必须 labeled
         undoManager.registerAction(
-            description: "批量重命名 \(count) 张照片",
+            description: Copy.undoBatchRename(count),
             action: { [weak self] in
                 var errors = 0
                 for p in plans {
@@ -762,9 +762,9 @@ final class GridViewModel {
                 }
                 modelContext.saveWithLog()
                 if errors > 0 {
-                    self?.enqueueToastHandler("部分重命名失败：\(errors) 张", .error, .long, nil)
+                    self?.enqueueToastHandler(Copy.toastBatchRenamePartialFail(errors), .error, .long, nil)
                 } else {
-                    self?.enqueueToastHandler("已重命名 \(count) 张照片", .success, .long, nil)
+                    self?.enqueueToastHandler(Copy.toastBatchRenameSuccess(count), .success, .long, nil)
                 }
                 _ = self
             },
@@ -784,7 +784,7 @@ final class GridViewModel {
                 }
                 modelContext.saveWithLog()
                 if undoErrors > 0 {
-                    self?.enqueueToastHandler("部分撤销失败：\(undoErrors) 张", .error, .long, nil)
+                    self?.enqueueToastHandler(Copy.toastBatchRenameUndoPartialFail(undoErrors), .error, .long, nil)
                 }
                 _ = self
             },
@@ -818,7 +818,7 @@ final class GridViewModel {
                 modelContext.saveWithLog { _ in }
             }
         }
-        undoManager.registerUndoOnly(description: "评分 \(rating) 星", undo: undo, coalesceId: "rate")
+        undoManager.registerUndoOnly(description: Copy.undoRate(rating), undo: undo, coalesceId: "rate")
     }
 
     /// 批量导出
@@ -827,7 +827,7 @@ final class GridViewModel {
         guard !photosToExport.isEmpty else { return }
 
         let panel = NSOpenPanel()
-        panel.title = "选择导出位置"
+        panel.title = Copy.exportPanelTitle
         panel.prompt = "导出"
         panel.canChooseFiles = false
         panel.canChooseDirectories = true

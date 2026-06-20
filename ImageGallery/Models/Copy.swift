@@ -25,7 +25,9 @@ enum Copy {
     static func movedDuplicates(_ count: Int) -> String { String.localizedStringWithFormat(String(localized: "movedDuplicates", defaultValue: "已移到回收站 %lld 张重复图"), count) }
     static func recycledBinEmptied(_ count: Int) -> String { String.localizedStringWithFormat(String(localized: "recycledBinEmptied", defaultValue: "已清空回收站（%lld 张）"), count) }
     static func copiedToPasteboard(_ count: Int) -> String {
-        count == 1 ? "已复制 1 张图片" : "已复制 \(count) 张图片"
+        // V6.37.9 printf 修复: 原 'count == 1 ? ... : ...\\(count) ...' 是 Swift 字面拼接 — i18n 盲点
+        //   英文 "Copied 1 photo" / "Copied 2 photos" 复数变化不在 zh 体现, 但 word order 仍可调整
+        String.localizedStringWithFormat(String(localized: "copiedToPasteboard", defaultValue: "已复制 %lld 张图片"), count)
     }
 
     // MARK: - 错误 (3 段式)
@@ -136,10 +138,18 @@ enum Copy {
     // MARK: - V6.22.2 (P2 #8): VoiceOver / a11y 标签
     static let accessibilitySelected = String(localized: "accessibilitySelected", defaultValue: "已选中")
     static let accessibilityUnselected = String(localized: "accessibilityUnselected", defaultValue: "未选中")
+    // V6.37.9: accessibilityPhotoLabel 拆解 — 子串 (rating/selected suffix) 走 Copy
+    //   原 '\\(filename)\\(ratingText)\\(stateText)' 子串硬编码, zh-Hant 不能改 word order
+    //   现在 rating/selected 各走 Copy key, 内部拼接
     static func accessibilityPhotoLabel(_ filename: String, rating: Int, selected: Bool) -> String {
-        let ratingText = rating > 0 ? "，\(rating) 星" : ""
-        let stateText = selected ? "，已选中" : ""
-        return "\(filename)\(ratingText)\(stateText)"
+        var result = filename
+        if rating > 0 {
+            result += String.localizedStringWithFormat(String(localized: "accessibilityRatingSuffix", defaultValue: "，%lld 星"), rating)
+        }
+        if selected {
+            result += String(localized: "accessibilitySelectedSuffix", defaultValue: "，已选中")
+        }
+        return result
     }
 
     // MARK: - 视图模式 (V5.50-4 扩展——菜单用全名，区别于设置面板的 "网格" 简称)
@@ -682,4 +692,82 @@ enum Copy {
     static func batchRenameCollisionWarning(_ count: Int) -> String {
         String.localizedStringWithFormat(String(localized: "batchRenameCollisionWarning", defaultValue: "模板会产生 %lld 个重名 — Apply 时会自动加 _1 _2 后缀"), count)
     }
+
+    // MARK: - V6.37.9: Models + ViewModels + Copy 自身修复收尾
+    // GridViewModel — sidebar enum case + status text + 各种 toast
+    static let gridViewTitleAll = String(localized: "gridViewTitleAll", defaultValue: "全部照片")
+    // status: "X 张 · Y" (%lld + %@) + " · 已筛选 (X)" suffix
+    static func statusCountAndSize(_ count: Int, size: String) -> String {
+        String.localizedStringWithFormat(String(localized: "statusCountAndSize", defaultValue: "%lld 张 · %@"), count, size)
+    }
+    static func statusFilteredSuffix(_ activeCount: Int) -> String {
+        String.localizedStringWithFormat(String(localized: "statusFilteredSuffix", defaultValue: " · 已筛选 (%lld)"), activeCount)
+    }
+    // delete alert: "X 张图片" (%lld)
+    static func alertDeleteNPhotos(_ n: Int) -> String {
+        String.localizedStringWithFormat(String(localized: "alertDeleteNPhotos", defaultValue: "%lld 张图片"), n)
+    }
+    // duplicates alert: "发现 X 张已存在 / Y 张新文件" (%lld + %lld)
+    static func duplicatesFoundBreakdown(_ existing: Int, newCount: Int) -> String {
+        String.localizedStringWithFormat(String(localized: "duplicatesFoundBreakdown", defaultValue: "发现 %lld 张已存在 / %lld 张新文件"), existing, newCount)
+    }
+    // 选空 toast (3 类)
+    static let toastSelectShareFirst = String(localized: "toastSelectShareFirst", defaultValue: "请先选择要分享的图片")
+    static let toastSelectRotateFirst = String(localized: "toastSelectRotateFirst", defaultValue: "请先选择要旋转的图片")
+    static let toastSelectSpeakFirst = String(localized: "toastSelectSpeakFirst", defaultValue: "请先选择要朗读的图片")
+    // rotate toast + undo
+    static func toastRotated(_ count: Int) -> String {
+        String.localizedStringWithFormat(String(localized: "toastRotated", defaultValue: "已旋转 %lld 张图片"), count)
+    }
+    static func toastUndoRotate(_ count: Int) -> String {
+        String.localizedStringWithFormat(String(localized: "toastUndoRotate", defaultValue: "已撤销旋转 %lld 张"), count)
+    }
+    static func undoRotate(_ count: Int) -> String {
+        String.localizedStringWithFormat(String(localized: "undoRotate", defaultValue: "旋转 %lld 张照片"), count)
+    }
+    // speak 反馈 (含 filename %@)
+    static func speakOnePhoto(_ filename: String) -> String {
+        String.localizedStringWithFormat(String(localized: "speakOnePhoto", defaultValue: "已选 1 张照片，文件名 %@"), filename)
+    }
+    static func speakMultiplePhotos(_ count: Int, firstFilename: String) -> String {
+        String.localizedStringWithFormat(String(localized: "speakMultiplePhotos", defaultValue: "已选 %lld 张照片，第一张 %@"), count, firstFilename)
+    }
+    // undo descriptions (delete 1/多)
+    static let undoDeleteOne = String(localized: "undoDeleteOne", defaultValue: "删除 1 张照片")
+    static func undoDeleteMany(_ count: Int) -> String {
+        String.localizedStringWithFormat(String(localized: "undoDeleteMany", defaultValue: "删除 %lld 张照片"), count)
+    }
+    // restore / moved toast
+    static func toastRestored(_ count: Int) -> String {
+        String.localizedStringWithFormat(String(localized: "toastRestored", defaultValue: "已恢复 %lld 张图片"), count)
+    }
+    static func toastMovedToRecycleBinCount(_ count: Int) -> String {
+        String.localizedStringWithFormat(String(localized: "toastMovedToRecycleBinCount", defaultValue: "已移到回收站 %lld 张"), count)
+    }
+    // folder unfiled fallback
+    static let folderNameUnfiledFallback = String(localized: "folderNameUnfiledFallback", defaultValue: "未整理")
+    // undo description for batch move (%lld + %@)
+    static func undoMoveToFolder(_ count: Int, folderName: String) -> String {
+        String.localizedStringWithFormat(String(localized: "undoMoveToFolder", defaultValue: "移动 %lld 张照片到 %@"), count, folderName)
+    }
+    // batch rename undo + 3 toast
+    static func undoBatchRename(_ count: Int) -> String {
+        String.localizedStringWithFormat(String(localized: "undoBatchRename", defaultValue: "批量重命名 %lld 张照片"), count)
+    }
+    static func toastBatchRenamePartialFail(_ count: Int) -> String {
+        String.localizedStringWithFormat(String(localized: "toastBatchRenamePartialFail", defaultValue: "部分重命名失败:%lld 张"), count)
+    }
+    static func toastBatchRenameSuccess(_ count: Int) -> String {
+        String.localizedStringWithFormat(String(localized: "toastBatchRenameSuccess", defaultValue: "已重命名 %lld 张照片"), count)
+    }
+    static func toastBatchRenameUndoPartialFail(_ count: Int) -> String {
+        String.localizedStringWithFormat(String(localized: "toastBatchRenameUndoPartialFail", defaultValue: "部分撤销失败:%lld 张"), count)
+    }
+    // batch rating undo description
+    static func undoRate(_ rating: Int) -> String {
+        String.localizedStringWithFormat(String(localized: "undoRate", defaultValue: "评分 %lld 星"), rating)
+    }
+    // Export / Import panel title
+    static let exportPanelTitle = String(localized: "exportPanelTitle", defaultValue: "选择导出位置")
+    static let importPanelTitle = String(localized: "importPanelTitle", defaultValue: "选择图片或文件夹")
 }

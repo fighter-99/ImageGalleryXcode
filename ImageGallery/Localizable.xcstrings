@@ -229,6 +229,30 @@
         }
       }
     },
+    "accessibilityRatingSuffix" : {
+      "comment" : "V6.37.9: Copy.accessibilityRatingSuffix → ，%lld 星",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : ", %lld stars"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "，%lld 星"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "，%lld 星"
+          }
+        }
+      }
+    },
     "accessibilitySelected" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -498,6 +522,30 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "应用"
+          }
+        }
+      }
+    },
+    "alertDeleteNPhotos" : {
+      "comment" : "V6.37.9: Copy.alertDeleteNPhotos → %lld 张图片",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld photos"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 张图片"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 張圖片"
           }
         }
       }
@@ -1829,6 +1877,30 @@
         }
       }
     },
+    "duplicatesFoundBreakdown" : {
+      "comment" : "V6.37.9: Copy.duplicatesFoundBreakdown → 发现 %lld 张已存在 / %lld 张新文件",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Found %lld existing / %lld new files"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "发现 %lld 张已存在 / %lld 张新文件"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "發現 %lld 張已存在 / %lld 張新檔案"
+          }
+        }
+      }
+    },
     "duplicatesFoundGroups" : {
       "comment" : "V6.12.17: V Copy.duplicatesFoundGroups → 发现 \\(count) 组重复",
       "extractionState" : "manual",
@@ -2379,6 +2451,30 @@
         }
       }
     },
+    "exportPanelTitle" : {
+      "comment" : "V6.37.9: Copy.exportPanelTitle → 选择导出位置",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose Export Location"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择导出位置"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選擇匯出位置"
+          }
+        }
+      }
+    },
     "exportQualityPercent" : {
       "comment" : "V6.12.19: Copy.exportQualityPercent(_:) → %lld%% (SettingsView export quality slider)",
       "extractionState" : "manual",
@@ -2595,6 +2691,30 @@
         }
       }
     },
+    "folderNameUnfiledFallback" : {
+      "comment" : "V6.37.9: Copy.folderNameUnfiledFallback → 未整理",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unfiled"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未整理"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未整理"
+          }
+        }
+      }
+    },
     "fontScaleCompact" : {
       "comment" : "V6.37.1: Copy.fontScaleCompact → 紧凑",
       "extractionState" : "manual",
@@ -2759,6 +2879,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "搜尋: %@"
+          }
+        }
+      }
+    },
+    "gridViewTitleAll" : {
+      "comment" : "V6.37.9: Copy.gridViewTitleAll → 全部照片",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All Photos"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全部照片"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "所有照片"
           }
         }
       }
@@ -3023,6 +3167,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "全部匯入（可能重複）"
+          }
+        }
+      }
+    },
+    "importPanelTitle" : {
+      "comment" : "V6.37.9: Copy.importPanelTitle → 选择图片或文件夹",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose Photos or Folder"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择图片或文件夹"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選擇圖片或資料夾"
           }
         }
       }
@@ -8167,6 +8335,102 @@
         }
       }
     },
+    "speakMultiplePhotos" : {
+      "comment" : "V6.37.9: Copy.speakMultiplePhotos → 已选 %lld 张照片，第一张 %@",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Selected %lld photos, first %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已选 %lld 张照片，第一张 %@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已選 %lld 張照片，第一張 %@"
+          }
+        }
+      }
+    },
+    "speakOnePhoto" : {
+      "comment" : "V6.37.9: Copy.speakOnePhoto → 已选 1 张照片，文件名 %@",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Selected 1 photo, filename %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已选 1 张照片，文件名 %@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已選 1 張照片，檔名 %@"
+          }
+        }
+      }
+    },
+    "statusCountAndSize" : {
+      "comment" : "V6.37.9: Copy.statusCountAndSize → %lld 张 · %@",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld photos · %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 张 · %@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 張 · %@"
+          }
+        }
+      }
+    },
+    "statusFilteredSuffix" : {
+      "comment" : "V6.37.9: Copy.statusFilteredSuffix →  · 已筛选 (%lld)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : " · Filtered (%lld)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : " · 已筛选 (%lld)"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : " · 已篩選 (%lld)"
+          }
+        }
+      }
+    },
     "statusSeparator" : {
       "comment" : "V6.12.17: V Copy.statusSeparator → ·",
       "extractionState" : "manual",
@@ -8750,6 +9014,78 @@
         }
       }
     },
+    "toastBatchRenamePartialFail" : {
+      "comment" : "V6.37.9: Copy.toastBatchRenamePartialFail → 部分重命名失败:%lld 张",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Some renames failed: %lld"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "部分重命名失败:%lld 张"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "部分重新命名失敗:%lld 張"
+          }
+        }
+      }
+    },
+    "toastBatchRenameSuccess" : {
+      "comment" : "V6.37.9: Copy.toastBatchRenameSuccess → 已重命名 %lld 张照片",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Renamed %lld photos"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已重命名 %lld 张照片"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已重新命名 %lld 張照片"
+          }
+        }
+      }
+    },
+    "toastBatchRenameUndoPartialFail" : {
+      "comment" : "V6.37.9: Copy.toastBatchRenameUndoPartialFail → 部分撤销失败:%lld 张",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Some undos failed: %lld"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "部分撤销失败:%lld 张"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "部分復原失敗:%lld 張"
+          }
+        }
+      }
+    },
     "toastCloseHelp" : {
       "comment" : "V6.37.5: Copy.toastCloseHelp → 关闭",
       "extractionState" : "manual",
@@ -8774,6 +9110,150 @@
         }
       }
     },
+    "toastMovedToRecycleBinCount" : {
+      "comment" : "V6.37.9: Copy.toastMovedToRecycleBinCount → 已移到回收站 %lld 张",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moved %lld photos to Recycle Bin"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已移到回收站 %lld 张"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已移到垃圾桶 %lld 張"
+          }
+        }
+      }
+    },
+    "toastRestored" : {
+      "comment" : "V6.37.9: Copy.toastRestored → 已恢复 %lld 张图片",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restored %lld photos"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已恢复 %lld 张图片"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已還原 %lld 張圖片"
+          }
+        }
+      }
+    },
+    "toastRotated" : {
+      "comment" : "V6.37.9: Copy.toastRotated → 已旋转 %lld 张图片",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rotated %lld photos"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已旋转 %lld 张图片"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已旋轉 %lld 張圖片"
+          }
+        }
+      }
+    },
+    "toastSelectRotateFirst" : {
+      "comment" : "V6.37.9: Copy.toastSelectRotateFirst → 请先选择要旋转的图片",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select photos to rotate first"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请先选择要旋转的图片"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請先選擇要旋轉的圖片"
+          }
+        }
+      }
+    },
+    "toastSelectShareFirst" : {
+      "comment" : "V6.37.9: Copy.toastSelectShareFirst → 请先选择要分享的图片",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select photos to share first"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请先选择要分享的图片"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請先選擇要分享的圖片"
+          }
+        }
+      }
+    },
+    "toastSelectSpeakFirst" : {
+      "comment" : "V6.37.9: Copy.toastSelectSpeakFirst → 请先选择要朗读的图片",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select photos to speak first"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请先选择要朗读的图片"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請先選擇要朗讀的圖片"
+          }
+        }
+      }
+    },
     "toastUndoHelp" : {
       "comment" : "V6.37.5: Copy.toastUndoHelp → 撤销 (⌘Z)",
       "extractionState" : "manual",
@@ -8794,6 +9274,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "復原 (⌘Z)"
+          }
+        }
+      }
+    },
+    "toastUndoRotate" : {
+      "comment" : "V6.37.9: Copy.toastUndoRotate → 已撤销旋转 %lld 张",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Undid rotation of %lld photos"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已撤销旋转 %lld 张"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已復原旋轉 %lld 張"
           }
         }
       }
@@ -8966,6 +9470,126 @@
         }
       }
     },
+    "undoBatchRename" : {
+      "comment" : "V6.37.9: Copy.undoBatchRename → 批量重命名 %lld 张照片",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Batch rename %lld photos"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "批量重命名 %lld 张照片"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "批次重新命名 %lld 張照片"
+          }
+        }
+      }
+    },
+    "undoDeleteMany" : {
+      "comment" : "V6.37.9: Copy.undoDeleteMany → 删除 %lld 张照片",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete %lld photos"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除 %lld 张照片"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刪除 %lld 張照片"
+          }
+        }
+      }
+    },
+    "undoDeleteOne" : {
+      "comment" : "V6.37.9: Copy.undoDeleteOne → 删除 1 张照片",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete 1 photo"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除 1 张照片"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刪除 1 張照片"
+          }
+        }
+      }
+    },
+    "undoMoveToFolder" : {
+      "comment" : "V6.37.9: Copy.undoMoveToFolder → 移动 %lld 张照片到 %@",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Move %lld photos to %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移动 %lld 张照片到 %@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移動 %lld 張照片到 %@"
+          }
+        }
+      }
+    },
+    "undoRate" : {
+      "comment" : "V6.37.9: Copy.undoRate → 评分 %lld 星",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rate %lld stars"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "评分 %lld 星"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "評分 %lld 星"
+          }
+        }
+      }
+    },
     "undoRemoveTag" : {
       "comment" : "V6.37.2: Copy.undoRemoveTag → 移除标签 %@",
       "extractionState" : "manual",
@@ -9010,6 +9634,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "重新命名為 %@"
+          }
+        }
+      }
+    },
+    "undoRotate" : {
+      "comment" : "V6.37.9: Copy.undoRotate → 旋转 %lld 张照片",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rotate %lld photos"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "旋转 %lld 张照片"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "旋轉 %lld 張照片"
           }
         }
       }

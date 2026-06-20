@@ -74,7 +74,7 @@ final class ImportViewModel {
         }
 
         let panel = NSOpenPanel()
-        panel.title = "选择图片或文件夹"
+        panel.title = Copy.importPanelTitle
         panel.allowsMultipleSelection = true
         panel.canChooseDirectories = true
         panel.canChooseFiles = true
@@ -182,12 +182,12 @@ final class ImportViewModel {
         }
         let result = importer.importURLs(urls)
         if result.inserted > 0 && result.hasFailures {
-            enqueueToastHandler("已导入 \(result.inserted) 张，\(result.failureCount) 张失败", .info, .normal, nil)
+            enqueueToastHandler(Copy.importedPartial(inserted: result.inserted, failed: result.failureCount), .info, .normal, nil)
         } else if result.inserted > 0 {
-            enqueueToastHandler("已导入 \(result.inserted) 张图片", .success, .normal, nil)
+            enqueueToastHandler(Copy.imported(result.inserted), .success, .normal, nil)
         }
         for (url, _) in result.failures where result.inserted == 0 {
-            enqueueToastHandler("导入失败：\(url.lastPathComponent)", .error, .long, nil)
+            enqueueToastHandler(Copy.importFailed(url.lastPathComponent), .error, .long, nil)
         }
     }
 
