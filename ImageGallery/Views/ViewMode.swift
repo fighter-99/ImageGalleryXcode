@@ -173,12 +173,15 @@ struct PhotoListRow: View {
     }
 
     /// 行背景：选中 > 多选 > hover > 默认
+    /// V6.32.1: 多选态用 Surface.selectedStrong — 暗色下 opacity 从 0.16 → 0.22 增强对比
+    @Environment(\.colorScheme) private var scheme
+
     private var rowBackground: some View {
         Group {
             if isActive {
                 Color.accentColor
             } else if isInMultiSelect {
-                Surface.selected
+                Surface.selectedStrong(for: scheme)
             } else if isHovered {
                 Surface.hover
             } else {
@@ -350,6 +353,8 @@ struct TimelineMonthSection: View {
 // MARK: - TimelineThumbnail
 
 struct TimelineThumbnail: View {
+    @Environment(\.colorScheme) private var scheme
+
     let photo: Photo
     let isInMultiSelect: Bool
     let isActive: Bool
@@ -387,8 +392,9 @@ struct TimelineThumbnail: View {
         )
         .overlay {
             if isInMultiSelect {
+                let strong = Surface.selectedStrong(for: scheme)
                 RoundedRectangle(cornerRadius: Radius.sm)
-                    .fill(Surface.selectedStrong)
+                    .fill(strong)
                 Image(systemName: "checkmark.circle.fill")
                     .font(Typography.body)
                     .foregroundStyle(.white, Color.accentColor)

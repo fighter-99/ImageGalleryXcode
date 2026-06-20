@@ -69,8 +69,9 @@ struct SidebarStyleTests {
 
     @Test func activeBackgroundMatchesSurfaceSelected() {
         // V4.6.0: Surface.selected 0.10 → 0.12——视觉锤更明确
-        // SidebarStyle.activeBackground 是 Surface.selected 的别名
-        #expect(SidebarStyle.activeBackground == Surface.selected)
+        // V6.32.1: Surface.selected 变函数 (for: ColorScheme), activeBackground 走 selectedLight
+        // SidebarStyle.activeBackground 是 Surface.selectedLight 的别名 (向后兼容 light mode)
+        #expect(SidebarStyle.activeBackground == Surface.selectedLight)
     }
 
     @Test func hoverBackgroundMatchesSurfaceHover() {

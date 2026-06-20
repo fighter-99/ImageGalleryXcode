@@ -32,6 +32,8 @@ struct SidebarRow: View {
     let action: () -> Void
 
     @State private var isHovered = false
+    // V6.32.1: 暗色模式感知 — selected/selectedStrong opacity 在 light/dark 不同
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         Button(action: action) {
@@ -51,10 +53,11 @@ struct SidebarRow: View {
                 Spacer(minLength: SidebarStyle.rowTextCountSpacing)
 
                 // 计数——V4.6.0 用 SidebarStyle.countFont token
+                // V6.32.1: 暗色下 opacity 从 0.7 → 0.85 (.secondary 在暗色下更暗, 0.7 太弱看不清)
                 if let count = count {
                     Text(Copy.sidebarCount(count))
                         .font(SidebarStyle.countFont)
-                        .foregroundStyle(isSelected ? Color.secondary : Color.secondary.opacity(0.7))
+                        .foregroundStyle(currentCountColor)
                 }
             }
             // V4.6.0: 显式 .frame(height: 28) 统一行高
@@ -87,10 +90,18 @@ struct SidebarRow: View {
     }
 
     /// 背景色：选中 > hover > 默认
+    /// V6.32.1: 选中态走 Surface.selected(for: colorScheme) — dark 模式用 0.18 opacity (比 light 0.12 更醒目)
     private var backgroundColor: Color {
-        if isSelected { return SidebarStyle.activeBackground }
+        if isSelected { return Surface.selected(for: colorScheme) }
         if isHovered { return SidebarStyle.hoverBackground }
         return .clear
+    }
+
+    /// 计数 text 颜色：选中 → secondary (跟 title 同色), 默认 → secondary.opacity
+    /// V6.32.1: dark mode opacity 0.7 → 0.85 — .secondary 在 dark 下偏暗, 0.7 几乎看不到
+    private var currentCountColor: Color {
+        if isSelected { return Color.secondary }
+        return colorScheme == .dark ? Color.secondary.opacity(0.85) : Color.secondary.opacity(0.7)
     }
 
     /// label 颜色：选中 > hover > 默认

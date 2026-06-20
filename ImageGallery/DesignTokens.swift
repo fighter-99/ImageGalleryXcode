@@ -74,11 +74,25 @@ enum Surface {
     // ─── 交互态 ───
     /// hover 时的微妙高亮（两种模式下都自然）
     static let hover = Color.primary.opacity(0.04)
-    /// 选中态的浅 accent 背景
+    /// 选中态的浅 accent 背景 (light mode default)
     /// V4.6.0: 0.10 → 0.12——sidebar active row 视觉锤（"胶囊"效果更明确）
-    static let selected = Color.accentColor.opacity(0.12)
-    /// 多选/强选中态
-    static let selectedStrong = Color.accentColor.opacity(0.16)
+    static let selectedLight = Color.accentColor.opacity(0.12)
+    /// V6.32.1: dark mode 选中态 — 0.18 (比 light 0.12 更醒目, Photos.app 暗色用 ~0.20)
+    ///   浅色 0.12 在暗色下视觉对比不够 (accent 在暗色下更亮, 但 0.12 opacity 仍偏弱)
+    static let selectedDark = Color.accentColor.opacity(0.18)
+    /// 选中态 — V6.32.1 加 colorScheme 参数 (light/dark opacity 不同)
+    ///   调用方传 environment(\.colorScheme) 拿到的 ColorScheme
+    static func selected(for colorScheme: ColorScheme) -> Color {
+        colorScheme == .dark ? selectedDark : selectedLight
+    }
+    /// 多选/强选中态 (light)
+    static let selectedStrongLight = Color.accentColor.opacity(0.16)
+    /// V6.32.1: dark mode 强选中态 — 0.22
+    static let selectedStrongDark = Color.accentColor.opacity(0.22)
+    /// 多选/强选中态 — V6.32.1 加 colorScheme 参数
+    static func selectedStrong(for colorScheme: ColorScheme) -> Color {
+        colorScheme == .dark ? selectedStrongDark : selectedStrongLight
+    }
     /// V6.12: 半饱和 accent——空状态 icon / 拖拽预览描边 (Q12)
     ///   - 0.6 opacity 让 accent 在装饰性场景"说话"但不抢戏
     ///   - 比 selected (0.12) / selectedStrong (0.16) 强得多, 但仍低于 1.0 全饱和
@@ -345,8 +359,14 @@ enum SidebarStyle {
     // ─── 状态色 ───
     /// hover 背景色——Surface.hover 0.04
     static let hoverBackground: Color = Surface.hover
-    /// 选中背景色——Surface.selected 0.12（V4.6.0 从 0.10 提至 0.12）
-    static let activeBackground: Color = Surface.selected
+    /// 选中背景色（向后兼容 — light mode 默认值）——Surface.selectedLight 0.12
+    /// V6.32.1: dark mode 用 activeBackground(for: colorScheme) 走 Surface.selectedDark 0.18
+    /// 保留 Color 静态属性供 SidebarStyleTests 等不感知 colorScheme 的 caller 用
+    static let activeBackground: Color = Surface.selectedLight
+    /// V6.32.1: colorScheme 感知选中背景色 — dark 模式 0.18 / light 0.12
+    static func activeBackground(for colorScheme: ColorScheme) -> Color {
+        Surface.selected(for: colorScheme)
+    }
     /// 默认 label 颜色
     static let labelDefault: Color = Color.primary.opacity(0.85)
     /// hover label 颜色
