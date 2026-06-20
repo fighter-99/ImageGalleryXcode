@@ -209,8 +209,8 @@ struct ContentView: View {
     //   onChange(of: showDetail) 时调 setActive / setTooltip 同步状态
     //   configureNSToolbar 内构造（一次），SwiftUI 重渲不重新构造（@State 持久）
     private var titlebarAccessory: TitlebarAccessoryController? {
-        get { model.titlebarAccessory }
-        nonmutating set { model.titlebarAccessory = newValue }
+        get { model.windowVM.titlebarAccessory }
+        nonmutating set { model.windowVM.titlebarAccessory = newValue }
     }
 
     // V4.20.0: 撤回 V4.19.0 glassNamespace + glassEffectUnion
@@ -379,7 +379,7 @@ struct ContentView: View {
                 layoutMode: layoutMode,
                 thumbnailSize: thumbnailSize,
                 sortOption: sortOption,
-                configureWindow: { model.configureToolbar(window: $0) }
+                configureWindow: { model.windowVM.configureToolbar(window: $0) }
             )
             // V5.59-2: 抽离 4 dialog + 4 onChange + 1 task 到 contentBodyModifiers 解决 type-check 超时
             // V6.28: grid 业务 closure 走 model.grid.X() — Core (startImport/restoreSelection/etc) 仍 model
@@ -480,7 +480,7 @@ struct ContentView: View {
     // V6.19.3 (P0 #13): titlebarAccessoryTooltip 1-line forwarder 删了, 这里直接走 model.X
     private func syncTitlebarAccessory(isActive: Bool) {
         titlebarAccessory?.setActive(isActive)
-        let tooltip = model.titlebarAccessoryTooltip(isActive: isActive)
+        let tooltip = model.windowVM.titlebarAccessoryTooltip(isActive: isActive)
         titlebarAccessory?.setTooltip(tooltip)
     }
 

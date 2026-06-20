@@ -55,7 +55,7 @@ struct ContentViewModelSmokeTests {
         #expect(model.grid.immersivePhoto == nil)
         #expect(model.grid.immersiveIndex == 0)
         #expect(model.storageErrorMessage == nil)
-        #expect(model.titlebarAccessory == nil)
+        #expect(model.windowVM.titlebarAccessory == nil)
         #expect(model.toastQueue.isEmpty == true)
         #expect(model.toastTask == nil)
         #expect(model.importVM.importProgress == nil)

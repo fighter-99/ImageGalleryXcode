@@ -85,7 +85,7 @@ final class ContentViewModel {
     var sidebarSelection: SidebarSelection? = nil
     var filterState = FilterState()
     /// V6.28.1: importProgress 迁 ImportViewModel.importProgress
-    var titlebarAccessory: TitlebarAccessoryController? = nil
+    /// V6.28.2: titlebarAccessory 迁 WindowViewModel.titlebarAccessory
     var toastQueue: [ToastInfo] = []
     var toastTask: Task<Void, Never>? = nil
     var storageErrorMessage: String? = nil
@@ -117,6 +117,12 @@ final class ContentViewModel {
     /// V6.28.1: Import 业务 — 启动 / 拖入 / 重复检测 / 批量导入 / 进度
     ///   caller 走 model.importVM.startImport() / model.importVM.importProgress 等
     let importVM: ImportViewModel
+
+    // MARK: - V6.28.2: Window 子模型
+
+    /// V6.28.2: Window 业务 — NSToolbar 配置 + Titlebar accessory + windowDidBecomeKey
+    ///   caller 走 model.windowVM.configureToolbar(window:) / model.windowVM.titlebarAccessory
+    let windowVM: WindowViewModel
 
     // MARK: - Settings 镜像 wrapper
 
@@ -159,123 +165,7 @@ final class ContentViewModel {
     let detailMaxWidth: CGFloat = 480
     let contentMinWidth: CGFloat = 400
 
-    // MARK: - V5.52-6: configureToolbar 搬过来——12 个 ToolbarController 闭包
-
-    /// V4.8.0: NSToolbar 配置（WindowAccessor 触发）
-    /// V6.28: Grid 业务闭包走 model.grid.X() (Core 业务仍 model.X())
-    func configureToolbar(window: NSWindow) {
-        // 只在第一次设置
-        guard window.toolbar == nil else { return }
-
-        let toolbar = NSToolbar(identifier: NSToolbar.Identifier("MainToolbar"))
-        toolbar.delegate = ToolbarController.shared
-        toolbar.displayMode = .iconOnly
-        // V4.8.3: centeredItemIdentifiers = [.search] 让搜索框居中
-        toolbar.centeredItemIdentifiers = [ToolbarController.Identifier.search.nsIdentifier]
-        toolbar.allowsUserCustomization = true   // 用户可自定义 toolbar items
-        toolbar.autosavesConfiguration = true   // 自定义状态自动保存
-        toolbar.showsBaselineSeparator = false  // 不显示底部分隔线
-        if #available(macOS 14.0, *) {
-            toolbar.allowsDisplayModeCustomization = true
-        }
-
-        // 绑 action closures
-        let controller = ToolbarController.shared
-        controller.onToggleSidebar = { [model = self] in
-            withAnimation(Animations.medium) { model.settings.showSidebar.toggle() }
-        }
-        // V5.7: 砍 onToggleFavorite——工具栏 ❤ 收藏按钮已移除
-        controller.onBatchExport = { [model = self] in
-            model.grid.batchExport()
-        }
-        controller.onDelete = { [model = self] in
-            model.grid.handleDelete()
-        }
-        controller.onImport = { [model = self] in
-            model.importVM.startImport()
-        }
-        // V4.37.1: ⌘Y Quick Look——复用 showQuickLook()（与空格键同路径）
-        controller.onQuickLook = { [model = self] in
-            model.grid.showQuickLook()
-        }
-        // V4.37.2: ⌘[ / ⌘] 上下张切换（macOS Quick Look 标准）
-        controller.onPrev = { [model = self] in
-            model.grid.goPrev()
-        }
-        controller.onNext = { [model = self] in
-            model.grid.goNext()
-        }
-        // V5.24: 布局模式 + 密度 toolbar 集成桥接
-        // V6.12.14: ThumbnailLayoutMode 加 .list 后——选 .list 切 viewMode = .list
-        controller.onLayoutModeChange = { [model = self] mode in
-            model.layoutMode = mode
-            switch mode {
-            case .list:
-                model.viewMode = .list
-            case .squareFit:
-                model.viewMode = .grid
-            }
-        }
-        controller.onDensityChange = { [model = self] density in
-            model.grid.thumbnailSize = density
-            // 同步 storedThumbnailSize 以便重启后恢复（V4.15.0 ⌘0 行为一致）
-            model.settings.thumbnailSize = Double(density)
-        }
-        // V5.39.3: 排序 toolbar 桥接
-        controller.onSortOptionChange = { [model = self] newSort in
-            model.grid.sortOption = newSort
-        }
-        // V4.90.0: filterContentProvider 改 filterCoordinatorFactory
-        //   folders/allTags 是 Q-bucket (view-owned), 由 GridViewModel 缓存
-        controller.filterCoordinatorFactory = { [model = self] onStateChange in
-            return FilterPopoverCoordinator(
-                folders: model.grid.folders,
-                tags: model.grid.allTags,
-                onStateChange: { newState in
-                    model.filterState = newState
-                    onStateChange(newState)
-                }
-            )
-        }
-        // V4.36.x: 首次同步角标
-        controller.filterActiveCount = filterState.activeCount
-        // V4.8.1: search field 改用 NSSearchField
-        controller.onSearchTextChanged = { [model = self] newText in
-            if model.grid.searchText != newText {
-                model.grid.searchText = newText
-            }
-        }
-
-        window.toolbar = toolbar
-        window.toolbarStyle = .unified
-        window.titleVisibility = .hidden
-
-        // V4.37.4: titlebar 右上角小按钮（Photos.app ⓘ 风格）
-        let accessory = TitlebarAccessoryController(
-            inactiveSymbol: "info.circle",
-            activeSymbol: "info.circle.fill",
-            accessibilityLabel: Copy.titlebarInfoLabel,
-            tooltip: titlebarAccessoryTooltip(isActive: settings.showDetail),
-            onAction: { [model = self] in
-                withAnimation(Animations.medium) { model.settings.showDetail.toggle() }
-            }
-        )
-        accessory.layoutAttribute = .trailing
-        window.addTitlebarAccessoryViewController(accessory)
-        titlebarAccessory = accessory
-        accessory.setActive(settings.showDetail)
-
-        // 初始 enabled 状态同步
-        controller.updateAllStates(
-            hasSelection: grid.selection.hasSelection,
-            hasMultipleSelection: grid.selection.isMultiSelect
-        )
-    }
-
-    /// V4.37.4: titlebar ⓘ 按钮 tooltip
-    func titlebarAccessoryTooltip(isActive: Bool) -> String {
-        isActive ? Copy.titlebarInfoTooltipHide : Copy.titlebarInfoTooltipShow
-    }
+    // MARK: - V6.28.2: configureToolbar + titlebarAccessory 迁 WindowViewModel
 
     // MARK: - V5.53: Core + Import funcs
 
@@ -432,6 +322,7 @@ final class ContentViewModel {
     ///   ImageGalleryApp 传 sharedSettings 引用进来, 实现 ContentView/menu/SettingsView 共享
     /// V6.28: 创建 GridViewModel (共享 settings/undoManager) + 设 weak core back-ref
     /// V6.28.1: 创建 ImportViewModel + 设 weak core back-ref + wire toast callback
+    /// V6.28.2: 创建 WindowViewModel (共享 settings) + 设 weak core back-ref
     init(settings: UserSettings? = nil) {
         let s = settings ?? UserSettings()
         let um = ImageGalleryUndoManager()
@@ -442,9 +333,12 @@ final class ContentViewModel {
         self.grid = GridViewModel(settings: s, undoManager: um)
         // V6.28.1: ImportViewModel — 单独 init, 后 wire (同 GridViewModel pattern)
         self.importVM = ImportViewModel()
-        // weak back-ref (避免 retain cycle — ContentViewModel 持 grid/importVM strong, 它们持 core weak)
+        // V6.28.2: WindowViewModel — 共享 settings, 后 wire
+        self.windowVM = WindowViewModel(settings: s)
+        // weak back-ref (避免 retain cycle — ContentViewModel 持 grid/importVM/windowVM strong, 它们持 core weak)
         self.grid.core = self
         self.importVM.core = self
+        self.windowVM.core = self
         // wire toast callback (子模型的 toast 走 Core 的 enqueueToast)
         self.grid.enqueueToastHandler = { [weak self] message, type, duration in
             self?.enqueueToast(message, type: type, duration: duration)
