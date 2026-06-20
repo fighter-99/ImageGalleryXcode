@@ -70,11 +70,11 @@ enum SettingsCategory: String, CaseIterable, Identifiable, Hashable {
 
     var title: String {
         switch self {
-        case .general:    return "通用"
-        case .appearance: return "外观"
+        case .general:    return Copy.settingsCategoryGeneral
+        case .appearance: return Copy.settingsCategoryAppearance
         case .library:    return Term.library
-        case .accent:     return "强调色"
-        case .about:      return "关于"
+        case .accent:     return Copy.settingsCategoryAccent
+        case .about:      return Copy.settingsCategoryAbout
         }
     }
 
@@ -173,7 +173,7 @@ struct SettingsView: View {
                 minHeight: 480, idealHeight: 580, maxHeight: 720
             )
         }
-        .navigationTitle("设置")
+        .navigationTitle(Copy.settingsTitle)
         // V5.93: 加 toolbar——Reset All + Help (Photos 偏好设置主操作入口)
         //   之前 Reset All 在内嵌 detail 底部, 跟用户距离远; 现在放 toolbar 1-click
         // V6.06: placement .primaryAction → .automatic——macOS 14+ Settings scene
@@ -240,8 +240,8 @@ private struct GeneralSettingsView: View {
         //   概念重叠 (都关于图片显示), 跨 通用/外观 2 个 page 不便对照
 
         SettingsSection(
-            title: "默认排序",
-            subtitle: "启动时图片按以下规则排序"
+            title: Copy.settingsDefaultSortTitle,
+            subtitle: Copy.settingsDefaultSortSubtitle
         ) {
             HStack(alignment: .center, spacing: Spacing.md) {
                 Text(Copy.settingsSortLabel)
@@ -260,11 +260,11 @@ private struct GeneralSettingsView: View {
         // V6.33.1: 字体大小 4 档 — 用户对 macOS 没系统级 Dynamic Type 的补充
         //   对应 FontScale → DynamicTypeSize, 透过 ContentView .environment 注入
         SettingsSection(
-            title: "字体大小",
-            subtitle: "调整 app 内所有文字大小。macOS 没系统级 Dynamic Type 设置, 这是 in-app 入口。"
+            title: Copy.settingsFontSizeTitle,
+            subtitle: Copy.settingsFontSizeSubtitle
         ) {
             HStack(alignment: .center, spacing: Spacing.md) {
-                Text("界面文字")
+                Text(Copy.settingsFontSizeInterfaceLabel)
                     .frame(width: SettingsMetrics.labelColumnWidth, alignment: .leading)
                 Picker("", selection: $settings.appFontScale) {
                     ForEach(FontScale.allCases) { scale in
@@ -294,8 +294,8 @@ private struct AppearanceSettingsView: View {
         //   现在 1 section 2 Picker——视图模式 (grid/list/timeline) + 布局 (方格/按比例)
         //   概念都是 '启动时的图片显示', 合并更紧凑
         SettingsSection(
-            title: "默认视图",
-            subtitle: "启动应用时的缩略图布局形状。视图模式 (网格/列表/时间线) 仍可通过 View 菜单或 ⌥1/⌥2/⌥3 快捷键切换。"
+            title: Copy.settingsDefaultViewTitle,
+            subtitle: Copy.settingsDefaultViewSubtitle
         ) {
             HStack(alignment: .center, spacing: Spacing.md) {
                 Text(Copy.settingsLayoutLabel)
@@ -314,8 +314,8 @@ private struct AppearanceSettingsView: View {
         //   Copy dict 改 NSLocalizedString 后 (V6.12.17), 所有 UI 文案按这里选的语言显示
         //   SettingsView 现在还会显示中文 ("语言")——V6.12.17 一起迁
         SettingsSection(
-            title: "语言 / Language",
-            subtitle: "App 显示语言。需重启 app 让部分 SwiftUI 文案刷新。"
+            title: Copy.settingsLanguageTitle,
+            subtitle: Copy.settingsLanguageSubtitle
         ) {
             HStack(alignment: .center, spacing: Spacing.md) {
                 Text(Copy.languageLabel)
@@ -332,8 +332,8 @@ private struct AppearanceSettingsView: View {
         }
 
         SettingsSection(
-            title: "缩略图大小",
-            subtitle: "默认缩略图尺寸。拖动 slider 实时预览缩略图大小。当前会话用 toolbar 临时改的会在重启后恢复。"
+            title: Copy.settingsThumbnailSizeTitle,
+            subtitle: Copy.settingsThumbnailSizeSubtitle
         ) {
             // V6.02: 拆 2 行——slider row + preview row
             //   之前 1 行放 slider + 40pt 数字 + 100pt preview + spacer, 总宽 ~400pt
@@ -360,8 +360,8 @@ private struct AppearanceSettingsView: View {
         }
 
         SettingsSection(
-            title: "外观",
-            subtitle: "应用整体外观。\u{201C}跟随系统\u{201D} 会随 macOS 切换自动调整。"
+            title: Copy.settingsAppearanceTitle,
+            subtitle: Copy.settingsAppearanceSubtitle
         ) {
             HStack(alignment: .center, spacing: Spacing.md) {
                 Text(Copy.settingsAppearanceLabel)
@@ -393,8 +393,8 @@ private struct LibrarySettingsView: View {
         //   Text 用 .frame(maxWidth: .infinity) 撑满左侧, Toggle 推到 trailing
         //   跟其他 section 不同: 此处 label 不固定 80pt (label 6+ 中文字 80pt 装不下)
         SettingsSection(
-            title: "导入",
-            subtitle: "拖入或选择文件夹导入图片时的默认行为。"
+            title: Copy.settingsImportTitle,
+            subtitle: Copy.settingsImportSubtitle
         ) {
             HStack {
                 Text(Copy.settingsAutoDedupeLabel).frame(maxWidth: .infinity, alignment: .leading)
@@ -409,8 +409,8 @@ private struct LibrarySettingsView: View {
         // V5.90: 导出——默认导出格式/质量
         // V5.95: HStack label 左 / control 右
         SettingsSection(
-            title: "导出",
-            subtitle: "导出图片时的默认格式和质量。"
+            title: Copy.settingsExportTitle,
+            subtitle: Copy.settingsExportSubtitle
         ) {
             HStack(alignment: .center, spacing: Spacing.md) {
                 Text(Copy.settingsFormatLabel)
@@ -438,8 +438,8 @@ private struct LibrarySettingsView: View {
 
         // V5.58-1: 自动清理——回收站保留时长
         SettingsSection(
-            title: "自动清理",
-            subtitle: "删除的图片会先进入回收站，超过下面设置的天数后会被自动永久删除。"
+            title: Copy.settingsAutoCleanupTitle,
+            subtitle: Copy.settingsAutoCleanupSubtitle
         ) {
             HStack(alignment: .center, spacing: Spacing.md) {
                 Text(Copy.settingsRetentionLabel)
@@ -465,8 +465,8 @@ private struct AccentSettingsView: View {
 
     var body: some View {
         SettingsSection(
-            title: "强调色",
-            subtitle: "选择应用的主色调，影响按钮、选中状态、链接等。"
+            title: Copy.settingsAccentSectionTitle,
+            subtitle: Copy.settingsAccentSectionSubtitle
         ) {
             // V6.03: 5 → 3 列——9 colors ÷ 3 = 3 行整, 之前 5 列末行 4 colors 残缺
             //   3 列 × 3 行 = 9 cells, 视觉方阵, 无空白 cell
@@ -497,7 +497,7 @@ private struct AboutSettingsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.xxl) {
             // V5.91: 重构——48x48 小图标 + name + version, 删 96x96 大图标 + card bg
-            SettingsSection(title: "应用信息", subtitle: nil) {
+            SettingsSection(title: Copy.settingsAppInfoTitle, subtitle: nil) {
                 HStack(alignment: .center, spacing: Spacing.md) {
                     if let appIcon = NSApp.applicationIconImage {
                         Image(nsImage: appIcon)
@@ -520,7 +520,7 @@ private struct AboutSettingsView: View {
             // V5.91: 链接行——占位 URL, Phase 4 可改
             // V6.08: safeExternalLink 替代 force-unwrap——URL 写错永不崩溃
             SettingsSection(
-                title: "链接",
+                title: Copy.settingsLinksTitle,
                 subtitle: nil
             ) {
                 VStack(alignment: .leading, spacing: Spacing.sm) {
@@ -538,7 +538,7 @@ private struct AboutSettingsView: View {
 
             // V5.91: 版权 + 致谢
             SettingsSection(
-                title: "版权",
+                title: Copy.settingsCopyrightTitle,
                 subtitle: nil
             ) {
                 VStack(alignment: .leading, spacing: Spacing.xs) {

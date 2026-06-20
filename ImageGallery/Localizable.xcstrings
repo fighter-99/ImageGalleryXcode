@@ -3222,6 +3222,342 @@
         }
       }
     },
+    "onboardingBack" : {
+      "comment" : "V6.37.3: Copy.onboardingBack → 上一步",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Back"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上一步"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上一步"
+          }
+        }
+      }
+    },
+    "onboardingImportHint" : {
+      "comment" : "V6.37.3: Copy.onboardingImportHint → 导入快捷键",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import Shortcut"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导入快捷键"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯入快捷鍵"
+          }
+        }
+      }
+    },
+    "onboardingImportSubtitle" : {
+      "comment" : "V6.37.3: Copy.onboardingImportSubtitle → 支持 JPG、PNG、HEIC、TIFF 等常见格式\n拖入文件夹即可批量导入，或按 ⌘O 选择文件",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supports JPG, PNG, HEIC, TIFF and more.\nDrag in a folder for batch import, or press ⌥O to choose files."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "支持 JPG、PNG、HEIC、TIFF 等常见格式\n拖入文件夹即可批量导入，或按 ⌘O 选择文件"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "支援 JPG、PNG、HEIC、TIFF 等常見格式\n拖入資料夾即可批次匯入，或按 ⌘O 選擇檔案"
+          }
+        }
+      }
+    },
+    "onboardingImportTitle" : {
+      "comment" : "V6.37.3: Copy.onboardingImportTitle → 导入你的照片",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import Your Photos"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导入你的照片"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯入你的照片"
+          }
+        }
+      }
+    },
+    "onboardingMarqueeHint" : {
+      "comment" : "V6.37.3: Copy.onboardingMarqueeHint → 尝试",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Try It"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "尝试"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "嘗試"
+          }
+        }
+      }
+    },
+    "onboardingMarqueeHintValue" : {
+      "comment" : "V6.37.3: Copy.onboardingMarqueeHintValue → 空白处拖动",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag in empty space"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "空白处拖动"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "空白處拖動"
+          }
+        }
+      }
+    },
+    "onboardingMarqueeSubtitle" : {
+      "comment" : "V6.37.3: Copy.onboardingMarqueeSubtitle → 在空白处按下左键拖动，可一次性选择一片区域内的所有照片\n类似 macOS Finder 和 Photos.app 的交互",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hold left mouse button and drag over empty space to select a region of photos at once.\nLike macOS Finder and Photos.app."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在空白处按下左键拖动，可一次性选择一片区域内的所有照片\n类似 macOS Finder 和 Photos.app 的交互"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在空白處按住左鍵拖動，可一次選取一片區域內的所有照片\n類似 macOS Finder 和 Photos.app 的互動"
+          }
+        }
+      }
+    },
+    "onboardingMarqueeTitle" : {
+      "comment" : "V6.37.3: Copy.onboardingMarqueeTitle → 拖动鼠标框选多张照片",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marquee Select"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拖动鼠标框选多张照片"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拖動滑鼠框選多張照片"
+          }
+        }
+      }
+    },
+    "onboardingMoreHint" : {
+      "comment" : "V6.37.3: Copy.onboardingMoreHint → 快捷键",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shortcuts"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "快捷键"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "快捷鍵"
+          }
+        }
+      }
+    },
+    "onboardingMoreSubtitle" : {
+      "comment" : "V6.37.3: Copy.onboardingMoreSubtitle → 右键图片可看到分享、旋转、评分等操作\n按 ⌘? 查看所有快捷键，按 ⌘, 打开设置",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Right-click a photo for share, rotate, rate actions.\nPress ⌥? to see all shortcuts, ⌥, to open Settings."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "右键图片可看到分享、旋转、评分等操作\n按 ⌘? 查看所有快捷键，按 ⌘, 打开设置"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在圖片上按右鍵可看到分享、旋轉、評分等操作\n按 ⌘? 查看所有快捷鍵，按 ⌘, 開啟設定"
+          }
+        }
+      }
+    },
+    "onboardingMoreTitle" : {
+      "comment" : "V6.37.3: Copy.onboardingMoreTitle → 更多功能",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "More Features"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更多功能"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更多功能"
+          }
+        }
+      }
+    },
+    "onboardingNext" : {
+      "comment" : "V6.37.3: Copy.onboardingNext → 下一步",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下一步"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下一步"
+          }
+        }
+      }
+    },
+    "onboardingSkip" : {
+      "comment" : "V6.37.3: Copy.onboardingSkip → 跳过",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skip"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "跳过"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "跳過"
+          }
+        }
+      }
+    },
+    "onboardingStart" : {
+      "comment" : "V6.37.3: Copy.onboardingStart → 开始使用",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Get Started"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "开始使用"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開始使用"
+          }
+        }
+      }
+    },
     "openRecent" : {
       "comment" : "V6.12.17: V Copy.openRecent → 最近打开",
       "extractionState" : "manual",
@@ -4014,6 +4350,54 @@
         }
       }
     },
+    "settingsAccentSectionSubtitle" : {
+      "comment" : "V6.37.3: Copy.settingsAccentSectionSubtitle → 选择应用的主色调，影响按钮、选中状态、链接等。",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose the app's primary color — affects buttons, selection state, links, etc."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择应用的主色调，影响按钮、选中状态、链接等。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選擇應用程式的主要色調，影響按鈕、選取狀態、連結等。"
+          }
+        }
+      }
+    },
+    "settingsAccentSectionTitle" : {
+      "comment" : "V6.37.3: Copy.settingsAccentSectionTitle → 强调色",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accent Color"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "强调色"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "強調色"
+          }
+        }
+      }
+    },
     "settingsAccessibilityLinkMisconfigured" : {
       "comment" : "V6.12.18: Copy.settingsAccessibilityLinkMisconfigured(_:) → 链接配置错误: %@ (urlString 参数)",
       "extractionState" : "manual",
@@ -4038,6 +4422,30 @@
         }
       }
     },
+    "settingsAppInfoTitle" : {
+      "comment" : "V6.37.3: Copy.settingsAppInfoTitle → 应用信息",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Info"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "应用信息"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "應用資訊"
+          }
+        }
+      }
+    },
     "settingsAppearanceLabel" : {
       "comment" : "V6.12.18: Copy.settingsAppearanceLabel → 外观",
       "extractionState" : "manual",
@@ -4058,6 +4466,102 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "外觀"
+          }
+        }
+      }
+    },
+    "settingsAppearanceSubtitle" : {
+      "comment" : "V6.37.3: Copy.settingsAppearanceSubtitle → 应用整体外观。“跟随系统” 会随 macOS 切换自动调整。",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Overall app appearance. “Follow System” adapts with macOS."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "应用整体外观。“跟随系统” 会随 macOS 切换自动调整。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "應用整體外觀。“跟隨系統” 會隨 macOS 切換自動調整。"
+          }
+        }
+      }
+    },
+    "settingsAppearanceTitle" : {
+      "comment" : "V6.37.3: Copy.settingsAppearanceTitle → 外观",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appearance"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "外观"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "外觀"
+          }
+        }
+      }
+    },
+    "settingsAutoCleanupSubtitle" : {
+      "comment" : "V6.37.3: Copy.settingsAutoCleanupSubtitle → 删除的图片会先进入回收站，超过下面设置的天数后会被自动永久删除。",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deleted photos first go to Recycle Bin; they are permanently deleted after the days you set below."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除的图片会先进入回收站，超过下面设置的天数后会被自动永久删除。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刪除的圖片會先進回收站，超過下面設定的天數後會被自動永久刪除。"
+          }
+        }
+      }
+    },
+    "settingsAutoCleanupTitle" : {
+      "comment" : "V6.37.3: Copy.settingsAutoCleanupTitle → 自动清理",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auto Cleanup"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自动清理"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自動清理"
           }
         }
       }
@@ -4110,6 +4614,102 @@
         }
       }
     },
+    "settingsCategoryAbout" : {
+      "comment" : "V6.37.3: Copy.settingsCategoryAbout → 关于",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "About"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关于"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "關於"
+          }
+        }
+      }
+    },
+    "settingsCategoryAccent" : {
+      "comment" : "V6.37.3: Copy.settingsCategoryAccent → 强调色",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accent"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "强调色"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "強調色"
+          }
+        }
+      }
+    },
+    "settingsCategoryAppearance" : {
+      "comment" : "V6.37.3: Copy.settingsCategoryAppearance → 外观",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appearance"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "外观"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "外觀"
+          }
+        }
+      }
+    },
+    "settingsCategoryGeneral" : {
+      "comment" : "V6.37.3: Copy.settingsCategoryGeneral → 通用",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "General"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通用"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一般"
+          }
+        }
+      }
+    },
     "settingsCopyright" : {
       "comment" : "V6.12.18: Copy.settingsCopyright → © 2026 ImageGallery",
       "extractionState" : "manual",
@@ -4130,6 +4730,246 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "© 2026 ImageGallery"
+          }
+        }
+      }
+    },
+    "settingsCopyrightTitle" : {
+      "comment" : "V6.37.3: Copy.settingsCopyrightTitle → 版权",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copyright"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "版权"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "版權"
+          }
+        }
+      }
+    },
+    "settingsDefaultSortSubtitle" : {
+      "comment" : "V6.37.3: Copy.settingsDefaultSortSubtitle → 启动时图片按以下规则排序",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sort photos by these rules at launch"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "启动时图片按以下规则排序"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "啟動時圖片按以下規則排序"
+          }
+        }
+      }
+    },
+    "settingsDefaultSortTitle" : {
+      "comment" : "V6.37.3: Copy.settingsDefaultSortTitle → 默认排序",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Default Sort"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "默认排序"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "預設排序"
+          }
+        }
+      }
+    },
+    "settingsDefaultViewSubtitle" : {
+      "comment" : "V6.37.3: Copy.settingsDefaultViewSubtitle → 启动应用时的缩略图布局形状。视图模式 (网格/列表/时间线) 仍可通过 View 菜单或 ⌥1/⌥2/⌥3 快捷键切换。",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Default thumbnail layout. View modes (Grid/List/Timeline) can still be switched via View menu or ⌥1/⌥2/⌥3 shortcuts."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "启动应用时的缩略图布局形状。视图模式 (网格/列表/时间线) 仍可通过 View 菜单或 ⌥1/⌥2/⌥3 快捷键切换。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "啟動應用時的縮圖佈局形狀。視圖模式 (網格/列表/時間軸) 仍可透過 View 選單或 ⌥1/⌥2/⌥3 快捷鍵切換。"
+          }
+        }
+      }
+    },
+    "settingsDefaultViewTitle" : {
+      "comment" : "V6.37.3: Copy.settingsDefaultViewTitle → 默认视图",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Default View"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "默认视图"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "預設視圖"
+          }
+        }
+      }
+    },
+    "settingsExportSubtitle" : {
+      "comment" : "V6.37.3: Copy.settingsExportSubtitle → 导出图片时的默认格式和质量。",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Default format and quality when exporting photos."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导出图片时的默认格式和质量。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯出圖片時的預設格式和品質。"
+          }
+        }
+      }
+    },
+    "settingsExportTitle" : {
+      "comment" : "V6.37.3: Copy.settingsExportTitle → 导出",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Export"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导出"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯出"
+          }
+        }
+      }
+    },
+    "settingsFontSizeInterfaceLabel" : {
+      "comment" : "V6.37.3: Copy.settingsFontSizeInterfaceLabel → 界面文字",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Interface Text"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "界面文字"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "介面文字"
+          }
+        }
+      }
+    },
+    "settingsFontSizeSubtitle" : {
+      "comment" : "V6.37.3: Copy.settingsFontSizeSubtitle → 调整 app 内所有文字大小。macOS 没系统级 Dynamic Type 设置, 这是 in-app 入口。",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adjust all in-app text size. macOS has no system-wide Dynamic Type setting — this is the in-app entry."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "调整 app 内所有文字大小。macOS 没系统级 Dynamic Type 设置, 这是 in-app 入口。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "調整 app 內所有文字大小。macOS 沒系統級 Dynamic Type 設定, 這是 in-app 入口。"
+          }
+        }
+      }
+    },
+    "settingsFontSizeTitle" : {
+      "comment" : "V6.37.3: Copy.settingsFontSizeTitle → 字体大小",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Font Size"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "字体大小"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "字型大小"
           }
         }
       }
@@ -4230,6 +5070,54 @@
         }
       }
     },
+    "settingsImportSubtitle" : {
+      "comment" : "V6.37.3: Copy.settingsImportSubtitle → 拖入或选择文件夹导入图片时的默认行为。",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Default behavior when dragging in or selecting a folder to import photos."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拖入或选择文件夹导入图片时的默认行为。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拖入或選擇資料夾匯入圖片時的預設行為。"
+          }
+        }
+      }
+    },
+    "settingsImportTitle" : {
+      "comment" : "V6.37.3: Copy.settingsImportTitle → 导入",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导入"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯入"
+          }
+        }
+      }
+    },
     "settingsIssueTracker" : {
       "comment" : "V6.12.18: Copy.settingsIssueTracker → 问题反馈",
       "extractionState" : "manual",
@@ -4254,6 +5142,54 @@
         }
       }
     },
+    "settingsLanguageSubtitle" : {
+      "comment" : "V6.37.3: Copy.settingsLanguageSubtitle → App 显示语言。需重启 app 让部分 SwiftUI 文案刷新。",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App display language. Restart required for some SwiftUI text to refresh."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App 显示语言。需重启 app 让部分 SwiftUI 文案刷新。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App 顯示語言。需重啟 app 讓部分 SwiftUI 文案刷新。"
+          }
+        }
+      }
+    },
+    "settingsLanguageTitle" : {
+      "comment" : "V6.37.3: Copy.settingsLanguageTitle → 语言 / Language",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Language / “语言”"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "语言 / Language"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "語言 / Language"
+          }
+        }
+      }
+    },
     "settingsLayoutLabel" : {
       "comment" : "V6.12.18: Copy.settingsLayoutLabel → 布局",
       "extractionState" : "manual",
@@ -4274,6 +5210,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "佈局"
+          }
+        }
+      }
+    },
+    "settingsLinksTitle" : {
+      "comment" : "V6.37.3: Copy.settingsLinksTitle → 链接",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Links"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "链接"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "連結"
           }
         }
       }
@@ -4523,6 +5483,774 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "即時預覽縮圖大小"
+          }
+        }
+      }
+    },
+    "settingsThumbnailSizeSubtitle" : {
+      "comment" : "V6.37.3: Copy.settingsThumbnailSizeSubtitle → 默认缩略图尺寸。拖动 slider 实时预览缩略图大小。当前会话用 toolbar 临时改的会在重启后恢复。",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Default thumbnail size. Drag the slider to preview. Toolbar changes for current session reset on relaunch."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "默认缩略图尺寸。拖动 slider 实时预览缩略图大小。当前会话用 toolbar 临时改的会在重启后恢复。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "預設縮圖尺寸。拖動 slider 即時預覽縮圖大小。目前工作階段用工具列臨時改的會在重啟後恢復。"
+          }
+        }
+      }
+    },
+    "settingsThumbnailSizeTitle" : {
+      "comment" : "V6.37.3: Copy.settingsThumbnailSizeTitle → 缩略图大小",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thumbnail Size"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "缩略图大小"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "縮圖大小"
+          }
+        }
+      }
+    },
+    "settingsTitle" : {
+      "comment" : "V6.37.3: Copy.settingsTitle → 设置",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Settings"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设置"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定"
+          }
+        }
+      }
+    },
+    "shortcutsCopyToPasteboard" : {
+      "comment" : "V6.37.3: Copy.shortcutsCopyToPasteboard → 复制到剪贴板",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy to Clipboard"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "复制到剪贴板"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "複製到剪貼簿"
+          }
+        }
+      }
+    },
+    "shortcutsExportSelected" : {
+      "comment" : "V6.37.3: Copy.shortcutsExportSelected → 导出选中",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Export Selected"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导出选中"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯出選中"
+          }
+        }
+      }
+    },
+    "shortcutsFocusSearch" : {
+      "comment" : "V6.37.3: Copy.shortcutsFocusSearch → 聚焦搜索框",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Focus Search"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "聚焦搜索框"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "聚焦搜尋框"
+          }
+        }
+      }
+    },
+    "shortcutsImmersive" : {
+      "comment" : "V6.37.3: Copy.shortcutsImmersive → 进入沉浸式",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter Immersive"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "进入沉浸式"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "進入沉浸式"
+          }
+        }
+      }
+    },
+    "shortcutsImportImage" : {
+      "comment" : "V6.37.3: Copy.shortcutsImportImage → 导入图片",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import Photo"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导入图片"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯入圖片"
+          }
+        }
+      }
+    },
+    "shortcutsNewFolder" : {
+      "comment" : "V6.37.3: Copy.shortcutsNewFolder → 新建文件夹",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Folder"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新建文件夹"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新建資料夾"
+          }
+        }
+      }
+    },
+    "shortcutsNextPhoto" : {
+      "comment" : "V6.37.3: Copy.shortcutsNextPhoto → 下一张",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下一张"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下一張"
+          }
+        }
+      }
+    },
+    "shortcutsOpenSettings" : {
+      "comment" : "V6.37.3: Copy.shortcutsOpenSettings → 设置",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Settings"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设置"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定"
+          }
+        }
+      }
+    },
+    "shortcutsPrevPhoto" : {
+      "comment" : "V6.37.3: Copy.shortcutsPrevPhoto → 上一张",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Previous"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上一张"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上一張"
+          }
+        }
+      }
+    },
+    "shortcutsQuickLook" : {
+      "comment" : "V6.37.3: Copy.shortcutsQuickLook → 快速查看",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quick Look"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "快速查看"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "快速查看"
+          }
+        }
+      }
+    },
+    "shortcutsRedo" : {
+      "comment" : "V6.37.3: Copy.shortcutsRedo → 重做",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redo"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重做"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重做"
+          }
+        }
+      }
+    },
+    "shortcutsResetFilter" : {
+      "comment" : "V6.37.3: Copy.shortcutsResetFilter → 重置筛选",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset Filter"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重置筛选"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重設篩選"
+          }
+        }
+      }
+    },
+    "shortcutsResetZoom" : {
+      "comment" : "V6.37.3: Copy.shortcutsResetZoom → 重置缩略图大小",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset Thumbnail Size"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重置缩略图大小"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重設縮圖大小"
+          }
+        }
+      }
+    },
+    "shortcutsSectionEdit" : {
+      "comment" : "V6.37.3: Copy.shortcutsSectionEdit → 编辑",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "编辑"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "編輯"
+          }
+        }
+      }
+    },
+    "shortcutsSectionFile" : {
+      "comment" : "V6.37.3: Copy.shortcutsSectionFile → 文件",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "File"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "文件"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "檔案"
+          }
+        }
+      }
+    },
+    "shortcutsSectionNavigation" : {
+      "comment" : "V6.37.3: Copy.shortcutsSectionNavigation → 导航 / 缩放",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Navigation / Zoom"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导航 / 缩放"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "導航 / 縮放"
+          }
+        }
+      }
+    },
+    "shortcutsSectionSidebar" : {
+      "comment" : "V6.37.3: Copy.shortcutsSectionSidebar → 侧栏 / 详情",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sidebar / Detail"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "侧栏 / 详情"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "側邊欄 / 詳細資訊"
+          }
+        }
+      }
+    },
+    "shortcutsSectionSortFilter" : {
+      "comment" : "V6.37.3: Copy.shortcutsSectionSortFilter → 排序 / 筛选",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sort / Filter"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "排序 / 筛选"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "排序 / 篩選"
+          }
+        }
+      }
+    },
+    "shortcutsSectionView" : {
+      "comment" : "V6.37.3: Copy.shortcutsSectionView → 视图",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "View"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "视图"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "視圖"
+          }
+        }
+      }
+    },
+    "shortcutsToggleDetail" : {
+      "comment" : "V6.37.3: Copy.shortcutsToggleDetail → 切换详情面板",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toggle Detail Pane"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "切换详情面板"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "切換詳細資訊面板"
+          }
+        }
+      }
+    },
+    "shortcutsToggleInfo" : {
+      "comment" : "V6.37.3: Copy.shortcutsToggleInfo → 切换信息面板",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toggle Info Pane"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "切换信息面板"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "切換資訊面板"
+          }
+        }
+      }
+    },
+    "shortcutsToggleSidebar" : {
+      "comment" : "V6.37.3: Copy.shortcutsToggleSidebar → 切换侧栏",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toggle Sidebar"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "切换侧栏"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "切換側邊欄"
+          }
+        }
+      }
+    },
+    "shortcutsToggleSort" : {
+      "comment" : "V6.37.3: Copy.shortcutsToggleSort → 切换排序方向",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toggle Sort Order"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "切换排序方向"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "切換排序方向"
+          }
+        }
+      }
+    },
+    "shortcutsUndo" : {
+      "comment" : "V6.37.3: Copy.shortcutsUndo → 撤销",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Undo"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "撤销"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "復原"
+          }
+        }
+      }
+    },
+    "shortcutsViewGrid" : {
+      "comment" : "V6.37.3: Copy.shortcutsViewGrid → 网格视图",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grid View"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "网格视图"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "網格視圖"
+          }
+        }
+      }
+    },
+    "shortcutsViewList" : {
+      "comment" : "V6.37.3: Copy.shortcutsViewList → 列表视图",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "List View"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "列表视图"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "列表視圖"
+          }
+        }
+      }
+    },
+    "shortcutsViewTimeline" : {
+      "comment" : "V6.37.3: Copy.shortcutsViewTimeline → 时间线视图",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Timeline View"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "时间线视图"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "時間軸視圖"
+          }
+        }
+      }
+    },
+    "shortcutsZoomIn" : {
+      "comment" : "V6.37.3: Copy.shortcutsZoomIn → 放大缩略图",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zoom In"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "放大缩略图"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "放大縮圖"
+          }
+        }
+      }
+    },
+    "shortcutsZoomOut" : {
+      "comment" : "V6.37.3: Copy.shortcutsZoomOut → 缩小缩略图",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zoom Out"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "缩小缩略图"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "縮小縮圖"
           }
         }
       }
