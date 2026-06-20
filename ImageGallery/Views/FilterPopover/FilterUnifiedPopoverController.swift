@@ -86,12 +86,12 @@ final class FilterUnifiedPopoverController: NSViewController {
         visualEffect.translatesAutoresizingMaskIntoConstraints = false
 
         // header (title + clear)
-        let headerLabel = NSTextField(labelWithString: "筛选")
+        let headerLabel = NSTextField(labelWithString: Copy.filter)
         headerLabel.font = NSFont.systemFont(ofSize: 13, weight: .semibold)
         headerLabel.textColor = .labelColor
         headerLabel.translatesAutoresizingMaskIntoConstraints = false
 
-        let clearButton = NSButton(title: "清除", target: self, action: #selector(handleClearTapped))
+        let clearButton = NSButton(title: Copy.filterPopoverClear, target: self, action: #selector(handleClearTapped))
         clearButton.bezelStyle = .recessed
         clearButton.controlSize = .small
         clearButton.font = NSFont.systemFont(ofSize: 11)
@@ -297,7 +297,7 @@ final class FilterUnifiedPopoverController: NSViewController {
 
         let allRow = RatingRowView(
             filledCount: 0,
-            label: "全部",
+            label: Copy.sidebarAll,
             isActive: filterState.minRating == 0,
             width: contentWidth
         ) { [weak self] in
@@ -309,7 +309,7 @@ final class FilterUnifiedPopoverController: NSViewController {
         for n in 1...5 {
             let row = RatingRowView(
                 filledCount: n,
-                label: "≥\(n) 星",
+                label: Copy.filterPopoverMinRating(n),
                 isActive: filterState.minRating == n,
                 width: contentWidth
             ) { [weak self] in

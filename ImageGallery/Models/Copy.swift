@@ -640,4 +640,17 @@ enum Copy {
     static let contextMenuViewSubmenu = String(localized: "contextMenuViewSubmenu", defaultValue: "视图")
     static let contextMenuEdit = String(localized: "contextMenuEdit", defaultValue: "编辑")
     static let contextMenuShare = String(localized: "contextMenuShare", defaultValue: "分享")
+
+    // MARK: - V6.37.6: 筛选 popover
+    // FilterCategory — 4 个筛选维度类别 label
+    //   注: 复用 Copy.tagLabel ("标签"), Copy.filter ("筛选"), Copy.sidebarAll ("全部")
+    static let filterCategoryFolder = String(localized: "filterCategoryFolder", defaultValue: "文件夹")
+    static let filterCategoryShape = String(localized: "filterCategoryShape", defaultValue: "形状")
+    static let filterCategoryRating = String(localized: "filterCategoryRating", defaultValue: "评分")
+    // FilterUnifiedPopoverController — header + clear button
+    static let filterPopoverClear = String(localized: "filterPopoverClear", defaultValue: "清除")
+    // rating segment "≥N 星" (含 %lld)
+    static func filterPopoverMinRating(_ rating: Int) -> String {
+        String.localizedStringWithFormat(String(localized: "filterPopoverMinRating", defaultValue: "≥%lld 星"), rating)
+    }
 }

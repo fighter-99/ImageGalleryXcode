@@ -327,10 +327,10 @@ enum FilterCategory: String, CaseIterable {
 
     var title: String {
         switch self {
-        case .folder: return "文件夹"
-        case .tag: return "标签"
-        case .shape: return "形状"
-        case .rating: return "评分"
+        case .folder: return Copy.filterCategoryFolder
+        case .tag: return Copy.tagLabel
+        case .shape: return Copy.filterCategoryShape
+        case .rating: return Copy.filterCategoryRating
         }
     }
 
