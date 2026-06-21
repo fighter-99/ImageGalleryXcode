@@ -360,6 +360,8 @@ final class ContentViewModel {
         // weak back-ref (避免 retain cycle — ContentViewModel 持 grid/importVM/windowVM strong, 它们持 core weak)
         self.grid.core = self
         self.importVM.core = self
+        // V6.39.1: importVM.settings 注入 — startImport 读 defaultImportLocation
+        self.importVM.settings = s
         self.windowVM.core = self
         // wire toast callback (子模型的 toast 走 Core 的 enqueueToast)
         // V6.29.1: 加 undoAction 参数; 拆出 wireToastHandler 方法避免 init 内 inline 闭包 type-check timeout

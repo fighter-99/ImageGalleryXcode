@@ -28,7 +28,9 @@ struct ContentViewModelImportTests {
         "sidebarSelection", "sortOption", "thumbnailLayoutMode",
         "sidebarColumnWidth", "detailColumnWidth", "autoDeduplicate",
         "autoGenerateThumbnails", "defaultExportFormat",
-        "defaultExportQuality", "scrollAnchorPhotoID"
+        "defaultExportQuality", "scrollAnchorPhotoID",
+        // V6.39.1: 加 defaultImportLocation
+        "defaultImportLocation"
     ]
     private static func isolatedModel() -> ContentViewModel {
         for key in userSettingsKeys {
@@ -213,5 +215,36 @@ struct ContentViewModelImportTests {
 
         let result = model.importVM.handleDrop(providers: [])
         #expect(result == true, "handleDrop 应始终 return true (符合 NSDragDestination 协议)")
+    }
+
+    // MARK: - V6.39.1: settings 注入 + defaultImportLocation 路径
+
+    @Test func importVM_settingsIsWiredFromContentViewModelInit() throws {
+        let container = try ModelContainer(
+            for: Photo.self, Folder.self, Tag.self,
+            configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+        )
+        let model = Self.isolatedModel()
+        model.modelContext = container.mainContext
+        // V6.39.1: ContentViewModel init 应自动 wire importVM.settings
+        #expect(model.importVM.settings != nil, "V6.39.1: importVM.settings 应在 init 注入")
+    }
+
+    @Test func defaultImportLocation_writesToUserDefaultsViaSettingsBinding() {
+        // V6.39.1: settings 是 ContentViewModel.sharedSettings 同一实例
+        //   直接验证 wiring + UserDefaults 同步 (用 isolatedUserSettings 避免污染 standard)
+        let model = Self.isolatedModel()
+        model.settings.defaultImportLocation = "file:///tmp/photos_import"
+        #expect(model.settings.defaultImportLocation == "file:///tmp/photos_import")
+        #expect(Self.isolatedDefaults.string(forKey: "defaultImportLocation") == "file:///tmp/photos_import")
+    }
+
+    @Test func defaultImportLocation_staleDetection_clearsOnReset() {
+        // V6.39.1: defaultImportLocation 写入后, reset() 也应清掉 (跟其他偏好同步)
+        let model = Self.isolatedModel()
+        model.settings.defaultImportLocation = "file:///nonexistent"
+        #expect(model.settings.defaultImportLocation != nil)
+        model.settings.reset()
+        #expect(model.settings.defaultImportLocation == nil, "reset 应清掉 stale defaultImportLocation")
     }
 }

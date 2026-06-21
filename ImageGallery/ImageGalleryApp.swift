@@ -271,6 +271,13 @@ struct ImageGalleryApp: App {
                     NotificationCenter.default.post(name: .shareRequested, object: nil)
                 }
                 .keyboardShortcut("e", modifiers: [.command, .shift])
+                // V6.39.1: File 菜单加 "清空回收站" — 跟 Settings page 同 path (NotificationCenter)
+                //   destructive 操作不绑快捷键 (避免误触), 二次确认在 ContentView 走 confirmationDialog
+                Divider()
+                Button(Copy.menuEmptyTrash) {
+                    NotificationCenter.default.post(name: .emptyTrashRequested, object: nil)
+                }
+                .help(Copy.menuEmptyTrashTooltip)
             }
             // V6.19.5 (P0 #16): Speech 朗读 — macOS 没有 .speech placement, 放 Edit 菜单用 .pasteboard 占位
             //   选 N 张 → 朗读 "已选 N 张照片, 第一张 <filename>" (zh-CN)

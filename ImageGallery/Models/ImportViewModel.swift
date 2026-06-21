@@ -43,6 +43,11 @@ final class ImportViewModel {
     ///   用途: modelContext + enqueueToast + grid.currentFolder
     @ObservationIgnored weak var core: ContentViewModel?
 
+    /// V6.39.1: UserSettings back-ref — startImport 读 defaultImportLocation
+    ///   跟 core 同样 weak pattern (避免 retain cycle)
+    ///   ContentViewModel wire (跟 modelContext / undoManager 注入同一位置)
+    @ObservationIgnored weak var settings: UserSettings?
+
     /// V6.28.1: toast callback — Core 的 enqueueToast (避免重复 toast queue 实现)
     /// V6.29.1: 加 undoAction 参数 (破坏性操作 Photos.app 撤销范式, 跟 GridViewModel 一致)
     @ObservationIgnored var enqueueToastHandler: (String, ToastView.ToastType, ToastInfo.Duration, _ undoAction: (() -> Void)?) -> Void = { _, _, _, _ in }
@@ -62,6 +67,9 @@ final class ImportViewModel {
     // MARK: - 启动导入
 
     /// ─── 启动导入 ───
+    /// V6.39.1: 优先用 settings.defaultImportLocation (LibrarySettingsView 选过的文件夹)
+    ///   如果有值且目录仍存在 → 直接 collect + 导入 (跳过 NSOpenPanel)
+    ///   如果目录已被移动/删除 → fallback NSOpenPanel + toast 提示用户重新选
     func startImport() {
         // V6.22.10 (XCUITest): launch arg bypass NSOpenPanel
         if let dir = uitestImportDirectory {
@@ -71,6 +79,28 @@ final class ImportViewModel {
                 runImportWithDuplicateCheck(urls: urls)
             }
             return
+        }
+
+        // V6.39.1: 优先用 settings.defaultImportLocation
+        if let urlString = settings?.defaultImportLocation,
+           let url = URL(string: urlString),
+           FileManager.default.fileExists(atPath: url.path) {
+            let urls = collectImageURLs(in: url.path)
+            if !urls.isEmpty {
+                importProgress = ImportProgress(current: 0, total: 0, isImporting: true)
+                runImportWithDuplicateCheck(urls: urls)
+                return
+            }
+            // 目录存在但无图片 — 也走 NSOpenPanel 让用户选别的
+        } else if settings?.defaultImportLocation != nil {
+            // V6.39.1: 默认位置存在过但现在不存在 — 清掉 stale + toast 提示 + 走 NSOpenPanel
+            settings?.defaultImportLocation = nil
+            enqueueToastHandler(
+                Copy.importLocationMissingMessage,
+                .warning,
+                .normal,
+                nil
+            )
         }
 
         let panel = NSOpenPanel()

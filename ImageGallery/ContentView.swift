@@ -672,7 +672,7 @@ struct ContentView: View {
                     selection = selection.selectingSingle(photo.id)
                     model.grid.rotateSelected(clockwise: clockwise)
                 },
-                onDoubleTap: { model.grid.enterImmersive($0) },
+                onDoubleTap: { handlePhotoDoubleTap($0) },
                 onClearFilters: { model.grid.resetFilters() },
                 onExportComplete: { count in
                     model.showToast(Copy.exported(count), type: .success)
@@ -718,7 +718,7 @@ struct ContentView: View {
                 photos: model.grid.visiblePhotos,
                 kind: .list,
                 onTap: { model.grid.handleTap($0) },
-                onDoubleTap: { model.grid.enterImmersive($0) }
+                onDoubleTap: { handlePhotoDoubleTap($0) }
             )
         case .timeline:
             PhotoListOrTimelinePane(
@@ -741,7 +741,7 @@ struct ContentView: View {
                 photos: model.grid.visiblePhotos,
                 kind: .timeline,
                 onTap: { model.grid.handleTap($0) },
-                onDoubleTap: { model.grid.enterImmersive($0) }
+                onDoubleTap: { handlePhotoDoubleTap($0) }
             )
         }
         } // Group 关闭 (V6.31.1)
@@ -816,6 +816,20 @@ struct ContentView: View {
             totalSize: model.grid.totalSizeFormatted,
             thumbnailSize: thumbnailSize
         )
+    }
+
+    // V6.39.1: 双击行为 — 读 settings.appDoubleClickAction 决定走 immersive 或 NSWorkspace.open (QuickLook via Preview.app)
+    //   默认 .immersive (跟 V6.39.0 之前完全兼容), 可选 .quickLook 让系统 Preview.app 打开
+    private func handlePhotoDoubleTap(_ photo: Photo) {
+        switch settings.appDoubleClickAction {
+        case .immersive:
+            model.grid.enterImmersive(photo)
+        case .quickLook:
+            // V6.39.1: NSWorkspace.open 在系统默认 app (Preview.app) 打开 — 简单可靠
+            //   跟 macOS Finder 空格 Quick Look 行为一致 (Finder 用 QLPreviewPanel, app 跨进程时 Preview.app)
+            //   关闭 Preview.app 自动回到 app
+            NSWorkspace.shared.open(photo.fileURL)
+        }
     }
 
     // V6.19.3 (P0 #13): 删 14 个 1-line forwarder (enqueueToast/scheduleDismiss/showToast/
