@@ -227,11 +227,15 @@ struct SidebarView: View {
                             Image(systemName: "plus")
                                 .frame(width: SidebarStyle.iconFrameWidth)
                                 .foregroundStyle(Color.accentColor)
-                            // V4.36.x: 显式 SidebarStyle.labelFont——与行 label 字号/字重完全一致
-                            //   避免 fallback 到系统默认（可能比行 label 略大或粗，视觉不协调）
+                            // V6.55 (design polish): '+ 新建文件夹' 改 caption + secondary (italic 风格 placeholder)
+                            //   之前 SidebarStyle.labelFont (13pt regular accent) 跟主内容 row 视觉权重一样
+                            //   用户可能误以为是 "已有 folder" 而不是创建入口
+                            //   现在 caption (11pt secondary italic) 视觉"次要 placeholder",
+                            //   跟 macOS Finder sidebar '+ 新建文件夹' 风格一致
                             Text(Copy.newFolder)
-                                .font(SidebarStyle.labelFont)
-                                .foregroundStyle(Color.accentColor)
+                                .font(.caption)
+                                .italic()
+                                .foregroundStyle(.secondary)
                         }
                     }
                     .buttonStyle(.plain)
@@ -272,10 +276,12 @@ struct SidebarView: View {
                             Image(systemName: "plus")
                                 .frame(width: SidebarStyle.iconFrameWidth)
                                 .foregroundStyle(Color.accentColor)
-                            // V4.36.x: 显式 SidebarStyle.labelFont——与行 label 字号/字重完全一致
+                            // V6.55 (design polish): 跟 '+ 新建文件夹' 同 caption + italic + secondary
+                            //   视觉锤 '这是 placeholder 而非主内容 row'
                             Text(Copy.newTag)
-                                .font(SidebarStyle.labelFont)
-                                .foregroundStyle(Color.accentColor)
+                                .font(.caption)
+                                .italic()
+                                .foregroundStyle(.secondary)
                         }
                     }
                     .buttonStyle(.plain)

@@ -57,7 +57,11 @@ struct OnboardingView: View {
                 ForEach(0..<Self.pages.count, id: \.self) { index in
                     OnboardingPageView(page: Self.pages[index])
                         .tag(index)
-                        .padding(.horizontal, 60)
+                        // V6.55 (design polish): 60 → 80 — 窗口 640pt, 之前外 60pt + 内 40pt = 总 100pt
+                        //   内容区 440pt 在 640pt 窗口偏窄, 视觉不够舒展
+                        //   现在外 80pt + 内 60pt = 总 140pt, 内容区 500pt — 留更多呼吸空间
+                        //   Onboarding 是用户第一印象, 跟 macOS Sonoma+ Photos 真版 Welcome Tour 一致
+                        .padding(.horizontal, 80)
                 }
             }
 
