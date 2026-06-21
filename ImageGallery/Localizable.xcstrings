@@ -5455,6 +5455,28 @@
         }
       }
     },
+    "settingsAboutMacOSVersionLabel" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "macOS 版本"
+          }
+        }
+      }
+    },
+    "settingsAboutSystemInfoTitle" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "系统信息"
+          }
+        }
+      }
+    },
     "settingsAccentSectionSubtitle" : {
       "comment" : "V6.37.3: Copy.settingsAccentSectionSubtitle → 选择应用的主色调，影响按钮、选中状态、链接等。",
       "extractionState" : "manual",
