@@ -87,9 +87,14 @@ struct ImmersivePhotoView: View {
             .animation(Animations.standard, value: isChromeVisible)
 
             // 4. 底部 chrome（翻页 + 索引）
+            // V6.58 (audit P1.9): photos.isEmpty 时整个 chrome 隐藏
+            //   之前 ProgressView guard `count > 0` 防 crash, 但 Index "1 / 0" UX 错乱
+            //   现在 chrome 整体隐藏 (用户从侧栏进入空 photo, 直接看到 blank + Esc 退出)
             VStack {
                 Spacer()
-                bottomChrome
+                if !photos.isEmpty {
+                    bottomChrome
+                }
             }
             .opacity(isChromeVisible ? 1 : 0)
             .animation(Animations.standard, value: isChromeVisible)

@@ -78,8 +78,11 @@ extension View {
                     .keyboardShortcut("s", modifiers: [.command, .shift])
                     .hidden()
                 // V3.5.12：⌘⌃+S 切换侧栏显隐（macOS 标准）
+                // V6.58 (audit P1.7): 改用 ⌘\ 避开 ⌘⇧S (sort) 的 s 字面冲突
+                //   之前两个 hidden Button 都绑 `s` (不同 modifier) — SwiftUI 在某些 macOS 版本
+                //   modifier-disambiguation 不稳, last-registered wins, 1 个 shortcut 静默失效
                 Button("") { onToggleSidebar() }
-                    .keyboardShortcut("s", modifiers: [.command, .control])
+                    .keyboardShortcut("\\", modifiers: [.command])
                     .hidden()
 
                 // V5.12: ⌘0 清除评分 + ⌘1-⌘5 设为 N 星（仿 macOS Photos 标准）

@@ -141,8 +141,8 @@ struct BatchRenameTemplateTests {
 
     // MARK: - uniquify
 
-    @Test func uniquify_noCollision_returnsAsIs() {
-        let result = BatchRenameTemplate.uniquify(
+    @Test func uniquify_noCollision_returnsAsIs() throws {
+        let result = try BatchRenameTemplate.uniquify(
             baseName: "photo_1", ext: "jpg",
             existingReserved: [],
             onDiskCheck: { _ in false }
@@ -151,9 +151,9 @@ struct BatchRenameTemplateTests {
         #expect(result.ext == "jpg")
     }
 
-    @Test func uniquify_withinBatchCollision_appendsCounter() {
+    @Test func uniquify_withinBatchCollision_appendsCounter() throws {
         var reserved: Set<String> = ["photo_1.jpg"]
-        let result = BatchRenameTemplate.uniquify(
+        let result = try BatchRenameTemplate.uniquify(
             baseName: "photo_1", ext: "jpg",
             existingReserved: reserved,
             onDiskCheck: { _ in false }
@@ -161,7 +161,7 @@ struct BatchRenameTemplateTests {
         #expect(result.baseName == "photo_1_1")
         #expect(result.ext == "jpg")
         reserved.insert("\(result.baseName).\(result.ext)")
-        let result2 = BatchRenameTemplate.uniquify(
+        let result2 = try BatchRenameTemplate.uniquify(
             baseName: "photo_1", ext: "jpg",
             existingReserved: reserved,
             onDiskCheck: { _ in false }
@@ -169,8 +169,8 @@ struct BatchRenameTemplateTests {
         #expect(result2.baseName == "photo_1_2")
     }
 
-    @Test func uniquify_onDiskCollision_appendsCounter() {
-        let result = BatchRenameTemplate.uniquify(
+    @Test func uniquify_onDiskCollision_appendsCounter() throws {
+        let result = try BatchRenameTemplate.uniquify(
             baseName: "photo_1", ext: "jpg",
             existingReserved: [],
             onDiskCheck: { name in name == "photo_1.jpg" }
@@ -179,10 +179,10 @@ struct BatchRenameTemplateTests {
         #expect(result.ext == "jpg")
     }
 
-    @Test func uniquify_bothLayersCollision() {
+    @Test func uniquify_bothLayersCollision() throws {
         var reserved: Set<String> = ["photo_1.jpg", "photo_1_1.jpg"]
         // on-disk 也有 photo_1_2.jpg
-        let result = BatchRenameTemplate.uniquify(
+        let result = try BatchRenameTemplate.uniquify(
             baseName: "photo_1", ext: "jpg",
             existingReserved: reserved,
             onDiskCheck: { name in name == "photo_1_2.jpg" }
@@ -190,8 +190,8 @@ struct BatchRenameTemplateTests {
         #expect(result.baseName == "photo_1_3")
     }
 
-    @Test func uniquify_noExtension() {
-        let result = BatchRenameTemplate.uniquify(
+    @Test func uniquify_noExtension() throws {
+        let result = try BatchRenameTemplate.uniquify(
             baseName: "raw_photo", ext: "",
             existingReserved: [],
             onDiskCheck: { _ in false }
@@ -200,7 +200,7 @@ struct BatchRenameTemplateTests {
         #expect(result.ext == "")
 
         // collision 时也不带点
-        let result2 = BatchRenameTemplate.uniquify(
+        let result2 = try BatchRenameTemplate.uniquify(
             baseName: "raw_photo", ext: "",
             existingReserved: ["raw_photo"],
             onDiskCheck: { _ in false }
@@ -209,10 +209,10 @@ struct BatchRenameTemplateTests {
         #expect(result2.ext == "")
     }
 
-    @Test func uniquify_mixedCaseExtension() {
+    @Test func uniquify_mixedCaseExtension() throws {
         // .JPG 跟 .jpg 在 macOS 默认是同一个文件 (case-insensitive HFS+)
         // V1 不做 case-folding 优化 — caller 决定
-        let result = BatchRenameTemplate.uniquify(
+        let result = try BatchRenameTemplate.uniquify(
             baseName: "photo_1", ext: "JPG",
             existingReserved: ["photo_1.jpg"],
             onDiskCheck: { _ in false }
@@ -222,5 +222,22 @@ struct BatchRenameTemplateTests {
         // V1 行为: 不冲突, 返回原名
         #expect(result.baseName == "photo_1")
         #expect(result.ext == "JPG")
+    }
+
+    // V6.58 (audit P1.4): 极端 adversarial case — 撞名 _1.._9999 耗尽
+    //   之前返回 unchecked `_10000` (未验证 onDisk), 静默覆盖风险
+    //   现在 throw .tooManyCollisions, caller 跳这条 + 弹 toast
+    @Test func uniquify_tooManyCollisions_throws() {
+        // reserved 占用所有 _1.._9999 + 原名, 模拟极端情况
+        var reserved: Set<String> = ["photo.jpg"]
+        for i in 1..<10_000 { reserved.insert("photo_\(i).jpg") }
+
+        #expect(throws: BatchRenameTemplate.BatchRenameError.tooManyCollisions) {
+            try BatchRenameTemplate.uniquify(
+                baseName: "photo", ext: "jpg",
+                existingReserved: reserved,
+                onDiskCheck: { _ in false }
+            )
+        }
     }
 }

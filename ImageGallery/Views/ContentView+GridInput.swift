@@ -104,8 +104,11 @@ extension View {
             }
             // V4.49.1: ⌘↩ Return 进入沉浸式查看（macOS Photos 标准）
             //   Photos.app 用 Return 键进入全屏图片——快捷键 ⌘↩ 标准
-            //   仅在 gridInputHandling 接受（多选/无选 .ignored 内部检查）
+            // V6.58 (audit P1.8): 之前无条件 onReturn() — 无选或多选时按 Enter 也进 immersive
+            //   (无选时不该进, 多选时不应作为 1 张处理)
+            //   现在 gate: 必须有 selection (hasSelection) 才进; 多选留给 caller 内部判断
             .onKeyPress(.return) {
+                guard hasSelection else { return .ignored }
                 onReturn()
                 return .handled
             }

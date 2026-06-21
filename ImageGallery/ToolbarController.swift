@@ -240,7 +240,7 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
                 // V4.14.0: 本地化——之前 V4.8.0 硬编码英文，hover tooltip + Customize Toolbar 面板显示英文
                 label: Copy.toolbarToggleSidebar,
                 action: #selector(handleToggleSidebar),
-                shortcut: Copy.toolbarShortcutToggleSidebar  // V6.24: ⌃⌘S
+                shortcut: Copy.toolbarShortcutToggleSidebar  // V6.24: ⌃⌘S → V6.58 ⌘\ 避开 sort 撞键
             )
         // V5.7: 砍 .favorite case——工具栏 ❤ 收藏按钮移除
         case .quickLook:  // V4.37.1 NEW

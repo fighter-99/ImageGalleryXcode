@@ -297,6 +297,11 @@ final class UserSettings {
         if let stored = defaults.string(forKey: "lastSettingsCategory") {
             self.lastSettingsCategory = stored
         }
+        // V6.58 (audit P1.1): fontScale init reader — V6.33.1 加的字段漏了 init,
+        //   didSet 写得起作用但重启读不回来, 用户改字号重启后丢失
+        if let stored = defaults.string(forKey: "fontScale") {
+            self.fontScale = stored
+        }
     }
 
     // MARK: - V5.58-2: reset() 恢复 12 字段到默认

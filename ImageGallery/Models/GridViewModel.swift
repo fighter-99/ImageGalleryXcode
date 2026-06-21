@@ -840,6 +840,9 @@ final class GridViewModel {
         let trimmed = template.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return }
 
+        // V6.58 (audit P1.4): 极端 adversarial state 撞名 _1.._9999 耗尽 → 跳过这条 + 末尾 toast 报告
+        var collisionCount = 0
+
         // Plan: 渲染 + 去重, 收集 (photo, oldURL, oldFilename, newBase, newExt)
         struct Plan {
             let photo: Photo
@@ -870,14 +873,27 @@ final class GridViewModel {
             }
 
             // 3) uniquify (within-batch + on-disk)
-            let (finalBase, finalExt) = BatchRenameTemplate.uniquify(
-                baseName: rendered, ext: ext, existingReserved: reserved,
-                onDiskCheck: { name in
-                    let candidateURL = oldURL.deletingLastPathComponent()
-                        .appendingPathComponent(name)
-                    return FileManager.default.fileExists(atPath: candidateURL.path)
-                }
-            )
+            // V6.58 (audit P1.4): uniquify 现在 throws tooManyCollisions (极端 adversarial case)
+            //   撞名 _1.._9999 都耗尽 → 跳过这条 (其他 photo 仍 rename), 弹 toast 告知用户
+            let uniquifyResult: (baseName: String, ext: String)
+            do {
+                uniquifyResult = try BatchRenameTemplate.uniquify(
+                    baseName: rendered, ext: ext, existingReserved: reserved,
+                    onDiskCheck: { name in
+                        let candidateURL = oldURL.deletingLastPathComponent()
+                            .appendingPathComponent(name)
+                        return FileManager.default.fileExists(atPath: candidateURL.path)
+                    }
+                )
+            } catch BatchRenameTemplate.BatchRenameError.tooManyCollisions {
+                collisionCount += 1
+                continue
+            } catch {
+                // 其他 BatchRenameError (例如 unexpected 内部错误) — 跳过这条
+                collisionCount += 1
+                continue
+            }
+            let (finalBase, finalExt) = uniquifyResult
             reserved.insert("\(finalBase).\(finalExt)")
             plans.append(Plan(
                 photo: photo, oldURL: oldURL, oldFilename: oldFilename,
@@ -908,9 +924,14 @@ final class GridViewModel {
                     }
                 }
                 modelContext.saveWithLog()
+                // V6.58 (audit P1.4): 报告 collisionCount (极端撞名 _1.._9999 耗尽)
+                //   加在 errors 之前, 区分 "重命名失败" vs "找不到 unique 名字"
+                if collisionCount > 0 {
+                    self?.enqueueToastHandler(Copy.toastBatchRenameCollisions(collisionCount), .warning, .long, nil)
+                }
                 if errors > 0 {
                     self?.enqueueToastHandler(Copy.toastBatchRenamePartialFail(errors), .error, .long, nil)
-                } else {
+                } else if collisionCount == 0 {
                     self?.enqueueToastHandler(Copy.toastBatchRenameSuccess(count), .success, .long, nil)
                 }
                 _ = self

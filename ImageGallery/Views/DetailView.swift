@@ -44,6 +44,9 @@ struct DetailView: View {
     @State private var showingRenameAlert = false
     @State private var newTagName = ""
     @State private var newFileName = ""
+    // V6.58 (audit P1.3): renameTarget 在 alert-open 时 capture 当前 photo,
+    //   避免 ← → 切换 photo 后 newFileName 还指向旧照片导致 rename 错照片
+    @State private var renameTarget: Photo? = nil
 
     var body: some View {
         // V3.5.21：详情面板卡片化 — ScrollView + VStack of cards
@@ -345,6 +348,10 @@ struct DetailView: View {
                         .truncationMode(.middle)
                         .frame(maxWidth: .infinity, alignment: .leading)
                     Button {
+                        // V6.58 (audit P1.3): capture renameTarget = photo at alert-open
+                        //   之前 `newFileName = photo.filename` 在 photo 切换时失同步:
+                        //   按 ← → photo 变 B 但 newFileName 仍是 A 的名字 → 改错照片
+                        renameTarget = photo
                         newFileName = photo.filename
                         showingRenameAlert = true
                     } label: {
@@ -520,13 +527,18 @@ struct DetailView: View {
     }
 
     // ─── 重命名（V3.5 Phase 2：支持撤销 + 同步文件磁盘）───
+    // V6.58 (audit P1.3): 用 renameTarget (alert-open 时 capture) 而非当前 photo
+    //   修复 ← → 切换 photo 期间 alert 还在 → 改错照片数据丢失 bug
     private func renamePhoto() {
+        // V6.58: renameTarget 可能为 nil (用户 alert 中 dismiss 但仍点 confirm 边角案例)
+        //   防御性 fallback 用 photo (虽然逻辑上不该发生)
+        let target = renameTarget ?? photo
         let trimmed = newFileName.trimmingCharacters(in: .whitespaces)
-        guard !trimmed.isEmpty, trimmed != photo.filename else { return }
+        guard !trimmed.isEmpty, trimmed != target.filename else { return }
 
-        // 快照：旧文件名 + 旧 URL
-        let oldFilename = photo.filename
-        let oldURL = photo.fileURL
+        // 快照：旧文件名 + 旧 URL (基于 renameTarget, 不是 photo)
+        let oldFilename = target.filename
+        let oldURL = target.fileURL
         let newURL = oldURL.deletingLastPathComponent().appendingPathComponent(trimmed)
 
         // 避免重名：若新 URL 已存在，放弃
@@ -538,11 +550,11 @@ struct DetailView: View {
             description: Copy.undoRename(trimmed)
         ) {
             // V6.08: 文件 rename 失败不能静默——之前 try? + 写 SwiftData → 孤儿文件
-            //   失败: 不更新 photo.filename/fileURL, 弹 toast 通知用户
+            //   失败: 不更新 target.filename/fileURL, 弹 toast 通知用户
             do {
                 try FileManager.default.moveItem(at: oldURL, to: newURL)
-                photo.filename = trimmed
-                photo.fileURL = newURL
+                target.filename = trimmed
+                target.fileURL = newURL
                 modelContext.saveWithLog()
             } catch {
                 onError(Copy.renameFailed(trimmed))
@@ -551,8 +563,8 @@ struct DetailView: View {
             // 撤销：磁盘重命名回 + SwiftData 回滚
             do {
                 try FileManager.default.moveItem(at: newURL, to: oldURL)
-                photo.filename = oldFilename
-                photo.fileURL = oldURL
+                target.filename = oldFilename
+                target.fileURL = oldURL
                 modelContext.saveWithLog()
             } catch {
                 // 撤销失败: 文件状态跟 SwiftData 不一致——只能提示用户

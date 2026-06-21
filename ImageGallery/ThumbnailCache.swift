@@ -12,16 +12,23 @@
 
 import Foundation
 import AppKit
+import os
 
 final class ThumbnailCache {
     static let shared = ThumbnailCache()
 
     private let cache = NSCache<NSString, NSImage>()
 
-    // V6.35.2: 缓存统计 (atomic counter — 跨线程安全)
-    private var hitCount: Int = 0
-    private var missCount: Int = 0
-    private var evictCount: Int = 0
+    // V6.58 (audit P1.10): 改 OSAllocatedUnfairLock 包 counters
+    //   之前 plain `var Int` 注释说 "atomic counter 跨线程安全" 实际不是原子 (read+write 3 ops)
+    //   UI 主线程读 + Task.detached ImageLoader 写 → torn snapshots, hitRate 超出 [0,1], ThreadSanitizer 触发
+    //   现在 lock 包裹所有 counter access, 原子化
+    private struct Stats: Sendable {
+        var hits: Int = 0
+        var misses: Int = 0
+        var evicts: Int = 0
+    }
+    private let statsLock = OSAllocatedUnfairLock<Stats>(initialState: Stats())
 
     private init() {
         // V5.17: 200→400MB——600→1200px 后单图 ~5.76MB (1200²×4)
@@ -39,10 +46,10 @@ final class ThumbnailCache {
     func get(url: URL, maxPixelSize: CGFloat) -> NSImage? {
         let key = makeKey(url: url, maxPixelSize: maxPixelSize)
         if let image = cache.object(forKey: key) {
-            hitCount += 1
+            statsLock.withLock { $0.hits += 1 }
             return image
         }
-        missCount += 1
+        statsLock.withLock { $0.misses += 1 }
         return nil
     }
 
@@ -67,8 +74,8 @@ final class ThumbnailCache {
         for size in sizes {
             cache.removeObject(forKey: makeKey(url: url, maxPixelSize: size))
         }
-        // V6.35.2: 主动删的也算 evict 统计
-        evictCount += sizes.count
+        // V6.35.2: 主动删的也算 evict 统计 (现在 lock 原子)
+        statsLock.withLock { $0.evicts += sizes.count }
     }
 
     // MARK: - V6.35.2 缓存统计 (监控命中率 + 大小)
@@ -77,9 +84,10 @@ final class ThumbnailCache {
     /// 用 NSString key 计数: cost / 平均 cost-per-image 估算
     /// 实际: NSCache 私有 count API, 这里用 hit/miss 推算
     var stats: (hits: Int, misses: Int, evicts: Int, hitRate: Double) {
-        let total = hitCount + missCount
-        let rate = total > 0 ? Double(hitCount) / Double(total) : 0
-        return (hitCount, missCount, evictCount, rate)
+        let snapshot = statsLock.withLock { $0 }
+        let total = snapshot.hits + snapshot.misses
+        let rate = total > 0 ? Double(snapshot.hits) / Double(total) : 0
+        return (snapshot.hits, snapshot.misses, snapshot.evicts, rate)
     }
 
     /// V6.35.2: 调试日志 — 打印当前 cache 状态 (dev only)

@@ -220,7 +220,8 @@ enum Copy {
     static let toolbarShortcutImport = "⌘O"
     static let toolbarShortcutDelete = "⌘⌫"
     static let toolbarShortcutQuickLook = "⌘Y"
-    static let toolbarShortcutToggleSidebar = "⌃⌘S"
+    // V6.58 (audit P1.7): ⌃⌘S 跟 ⌘⇧S (sort) 撞 's' 字面冲突, 改用 ⌘\
+    static let toolbarShortcutToggleSidebar = "⌘\\"
     static let layoutMode = String(localized: "layoutMode", defaultValue: "布局模式")
     static let thumbnailSize = String(localized: "thumbnailSize", defaultValue: "缩略图大小")
     static let sort = String(localized: "sort", defaultValue: "排序")
@@ -776,6 +777,10 @@ enum Copy {
     }
     static func toastBatchRenameSuccess(_ count: Int) -> String {
         String.localizedStringWithFormat(String(localized: "toastBatchRenameSuccess", defaultValue: "已重命名 %lld 张照片"), count)
+    }
+    // V6.58 (audit P1.4): BatchRenameTemplate 极端撞名 _1.._9999 耗尽 报告
+    static func toastBatchRenameCollisions(_ count: Int) -> String {
+        String.localizedStringWithFormat(String(localized: "toastBatchRenameCollisions", defaultValue: "%lld 张照片重命名跳过（已有 _1.._9999 同名文件）"), count)
     }
     static func toastBatchRenameUndoPartialFail(_ count: Int) -> String {
         String.localizedStringWithFormat(String(localized: "toastBatchRenameUndoPartialFail", defaultValue: "部分撤销失败:%lld 张"), count)

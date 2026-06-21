@@ -230,4 +230,15 @@ struct UserSettingsTests {
         settings.reset()
         #expect(settings.scrollAnchorPhotoID == "abc-123")
     }
+
+    // V6.58 (audit P1.1): fontScale UserDefaults 重启后保留
+    //   之前 V6.33.1 加的字段漏了 init reader — didSet 写得起作用但重启读不回来
+    @Test func fontScale_persistsAcrossInit() {
+        // 隔离 UserDefaults (跟其他 test 用同一个 isolatedDefaults, 但用 removeObject 防止污染)
+        Self.isolatedDefaults.removeObject(forKey: "fontScale")
+        Self.isolatedDefaults.set("large", forKey: "fontScale")
+
+        let settings = UserSettings(defaults: Self.isolatedDefaults)
+        #expect(settings.appFontScale == .large, "V6.58: fontScale 应从 UserDefaults 读回")
+    }
 }

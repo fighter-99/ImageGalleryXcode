@@ -54,16 +54,19 @@ enum PhotoOrientation: UInt32, CaseIterable {
     }
 
     /// 水平 flip (左右镜像)
+    // V6.58 (audit P1.2): 之前 `.left → .rightMirrored` 错误 — 水平 flip 是 parity 改变
+    //   (mirrored ↔ non-mirrored), 不应改旋转方向. 之前实现让用户得到旋转+翻转
+    //   (180° 偏离意图). 现在保持旋转方向, 只切 mirrored.
     var horizontalFlip: PhotoOrientation {
         switch self {
         case .up: return .upMirrored
         case .down: return .downMirrored
-        case .left: return .rightMirrored
-        case .right: return .leftMirrored
+        case .left: return .leftMirrored
+        case .right: return .rightMirrored
         case .upMirrored: return .up
         case .downMirrored: return .down
-        case .leftMirrored: return .right
-        case .rightMirrored: return .left
+        case .leftMirrored: return .left
+        case .rightMirrored: return .right
         }
     }
 

@@ -25,6 +25,10 @@ enum BatchRenameTemplate {
 
     enum BatchRenameError: Error, Equatable {
         case emptyTemplate
+        // V6.58 (audit P1.4): 9999 个 _N 后缀还不 unique → caller 弹 toast 而非返回 unchecked name
+        //   之前 _10000 fallback 没验证 onDisk, 极端 case (例如已有 9999 个 _1.._9999 文件)
+        //   会返回撞盘名字, 后续 FileManager.moveItem 静默覆盖
+        case tooManyCollisions
     }
 
     // MARK: - Render
@@ -101,12 +105,15 @@ enum BatchRenameTemplate {
     ///   - existingReserved: 已被本批其他 photo 占据的 finalName 集合 (含扩展名)
     ///   - onDiskCheck: 给定 fullName (含扩展名) 返回磁盘上是否已存在
     /// - Returns: (最终 baseName, 最终 ext)
+    /// - Throws: `BatchRenameError.tooManyCollisions` 当 9999 个 _N 后缀都不 unique 时
+    ///   V6.58 (audit P1.4): 之前 fallback 返回 `_10000` 未验证 onDisk, 极端 case 静默覆盖
+    ///   现在 throw 让 caller (BatchRenameSheet) 弹 toast 通知用户
     static func uniquify(
         baseName: String,
         ext: String,
         existingReserved: Set<String>,
         onDiskCheck: (String) -> Bool
-    ) -> (baseName: String, ext: String) {
+    ) throws -> (baseName: String, ext: String) {
         let fullName = composeName(baseName: baseName, ext: ext)
         if !existingReserved.contains(fullName) && !onDiskCheck(fullName) {
             return (baseName, ext)
@@ -122,8 +129,10 @@ enum BatchRenameTemplate {
             }
             counter += 1
         }
-        // 不可能走到这里 (9999 个 _N 后缀还不 unique), 兜底返回 _10000
-        return ("\(baseName)_\(counter)", ext)
+        // V6.58: 抛 .tooManyCollisions 而非 fallback 返回 unchecked name
+        //   - 极端 adversarial state (existingReserved 已有 _1.._9999) 触发
+        //   - 之前 fallback _10000 未验证 onDisk → 静默覆盖风险
+        throw BatchRenameError.tooManyCollisions
     }
 
     // MARK: - Helpers

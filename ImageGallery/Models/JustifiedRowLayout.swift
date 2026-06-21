@@ -189,6 +189,25 @@ enum JustifiedRowLayout {
         // 末行+不拉伸: 保持 targetRowHeight, 但 cells 不允许溢出
         let wouldOverflow = !isStretched && theoreticalWidth > availableWidth
         let actualRowHeight: CGFloat
+        // V6.58 (audit P1.5): aspectSum <= 0 fallback — 之前除零保护让 scaleFactor=1.0
+        //   然后 cellWidth = targetRowHeight * 0 = 0, 整行 cell 不可见
+        //   现在 aspectSum <= 0 → 等分 availableWidth (每 cell 一份, 视觉上是空白行)
+        if aspectSum <= 0 {
+            let perCellWidth = n > 0 ? (availableWidth - totalSpacing) / CGFloat(n) : 0
+            return JustifiedRow(
+                items: items.map { item in
+                    MasonryMath.Item(
+                        id: item.id,
+                        width: perCellWidth,
+                        aspectRatio: perCellWidth / targetRowHeight
+                    )
+                },
+                targetRowHeight: targetRowHeight,
+                actualRowHeight: targetRowHeight,
+                spacing: spacing,
+                theoreticalWidth: theoreticalWidth
+            )
+        }
         if isStretched || wouldOverflow {
             // 拉伸 (或压缩到 fit) 填满 availableWidth
             let availableWidthForCells = availableWidth - totalSpacing

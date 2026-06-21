@@ -551,18 +551,18 @@ private struct LibrarySettingsView: View {
         }
 
         // V6.43: PhotosCheckbox — 替代 .toggle (switch), 用蓝填充方框 + 白勾
+        // V6.58 (audit P1.6): 传 @Binding 直接绑 — 之前传 Bool + onToggle 分离,
+        //   外部 mutation (例如 reset()) 不会更新 checkbox 视觉
         PhotosCheckbox(
             title: Copy.settingsImportTitle,
             description: Copy.settingsImportSubtitle,
-            isOn: $settings.autoDeduplicate.wrappedValue,
-            onToggle: { settings.autoDeduplicate.toggle() }
+            isOn: $settings.autoDeduplicate
         )
 
         PhotosCheckbox(
             title: Copy.settingsAutoThumbnailsLabel,
             description: Copy.settingsAutoGenerateThumbnailsDescription,
-            isOn: $settings.autoGenerateThumbnails.wrappedValue,
-            onToggle: { settings.autoGenerateThumbnails.toggle() }
+            isOn: $settings.autoGenerateThumbnails
         )
 
         // V6.43: PhotosSettingRadios — 3 个导出格式选项垂直 stacked
@@ -793,13 +793,14 @@ private struct CategoryTabButton: View {
     let category: SettingsCategory
     let isSelected: Bool
     let onTap: () -> Void
+    // V6.58 (audit P1.6 follow-up): @State 提到 struct 字段 (之前在 body 内是非 idiomatic)
+    @State private var isHovered = false
 
     var body: some View {
         // V6.45: hover state — 未选 tab 鼠标悬停时背景变 .quaternary (轻浮视觉反馈)
         //   选中 tab 用 accent 圆角背景 (已有), hover 在未选 tab 上才有意义
         // V6.46: hierarchical rendering — SF Symbol 多色梯度 (跟 macOS Sonoma+ System Settings 一致)
         //   默认 monochrome 是单色, hierarchical 给我们 tint 颜色的多色梯度 (视觉更丰富)
-        @State var isHovered = false
         return Button(action: onTap) {
             VStack(spacing: 4) {
                 Image(systemName: category.icon)
@@ -887,6 +888,8 @@ private struct PhotosRadioOption<Trailing: View>: View {
     let isSelected: Bool
     let onTap: () -> Void
     @ViewBuilder let trailing: (() -> Trailing)?
+    // V6.58 (audit P1.6 follow-up): @State 提到 struct 字段
+    @State private var isHovered = false
 
     init(
         title: String,
@@ -905,7 +908,6 @@ private struct PhotosRadioOption<Trailing: View>: View {
     var body: some View {
         // V6.45: hover state — radio option 在鼠标悬停时背景微微变深
         //   Photos 真版 feedback: hover 给用户"可点"暗示, 不像 click 按钮那么重
-        @State var isHovered = false
         return Button(action: onTap) {
             HStack(alignment: .firstTextBaseline, spacing: Spacing.sm) {
                 Image(systemName: isSelected ? "circle.inset.filled" : "circle")
@@ -946,15 +948,21 @@ private struct PhotosRadioOption<Trailing: View>: View {
 private struct PhotosCheckbox: View {
     let title: String
     let description: String?
-    let isOn: Bool
-    let onToggle: () -> Void
+    // V6.58 (audit P1.6): 改 @Binding 取代 Bool + onToggle 分离
+    //   之前 caller 写 `$settings.X.wrappedValue` (Bool) + `onToggle: { settings.X.toggle() }`,
+    //   外部 mutation (例如 reset()) 不会更新 checkbox 视觉 (因为没监听变化)
+    //   现在 @Binding 直接绑, SwiftUI 自动追踪 source of truth
+    @Binding var isOn: Bool
+    // V6.58: @State 提到 struct 字段 (之前在 body 内是非 idiomatic)
+    @State private var isHovered = false
 
     var body: some View {
         // V6.48: hover 反馈 — 跟 PhotosRadioOption + CategoryTabButton 一致
         //   未选 checkbox 悬停时 Surface.hover 浅背景 — 用户感觉"可点"
         //   选中时不显示 hover (避免视觉冲突)
-        @State var isHovered = false
-        return Button(action: onToggle) {
+        return Button {
+            isOn.toggle()
+        } label: {
             HStack(alignment: .firstTextBaseline, spacing: Spacing.sm) {
                 Image(systemName: isOn ? "checkmark.square.fill" : "square")
                     .font(.system(size: 16))

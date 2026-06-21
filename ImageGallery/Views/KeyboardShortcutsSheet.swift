@@ -61,7 +61,7 @@ struct KeyboardShortcutsSheet: View {
                     shortcutsSection(
                         title: Copy.shortcutsSectionSidebar,
                         items: [
-                            .init(icon: "sidebar.leading", label: Copy.shortcutsToggleSidebar, keys: "⌃⌘S"),
+                            .init(icon: "sidebar.leading", label: Copy.shortcutsToggleSidebar, keys: "⌘\\"),
                             .init(icon: "sidebar.right", label: Copy.shortcutsToggleDetail, keys: "⌃⌘D"),
                             .init(icon: "info.circle", label: Copy.shortcutsToggleInfo, keys: "⌘I")
                         ]

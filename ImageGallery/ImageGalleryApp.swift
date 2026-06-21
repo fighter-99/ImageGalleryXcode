@@ -297,7 +297,8 @@ struct ImageGalleryApp: App {
             // V5.59-3: 3 Toggle + 3 Button 改用 $sharedSettings.X 替代已删的 3 userDefaults bindings
             CommandGroup(after: .sidebar) {
                 Toggle(Copy.showSidebar, isOn: $sharedSettings.showSidebar)
-                    .keyboardShortcut("s", modifiers: [.command, .control])
+                    // V6.58 (audit P1.7): ⌃⌘S → ⌘\ 避开 ⌘⇧S (sort) 撞 's' 字面冲突
+                    .keyboardShortcut("\\", modifiers: [.command])
                 Toggle(Copy.showDetailPanel, isOn: $sharedSettings.showDetail)
                     .keyboardShortcut("d", modifiers: [.command, .control])
                 // V4.37.0: macOS Photos 标准 ⌘I = Show Info Panel
