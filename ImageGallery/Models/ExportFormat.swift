@@ -10,7 +10,7 @@
 
 import Foundation
 
-enum ExportFormat: String, CaseIterable, Identifiable {
+enum ExportFormat: String, CaseIterable, Identifiable, Hashable {
     case jpg
     case png
     case heic

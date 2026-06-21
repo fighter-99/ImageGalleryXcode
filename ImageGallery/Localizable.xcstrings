@@ -10,6 +10,16 @@
     "#%@" : {
 
     },
+    "%@ — %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ — %2$@"
+          }
+        }
+      }
+    },
     "%lld." : {
 
     },
@@ -264,6 +274,17 @@
         }
       }
     },
+    "accessibilitySelectedSuffix" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "，已选中"
+          }
+        }
+      }
+    },
     "accessibilityUnselected" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -443,6 +464,30 @@
         }
       }
     },
+    "alertDeleteNPhotos" : {
+      "comment" : "V6.37.9: Copy.alertDeleteNPhotos → %lld 张图片",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld photos"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 张图片"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 張圖片"
+          }
+        }
+      }
+    },
     "appearanceModeDark" : {
       "comment" : "V6.37.1: Copy.appearanceModeDark → 深色",
       "extractionState" : "manual",
@@ -522,30 +567,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "应用"
-          }
-        }
-      }
-    },
-    "alertDeleteNPhotos" : {
-      "comment" : "V6.37.9: Copy.alertDeleteNPhotos → %lld 张图片",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld photos"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld 张图片"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld 張圖片"
           }
         }
       }
@@ -1105,6 +1126,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "視圖"
+          }
+        }
+      }
+    },
+    "copiedToPasteboard" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "已复制 %lld 张图片"
           }
         }
       }
@@ -3171,6 +3203,100 @@
         }
       }
     },
+    "imported" : {
+      "comment" : "V6.12.17: V Copy.imported → 已导入 \\(count) 张图片",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Imported %lld photos"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已导入 %lld 张图片"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已匯入 %lld 張圖片"
+          }
+        }
+      }
+    },
+    "importedPartial" : {
+      "comment" : "V6.12.17: V Copy.importedPartial → 已导入 \\(inserted) 张，\\(failed) 张失败",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Imported %lld, %lld failed"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已导入 %lld 张，%lld 张失败"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已匯入 %lld 張，%lld 張失敗"
+          }
+        }
+      }
+    },
+    "importFailed" : {
+      "comment" : "V6.12.17: V Copy.importFailed → 导入失败：\\(filename)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import failed: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导入失败：%@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯入失敗：%@"
+          }
+        }
+      }
+    },
+    "importLocationMissingMessage" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "之前选择的文件夹已被移动或删除, 请重新选择。"
+          }
+        }
+      }
+    },
+    "importLocationMissingTitle" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "默认导入位置不存在"
+          }
+        }
+      }
+    },
     "importPanelTitle" : {
       "comment" : "V6.37.9: Copy.importPanelTitle → 选择图片或文件夹",
       "extractionState" : "manual",
@@ -3287,78 +3413,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "匯入中..."
-          }
-        }
-      }
-    },
-    "imported" : {
-      "comment" : "V6.12.17: V Copy.imported → 已导入 \\(count) 张图片",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Imported %lld photos"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已导入 %lld 张图片"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已匯入 %lld 張圖片"
-          }
-        }
-      }
-    },
-    "importedPartial" : {
-      "comment" : "V6.12.17: V Copy.importedPartial → 已导入 \\(inserted) 张，\\(failed) 张失败",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Imported %lld, %lld failed"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已导入 %lld 张，%lld 张失败"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已匯入 %lld 張，%lld 張失敗"
-          }
-        }
-      }
-    },
-    "importFailed" : {
-      "comment" : "V6.12.17: V Copy.importFailed → 导入失败：\\(filename)",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Import failed: %@"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "导入失败：%@"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "匯入失敗：%@"
           }
         }
       }
@@ -3627,6 +3681,124 @@
         }
       }
     },
+    "marqueeHintDismiss" : {
+      "comment" : "V6.37.8: Copy.marqueeHintDismiss → 知道了",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Got it"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "知道了"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "知道了"
+          }
+        }
+      }
+    },
+    "marqueeHintSubtitle" : {
+      "comment" : "V6.37.8: Copy.marqueeHintSubtitle → 在空白处按下左键拖动, 选择一片区域内的所有照片",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hold left mouse button and drag over empty space to select a region of photos at once."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在空白处按下左键拖动, 选择一片区域内的所有照片"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在空白處按住左鍵拖動，選擇一片區域內的所有照片"
+          }
+        }
+      }
+    },
+    "menuEmptyTrash" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "清空回收站…"
+          }
+        }
+      }
+    },
+    "menuEmptyTrashTooltip" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "永久删除回收站中的所有照片"
+          }
+        }
+      }
+    },
+    "menuShare" : {
+      "comment" : "V6.37.10: Copy.menuShare → 分享…",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分享…"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分享…"
+          }
+        }
+      }
+    },
+    "menuStartSpeaking" : {
+      "comment" : "V6.37.10: Copy.menuStartSpeaking → 开始朗读",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start Speaking"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "开始朗读"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開始朗讀"
+          }
+        }
+      }
+    },
     "miniToolbarAddTagTitle" : {
       "comment" : "V6.37.5: Copy.miniToolbarAddTagTitle → 加标签",
       "extractionState" : "manual",
@@ -3863,102 +4035,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "為選中照片加標籤"
-          }
-        }
-      }
-    },
-    "marqueeHintDismiss" : {
-      "comment" : "V6.37.8: Copy.marqueeHintDismiss → 知道了",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Got it"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "知道了"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "知道了"
-          }
-        }
-      }
-    },
-    "marqueeHintSubtitle" : {
-      "comment" : "V6.37.8: Copy.marqueeHintSubtitle → 在空白处按下左键拖动, 选择一片区域内的所有照片",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hold left mouse button and drag over empty space to select a region of photos at once."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在空白处按下左键拖动, 选择一片区域内的所有照片"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在空白處按住左鍵拖動，選擇一片區域內的所有照片"
-          }
-        }
-      }
-    },
-    "menuShare" : {
-      "comment" : "V6.37.10: Copy.menuShare → 分享…",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Share…"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "分享…"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "分享…"
-          }
-        }
-      }
-    },
-    "menuStartSpeaking" : {
-      "comment" : "V6.37.10: Copy.menuStartSpeaking → 开始朗读",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Start Speaking"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "开始朗读"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "開始朗讀"
           }
         }
       }
@@ -5451,6 +5527,28 @@
         }
       }
     },
+    "settingsAdvancedSubtitle" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "一次性操作, 不会持久化偏好。"
+          }
+        }
+      }
+    },
+    "settingsAdvancedTitle" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "高级"
+          }
+        }
+      }
+    },
     "settingsAppearanceLabel" : {
       "comment" : "V6.12.18: Copy.settingsAppearanceLabel → 外观",
       "extractionState" : "manual",
@@ -5619,6 +5717,17 @@
         }
       }
     },
+    "settingsAutoGenerateThumbnailsDescription" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "导入时自动生成缩略图缓存, 提升后续浏览速度"
+          }
+        }
+      }
+    },
     "settingsAutoThumbnailsLabel" : {
       "comment" : "V6.12.18: Copy.settingsAutoThumbnailsLabel → 导入时生成缩略图",
       "extractionState" : "manual",
@@ -5663,6 +5772,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "關於"
+          }
+        }
+      }
+    },
+    "settingsCategoryAboutSubtitle" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "应用信息、链接与版权"
           }
         }
       }
@@ -5715,6 +5835,17 @@
         }
       }
     },
+    "settingsCategoryAppearanceSubtitle" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "主题、强调色、字体大小"
+          }
+        }
+      }
+    },
     "settingsCategoryGeneral" : {
       "comment" : "V6.37.3: Copy.settingsCategoryGeneral → 通用",
       "extractionState" : "manual",
@@ -5735,6 +5866,105 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "一般"
+          }
+        }
+      }
+    },
+    "settingsCategoryGeneralSubtitle" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "启动默认值与高级操作"
+          }
+        }
+      }
+    },
+    "settingsCategoryLanguage" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "语言"
+          }
+        }
+      }
+    },
+    "settingsCategoryLanguageSubtitle" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "App 显示语言"
+          }
+        }
+      }
+    },
+    "settingsCategoryLibrary" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "图库"
+          }
+        }
+      }
+    },
+    "settingsCategoryLibrarySubtitle" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "导入与导出的默认行为"
+          }
+        }
+      }
+    },
+    "settingsCategoryShortcuts" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "快捷键"
+          }
+        }
+      }
+    },
+    "settingsCategoryShortcutsSubtitle" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "完整快捷键列表"
+          }
+        }
+      }
+    },
+    "settingsCategoryTrash" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "回收站"
+          }
+        }
+      }
+    },
+    "settingsCategoryTrashSubtitle" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "回收站保留时长与清空"
           }
         }
       }
@@ -5879,6 +6109,149 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "預設視圖"
+          }
+        }
+      }
+    },
+    "settingsDoubleClickImmersiveLabel" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "沉浸式"
+          }
+        }
+      }
+    },
+    "settingsDoubleClickLabel" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "双击"
+          }
+        }
+      }
+    },
+    "settingsDoubleClickQuickLookLabel" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "快速查看"
+          }
+        }
+      }
+    },
+    "settingsDoubleClickSubtitle" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "在缩略图上双击时的默认行为。“沉浸式” 进入全屏查看，“快速查看” 用系统 Quick Look panel。"
+          }
+        }
+      }
+    },
+    "settingsDoubleClickTitle" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "双击行为"
+          }
+        }
+      }
+    },
+    "settingsEmptyTrashButton" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "立即清空"
+          }
+        }
+      }
+    },
+    "settingsEmptyTrashConfirmAction" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "永久删除"
+          }
+        }
+      }
+    },
+    "settingsEmptyTrashConfirmMessage" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "此操作会永久删除回收站中的所有照片, 无法撤销。"
+          }
+        }
+      }
+    },
+    "settingsEmptyTrashConfirmTitle" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "清空回收站?"
+          }
+        }
+      }
+    },
+    "settingsEmptyTrashLabel" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "所有已删除照片"
+          }
+        }
+      }
+    },
+    "settingsEmptyTrashSubtitle" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "永久删除所有回收站中的照片, 无法撤销。"
+          }
+        }
+      }
+    },
+    "settingsEmptyTrashTitle" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "清空回收站"
+          }
+        }
+      }
+    },
+    "settingsEmptyTrashTooltip" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "永久删除回收站中所有照片, 无法撤销"
           }
         }
       }
@@ -6099,6 +6472,72 @@
         }
       }
     },
+    "settingsImportLocationChooseButton" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "选择..."
+          }
+        }
+      }
+    },
+    "settingsImportLocationClearButton" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "清除"
+          }
+        }
+      }
+    },
+    "settingsImportLocationEmpty" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "未设置"
+          }
+        }
+      }
+    },
+    "settingsImportLocationLabel" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "文件夹"
+          }
+        }
+      }
+    },
+    "settingsImportLocationSubtitle" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "设置后, ⌘O 自动打开这个文件夹。留空则每次手动选择。"
+          }
+        }
+      }
+    },
+    "settingsImportLocationTitle" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "默认导入位置"
+          }
+        }
+      }
+    },
     "settingsImportSubtitle" : {
       "comment" : "V6.37.3: Copy.settingsImportSubtitle → 拖入或选择文件夹导入图片时的默认行为。",
       "extractionState" : "manual",
@@ -6243,6 +6682,28 @@
         }
       }
     },
+    "settingsLayoutSubtitle" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "缩略图的显示形状。方格按比例裁切, 按比例保留原图比例。"
+          }
+        }
+      }
+    },
+    "settingsLayoutTitle" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "缩略图布局"
+          }
+        }
+      }
+    },
     "settingsLinksTitle" : {
       "comment" : "V6.37.3: Copy.settingsLinksTitle → 链接",
       "extractionState" : "manual",
@@ -6287,6 +6748,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "設定…"
+          }
+        }
+      }
+    },
+    "settingsOpenDataFolderButton" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "在 Finder 中显示"
+          }
+        }
+      }
+    },
+    "settingsOpenDataFolderLabel" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "数据文件夹"
+          }
+        }
+      }
+    },
+    "settingsOpenDataFolderTooltip" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "在 Finder 中显示 App 数据存储目录 (Application Support/ImageGallery)"
           }
         }
       }
@@ -6363,6 +6857,17 @@
         }
       }
     },
+    "settingsResetAllLabel" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "所有偏好设置"
+          }
+        }
+      }
+    },
     "settingsResetAllTooltip" : {
       "comment" : "V6.12.18: Copy.settingsResetAllTooltip → 恢复全部设置为默认",
       "extractionState" : "manual",
@@ -6420,6 +6925,72 @@
         }
       }
     },
+    "settingsResetOnboardingButton" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "重新查看"
+          }
+        }
+      }
+    },
+    "settingsResetOnboardingConfirmAction" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "重新查看"
+          }
+        }
+      }
+    },
+    "settingsResetOnboardingConfirmMessage" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "关闭设置后会立即弹出 3 张引导卡。"
+          }
+        }
+      }
+    },
+    "settingsResetOnboardingConfirmTitle" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "重新查看新手引导?"
+          }
+        }
+      }
+    },
+    "settingsResetOnboardingLabel" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "新手引导"
+          }
+        }
+      }
+    },
+    "settingsResetOnboardingTooltip" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "重新弹出新手引导 3 张卡片"
+          }
+        }
+      }
+    },
     "settingsRetentionLabel" : {
       "comment" : "V6.12.18: Copy.settingsRetentionLabel → 保留时长",
       "extractionState" : "manual",
@@ -6440,6 +7011,72 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "保留時長"
+          }
+        }
+      }
+    },
+    "settingsRetentionSubtitle" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "删除的照片在回收站中保留的天数。超过后自动永久删除。"
+          }
+        }
+      }
+    },
+    "settingsRetentionTitle" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "保留时长"
+          }
+        }
+      }
+    },
+    "settingsShortcutsLabel" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "完整快捷键列表"
+          }
+        }
+      }
+    },
+    "settingsShortcutsShowButton" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "打开速查"
+          }
+        }
+      }
+    },
+    "settingsShortcutsSubtitle" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "查看 app 内所有快捷键。也可以按 ⌘? 随时打开速查。"
+          }
+        }
+      }
+    },
+    "settingsShortcutsTitle" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "快捷键"
           }
         }
       }
@@ -6516,6 +7153,28 @@
         }
       }
     },
+    "settingsThumbnailSizeLarge" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "大"
+          }
+        }
+      }
+    },
+    "settingsThumbnailSizeSmall" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "小"
+          }
+        }
+      }
+    },
     "settingsThumbnailSizeSubtitle" : {
       "comment" : "V6.37.3: Copy.settingsThumbnailSizeSubtitle → 默认缩略图尺寸。拖动 slider 实时预览缩略图大小。当前会话用 toolbar 临时改的会在重启后恢复。",
       "extractionState" : "manual",
@@ -6584,6 +7243,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "設定"
+          }
+        }
+      }
+    },
+    "settingsViewModeLabel" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "视图"
           }
         }
       }
@@ -10045,39 +10715,6 @@
           }
         }
       }
-    },
-    "共 %lld 张" : {
-
-    },
-    "分享…" : {
-
-    },
-    "单击切换选中, 双击进入沉浸式查看, 右键显示更多操作" : {
-
-    },
-    "在空白处按下左键拖动, 选择一片区域内的所有照片" : {
-
-    },
-    "开始朗读" : {
-
-    },
-    "拖动鼠标框选多张照片" : {
-
-    },
-    "新文件夹" : {
-
-    },
-    "模板" : {
-
-    },
-    "模板会产生 %lld 个重名 — Apply 时会自动加 _1 _2 后缀" : {
-
-    },
-    "知道了" : {
-
-    },
-    "预览" : {
-
     }
   },
   "version" : "1.0"

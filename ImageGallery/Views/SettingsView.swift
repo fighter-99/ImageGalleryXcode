@@ -2,69 +2,62 @@
 //  SettingsView.swift
 //  ImageGallery
 //
-//  V3.6.13: 设置面板——单滚动视图 6 section（强调色/回收站/缩略图/视图/排序/外观）
-//  V4.13.0: 改 Settings scene——独立 Preferences 窗口（⌘,）
-//  V4.50.0: 改造 Photos 风格——sidebar 4 类 + detail 布局
-//    之前单滚动 VStack 改为 NavigationSplitView
-//    4 类别：通用 / 外观 / 图库 / 强调色
-//    删 "完成" 按钮（macOS 标准：红 traffic light 关闭窗口）
+//  V6.39.0 (Settings Refactor): 重构 — 5 → 7 categories, 平衡密度, 补缺
+//    原 5 个 categories (通用/外观/图库/强调色/关于) 密度不均: 通用 2 sections 空,
+//    外观 4 sections 满; 字体大小在通用 / 语言在外观概念错位; 缺常用项.
 //
-//  设计原则：
-//  - sidebar 用系统 List .sidebar 风格——macOS 偏好设置标准
-//  - 每类独立子 View——@AppStorage 在子 View 里也能正常工作
-//  - 不改 @AppStorage keys（向后兼容用户已存的偏好）
+//  V6.39.0 新结构:
+//    1. 通用 (启动默认值 + 双击行为 + 高级 actions)
+//    2. 外观 (主题 / 强调色 / 字体大小)
+//    3. 图库 (导入 / 导出默认)
+//    4. 回收站 (保留时长 / 清空 action)  [新独立]
+//    5. 语言 [新独立]
+//    6. 快捷键 (嵌入 KeyboardShortcutsSheet)  [新]
+//    7. 关于 (版本 / 链接 / 版权)
+//
+//  新增 UserSettings 字段:
+//    - defaultImportLocation: String? (LibrarySettingsView 选择)
+//    - doubleClickAction: DoubleClickAction (GeneralSettingsView 选择)
 //
 
 import SwiftUI
+import AppKit
+import UniformTypeIdentifiers
 
-// MARK: - V6.01: 节奏统一常量
-//
-// V6.01: 统一 3 个 SettingsView 内部常量, 之前散在 7+ 处, 改一处全跟
-//   - labelColumnWidth: 80pt (label 80pt 左 + control 右 对齐 Photos 偏好设置)
-//   - 之前 LibrarySettingsView 用 60pt, 跟 General/Appearance 不齐
-//   - titleSubtitleGap: 8pt (V5.45 13 token 体系的 Spacing.sm)
-//   - 之前用字面量 4, 跨 Spacing.xs/sm 节奏跳跃
-//
-// 暂不抽到 DesignTokens.swift——只 SettingsView 用, 后续 ContentView 复用再 promote
+// MARK: - V6.01: 节奏统一常量 (沿用)
 private enum SettingsMetrics {
     static let labelColumnWidth: CGFloat = 80
     static let titleSubtitleGap: CGFloat = Spacing.sm
 }
 
-// MARK: - V6.08: 外部链接（占位 URL，Phase 4 改）
-//
-//   之前 4 处 Link(destination: URL(string: "...")!) force-unwrap
-//   "https://github.com/" 现在合法, 但改 URL 时加 # anchor 带空格 / 含百分号 / 中文
-//   都会让 URL(string:) 返回 nil → 崩溃. 改 if let 守卫.
+// MARK: - V6.39.0: 关于页面链接 (占位 → 真实 URL)
 private enum SettingsLinks {
     static let projectHomepage = "https://github.com/"
     static let helpDocs = "https://github.com/"
     static let issueTracker = "https://github.com/"
 }
 
-/// V6.08: 安全的 Link——URL 解析失败时回退到红字提示, 永不崩溃
+// MARK: - V6.08: 安全的 Link (沿用)
 @ViewBuilder
 private func safeExternalLink(_ urlString: String, @ViewBuilder label: () -> some View) -> some View {
     if let url = URL(string: urlString) {
         Link(destination: url, label: label)
     } else {
-        // 开发者错误: 改 SettingsLinks 时 URL 写错, 编译/运行期都不报警
-        // 提示让 bug 可见 (Label + 红字), 不崩溃
         label()
             .foregroundStyle(.red)
             .accessibilityLabel(Copy.settingsAccessibilityLinkMisconfigured(urlString))
     }
 }
 
-// MARK: - V4.50.0: 设置类别（sidebar 项）
-// V5.57-1: 加 .about——macOS Photos.app 习惯，about 放最末
-
+// MARK: - V6.39.0: 设置类别 (7 categories, 平衡密度)
 enum SettingsCategory: String, CaseIterable, Identifiable, Hashable {
-    case general       // 通用：默认视图/排序
-    case appearance    // 外观：缩略图大小/外观模式
-    case library       // 图库：回收站保留时长
-    case accent        // 强调色
-    case about         // V5.57-1: 关于——版本号/build/链接
+    case general       // 通用: 启动默认值 + 双击行为 + 高级 actions
+    case appearance    // 外观: 主题/强调色/字体大小
+    case library       // 图库: 导入/导出默认
+    case trash         // 回收站: 保留时长/清空 [新独立]
+    case language      // 语言 [新独立]
+    case shortcuts     // 快捷键: 嵌入 KeyboardShortcutsSheet [新]
+    case about         // 关于
 
     var id: String { rawValue }
 
@@ -72,137 +65,177 @@ enum SettingsCategory: String, CaseIterable, Identifiable, Hashable {
         switch self {
         case .general:    return Copy.settingsCategoryGeneral
         case .appearance: return Copy.settingsCategoryAppearance
-        case .library:    return Term.library
-        case .accent:     return Copy.settingsCategoryAccent
+        case .library:    return Copy.settingsCategoryLibrary
+        case .trash:      return Copy.settingsCategoryTrash
+        case .language:   return Copy.settingsCategoryLanguage
+        case .shortcuts:  return Copy.settingsCategoryShortcuts
         case .about:      return Copy.settingsCategoryAbout
         }
     }
 
-    /// macOS Photos 风格 SF Symbol——sidebar 类别 icon
-    /// V6.07: 全部加 .fill (solid)——视觉重量统一
-    ///   之前 mix: gearshape/paintbrush/trash 看起来更重, paintpalette/info.circle 看起来更轻
-    ///   (gearshape 齿多视觉密度高, paintbrush 单线视觉密度低)
-    ///   改 .fill 后 5 个 icon 都是 solid, 视觉重量齐整——sidebar 类别一眼能扫
-    ///   跟 macOS Sonoma+ System Settings sidebar 范式一致
+    /// V6.41: category 简短描述 — Photos 风格 detail 顶部大标题下方 subtitle
+    var subtitle: String {
+        switch self {
+        case .general:    return Copy.settingsCategoryGeneralSubtitle
+        case .appearance: return Copy.settingsCategoryAppearanceSubtitle
+        case .library:    return Copy.settingsCategoryLibrarySubtitle
+        case .trash:      return Copy.settingsCategoryTrashSubtitle
+        case .language:   return Copy.settingsCategoryLanguageSubtitle
+        case .shortcuts:  return Copy.settingsCategoryShortcutsSubtitle
+        case .about:      return Copy.settingsCategoryAboutSubtitle
+        }
+    }
+
+    /// macOS Photos 风格 SF Symbol — sidebar 类别 icon
+    ///   全部 .fill (solid) — 视觉重量统一 (V6.07 沿用)
     var icon: String {
         switch self {
         case .general:    return "gearshape.fill"
         case .appearance: return "paintbrush.fill"
-        case .library:    return "trash.fill"
-        case .accent:     return "paintpalette.fill"
+        case .library:    return "photo.stack.fill"
+        case .trash:      return "trash.fill"
+        case .language:   return "globe"
+        case .shortcuts:  return "keyboard.fill"
         case .about:      return "info.circle.fill"
         }
     }
 }
 
-// MARK: - V4.50.0: 主设置视图
-// V5.57-1: detail 容器包 VStack(spacing: Spacing.lg) + 底部"恢复全部为默认"按钮
-// V5.57-2: @SceneStorage 持久化 selectedCategory——关掉设置重开回到上次类别
-// V5.58-1: 接收 UserSettings 实例, 4 个子 View 改用 @Bindable 直接绑 UserSettings
-//   (去掉子 view 的 @AppStorage 双写, 改用 $settings.xxx Binding)
-
+// MARK: - V6.39.0: 主设置视图
 struct SettingsView: View {
-    // V5.58-1: 接收注入的 UserSettings 实例——从 ImageGalleryApp Settings scene 传过来
-    //   不是 @State 不是 @Environment——是普通的 let (init 时拿到引用即可)
     let settings: UserSettings
 
-    // V5.57-2: @SceneStorage 持久化类别选择 (scope = scene, 不是 app)
-    //   同时开 2 个 ImageGallery 窗口各自记忆——photos.app Settings scene 同模式
-    //   字符串 (rawValue) 而非 enum——@SceneStorage 不直接支持 enum
-    @SceneStorage("settingsSelectedCategoryRaw") private var selectedCategoryRaw: String = SettingsCategory.general.rawValue
+    // V6.45: 持久化最后选中 category — 跨 app restart 记忆
+    //   之前 @SceneStorage 只在 scene 生命周期内保留, 关 app 后丢失
+    //   现在 UserSettings.lastSettingsCategory 持久化到 UserDefaults
+    //   用 @State + custom init 从 settings 读取 (替代 @SceneStorage)
+    @State private var selectedCategoryRaw: String
 
-    // V6.31.3: "恢复全部为默认" 二次确认 — 之前直接 destructive, 误触会清空用户偏好
     @State private var showingResetConfirm = false
+    @State private var showingResetOnboardingConfirm = false
+    @State private var showingEmptyTrashConfirm = false
+
+    // V6.45: custom init — 用 settings.lastSettingsCategory 初始化 selectedCategoryRaw
+    //   替代 @SceneStorage 默认值, 实现跨 app restart 记忆
+    init(settings: UserSettings) {
+        self.settings = settings
+        self._selectedCategoryRaw = State(initialValue: settings.lastSettingsCategory)
+    }
+
+    // V6.51: Window 入场动画 — 打开 Settings 时 fade (0→1) + scale (0.98→1.0)
+    //   macOS 标准窗口入场 (easeOut 200ms) — 视觉锤"窗口活过来"
+    //   跟 macOS Sonoma+ System Settings 行为对齐
+    @State private var appearanceProgress: Double = 0
+    @State private var showingShortcutsSheet = false
 
     private var selectedCategory: Binding<SettingsCategory> {
         Binding(
             get: { SettingsCategory(rawValue: selectedCategoryRaw) ?? .general },
-            set: { selectedCategoryRaw = $0.rawValue }
+            set: {
+                selectedCategoryRaw = $0.rawValue
+                // V6.45: 持久化到 UserSettings (跨 app restart 记忆)
+                settings.lastSettingsCategory = $0.rawValue
+            }
         )
     }
 
     var body: some View {
-        NavigationSplitView {
-            // V5.93: 侧边栏始终可见——删窗口可隐藏功能 (Photos 偏好设置范式)
-            //   .navigationSplitViewColumnWidth 加 fixed 240pt (跟 Photos 接近, 紧凑)
-            // V5.98: 删 sidebar 搜索框——macOS Photos 偏好设置范式无 search, 5 个 category
-            //   加搜索是过度设计 (V5.92), 占视觉空间且隐藏 .about (用户报告 4 个 category)
-            List(SettingsCategory.allCases, selection: selectedCategory) { category in
-                Label(category.title, systemImage: category.icon)
-                    .tag(category)
-            }
-            .navigationSplitViewColumnWidth(min: 180, ideal: 200, max: 240)
-        } detail: {
-            // V5.89: 拆 cards → fluid rows——detail 改 ScrollView 包 VStack(spacing: Spacing.xxl)
-            //   之前每个 section 是大卡片 (背景 + padding + 圆角),看着像表单
-            //   改成 fluid rows (无 card 背景, photos.app 偏好设置风格)
-            //   padding 统一在外层 (Spacing.xl),section 之间 Spacing.xxl 24pt 留白
-            // V5.93: 删 slide-left 动画 (.move edge: .trailing)——改 fade only (.opacity)
-            //   Photos 偏好设置范式: 切 category 是 fade, 无 slide (iOS 风格)
-            // V5.93: Reset 按钮从内嵌 detail 底部移到 toolbar (主操作入口)
-            // V5.94: spacing xxl(24pt) → lg(16pt)——Photos 偏好设置实际节奏, 紧凑
+        VStack(spacing: 0) {
+            // V6.41.1: Photos 风格顶部 tab 栏 — 替代 NavigationSplitView sidebar
+            //   之前误判截图: 以为 Photos 用 sidebar, 实际是顶部 3 个 tab (通用/iCloud/共享图库)
+            //   我们 7 category 用 ScrollView(.horizontal) 支持横向滚动
+            //   选中态: 圆角背景 + tint 色图标/文字 (跟 Photos iCloud tab 选中态一致)
+            // V6.50: tab bar 加 .background(.bar) — macOS 标准 toolbar 视觉
+            //   之前透明背景, 跟 content 区域无视觉分隔. 现在 frosted glass 效果
+            //   跟 macOS Sonoma+ Photos 真版 Preferences 顶部 tab 视觉一致
+            CategoryTabBar(selection: selectedCategory)
+                .background(.bar)
+            Divider()
             ScrollView {
                 VStack(alignment: .leading, spacing: Spacing.lg) {
+                    // V6.41: Photos 风格 detail 顶部 — 大标题 + subtitle
+                    VStack(alignment: .leading, spacing: Spacing.xs) {
+                        Text(selectedCategory.wrappedValue.title)
+                            .font(.system(size: 28, weight: .semibold))
+                            .foregroundStyle(.primary)
+                        Text(selectedCategory.wrappedValue.subtitle)
+                            .font(Typography.body)
+                            .foregroundStyle(Surface.textSecondary)
+                    }
+                    .padding(.bottom, Spacing.sm)
                     Group {
                         switch selectedCategory.wrappedValue {
                         case .general:
-                            GeneralSettingsView(settings: settings)
+                            GeneralSettingsView(
+                                settings: settings,
+                                onResetOnboarding: { showingResetOnboardingConfirm = true },
+                                onOpenDataFolder: openDataFolder,
+                                onResetAll: { showingResetConfirm = true }
+                            )
                         case .appearance:
                             AppearanceSettingsView(settings: settings)
                         case .library:
                             LibrarySettingsView(settings: settings)
-                        case .accent:
-                            AccentSettingsView(settings: settings)
+                        case .trash:
+                            TrashSettingsView(
+                                settings: settings,
+                                onEmptyTrash: { showingEmptyTrashConfirm = true }
+                            )
+                        case .language:
+                            LanguageSettingsView(settings: settings)
+                        case .shortcuts:
+                            ShortcutsSettingsView(onShowShortcuts: { showingShortcutsSheet = true })
                         case .about:
                             AboutSettingsView()
                         }
                     }
-                    .id(selectedCategory.wrappedValue)  // V4.55.0: 强制 SwiftUI 视为不同视图（transition 关键）
-                    .transition(.opacity)  // V5.93: 删 .move(edge: .trailing)——fade only, Photos 范式
-                    .animation(Animations.standard, value: selectedCategory.wrappedValue)  // V4.55.0: 驱动 transition
+                    .id(selectedCategory.wrappedValue)
+                    .transition(.opacity)
+                    .animation(Animations.standard, value: selectedCategory.wrappedValue)
                 }
-                .padding(Spacing.xl)  // V5.89: 统一外层 padding
+                .padding(Spacing.xl)
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
-            // V6.00: 改 minWidth/Height → idealWidth/Height + maxHeight——给 Settings 窗口合理默认尺寸
-            //   之前 minWidth: 480, minHeight: 360 让窗口能拉到 1500+pt 高 (用户报告), 大量空白
-            //   改 idealHeight: 580, maxHeight: 720——窗口自动 size-to-content
-            //   跟 macOS Photos 偏好设置范式一致 (Photos 也是固定 ~580pt 高)
-            .frame(
-                minWidth: 640, idealWidth: 760,
-                minHeight: 480, idealHeight: 580, maxHeight: 720
-            )
+        }
+        .frame(
+            // V6.47: 缩 window minimum — Photos 真版 ~520pt wide × 400pt tall
+            //   之前 640x480 让小屏用户被迫滚动, 不灵活
+            minWidth: 520, idealWidth: 720,
+            minHeight: 400, idealHeight: 560
+        )
+        // V6.51: Window 入场 fade + scale 动画 — macOS 标准 200ms ease-out
+        //   打开 Settings 时从透明 + 98% scale → 完整, 视觉锤"窗口活过来"
+        //   跟 macOS Sonoma+ System Settings / Photos 真版 Preferences 入场行为对齐
+        .scaleEffect(0.98 + 0.02 * appearanceProgress, anchor: .center)
+        .opacity(appearanceProgress)
+        .onAppear {
+            withAnimation(.easeOut(duration: 0.2)) {
+                appearanceProgress = 1
+            }
         }
         .navigationTitle(Copy.settingsTitle)
-        // V5.93: 加 toolbar——Reset All + Help (Photos 偏好设置主操作入口)
-        //   之前 Reset All 在内嵌 detail 底部, 跟用户距离远; 现在放 toolbar 1-click
-        // V6.06: placement .primaryAction → .automatic——macOS 14+ Settings scene
-        //   .primaryAction 渲染不稳定 (用户报告 4 张截图都看不到 toolbar)
-        //   .automatic 让 SwiftUI 自动选 placement, Settings scene 兼容更好
-        .toolbar {
-            ToolbarItem(placement: .automatic) {
-                Button {
-                    // V6.31.3: 弹确认 dialog, 避免误触清空用户偏好
-                    showingResetConfirm = true
-                } label: {
-                    Label(Copy.settingsResetAll, systemImage: "arrow.counterclockwise")
-                }
-                .help(Copy.settingsResetAllTooltip)
+        // V6.41: 完全删 toolbar — macOS Photos Settings 风格
+        //   之前 Reset + Help 2 个 toolbar item 太显眼, 跟 Photos "窗口只有 traffic light" 风格冲突
+        //   Reset 移到 General > 高级 (跟"重置 Onboarding"同 section, destructive 上下文就近)
+        //   Help 移到 About > 链接 (已有 3 个 safeExternalLink)
+        //   ⓘ button 走右下角 overlay (Photos 风格, 极轻量浮层) — 见 detail overlay
+        // V6.41: 右下角 ⓘ help button — Photos 真版浮层圆形 button, 不抢戏
+        .overlay(alignment: .bottomTrailing) {
+            safeExternalLink(SettingsLinks.helpDocs) {
+                Image(systemName: "questionmark")
+                    .font(Typography.body.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 28, height: 28)
+                    .background(.quaternary, in: Circle())
             }
-            ToolbarItem(placement: .automatic) {
-                safeExternalLink(SettingsLinks.helpDocs) {
-                    Label(Copy.settingsHelpLabel, systemImage: "questionmark.circle")
-                }
-                .help(Copy.settingsHelpTooltip)
-            }
+            .help(Copy.settingsHelpTooltip)
+            .padding(Spacing.md)
         }
-        // V6.31.3: reset 确认 dialog (Photos.app 范式 — destructive 操作前确认)
-        //   之前直接 settings.reset() 会清空所有 UserSettings 偏好 (排序/视图模式/缩略图大小等)
-        //   误触风险高, 加二次确认 — 跟 V6.29.1 撤销 toast (reactive) 互补
-        .confirmationDialog(
+        // V6.45: 改用 .alert (macOS 真版 dialog window) — 替代 iOS 风格 .confirmationDialog sheet
+        //   macOS Photos 用真 dialog, 不是从底部弹的 action sheet
+        .alert(
             Copy.settingsResetConfirmTitle,
-            isPresented: $showingResetConfirm,
-            titleVisibility: .visible
+            isPresented: $showingResetConfirm
         ) {
             Button(Copy.settingsResetConfirmAction, role: .destructive) {
                 settings.reset()
@@ -211,318 +244,450 @@ struct SettingsView: View {
         } message: {
             Text(Copy.settingsResetConfirmMessage)
         }
+        // V6.45: Reset Onboarding → .alert
+        .alert(
+            Copy.settingsResetOnboardingConfirmTitle,
+            isPresented: $showingResetOnboardingConfirm
+        ) {
+            Button(Copy.settingsResetOnboardingConfirmAction, role: .destructive) {
+                settings.hasSeenOnboarding = false
+            }
+            Button(Copy.cancel, role: .cancel) {}
+        } message: {
+            Text(Copy.settingsResetOnboardingConfirmMessage)
+        }
+        // V6.45: Empty Trash → .alert
+        .alert(
+            Copy.settingsEmptyTrashConfirmTitle,
+            isPresented: $showingEmptyTrashConfirm
+        ) {
+            Button(Copy.settingsEmptyTrashConfirmAction, role: .destructive) {
+                emptyTrash()
+            }
+            Button(Copy.cancel, role: .cancel) {}
+        } message: {
+            Text(Copy.settingsEmptyTrashConfirmMessage)
+        }
+        // V6.39.0: 完整 KeyboardShortcutsSheet (V5.60-7 已存在, 复用)
+        .sheet(isPresented: $showingShortcutsSheet) {
+            KeyboardShortcutsSheet()
+        }
+    }
+
+    // MARK: - V6.39.0: Action handlers
+
+    /// 打开数据文件夹 (NSWorkspace file viewer — macOS 标准 "Reveal in Finder")
+    ///   不需要 ModelContext — 直接打开 Application Support/ImageGallery/
+    private func openDataFolder() {
+        // V6.39.0: PhotoStorage 只暴露 photosDirectory (Photos/ 子目录),
+        //   deletingLastPathComponent → Application Support/ImageGallery/
+        let url = PhotoStorage.shared.photosDirectory.deletingLastPathComponent()
+        try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        NSWorkspace.shared.activateFileViewerSelecting([url])
+    }
+
+    /// 清空回收站 — 走 ContentViewModel.grid.emptyTrash
+    ///   V6.39.0: 这里需要 ContentViewModel 引用, 但 SettingsView 不持有
+    ///   改: 发 NotificationCenter 通知, ContentViewModel 监听后调 emptyTrash
+    ///   或者: 直接走 NSWorkspace 弹 "清空回收站" 走 trash 服务
+    ///   选择: NotificationCenter (跟 .newFolderRequested / .speakRequested 同一 pattern)
+    private func emptyTrash() {
+        NotificationCenter.default.post(name: .emptyTrashRequested, object: nil)
     }
 }
 
-// MARK: - V4.50.0: 4 类设置子 View
-//
-// 设计：每类独立 View + @AppStorage 在子 View
-//   优势：每类独立测试 + 维护，SettingsView 仅做 sidebar/detail 路由
-//
+// MARK: - V6.39.0: NotificationCenter 事件
+extension Notification.Name {
+    static let emptyTrashRequested = Notification.Name("settings.emptyTrashRequested")
+}
 
-// MARK: 通用（默认视图/排序）
-// V5.57-1: 加"窗口"区 (2 toggle)——与菜单 ⌃⌘S/⌘I 同源, 设置文档化统一入口
-// V5.90: 删"窗口"区——跟 菜单"显示"重复, 改用菜单 ⌃⌘S / ⌘I 切换即可
-// V5.58-1: 改用 @Bindable UserSettings——去 4 个 @AppStorage 双写
-
+// MARK: - 通用 (启动默认值 + 双击行为 + 高级 actions)
 private struct GeneralSettingsView: View {
-    // V5.58-1: @Bindable 让 $settings.xxx 直接是 Binding<T>——SwiftUI 标准 pattern
     @Bindable var settings: UserSettings
-
-    // V6.04: 删 defaultViewModeOptions——视图模式搬到外观跟缩略图布局合并
-    private let defaultSortOptions: [SortOption] = SortOption.allCases
+    let onResetOnboarding: () -> Void
+    let onOpenDataFolder: () -> Void
+    // V6.41: 从 toolbar 移下来 — Reset 跟"重置 Onboarding"同 section (destructive 上下文就近)
+    let onResetAll: () -> Void
 
     var body: some View {
-        // V5.95: HStack label 左 / control 右——Photos 偏好设置范式
-        //   之前 Picker 占整 row 宽, 像表单; 现在 label 左 + control 右 紧凑
-        // V6.04: 删"默认视图模式"section——搬到外观跟"缩略图布局"合并
-        //   之前 视图模式(grid/list/timeline) 跟 缩略图布局(square/squareFit) 拆 2 个 section
-        //   概念重叠 (都关于图片显示), 跨 通用/外观 2 个 page 不便对照
+        // V6.42: Photos 风格 — 每个 setting 一个 PhotosSettingRow
 
-        SettingsSection(
-            title: Copy.settingsDefaultSortTitle,
-            subtitle: Copy.settingsDefaultSortSubtitle
-        ) {
-            HStack(alignment: .center, spacing: Spacing.md) {
-                Text(Copy.settingsSortLabel)
-                    .frame(width: SettingsMetrics.labelColumnWidth, alignment: .leading)
-                Picker("", selection: $settings.sortOption) {
-                    ForEach(defaultSortOptions) { option in
-                        Text(option.label).tag(option.rawValue)
-                    }
-                }
-                .pickerStyle(.menu)
-                .labelsHidden()
-                Spacer()  // V5.95: menu picker 不撑满, 留 trailing 视觉缓冲
-            }
-        }
-
-        // V6.33.1: 字体大小 4 档 — 用户对 macOS 没系统级 Dynamic Type 的补充
-        //   对应 FontScale → DynamicTypeSize, 透过 ContentView .environment 注入
-        SettingsSection(
-            title: Copy.settingsFontSizeTitle,
-            subtitle: Copy.settingsFontSizeSubtitle
-        ) {
-            HStack(alignment: .center, spacing: Spacing.md) {
-                Text(Copy.settingsFontSizeInterfaceLabel)
-                    .frame(width: SettingsMetrics.labelColumnWidth, alignment: .leading)
-                Picker("", selection: $settings.appFontScale) {
-                    ForEach(FontScale.allCases) { scale in
-                        Text(scale.displayName).tag(scale)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-            }
-        }
-        // V6.04: 通用 page 只剩"默认排序"1 个 section——视图模式搬到外观
-        //   IA 角度: 排序跟内容组织有关, 留在通用; 显示模式/布局跟外观有关, 搬走
-    }
-}
-
-// MARK: 外观（缩略图大小/缩略图布局/外观模式）
-// V5.57-1: 加"缩略图布局"区 (方格/按比例)——之前仅 toolbar densityMenu 暴露
-// V5.58-1: 改用 @Bindable UserSettings——去 3 个 @AppStorage 双写
-
-private struct AppearanceSettingsView: View {
-    // V5.58-1: @Bindable UserSettings 单一真相源——替换 3 个 @AppStorage
-    @Bindable var settings: UserSettings
-
-    var body: some View {
-        // V6.04: 合并"视图模式"(从通用搬来) + "缩略图布局"为 1 个 section
-        //   之前 2 个独立 section, 跨 page (通用/外观) 不便对照
-        //   现在 1 section 2 Picker——视图模式 (grid/list/timeline) + 布局 (方格/按比例)
-        //   概念都是 '启动时的图片显示', 合并更紧凑
-        SettingsSection(
+        // 默认视图模式
+        PhotosSettingRow(
             title: Copy.settingsDefaultViewTitle,
-            subtitle: Copy.settingsDefaultViewSubtitle
+            description: Copy.settingsDefaultViewSubtitle
         ) {
-            HStack(alignment: .center, spacing: Spacing.md) {
-                Text(Copy.settingsLayoutLabel)
-                    .frame(width: SettingsMetrics.labelColumnWidth, alignment: .leading)
-                Picker("", selection: $settings.thumbnailLayoutMode) {
-                    ForEach(ThumbnailLayoutMode.allCases) { mode in
-                        Label(mode.displayName, systemImage: mode.icon).tag(mode.rawValue)
-                    }
+            Picker("", selection: $settings.appViewMode) {
+                ForEach(ViewMode.allCases) { mode in
+                    Label(mode.label, systemImage: mode.icon).tag(mode)
                 }
-                .pickerStyle(.segmented)
-                .labelsHidden()
             }
+            .pickerStyle(.menu)
+            .labelsHidden()
+            .fixedSize()
         }
 
-        // V6.12.16: 语言选项——简体中文 / 繁體中文 / English
-        //   Copy dict 改 NSLocalizedString 后 (V6.12.17), 所有 UI 文案按这里选的语言显示
-        //   SettingsView 现在还会显示中文 ("语言")——V6.12.17 一起迁
-        SettingsSection(
-            title: Copy.settingsLanguageTitle,
-            subtitle: Copy.settingsLanguageSubtitle
+        // 默认排序
+        PhotosSettingRow(
+            title: Copy.settingsDefaultSortTitle,
+            description: Copy.settingsDefaultSortSubtitle
         ) {
-            HStack(alignment: .center, spacing: Spacing.md) {
-                Text(Copy.languageLabel)
-                    .frame(width: SettingsMetrics.labelColumnWidth, alignment: .leading)
-                Picker("", selection: $settings.appLanguage) {
-                    ForEach(Language.allCases) { lang in
-                        Text(lang.displayName).tag(lang)
-                    }
+            Picker("", selection: $settings.sortOption) {
+                ForEach(SortOption.allCases) { option in
+                    Text(option.label).tag(option.rawValue)
                 }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-                .labelsHidden()
             }
+            .pickerStyle(.menu)
+            .labelsHidden()
+            .fixedSize()
         }
 
-        SettingsSection(
+        // V6.48: 默认缩略图大小 — PhotosSettingRow 紧凑化 (SettingsSection 3 HStack → PhotosSettingRow + 1 preview 行)
+        //   之前 SettingsSection 有 title + slider row + min/max row + preview = 4 HStack 视觉割裂
+        //   现在 PhotosSettingRow 统一 title/subdescription + slider (1 row), 下方 preview + min/max (1 row)
+        //   跟 macOS Sonoma+ System Settings 紧凑布局对齐
+        PhotosSettingRow(
             title: Copy.settingsThumbnailSizeTitle,
-            subtitle: Copy.settingsThumbnailSizeSubtitle
+            description: Copy.settingsThumbnailSizeSubtitle
         ) {
-            // V6.02: 拆 2 行——slider row + preview row
-            //   之前 1 行放 slider + 40pt 数字 + 100pt preview + spacer, 总宽 ~400pt
-            //   跟其他 section 'label 80pt + control 撑满' 节奏不齐, trailing 也不齐
-            //   现在: slider row 跟其他 section 同节奏 (label + slider + 数字)
-            //         preview row 居中 100x100, 视觉重心独立
-            HStack(alignment: .center, spacing: Spacing.md) {
-                Text(Copy.settingsSizeLabel)
-                    .frame(width: SettingsMetrics.labelColumnWidth, alignment: .leading)
+            HStack(spacing: Spacing.sm) {
                 Slider(value: $settings.thumbnailSize, in: 100...250, step: 10)
+                    .frame(width: 160)
                 Text(Copy.thumbnailSizeLabel(Int(settings.thumbnailSize)))
                     .font(Typography.captionMono)
                     .foregroundStyle(Surface.textSecondary)
                     .frame(width: 40, alignment: .trailing)
-                Spacer()
-            }
-            // V6.02: 预览挪到独立行——label column 80pt 占位 (跟其他 row 同节奏)
-            HStack(alignment: .center, spacing: Spacing.md) {
-                Color.clear.frame(width: SettingsMetrics.labelColumnWidth)  // 占位对齐 slider row
-                // V5.57-2: 实时预览——SF Symbol 按 size 缩放
-                // V5.99: card 背景 + 1pt 描边——暗色可见
-                ThumbnailSizePreview(size: $settings.thumbnailSize)
             }
         }
+        // V6.48: min/max + preview — 独立 1 行 (紧跟 PhotosSettingRow 之后, 视觉紧凑)
+        HStack(spacing: Spacing.md) {
+            Text(Copy.settingsThumbnailSizeSmall)
+                .font(Typography.caption)
+                .foregroundStyle(Surface.textSecondary)
+            Spacer()
+            ThumbnailSizePreview(size: $settings.thumbnailSize)
+            Spacer()
+            Text(Copy.settingsThumbnailSizeLarge)
+                .font(Typography.caption)
+                .foregroundStyle(Surface.textSecondary)
+        }
 
+        // V6.43: 双击行为 — PhotosSettingRadios 替代 Picker (2 选项, vertical stack 更 Photos)
+        PhotosSettingRadios(
+            title: Copy.settingsDoubleClickTitle,
+            description: Copy.settingsDoubleClickSubtitle,
+            options: DoubleClickAction.allCases,
+            selection: $settings.appDoubleClickAction,
+            label: { $0.displayName },
+            optionDescription: { _ in nil }
+        )
+
+        // 高级 actions — destructive 操作就地放 (Photos 风格就近)
+        //   不用 PhotosSettingRow — 因为有 3 个 button rows, 用 SettingsSection 容器
         SettingsSection(
-            title: Copy.settingsAppearanceTitle,
-            subtitle: Copy.settingsAppearanceSubtitle
+            title: Copy.settingsAdvancedTitle,
+            subtitle: Copy.settingsAdvancedSubtitle
         ) {
-            HStack(alignment: .center, spacing: Spacing.md) {
-                Text(Copy.settingsAppearanceLabel)
-                    .frame(width: SettingsMetrics.labelColumnWidth, alignment: .leading)
-                Picker("", selection: $settings.appearanceMode) {
-                    ForEach(AppearanceMode.allCases) { mode in
-                        Label(mode.displayName, systemImage: mode.icon).tag(mode.rawValue)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .labelsHidden()
+            HStack {
+                Text(Copy.settingsOpenDataFolderLabel)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                Button(Copy.settingsOpenDataFolderButton, action: onOpenDataFolder)
+                    .buttonStyle(.bordered)
+                    .controlSize(.regular)
+                    .help(Copy.settingsOpenDataFolderTooltip)  // V6.46: 详细 tooltip
+            }
+            HStack {
+                Text(Copy.settingsResetOnboardingLabel)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                Button(Copy.settingsResetOnboardingButton, role: .destructive, action: onResetOnboarding)
+                    .buttonStyle(.bordered)
+                    .controlSize(.regular)
+                    .help(Copy.settingsResetOnboardingTooltip)  // V6.46: 详细 tooltip
+            }
+            HStack {
+                Text(Copy.settingsResetAllLabel)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                Button(Copy.settingsResetAll, role: .destructive, action: onResetAll)
+                    .buttonStyle(.bordered)
+                    .controlSize(.regular)
             }
         }
     }
 }
 
-// MARK: 图库（导入/导出/自动清理）
-// V5.58-1: 改用 @Bindable UserSettings——去 @AppStorage("trashRetentionDays")
-// V5.90: 加"导入" + "导出"区——平衡 IA (单 section 类别显得空)
-
-private struct LibrarySettingsView: View {
+// MARK: - 外观 (主题 / 强调色 / 字体大小)
+private struct AppearanceSettingsView: View {
     @Bindable var settings: UserSettings
 
     var body: some View {
-        // V5.90: 导入——默认从哪个文件夹导入
-        // V6.03: 删外层 VStack 包装——之前 VStack(spacing: .sm) 让 2 toggle 行有 8pt gap
-        //   跟 导出/自动清理 section 的 2 HStack back-to-back 节奏不齐
-        //   改: 2 HStack 直列 (0pt gap), 跟 导出/自动清理 节奏统一
-        //   Text 用 .frame(maxWidth: .infinity) 撑满左侧, Toggle 推到 trailing
-        //   跟其他 section 不同: 此处 label 不固定 80pt (label 6+ 中文字 80pt 装不下)
-        SettingsSection(
-            title: Copy.settingsImportTitle,
-            subtitle: Copy.settingsImportSubtitle
+        // V6.42: Photos 风格 — 每个 setting 一个 PhotosSettingRow
+        //   标题 16pt semibold + 11pt secondary description (跟 macOS Sonoma+ System Settings 一致)
+        //   trailing control 推到右侧 (Picker / Slider / Toggle)
+
+        // 缩略图布局
+        PhotosSettingRow(
+            title: Copy.settingsLayoutTitle,
+            description: Copy.settingsLayoutSubtitle
         ) {
-            HStack {
-                Text(Copy.settingsAutoDedupeLabel).frame(maxWidth: .infinity, alignment: .leading)
-                Toggle("", isOn: $settings.autoDeduplicate).labelsHidden()
+            Picker("", selection: $settings.thumbnailLayoutMode) {
+                ForEach(ThumbnailLayoutMode.allCases) { mode in
+                    Label(mode.displayName, systemImage: mode.icon).tag(mode.rawValue)
+                }
             }
-            HStack {
-                Text(Copy.settingsAutoThumbnailsLabel).frame(maxWidth: .infinity, alignment: .leading)
-                Toggle("", isOn: $settings.autoGenerateThumbnails).labelsHidden()
+            .pickerStyle(.menu)
+            .labelsHidden()
+            .fixedSize()
+        }
+
+        // 主题
+        PhotosSettingRow(
+            title: Copy.settingsAppearanceTitle,
+            description: Copy.settingsAppearanceSubtitle
+        ) {
+            Picker("", selection: $settings.appearanceMode) {
+                ForEach(AppearanceMode.allCases) { mode in
+                    Label(mode.displayName, systemImage: mode.icon).tag(mode.rawValue)
+                }
+            }
+            .pickerStyle(.menu)
+            .labelsHidden()
+            .fixedSize()
+        }
+
+        // 字体大小
+        PhotosSettingRow(
+            title: Copy.settingsFontSizeTitle,
+            description: Copy.settingsFontSizeSubtitle
+        ) {
+            Picker("", selection: $settings.appFontScale) {
+                ForEach(FontScale.allCases) { scale in
+                    Text(scale.displayName).tag(scale)
+                }
+            }
+            .pickerStyle(.menu)
+            .labelsHidden()
+            .fixedSize()
+        }
+
+        // 强调色 — V6.44 重构: 不走 PhotosSettingRow trailing (会聚集右侧)
+        //   改成独立 section block — title/subtitle 顶部, 9 色 swatch 在下方 2 行 (5 + 4)
+        //   视觉: 标题为锚点, colors 下方展开 — 跟 macOS Sonoma+ Photos accent picker 接近
+        VStack(alignment: .leading, spacing: Spacing.md) {
+            VStack(alignment: .leading, spacing: SettingsMetrics.titleSubtitleGap) {
+                Text(Copy.settingsAccentSectionTitle)
+                    .font(Typography.headline)
+                Text(Copy.settingsAccentSectionSubtitle)
+                    .font(Typography.caption)
+                    .foregroundStyle(Surface.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            VStack(alignment: .leading, spacing: Spacing.md) {
+                let colors = AccentColor.allCases
+                let halfPoint = (colors.count + 1) / 2  // 9 colors → 5 + 4 split
+                HStack(spacing: Spacing.md) {
+                    ForEach(colors.prefix(halfPoint)) { accent in
+                        AccentSwatch(
+                            accent: accent,
+                            isSelected: settings.accentColorID == accent.rawValue,
+                            onTap: { settings.accentColorID = accent.rawValue }
+                        )
+                    }
+                }
+                HStack(spacing: Spacing.md) {
+                    ForEach(colors.dropFirst(halfPoint)) { accent in
+                        AccentSwatch(
+                            accent: accent,
+                            isSelected: settings.accentColorID == accent.rawValue,
+                            onTap: { settings.accentColorID = accent.rawValue }
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+// MARK: - 图库 (导入/导出)
+private struct LibrarySettingsView: View {
+    @Bindable var settings: UserSettings
+    @State private var showingImportLocationPanel = false
+
+    var body: some View {
+        // V6.42: Photos 风格 — 每个 setting 一个 PhotosSettingRow
+
+        // 默认导入位置
+        PhotosSettingRow(
+            title: Copy.settingsImportLocationTitle,
+            description: Copy.settingsImportLocationSubtitle
+        ) {
+            HStack(spacing: Spacing.sm) {
+                Text(currentImportLocationDisplay)
+                    .font(Typography.caption)
+                    .foregroundStyle(Surface.textSecondary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                    .frame(maxWidth: 200, alignment: .trailing)
+                Button(Copy.settingsImportLocationChooseButton) {
+                    showingImportLocationPanel = true
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                if settings.defaultImportLocation != nil {
+                    Button(Copy.settingsImportLocationClearButton) {
+                        settings.defaultImportLocation = nil
+                    }
+                    .buttonStyle(.borderless)
+                    .controlSize(.small)
+                }
+            }
+        }
+        .fileImporter(
+            isPresented: $showingImportLocationPanel,
+            allowedContentTypes: [.folder]
+        ) { result in
+            if case .success(let url) = result {
+                settings.defaultImportLocation = url.absoluteString
             }
         }
 
-        // V5.90: 导出——默认导出格式/质量
-        // V5.95: HStack label 左 / control 右
-        SettingsSection(
-            title: Copy.settingsExportTitle,
-            subtitle: Copy.settingsExportSubtitle
-        ) {
-            HStack(alignment: .center, spacing: Spacing.md) {
-                Text(Copy.settingsFormatLabel)
-                    .frame(width: SettingsMetrics.labelColumnWidth, alignment: .leading)
-                Picker("", selection: $settings.defaultExportFormat) {
-                    ForEach(ExportFormat.allCases) { format in
-                        Text(format.displayName).tag(format.rawValue)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-            }
+        // V6.43: PhotosCheckbox — 替代 .toggle (switch), 用蓝填充方框 + 白勾
+        PhotosCheckbox(
+            title: Copy.settingsImportTitle,
+            description: Copy.settingsImportSubtitle,
+            isOn: $settings.autoDeduplicate.wrappedValue,
+            onToggle: { settings.autoDeduplicate.toggle() }
+        )
 
-            HStack(alignment: .center, spacing: Spacing.md) {
-                Text(Copy.settingsQualityLabel)
-                    .frame(width: SettingsMetrics.labelColumnWidth, alignment: .leading)
+        PhotosCheckbox(
+            title: Copy.settingsAutoThumbnailsLabel,
+            description: Copy.settingsAutoGenerateThumbnailsDescription,
+            isOn: $settings.autoGenerateThumbnails.wrappedValue,
+            onToggle: { settings.autoGenerateThumbnails.toggle() }
+        )
+
+        // V6.43: PhotosSettingRadios — 3 个导出格式选项垂直 stacked
+        PhotosSettingRadios(
+            title: Copy.settingsExportTitle,
+            description: Copy.settingsExportSubtitle,
+            options: ExportFormat.allCases,
+            selection: $settings.appExportFormat,
+            label: { $0.displayName },
+            optionDescription: { _ in nil }
+        )
+
+        // 导出质量 (Slider) — 保留 PhotosSettingRow (slider 复合 row)
+        PhotosSettingRow(
+            title: Copy.settingsQualityLabel,
+            description: nil
+        ) {
+            HStack(spacing: Spacing.sm) {
                 Slider(value: $settings.defaultExportQuality, in: 0.5...1.0, step: 0.05)
+                    .frame(width: 160)
                 Text(Copy.exportQualityPercent(Int(settings.defaultExportQuality * 100)))
                     .font(Typography.captionMono)
                     .foregroundStyle(Surface.textSecondary)
                     .frame(width: 40, alignment: .trailing)
-                Spacer()  // V5.95: trailing Spacer 防 slider 撑满 row
             }
         }
+    }
 
-        // V5.58-1: 自动清理——回收站保留时长
-        SettingsSection(
-            title: Copy.settingsAutoCleanupTitle,
-            subtitle: Copy.settingsAutoCleanupSubtitle
+    private var currentImportLocationDisplay: String {
+        if let urlString = settings.defaultImportLocation,
+           let url = URL(string: urlString) {
+            return url.lastPathComponent.isEmpty ? url.path : url.lastPathComponent
+        }
+        return Copy.settingsImportLocationEmpty
+    }
+}
+
+// MARK: - V6.39.0 NEW: 回收站 (从图库拆出)
+private struct TrashSettingsView: View {
+    @Bindable var settings: UserSettings
+    let onEmptyTrash: () -> Void
+
+    var body: some View {
+        // V6.43: Photos 真版 radio group — 4 个保留时长选项垂直 stacked
+        //   替代之前的 Picker .menu dropdown — Photos 风格是直接看到所有选项
+        PhotosSettingRadios(
+            title: Copy.settingsRetentionTitle,
+            description: Copy.settingsRetentionSubtitle,
+            options: TrashRetentionDays.allCases,
+            selection: $settings.appTrashRetentionDays,
+            label: { $0.displayName },
+            optionDescription: { _ in nil }
+        )
+
+        // V6.43: 清空回收站 action — PhotosSettingRow + destructive Button
+        PhotosSettingRow(
+            title: Copy.settingsEmptyTrashTitle,
+            description: Copy.settingsEmptyTrashSubtitle
         ) {
-            HStack(alignment: .center, spacing: Spacing.md) {
-                Text(Copy.settingsRetentionLabel)
-                    .frame(width: SettingsMetrics.labelColumnWidth, alignment: .leading)
-                Picker("", selection: $settings.trashRetentionDays) {
-                    ForEach(TrashRetentionDays.allCases) { days in
-                        Text(days.displayName).tag(days.rawValue)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-                Spacer()
-            }
+            Button(Copy.settingsEmptyTrashButton, role: .destructive, action: onEmptyTrash)
+                .buttonStyle(.bordered)
+                .controlSize(.regular)
+                .help(Copy.settingsEmptyTrashTooltip)  // V6.46: 详细 tooltip
         }
     }
 }
 
-// MARK: 强调色
-// V5.58-1: 改用 @Bindable UserSettings——去 @AppStorage("accentColorID")
-
-private struct AccentSettingsView: View {
+// MARK: - V6.39.0 NEW: 语言 (独立 category)
+private struct LanguageSettingsView: View {
     @Bindable var settings: UserSettings
 
     var body: some View {
-        SettingsSection(
-            title: Copy.settingsAccentSectionTitle,
-            subtitle: Copy.settingsAccentSectionSubtitle
+        // V6.42: Photos 风格 row
+        PhotosSettingRow(
+            title: Copy.settingsLanguageTitle,
+            description: Copy.settingsLanguageSubtitle
         ) {
-            // V6.03: 5 → 3 列——9 colors ÷ 3 = 3 行整, 之前 5 列末行 4 colors 残缺
-            //   3 列 × 3 行 = 9 cells, 视觉方阵, 无空白 cell
-            LazyVGrid(
-                columns: Array(repeating: GridItem(.flexible(), spacing: Spacing.md), count: 3),
-                spacing: Spacing.md
-            ) {
-                ForEach(AccentColor.allCases) { accent in
-                    AccentSwatch(
-                        accent: accent,
-                        isSelected: settings.accentColorID == accent.rawValue,
-                        onTap: { settings.accentColorID = accent.rawValue }
-                    )
+            Picker("", selection: $settings.appLanguage) {
+                ForEach(Language.allCases) { lang in
+                    Text(lang.displayName).tag(lang)
                 }
             }
+            .pickerStyle(.menu)
+            .labelsHidden()
+            .fixedSize()
         }
     }
 }
 
-// MARK: 关于（V5.57-1 新增 6 类）
-//
-// macOS Photos.app 习惯——About 放最末
-// 内容：app 图标 + 名称 + 版本 + build + 版权 + 链接
-// 版本号从 AppVersion.current 读（Bundle.main.infoDictionary + fallback）
-// V5.91: 重构——小图标 (96→48) + 删 card 背景 (跟其他 detail 一致 fluid rows)
+// MARK: - V6.39.0 NEW: 快捷键 (嵌入 KeyboardShortcutsSheet 入口)
+private struct ShortcutsSettingsView: View {
+    let onShowShortcuts: () -> Void
 
+    var body: some View {
+        // V6.42: Photos 风格 row
+        PhotosSettingRow(
+            title: Copy.settingsShortcutsTitle,
+            description: Copy.settingsShortcutsSubtitle
+        ) {
+            Button(Copy.settingsShortcutsShowButton, action: onShowShortcuts)
+                .buttonStyle(.bordered)
+                .controlSize(.regular)
+        }
+    }
+}
+
+// MARK: - 关于
 private struct AboutSettingsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.xxl) {
-            // V5.91: 重构——48x48 小图标 + name + version, 删 96x96 大图标 + card bg
-            SettingsSection(title: Copy.settingsAppInfoTitle, subtitle: nil) {
-                HStack(alignment: .center, spacing: Spacing.md) {
-                    if let appIcon = NSApp.applicationIconImage {
-                        Image(nsImage: appIcon)
-                            .resizable()
-                            .frame(width: 48, height: 48)
-                            // V6.12: cornerRadius(10) → Radius.appIcon (Q13)
-                            //   48x48 app icon 用 10pt (21% 比例) 圆角, 仿 macOS Photos 偏好设置风格
-                            .clipShape(RoundedRectangle(cornerRadius: Radius.appIcon, style: .continuous))
-                    }
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(Copy.appName)  // V6.12.15: 硬编码英文入库
-                            .font(Typography.headline)
-                        Text(AppVersion.current.displayString)
-                            .font(Typography.caption)
-                            .foregroundStyle(Surface.textSecondary)
-                    }
+            // V6.42: Photos 风格 row — 应用信息 (icon + name + version)
+            PhotosSettingRow(
+                title: Copy.appName,
+                description: AppVersion.current.displayString
+            ) {
+                if let appIcon = NSApp.applicationIconImage {
+                    Image(nsImage: appIcon)
+                        .resizable()
+                        .frame(width: 48, height: 48)
+                        .clipShape(RoundedRectangle(cornerRadius: Radius.appIcon, style: .continuous))
                 }
             }
 
-            // V5.91: 链接行——占位 URL, Phase 4 可改
-            // V6.08: safeExternalLink 替代 force-unwrap——URL 写错永不崩溃
-            SettingsSection(
-                title: Copy.settingsLinksTitle,
-                subtitle: nil
-            ) {
+            // 链接 section — 多个 external links, 用 SettingsSection 容器
+            SettingsSection(title: Copy.settingsLinksTitle, subtitle: nil) {
                 VStack(alignment: .leading, spacing: Spacing.sm) {
                     safeExternalLink(SettingsLinks.projectHomepage) {
                         Label(Copy.settingsProjectHomepage, systemImage: "arrow.up.right.square")
@@ -536,15 +701,24 @@ private struct AboutSettingsView: View {
                 }
             }
 
-            // V5.91: 版权 + 致谢
-            SettingsSection(
-                title: Copy.settingsCopyrightTitle,
-                subtitle: nil
-            ) {
+            // V6.50: 系统信息 section — macOS 版本 (ProcessInfo.operatingSystemVersionString)
+            //   给用户 / 客服报告 bug 时方便确认环境
+            SettingsSection(title: Copy.settingsAboutSystemInfoTitle, subtitle: nil) {
+                HStack {
+                    Text(Copy.settingsAboutMacOSVersionLabel)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    Text(ProcessInfo.processInfo.operatingSystemVersionString)
+                        .font(Typography.captionMono)
+                        .foregroundStyle(Surface.textSecondary)
+                }
+            }
+
+            // 版权 section — 多行文字, 保留 SettingsSection 容器
+            SettingsSection(title: Copy.settingsCopyrightTitle, subtitle: nil) {
                 VStack(alignment: .leading, spacing: Spacing.xs) {
                     Text(Copy.settingsCopyright)
                         .font(Typography.body)
-                    Text(Copy.builtWithStack)  // V6.12.15: 硬编码英文入库
+                    Text(Copy.builtWithStack)
                         .font(Typography.caption)
                         .foregroundStyle(Surface.textSecondary)
                 }
@@ -553,14 +727,318 @@ private struct AboutSettingsView: View {
     }
 }
 
-// MARK: - V4.50.0: 通用 settings section 容器
-// V5.89: 改 fluid rows——删 card 背景 + padding, 仿 macOS Photos 偏好设置风格
-//   之前: title/subtitle + content 在 Surface.panel 卡片里 (padding.lg + Radius.md 圆角)
-//   现在: title/subtitle + content 无背景, padding 由外层 ScrollView .padding(Spacing.xl) 统一
-//   section 之间 Spacing.xxl 24pt 留白 (Photos.app 同节奏)
-// V5.98: 删 onReset 闭包 + "重置本节"按钮——macOS Photos 偏好设置**没有**这按钮
-//   之前 V5.92 加的 per-section reset 是过度设计, 暗色下还不可见 (.secondary 跟背景同色)
-//   全局重置保留在 toolbar "恢复全部为默认" 按钮 (V5.93) — 主操作入口
+// MARK: - V6.41.1: Photos 风格顶部 tab 栏 (替代 NavigationSplitView sidebar)
+//
+// 截图1.png 观察: Photos.app macOS Sonoma+ Settings 用顶部 tab 切换 (3 个),
+// 不是 sidebar. 选中 tab: 圆角背景 + tint 色图标/文字 + tint 文字 label.
+// 我们 7 category 用 ScrollView(.horizontal) 支持横向滚动.
+//
+// 视觉规范 (跟截图 iCloud tab 一致):
+//   - tab 宽 80pt, 高 56pt
+//   - icon 24pt (跟 sidebar 字号 13pt 区分, 更突出)
+//   - label caption (11pt)
+//   - 选中: Color.accentColor.opacity(0.15) 圆角背景 + tint 图标/文字
+//   - 未选: 透明背景 + secondary 图标/文字
+//   - hover: 极轻 .quaternary 背景
+
+private struct CategoryTabBar: View {
+    @Binding var selection: SettingsCategory
+
+    // V6.49: @FocusState — auto-focus 当前选中 tab (键盘 accessibility)
+    //   打开 Settings 时焦点自动落在 "通用" tab, 用户可直接 ↑↓ ←→ 切换 (macOS 真版模式)
+    //   Photos 真版也这样做 — 打开 Preferences 焦点立即可操作
+    @FocusState private var focusedCategory: SettingsCategory?
+
+    var body: some View {
+        // V6.47: ScrollViewReader 监听 selection 变化 → 自动滚到选中 tab
+        //   之前: 7 个 tab 横排, 选中 tab 若超出视口会被截断, 用户看不到自己选的
+        //   现在: scrollTo(selection, anchor: .center) 自动滚到选中 (类似 macOS Sonoma+ Photos)
+        // V6.49: 加 onAppear auto-focus — 焦点自动落到当前 selection
+        ScrollViewReader { proxy in
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: Spacing.xs) {
+                    ForEach(SettingsCategory.allCases) { category in
+                        CategoryTabButton(
+                            category: category,
+                            isSelected: selection == category,
+                            onTap: { selection = category }
+                        )
+                        .id(category)  // ScrollViewReader anchor (SettingsCategory Hashable)
+                        // V6.49: focus binding — 每个 tab 都跟 focusedCategory 关联, 切 tab 时焦点跟着走
+                        .focused($focusedCategory, equals: category)
+                    }
+                }
+                .padding(.horizontal, Spacing.lg)
+                .padding(.vertical, Spacing.md)
+                .frame(maxWidth: .infinity)  // 居中 (跟 Photos 顶部 tab 居中布局一致)
+            }
+            .onChange(of: selection) { _, new in
+                withAnimation(Animations.quick) {
+                    proxy.scrollTo(new, anchor: .center)
+                }
+            }
+        }
+        // V6.49: Auto-focus 当前选中 tab (Settings 打开时焦点立即可操作)
+        //   DispatchQueue.main.asyncAfter 0.05s — 等 window focus + onAppear 都稳定后再设焦点
+        //   避免 macOS window 还没 focus 时调用 focusedCategory = nil
+        .onAppear {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                focusedCategory = selection
+            }
+        }
+    }
+}
+
+private struct CategoryTabButton: View {
+    let category: SettingsCategory
+    let isSelected: Bool
+    let onTap: () -> Void
+
+    var body: some View {
+        // V6.45: hover state — 未选 tab 鼠标悬停时背景变 .quaternary (轻浮视觉反馈)
+        //   选中 tab 用 accent 圆角背景 (已有), hover 在未选 tab 上才有意义
+        // V6.46: hierarchical rendering — SF Symbol 多色梯度 (跟 macOS Sonoma+ System Settings 一致)
+        //   默认 monochrome 是单色, hierarchical 给我们 tint 颜色的多色梯度 (视觉更丰富)
+        @State var isHovered = false
+        return Button(action: onTap) {
+            VStack(spacing: 4) {
+                Image(systemName: category.icon)
+                    .font(.system(size: 24))
+                    // V6.46: hierarchical — 多色梯度, macOS Sonoma+ 真版 System Settings 风格
+                    .symbolRenderingMode(.hierarchical)
+                Text(category.title)
+                    .font(Typography.caption)
+            }
+            .foregroundStyle(isSelected ? Color.accentColor : Surface.textSecondary)
+            .frame(width: 80, height: 56)
+            .background(
+                isSelected ? Color.accentColor.opacity(0.15)
+                : (isHovered ? Color.primary.opacity(0.06) : .clear),
+                in: RoundedRectangle(cornerRadius: Radius.md)
+            )
+        }
+        .buttonStyle(.plain)
+        // V6.47: tooltip 显示 "Title — Subtitle" — 让用户 hover 时理解 category 用途
+        //   之前只显示 title (例如 "回收站"), 用户不知道里面有什么
+        //   现在显示 "回收站 — 回收站保留时长与清空" — 跟 macOS Sonoma+ Settings 一致
+        .help("\(category.title) — \(category.subtitle)")
+        .onHover { isHovered = $0 }
+    }
+}
+
+// MARK: - V6.42: Photos 风格 setting row 组件
+//
+// 截图1.png 视觉规范:
+//   - 顶层 group label: 16pt semibold (Photos iCloud page "iCloud 照片")
+//   - 描述: 11pt secondary, indent 跟 group label 起点对齐
+//   - radio 选项: 圆圈 + label, **indented +32pt** from group
+//   - radio 描述: 11pt secondary, indent 跟 radio 对齐
+//
+// PhotosSettingRow — 单个 setting row (title + desc + trailing control)
+//   替代之前 "label 80pt 固定列宽 + Picker" 模式
+// PhotosRadioGroup — radio 选项容器 (用于 hierarchical settings)
+
+/// V6.42: Photos 风格 setting row — 单行设置 (title + description + trailing control)
+///   Title 16pt semibold + 11pt secondary description (跟截图 iCloud 行的 visual hierarchy 一致)
+///   trailing control 在 right (Picker / Toggle / Slider)
+private struct PhotosSettingRow<Trailing: View>: View {
+    let title: String
+    let description: String?
+    @ViewBuilder let trailing: () -> Trailing
+
+    init(
+        title: String,
+        description: String? = nil,
+        @ViewBuilder trailing: @escaping () -> Trailing
+    ) {
+        self.title = title
+        self.description = description
+        self.trailing = trailing
+    }
+
+    var body: some View {
+        // V6.42: Photos 风格 — leading 是 title/desc stack, trailing 是 control
+        //   Spacer 让 control 推到右侧; baseline alignment 让 control 跟 title 对齐
+        HStack(alignment: .firstTextBaseline, spacing: Spacing.md) {
+            VStack(alignment: .leading, spacing: Spacing.xxs) {
+                Text(title)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(.primary)
+                if let description {
+                    Text(description)
+                        .font(Typography.caption)
+                        .foregroundStyle(Surface.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            Spacer(minLength: Spacing.md)
+            trailing()
+        }
+    }
+}
+
+/// V6.42: Photos 风格 radio option — 单个 radio 选项
+///   圆圈 + label (14pt regular) + description (11pt)
+///   Photos 选中态: 实心圆点 (蓝) — 用 SF Symbol circle.inset.filled
+///   未选中: 空圆圈 — SF Symbol circle
+private struct PhotosRadioOption<Trailing: View>: View {
+    let title: String
+    let description: String?
+    let isSelected: Bool
+    let onTap: () -> Void
+    @ViewBuilder let trailing: (() -> Trailing)?
+
+    init(
+        title: String,
+        description: String? = nil,
+        isSelected: Bool,
+        onTap: @escaping () -> Void,
+        @ViewBuilder trailing: @escaping () -> Trailing = { EmptyView() }
+    ) {
+        self.title = title
+        self.description = description
+        self.isSelected = isSelected
+        self.onTap = onTap
+        self.trailing = trailing
+    }
+
+    var body: some View {
+        // V6.45: hover state — radio option 在鼠标悬停时背景微微变深
+        //   Photos 真版 feedback: hover 给用户"可点"暗示, 不像 click 按钮那么重
+        @State var isHovered = false
+        return Button(action: onTap) {
+            HStack(alignment: .firstTextBaseline, spacing: Spacing.sm) {
+                Image(systemName: isSelected ? "circle.inset.filled" : "circle")
+                    .font(.system(size: 16))
+                    .foregroundStyle(isSelected ? Color.accentColor : .secondary)
+                VStack(alignment: .leading, spacing: Spacing.xxs) {
+                    Text(title)
+                        .font(.system(size: 14, weight: .regular))
+                        .foregroundStyle(.primary)
+                    if let description {
+                        Text(description)
+                            .font(Typography.caption)
+                            .foregroundStyle(Surface.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                Spacer(minLength: Spacing.md)
+                if let trailing {
+                    trailing()
+                }
+            }
+            .padding(.horizontal, Spacing.xs)
+            .padding(.vertical, Spacing.xxs)
+            .background(
+                isHovered && !isSelected ? Surface.hover : .clear,
+                in: RoundedRectangle(cornerRadius: Radius.sm)
+            )
+        }
+        .buttonStyle(.plain)
+        .onHover { isHovered = $0 }
+    }
+}
+
+/// V6.43: Photos 风格 checkbox — SF Symbol 模拟 macOS Sonoma+ 蓝填充框
+///   选中: `checkmark.square.fill` (蓝底白勾)
+///   未选: `square` (灰框)
+///   替代 .toggle 的 switch 样式 — macOS Photos 用 checkbox 而非 switch
+private struct PhotosCheckbox: View {
+    let title: String
+    let description: String?
+    let isOn: Bool
+    let onToggle: () -> Void
+
+    var body: some View {
+        // V6.48: hover 反馈 — 跟 PhotosRadioOption + CategoryTabButton 一致
+        //   未选 checkbox 悬停时 Surface.hover 浅背景 — 用户感觉"可点"
+        //   选中时不显示 hover (避免视觉冲突)
+        @State var isHovered = false
+        return Button(action: onToggle) {
+            HStack(alignment: .firstTextBaseline, spacing: Spacing.sm) {
+                Image(systemName: isOn ? "checkmark.square.fill" : "square")
+                    .font(.system(size: 16))
+                    .foregroundStyle(isOn ? Color.accentColor : .secondary)
+                VStack(alignment: .leading, spacing: Spacing.xxs) {
+                    Text(title)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(.primary)
+                    if let description {
+                        Text(description)
+                            .font(Typography.caption)
+                            .foregroundStyle(Surface.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                Spacer(minLength: Spacing.md)
+            }
+            .padding(.horizontal, Spacing.xs)
+            .padding(.vertical, Spacing.xxs)
+            .background(
+                isHovered && !isOn ? Surface.hover : .clear,
+                in: RoundedRectangle(cornerRadius: Radius.sm)
+            )
+        }
+        .buttonStyle(.plain)
+        .onHover { isHovered = $0 }
+    }
+}
+
+/// V6.43: Photos 风格 setting with radios — vertical stack of PhotosRadioOption
+///   用于 settings 有多个选项 (替代 .menu Picker + SettingsSection 嵌套)
+///   跟截图 iCloud page "iCloud 照片" group label 一样: title + description + 子 radios stacked
+private struct PhotosSettingRadios<T: Hashable>: View {
+    let title: String
+    let description: String?
+    let options: [T]
+    @Binding var selection: T
+    let label: (T) -> String
+    let optionDescription: (T) -> String?
+
+    init(
+        title: String,
+        description: String? = nil,
+        options: [T],
+        selection: Binding<T>,
+        label: @escaping (T) -> String,
+        optionDescription: @escaping (T) -> String? = { _ in nil }
+    ) {
+        self.title = title
+        self.description = description
+        self.options = options
+        self._selection = selection
+        self.label = label
+        self.optionDescription = optionDescription
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            VStack(alignment: .leading, spacing: Spacing.xxs) {
+                Text(title)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(.primary)
+                if let description {
+                    Text(description)
+                        .font(Typography.caption)
+                        .foregroundStyle(Surface.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            VStack(alignment: .leading, spacing: Spacing.xs) {
+                ForEach(options, id: \.self) { option in
+                    PhotosRadioOption(
+                        title: label(option),
+                        description: optionDescription(option),
+                        isSelected: selection == option,
+                        onTap: { selection = option }
+                    )
+                }
+            }
+        }
+    }
+}
+
+// MARK: - 通用 settings section 容器 (沿用 V5.89 fluid rows 设计)
 private struct SettingsSection<Content: View>: View {
     let title: String
     let subtitle: String?
@@ -578,7 +1056,6 @@ private struct SettingsSection<Content: View>: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
-            // V5.98: 删右上角"重置本节"按钮 + onReset HStack——title/subtitle 直接左对齐
             VStack(alignment: .leading, spacing: SettingsMetrics.titleSubtitleGap) {
                 Text(title)
                     .font(Typography.headline)
@@ -592,12 +1069,10 @@ private struct SettingsSection<Content: View>: View {
             content()
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        // V5.89: 删 .padding(Spacing.lg) 和 .background(Surface.panel, ...)——fluid rows
     }
 }
 
-// MARK: - 强调色色板（V3.6.13 抽出独立 View）
-
+// MARK: - 强调色色板 (沿用)
 struct AccentSwatch: View {
     let accent: AccentColor
     let isSelected: Bool
@@ -634,27 +1109,12 @@ struct AccentSwatch: View {
     }
 }
 
-// MARK: - 缩略图大小 slider 实时预览（V5.57-2）
-//
-// 100pt 固定容器内放 SF Symbol "photo" + scaleEffect
-//   displayScale 范围 0.3..1.0——size=100 → 30pt, size=250 → 100pt
-//   用 scaleEffect 而非 font size——SF Symbol 缩放不重设布局
-//
-// 用 SF Symbol 而非真样图:
-//   - 零 file 依赖, 零 async load
-//   - Phase 3 推 model.settings 改造时可换真 sample photo
-//
-// V5.99: 修暗色下完全不可见问题——.quaternary 暗色 ≈ 背景, .secondary SF Symbol 也暗
-//   改 Surface.cardBackground + 1pt cardBorder 描边, icon 改 .primary
-//   Photos 范式: 预览框跟 .searchable bg 视觉重量一致, 边界明确
-
+// MARK: - 缩略图大小 slider 实时预览 (沿用)
 private struct ThumbnailSizePreview: View {
     @Binding var size: Double
 
     var body: some View {
         ZStack {
-            // V5.99: card 背景 + 1pt 边框——暗色下视觉边界明确
-            //   之前 .quaternary 暗色 ≈ 背景色, 100x100 box 看不见
             RoundedRectangle(cornerRadius: Radius.sm, style: .continuous)
                 .fill(Surface.cardBackground)
                 .overlay {
@@ -662,17 +1122,14 @@ private struct ThumbnailSizePreview: View {
                         .stroke(Surface.cardBorder, lineWidth: 1)
                 }
             Image(systemName: "photo")
-                // V6.12: .system(size: 100) → Typography.thumbnailPreview (Q13)
-                //   100pt SF Symbol + scaleEffect 0.3..1.0 模拟 100..250pt 缩略图
                 .font(Typography.thumbnailPreview)
                 .scaleEffect(displayScale)
-                .foregroundStyle(.primary)  // V5.99: 暗色下也清晰可见
+                .foregroundStyle(.primary)
         }
         .frame(width: 100, height: 100)
         .help(Copy.settingsThumbnailSizeHelpTooltip)
     }
 
-    /// V5.57-2: size 100..250 映射到 scale 0.3..1.0
     private var displayScale: Double {
         0.3 + (size - 100) / 150 * 0.7
     }

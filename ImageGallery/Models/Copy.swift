@@ -358,6 +358,8 @@ enum Copy {
     // MARK: - V6.12.18: SettingsView / DetailView / ActiveFiltersBar / ContentViewModel 硬编码入库
     // SettingsView — toolbar 按钮
     static let settingsResetAll = String(localized: "settingsResetAll", defaultValue: "恢复全部为默认")
+    // V6.41: Reset 按钮左侧 label (跟"重置 Onboarding"label 同 pattern)
+    static let settingsResetAllLabel = String(localized: "settingsResetAllLabel", defaultValue: "所有偏好设置")
     static let settingsResetAllTooltip = String(localized: "settingsResetAllTooltip", defaultValue: "恢复全部设置为默认")
     // V6.31.3: reset 二次确认 — 防止误触清空用户偏好
     static let settingsResetConfirmTitle = String(localized: "settingsResetConfirmTitle", defaultValue: "恢复全部为默认？")
@@ -373,6 +375,8 @@ enum Copy {
     static let settingsAppearanceLabel = String(localized: "settingsAppearanceLabel", defaultValue: "外观")
     static let settingsAutoDedupeLabel = String(localized: "settingsAutoDedupeLabel", defaultValue: "导入时自动去重")
     static let settingsAutoThumbnailsLabel = String(localized: "settingsAutoThumbnailsLabel", defaultValue: "导入时生成缩略图")
+    // V6.42: 自动生成缩略图描述 (Photos 风格 row description)
+    static let settingsAutoGenerateThumbnailsDescription = String(localized: "settingsAutoGenerateThumbnailsDescription", defaultValue: "导入时自动生成缩略图缓存, 提升后续浏览速度")
     static let settingsFormatLabel = String(localized: "settingsFormatLabel", defaultValue: "格式")
     static let settingsQualityLabel = String(localized: "settingsQualityLabel", defaultValue: "质量")
     static let settingsRetentionLabel = String(localized: "settingsRetentionLabel", defaultValue: "保留时长")
@@ -529,6 +533,9 @@ enum Copy {
     static let settingsAppInfoTitle = String(localized: "settingsAppInfoTitle", defaultValue: "应用信息")
     static let settingsLinksTitle = String(localized: "settingsLinksTitle", defaultValue: "链接")
     static let settingsCopyrightTitle = String(localized: "settingsCopyrightTitle", defaultValue: "版权")
+    // V6.50: About 页 system info section — macOS 版本 + 系统语言
+    static let settingsAboutSystemInfoTitle = String(localized: "settingsAboutSystemInfoTitle", defaultValue: "系统信息")
+    static let settingsAboutMacOSVersionLabel = String(localized: "settingsAboutMacOSVersionLabel", defaultValue: "macOS 版本")
 
     // OnboardingView — 3 卡 sheet
     static let onboardingImportTitle = String(localized: "onboardingImportTitle", defaultValue: "导入你的照片")
@@ -784,4 +791,78 @@ enum Copy {
         String.localizedStringWithFormat(String(localized: "importProgressFailures", defaultValue: " · %lld 失败"), failureCount)
     }
     static let importPreparing = String(localized: "importPreparing", defaultValue: "准备中...")
+
+    // MARK: - V6.39.0: Settings Refactor — 7 categories + 新字段
+    // 通用 page — 双击行为 + 高级 actions
+    static let settingsDoubleClickTitle = String(localized: "settingsDoubleClickTitle", defaultValue: "双击行为")
+    static let settingsDoubleClickSubtitle = String(localized: "settingsDoubleClickSubtitle", defaultValue: "在缩略图上双击时的默认行为。\u{201C}沉浸式\u{201D} 进入全屏查看，\u{201C}快速查看\u{201D} 用系统 Quick Look panel。")
+    static let settingsDoubleClickLabel = String(localized: "settingsDoubleClickLabel", defaultValue: "双击")
+    static let settingsDoubleClickImmersiveLabel = String(localized: "settingsDoubleClickImmersiveLabel", defaultValue: "沉浸式")
+    static let settingsDoubleClickQuickLookLabel = String(localized: "settingsDoubleClickQuickLookLabel", defaultValue: "快速查看")
+    // 通用 page — 高级 actions section
+    static let settingsAdvancedTitle = String(localized: "settingsAdvancedTitle", defaultValue: "高级")
+    static let settingsAdvancedSubtitle = String(localized: "settingsAdvancedSubtitle", defaultValue: "一次性操作, 不会持久化偏好。")
+    static let settingsOpenDataFolderLabel = String(localized: "settingsOpenDataFolderLabel", defaultValue: "数据文件夹")
+    static let settingsOpenDataFolderButton = String(localized: "settingsOpenDataFolderButton", defaultValue: "在 Finder 中显示")
+    // V6.46: destructive button tooltips — .help() tooltip 详细说明 (Photos 真版模式)
+    static let settingsOpenDataFolderTooltip = String(localized: "settingsOpenDataFolderTooltip", defaultValue: "在 Finder 中显示 App 数据存储目录 (Application Support/ImageGallery)")
+    static let settingsResetOnboardingTooltip = String(localized: "settingsResetOnboardingTooltip", defaultValue: "重新弹出新手引导 3 张卡片")
+    static let settingsEmptyTrashTooltip = String(localized: "settingsEmptyTrashTooltip", defaultValue: "永久删除回收站中所有照片, 无法撤销")
+    static let settingsResetOnboardingLabel = String(localized: "settingsResetOnboardingLabel", defaultValue: "新手引导")
+    static let settingsResetOnboardingButton = String(localized: "settingsResetOnboardingButton", defaultValue: "重新查看")
+    // 缩略图大小 — min/max label
+    static let settingsThumbnailSizeSmall = String(localized: "settingsThumbnailSizeSmall", defaultValue: "小")
+    static let settingsThumbnailSizeLarge = String(localized: "settingsThumbnailSizeLarge", defaultValue: "大")
+    // 视图模式 picker label
+    static let settingsViewModeLabel = String(localized: "settingsViewModeLabel", defaultValue: "视图")
+    // 通用 page — 缩略图布局搬到外观 page, 加 LayoutTitle/Subtitle
+    static let settingsLayoutTitle = String(localized: "settingsLayoutTitle", defaultValue: "缩略图布局")
+    static let settingsLayoutSubtitle = String(localized: "settingsLayoutSubtitle", defaultValue: "缩略图的显示形状。方格按比例裁切, 按比例保留原图比例。")
+    // SettingsCategory 新增 3 case (Trash / Language / Shortcuts)
+    static let settingsCategoryTrash = String(localized: "settingsCategoryTrash", defaultValue: "回收站")
+    static let settingsCategoryLanguage = String(localized: "settingsCategoryLanguage", defaultValue: "语言")
+    static let settingsCategoryShortcuts = String(localized: "settingsCategoryShortcuts", defaultValue: "快捷键")
+    static let settingsCategoryLibrary = String(localized: "settingsCategoryLibrary", defaultValue: "图库")
+    // V6.41: Photos 风格 detail 顶部大标题下方 subtitle — 7 category 简短描述
+    static let settingsCategoryGeneralSubtitle = String(localized: "settingsCategoryGeneralSubtitle", defaultValue: "启动默认值与高级操作")
+    static let settingsCategoryAppearanceSubtitle = String(localized: "settingsCategoryAppearanceSubtitle", defaultValue: "主题、强调色、字体大小")
+    static let settingsCategoryLibrarySubtitle = String(localized: "settingsCategoryLibrarySubtitle", defaultValue: "导入与导出的默认行为")
+    static let settingsCategoryTrashSubtitle = String(localized: "settingsCategoryTrashSubtitle", defaultValue: "回收站保留时长与清空")
+    static let settingsCategoryLanguageSubtitle = String(localized: "settingsCategoryLanguageSubtitle", defaultValue: "App 显示语言")
+    static let settingsCategoryShortcutsSubtitle = String(localized: "settingsCategoryShortcutsSubtitle", defaultValue: "完整快捷键列表")
+    static let settingsCategoryAboutSubtitle = String(localized: "settingsCategoryAboutSubtitle", defaultValue: "应用信息、链接与版权")
+    // Library page — 默认导入位置 (NSOpenPanel)
+    static let settingsImportLocationTitle = String(localized: "settingsImportLocationTitle", defaultValue: "默认导入位置")
+    static let settingsImportLocationSubtitle = String(localized: "settingsImportLocationSubtitle", defaultValue: "设置后, ⌘O 自动打开这个文件夹。留空则每次手动选择。")
+    static let settingsImportLocationLabel = String(localized: "settingsImportLocationLabel", defaultValue: "文件夹")
+    static let settingsImportLocationChooseButton = String(localized: "settingsImportLocationChooseButton", defaultValue: "选择...")
+    static let settingsImportLocationClearButton = String(localized: "settingsImportLocationClearButton", defaultValue: "清除")
+    static let settingsImportLocationEmpty = String(localized: "settingsImportLocationEmpty", defaultValue: "未设置")
+    // Trash page — 清空回收站
+    static let settingsEmptyTrashTitle = String(localized: "settingsEmptyTrashTitle", defaultValue: "清空回收站")
+    static let settingsEmptyTrashSubtitle = String(localized: "settingsEmptyTrashSubtitle", defaultValue: "永久删除所有回收站中的照片, 无法撤销。")
+    static let settingsEmptyTrashLabel = String(localized: "settingsEmptyTrashLabel", defaultValue: "所有已删除照片")
+    static let settingsEmptyTrashButton = String(localized: "settingsEmptyTrashButton", defaultValue: "立即清空")
+    static let settingsEmptyTrashConfirmTitle = String(localized: "settingsEmptyTrashConfirmTitle", defaultValue: "清空回收站?")
+    static let settingsEmptyTrashConfirmMessage = String(localized: "settingsEmptyTrashConfirmMessage", defaultValue: "此操作会永久删除回收站中的所有照片, 无法撤销。")
+    static let settingsEmptyTrashConfirmAction = String(localized: "settingsEmptyTrashConfirmAction", defaultValue: "永久删除")
+    // Retention picker (从 LibrarySettingsView 搬到 TrashSettingsView)
+    static let settingsRetentionTitle = String(localized: "settingsRetentionTitle", defaultValue: "保留时长")
+    static let settingsRetentionSubtitle = String(localized: "settingsRetentionSubtitle", defaultValue: "删除的照片在回收站中保留的天数。超过后自动永久删除。")
+    // Shortcuts page
+    static let settingsShortcutsTitle = String(localized: "settingsShortcutsTitle", defaultValue: "快捷键")
+    static let settingsShortcutsSubtitle = String(localized: "settingsShortcutsSubtitle", defaultValue: "查看 app 内所有快捷键。也可以按 ⌘? 随时打开速查。")
+    static let settingsShortcutsLabel = String(localized: "settingsShortcutsLabel", defaultValue: "完整快捷键列表")
+    static let settingsShortcutsShowButton = String(localized: "settingsShortcutsShowButton", defaultValue: "打开速查")
+    // Reset Onboarding confirm
+    static let settingsResetOnboardingConfirmTitle = String(localized: "settingsResetOnboardingConfirmTitle", defaultValue: "重新查看新手引导?")
+    static let settingsResetOnboardingConfirmMessage = String(localized: "settingsResetOnboardingConfirmMessage", defaultValue: "关闭设置后会立即弹出 3 张引导卡。")
+    static let settingsResetOnboardingConfirmAction = String(localized: "settingsResetOnboardingConfirmAction", defaultValue: "重新查看")
+
+    // MARK: - V6.39.1: File menu 清空回收站 + 默认导入位置相关
+    static let menuEmptyTrash = String(localized: "menuEmptyTrash", defaultValue: "清空回收站…")
+    static let menuEmptyTrashTooltip = String(localized: "menuEmptyTrashTooltip", defaultValue: "永久删除回收站中的所有照片")
+    // defaultImportLocation 用过 / 未设置 时 NSOpenPanel 的 fallback title (跟原 importPanelTitle 一致)
+    static let importLocationMissingTitle = String(localized: "importLocationMissingTitle", defaultValue: "默认导入位置不存在")
+    static let importLocationMissingMessage = String(localized: "importLocationMissingMessage", defaultValue: "之前选择的文件夹已被移动或删除, 请重新选择。")
 }
