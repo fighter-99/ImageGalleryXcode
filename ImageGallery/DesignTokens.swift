@@ -35,6 +35,18 @@ enum Spacing {
     static let rowTight: CGFloat = sm
     static let rowNormal: CGFloat = lg
     static let rowLoose: CGFloat = xxl
+
+    // V6.57 (Polish): 3 个新场景化 token 收口 — 跟 rowTight/Normal/Loose 同思路,
+    //   数值上跟现有 6 个对应, 纯命名升级, 让"间距意图"代替"数值":
+    //   - cardPadding (12pt)  = md — Card 类视图内边距 (PhotosSettingRow / detailCard /
+    //     operationsCard / ToastView / popover 容器内 padding)
+    //   - sectionGap (16pt)   = lg — section 之间间距 (SettingsView VStack spacing /
+    //     DetailView V6.52 spacing.lg / Sidebar section header 间距)
+    //   - toolbarPadding (8pt) = sm — toolbar item 之间 padding (ContextualSelectionBar /
+    //     ActiveFiltersBar chip 间距 / keyboard shortcut group 间距)
+    static let cardPadding: CGFloat = md
+    static let sectionGap: CGFloat = lg
+    static let toolbarPadding: CGFloat = sm
 }
 
 // MARK: - 圆角系统
