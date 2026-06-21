@@ -101,7 +101,8 @@ struct SidebarStyleTests {
     @Test func headerPaddingValues() {
         #expect(SidebarStyle.headerPaddingHorizontal == 12)
         #expect(SidebarStyle.headerPaddingTop == 10)
-        #expect(SidebarStyle.headerPaddingBottom == 4)
+        // V6.54 (design polish): 4 → 8 — section 之间视觉呼吸更足, 跟 Photos 真版对齐
+        #expect(SidebarStyle.headerPaddingBottom == 8)
     }
 
     @Test func headerColorIsTertiaryEquivalent() {

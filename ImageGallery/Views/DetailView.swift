@@ -207,14 +207,34 @@ struct DetailView: View {
                         .id("bigImage")
                 }
             } else if bigImageLoadFailed {
-                // V4.9.5: 加载失败——显示 photo 占位 + 错误 icon
-                RoundedRectangle(cornerRadius: Radius.md)
-                    .fill(Palette.cellFilled)
-                    .overlay {
-                        Image(systemName: "exclamationmark.triangle")
-                            .font(Typography.emptyStateIcon)
-                            .foregroundStyle(.tertiary)
+                // V6.54 (design polish): 错误态加 caption + '在 Finder 中显示' button
+                //   之前只显示 SF Symbol triangle — 用户看不出'加载失败 vs 文件被删 vs 权限不足'
+                //   现在: icon + 1 行 caption ('无法读取文件') + 1 个 button (NSWorkspace.open photo.fileURL.dirname)
+                //   Photos 真版 detail panel 错误态: icon + reason + recovery action
+                VStack(spacing: Spacing.md) {
+                    Image(systemName: "exclamationmark.triangle")
+                        .font(Typography.emptyStateIcon)
+                        .foregroundStyle(.tertiary)
+                    Text(Copy.detailLoadFailed)
+                        .font(Typography.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                    Button {
+                        // NSWorkspace.open fileURL.dirname — Finder 显示该目录, 用户可手动检查文件
+                        NSWorkspace.shared.open(photo.fileURL.deletingLastPathComponent())
+                    } label: {
+                        Label(Copy.detailShowInFinder, systemImage: "folder")
+                            .font(.caption)
                     }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                }
+                .padding(Spacing.md)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(
+                    RoundedRectangle(cornerRadius: Radius.md)
+                        .fill(Palette.cellFilled.opacity(0.3))
+                )
             } else {
                 // V4.9.5: 加载中——Shimmer 占位（V4.4.0 Shimmer 复用）
                 RoundedRectangle(cornerRadius: Radius.md)
@@ -616,8 +636,9 @@ private struct RatingStarsView: View {
 
     /// V6.32.2: 暗色下 unfilled star 用 0.65 (跟 filled yellow 形成对比)
     /// 浅色 0.5 (跟 Color.secondary 拉开)
+    /// V6.54: 改走 Surface.ratingUnfilled(for: colorScheme) token — 收口, 跟 ratingFilled 对仗
     private var unfilledStarColor: Color {
-        colorScheme == .dark ? Color.secondary.opacity(0.65) : Color.secondary.opacity(0.5)
+        Surface.ratingUnfilled(for: colorScheme)
     }
 
     /// 显示的填充范围——max(rating, hoverRating)

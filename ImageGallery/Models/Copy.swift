@@ -485,6 +485,11 @@ enum Copy {
     // DetailView 顶部导航按钮 .help tooltip
     static let detailPrevHelp = String(localized: "detailPrevHelp", defaultValue: "上一张 (←)")
     static let detailNextHelp = String(localized: "detailNextHelp", defaultValue: "下一张 (→)")
+    // V6.54 (design polish): DetailView bigImageCard 错误态
+    //   之前只显示 SF Symbol triangle — 用户看不出原因
+    //   现在: caption + '在 Finder 中显示' button (跳转 photo.fileURL.dirname)
+    static let detailLoadFailed = String(localized: "detailLoadFailed", defaultValue: "无法读取文件, 可能已被移动或删除")
+    static let detailShowInFinder = String(localized: "detailShowInFinder", defaultValue: "在 Finder 中显示")
     // DetailView undo description (含 tag.name / filename 插值, %@)
     static func undoRemoveTag(_ tagName: String) -> String {
         String.localizedStringWithFormat(String(localized: "undoRemoveTag", defaultValue: "移除标签 %@"), tagName)

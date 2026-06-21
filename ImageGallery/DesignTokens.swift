@@ -132,6 +132,15 @@ enum Surface {
     ///   favorite 跟 rating 是同一语义 (评分 ≥ 1 = "感兴趣"), 但语义不同 token 命名更清晰
     ///   实际值一样 (都是 Color.yellow), 区分命名便于未来差异化调整
     static let ratingFilled = Color.yellow
+    /// V6.54 NEW: 评分未点亮色 (rating stars 空心)
+    ///   之前 RatingStarsView.swift:610 写 Color.secondary.opacity(0.5) (light) / 0.65 (dark)
+    ///   收口到 token, 跟 ratingFilled 对仗, 未来统一调整 (例如改 .secondary.opacity(0.4) 全局生效)
+    static let ratingUnfilledLight = Color.secondary.opacity(0.5)
+    static let ratingUnfilledDark = Color.secondary.opacity(0.65)
+    /// V6.54 NEW: colorScheme-aware 未点亮色 — 调用方传 environment(\.colorScheme) 拿到的 ColorScheme
+    static func ratingUnfilled(for colorScheme: ColorScheme) -> Color {
+        colorScheme == .dark ? ratingUnfilledDark : ratingUnfilledLight
+    }
 
     // ─── 卡片 ───
     static let cardBackground = Color(NSColor.controlBackgroundColor)
@@ -437,7 +446,10 @@ enum SidebarStyle {
     /// section header 上下 padding——视觉分组空间
     static let headerPaddingHorizontal: CGFloat = 12
     static let headerPaddingTop: CGFloat = 10
-    static let headerPaddingBottom: CGFloat = 4
+    // V6.54 (design polish): headerPaddingBottom 4 → 8 — 之前 4pt 太挤, section 之间视觉呼吸不足
+    //   Photos 真版 section header 上下各有 8-12pt 留白, 让 '我的图馆 / 智能文件夹 / 我的文件夹 / 标签'
+    //   之间有清晰分组感
+    static let headerPaddingBottom: CGFloat = 8
     /// section header icon↔title 间距
     static let headerIconSpacing: CGFloat = 5
     // V6.23: 删 headerFontSize + headerIconSize 死代码 (0 引用, 跟 SidebarSectionHeader 的 .font(headerFont) 重复定义)
