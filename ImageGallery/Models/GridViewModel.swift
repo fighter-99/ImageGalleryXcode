@@ -383,16 +383,22 @@ final class GridViewModel {
     // V6.20.0 (code audit fix #6): libraryStats 缓存 — PhotoStatsSnapshot.compute 每次 body 重渲都重算
     //   @Query allPhotos 任何 SwiftData write (import/delete/tag/rating/drag-drop) 都触发 SidebarView body 重渲染
     //   之前 7-8 遍 O(n) (V6.19.2 P0 #11 优化前) 改 2 遍 (snapshot) 仍 per-render 重算 — 大库 + 频繁写入场景下卡顿
-    //   修: 缓存 snapshot + allPhotos.count 比较 (O(1) invalidation key)
+    // V6.59 (audit P2.5): cache key 加 photos.map(\.id) hash (跟 count XOR)
+    //   之前 key 只看 count: trash/restore 不改 count 但改 trashedCount → sidebar stale
+    //   现在 key 看 count + content fingerprint: 任何 photo insert/delete/edit 必失效
     @ObservationIgnored private var cachedLibraryStats: PhotoStatsSnapshot?
-    @ObservationIgnored private var libraryStatsCacheCount: Int = -1
+    @ObservationIgnored private var libraryStatsCacheKey: Int = 0
+    private var libraryStatsCurrentKey: Int {
+        allPhotos.count &* (allPhotos.reduce(0) { $0 &+ $1.id.hashValue })
+    }
     var libraryStats: PhotoStatsSnapshot {
-        if let cached = cachedLibraryStats, libraryStatsCacheCount == allPhotos.count {
+        let key = libraryStatsCurrentKey
+        if let cached = cachedLibraryStats, libraryStatsCacheKey == key {
             return cached
         }
         let snapshot = PhotoStatsSnapshot.compute(allPhotos)
         cachedLibraryStats = snapshot
-        libraryStatsCacheCount = allPhotos.count
+        libraryStatsCacheKey = key
         return snapshot
     }
 

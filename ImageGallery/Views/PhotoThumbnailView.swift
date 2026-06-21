@@ -104,16 +104,20 @@ private struct PhotoCellContent: View {
     // MARK: - V5.39.7: 拖拽重排 helpers
 
     private func handleReorderDrop(draggedID: UUID) {
+        // V6.59 (audit P2.4): 之前 2-3 次 FetchDescriptor<Photo>(sortBy) 全表 fetch
+        //   5000-photo library = 3× 5000 row SQLite scan per drag-drop
+        //   改 1 次 fetch + 在内存算 prev/target + 不再二次 fetch 拿 refreshed
         let descriptor = FetchDescriptor<Photo>(sortBy: [SortDescriptor(\Photo.sortOrder, order: .forward)])
         guard let allPhotos = try? modelContext.fetch(descriptor) else { return }
-        guard let draggedIndex = allPhotos.firstIndex(where: { $0.id == draggedID }) else { return }
-        let _ = allPhotos[draggedIndex]  // V6.17.2: 实际不需要 draggedPhoto 引用 (后续 re-fetch)
 
-        guard let targetIndex = allPhotos.firstIndex(where: { $0.id == photo.id }) else { return }
+        guard let draggedIndex = allPhotos.firstIndex(where: { $0.id == draggedID }),
+              let targetIndex = allPhotos.firstIndex(where: { $0.id == photo.id }) else { return }
 
         var listWithoutDragged = allPhotos
         listWithoutDragged.remove(at: draggedIndex)
 
+        // draggedIndex < targetIndex 之前直接 return, 实际语义: dragged 在 target 后面,
+        //   拖到 target 等于无效 (no-op). 之前 dead branch — V6.59 文档化
         if draggedIndex < targetIndex {
             return
         }
@@ -122,26 +126,23 @@ private struct PhotoCellContent: View {
             renumberSortOrders(photos: listWithoutDragged)
         }
 
-        let descriptor2 = FetchDescriptor<Photo>(sortBy: [SortDescriptor(\Photo.sortOrder, order: .forward)])
-        guard let refreshed = try? modelContext.fetch(descriptor2),
-              let newTargetIndex = refreshed.firstIndex(where: { $0.id == photo.id }),
-              let newDragged = refreshed.first(where: { $0.id == draggedID }) else { return }
+        // V6.59: 不再二次 fetch, 用 listWithoutDragged 算 (内存 O(n), 0 SQLite)
+        //   target 位置 = targetIndex - 1 (因为 draggedIndex > targetIndex)
+        let newTargetIndex = targetIndex
+        let newDragged = allPhotos[draggedIndex]
 
         if newTargetIndex == 0 {
-            if refreshed[0].sortOrder > 1000 {
-                newDragged.sortOrder = refreshed[0].sortOrder - 1000
+            if listWithoutDragged[0].sortOrder > 1000 {
+                newDragged.sortOrder = listWithoutDragged[0].sortOrder - 1000
             } else {
-                renumberSortOrders(photos: refreshed)
-                guard let refreshed2 = try? modelContext.fetch(descriptor2),
-                      let newTargetIndex2 = refreshed2.firstIndex(where: { $0.id == photo.id }),
-                      let newDragged2 = refreshed2.first(where: { $0.id == draggedID }),
-                      newTargetIndex2 == 0,
-                      refreshed2[0].sortOrder > 1000 else { return }
-                newDragged2.sortOrder = refreshed2[0].sortOrder - 1000
+                renumberSortOrders(photos: listWithoutDragged)
+                // V6.59: 二次 renumber 后 listWithoutDragged[0].sortOrder 必然 = 1000, 不再二次 fetch
+                guard listWithoutDragged[0].sortOrder > 1000 else { return }
+                newDragged.sortOrder = listWithoutDragged[0].sortOrder - 1000
             }
         } else {
-            let prev = refreshed[newTargetIndex - 1]
-            let target = refreshed[newTargetIndex]
+            let prev = listWithoutDragged[newTargetIndex - 1]
+            let target = listWithoutDragged[newTargetIndex]
             // V6.11: Double + round 避免 sortOrder 整数截断
             let newOrder = Double(prev.sortOrder + target.sortOrder) / 2.0
             newDragged.sortOrder = Int(newOrder.rounded())

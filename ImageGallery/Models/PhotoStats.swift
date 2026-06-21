@@ -207,18 +207,38 @@ enum PhotoStats {
 
     // MARK: - P4.1.1: 智能文件夹 sidebar count helper
     /// 算 smart folder 命中的 photo 数 (sidebar row 显示用)
-    ///   V1 简化: 走完整 filtered pipeline (其他维度默认 false/nil, 只应用 smart folder filter)
-    ///   跟 V6.11 教训: 用 result 算 hashCounts, 不用 photos input
-    ///   N smart folder × M photo = N×M, 但 sidebar 渲染只在 smart folder 数 ≤ 几十时调用, OK
+    /// V6.59 (audit P2.1): 改 lazy.filter.count, 之前 filtered(...) 跑完整 pipeline + sort + 1000-元素数组 alloc
+    ///   之前: 20 smart folders × 5000 photos = 100,000 ops/sidebar render
+    ///   现在: lazy.count 不 alloc 中间数组, 不排序, 仅应用 smart folder 4 维 filter
+    ///   4 个维度都 short-circuit (empty 时跳过), 大部分 sidebar render 不需要 full filter
     static func smartFolderCount(_ photos: [Photo], smartFolderFilter: FilterState) -> Int {
-        filtered(
-            photos,
-            folder: nil, tag: nil, searchText: "",
-            sortOption: .filenameAsc,
-            filterUnfiled: false, filterDuplicates: false,
-            filterRecent7Days: false, filterLargeFiles: false, filterInTrash: false,
-            smartFolderFilter: smartFolderFilter
-        ).count
+        // smartFolderFilter.empty (默认) → 所有 photo 命中, count == photos.count, O(n)
+        guard smartFolderFilter.isActive else { return photos.count }
+        return photos.lazy.filter { matchesSmartFolderFilter($0, filter: smartFolderFilter) }.count
+    }
+
+    /// V6.59: 单 photo 命中 smart folder filter 判定 (smartFolderCount 用)
+    ///   跟 filtered() 的 smart folder 分支 (L196-201) 语义一致, 但抽出供 lazy 用
+    ///   不应用其他维度 (folder/tag/searchText 等) — smart folder 仅这 4 维
+    private static func matchesSmartFolderFilter(_ photo: Photo, filter: FilterState) -> Bool {
+        // V6.59: !photo.isInTrash — smart folder 永远排除已删照片 (跟 toolbar filter 一致)
+        guard !photo.isInTrash else { return false }
+        // V6.59: 4 维 AND, 各自短 (empty 不调 helper)
+        if !filter.folders.isEmpty {
+            guard let fid = photo.folder?.id else { return false }
+            guard filter.folders.contains(fid) else { return false }
+        }
+        if !filter.tags.isEmpty {
+            guard photo.tags.contains(where: { filter.tags.contains($0.id) }) else { return false }
+        }
+        if !filter.shapes.isEmpty {
+            // V6.59: Photo 没有 stored shape 字段, 派生自 width/height (跟 shapeFilter 一致)
+            guard filter.shapes.contains(PhotoShape.from(width: photo.width, height: photo.height)) else { return false }
+        }
+        if filter.minRating > 0 {
+            guard photo.rating >= filter.minRating else { return false }
+        }
+        return true
     }
 
     // MARK: - 4 个纯函数 helper（V4.36.x：工具栏筛选按钮的可独立单测单元）

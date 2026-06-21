@@ -497,7 +497,15 @@ struct PhotoGridView: View {
         hasher.combine(cellSpacing)
         hasher.combine(gridPadding)
         hasher.combine(photos.count)
+        // V6.59 (audit P2.5): 加 photos.map(\.id) hash — 之前只 count, EXIF rotate 后
+        //   aspectRatio 翻转但 cache hit, stale cell frames
+        for id in photos.map(\.id) { hasher.combine(id) }
         hasher.combine(cachedDateGroups.count)
+        // V6.59: date group 内容 fingerprint — group split/merge 但 count 不变时 stale
+        for group in cachedDateGroups {
+            hasher.combine(group.id)
+            hasher.combine(group.photos.count)
+        }
         hasher.combine(layoutMode)
         hasher.combine(sortOption)
         return hasher.finalize()

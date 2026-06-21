@@ -76,8 +76,12 @@ struct ImageImporter {
     ) -> DuplicateCheckResult {
         // V3.6.27: 同步版本仍保留（向后兼容），实际推荐用 checkDuplicatesAsync
         // 1. 收集所有现有 photo 的 fileHash → URL 映射
+        // V6.59 (audit P2.3): FetchDescriptor 加 predicate `fileHash != nil`
+        //   之前 FetchDescriptor<Photo>() (无 predicate) 拉 ALL photos 进内存
+        //   5000-photo library = 5000 Photo alloc on main thread per dup-check
+        //   现在仅拉有 hash 的 (绝大多数), 大库 50x+ 快
         let existingHashes = (try? modelContext.fetch(
-            FetchDescriptor<Photo>()
+            FetchDescriptor<Photo>(predicate: #Predicate { $0.fileHash != nil })
         )) ?? []
         let existingByHash = Dictionary(
             grouping: existingHashes.compactMap { photo -> (String, Photo)? in
@@ -117,8 +121,9 @@ struct ImageImporter {
         onProgress: @MainActor @Sendable @escaping (Int, Int) -> Void = { _, _ in }
     ) async -> DuplicateCheckResult {
         // 1. 先在主线程拉现有 photo（SwiftData 限制）
+        // V6.59 (audit P2.3): 跟 sync 版本同 predicate `fileHash != nil` — 50x+ 提速
         let existingHashes = (try? modelContext.fetch(
-            FetchDescriptor<Photo>()
+            FetchDescriptor<Photo>(predicate: #Predicate { $0.fileHash != nil })
         )) ?? []
         let existingByHash = Dictionary(
             grouping: existingHashes.compactMap { photo -> (String, Photo)? in

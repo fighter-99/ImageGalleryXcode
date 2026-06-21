@@ -221,4 +221,43 @@ struct PhotoStatsFilterTests {
     private func makeTag() -> ImageGallery.Tag {
         ImageGallery.Tag(name: "test_tag_\(UUID().uuidString)", colorHex: "#5B8FF9")
     }
+
+    // MARK: - V6.59 (audit P2.1): smartFolderCount lazy
+
+    @Test func smartFolderCount_emptyFilter_returnsAll() {
+        // V6.59: smartFolderFilter.isActive=false → count == photos.count (短路)
+        let photos = (0..<100).map { _ in makePhoto() }
+        let count = PhotoStats.smartFolderCount(photos, smartFolderFilter: .empty)
+        #expect(count == 100)
+    }
+
+    @Test func smartFolderCount_activeFilter_excludesTrashed() {
+        // V6.59: matchesSmartFolderFilter 默认排除 isInTrash
+        // 5 photos: photos[0] trashed + rating=5, others rating=5
+        // filter: rating>=4 (让 isActive=true) — 4 non-trashed 命中, 1 trashed 排除
+        var photos = (0..<5).map { _ in makePhoto(rating: 5) }
+        photos[0].trashedAt = Date()  // trashed
+        let filter = FilterState(folders: [], tags: [], shapes: [], minRating: 4)
+        let count = PhotoStats.smartFolderCount(photos, smartFolderFilter: filter)
+        #expect(count == 4, "5 photos 总, 1 trashed, filter rating>=4 → 4 命中")
+    }
+
+    @Test func smartFolderCount_shapeFilter_appliesOnlyShape() {
+        // V6.59: 4 维 AND, 但 shapes 过滤独立工作
+        let p1 = makePhoto(width: 4000, height: 3000)  // landscape
+        let p2 = makePhoto(width: 3000, height: 4000)  // portrait
+        let p3 = makePhoto(width: 1000, height: 1000)  // square
+        let filter = FilterState(folders: [], tags: [], shapes: [.landscape], minRating: 0)
+        let count = PhotoStats.smartFolderCount([p1, p2, p3], smartFolderFilter: filter)
+        #expect(count == 1)
+    }
+
+    @Test func smartFolderCount_ratingFilter_appliesOnlyMinRating() {
+        let p1 = makePhoto(rating: 3)
+        let p2 = makePhoto(rating: 5)
+        let p3 = makePhoto(rating: 0)
+        let filter = FilterState(folders: [], tags: [], shapes: [], minRating: 4)
+        let count = PhotoStats.smartFolderCount([p1, p2, p3], smartFolderFilter: filter)
+        #expect(count == 1, "rating >= 4 应该是 p2")
+    }
 }
