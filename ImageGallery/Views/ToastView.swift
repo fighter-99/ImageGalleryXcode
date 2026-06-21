@@ -17,6 +17,7 @@
 //
 
 import SwiftUI
+import AppKit  // V6.64.1 (A11y): NSAccessibility.post announcement — VoiceOver 朗读 toast
 
 struct ToastView: View {
     enum ToastType {
@@ -125,6 +126,24 @@ struct ToastView: View {
             radius: colorScheme == .dark ? 14 : 10,
             y: 4
         )
+        // V6.64.1 (A11y): toast 整行作为单一 a11y 元素 + announce 触发时通知 VoiceOver
+        //   undoAction 存在时 hint 告诉用户 "按 ⌘Z 或点撤销按钮恢复"
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(message)
+        .accessibilityAddTraits(undoAction != nil ? .updatesFrequently : [])
+        // V6.64.1 (A11y): 触发 NSAccessibility announcement — VoiceOver 立即朗读 toast 内容
+        //   替代方式: NSAccessibility.post(element: NSApp.mainWindow, notification: .announcementRequested, ...)
+        .onAppear {
+            // macOS 自动 VoiceOver 朗读 focus 元素, toast 是临时浮层不 focus — 主动 announce
+            NSAccessibility.post(
+                element: NSApp.mainWindow as Any,
+                notification: .announcementRequested,
+                userInfo: [
+                    .announcement: message,
+                    .priority: NSAccessibilityPriorityLevel.high.rawValue
+                ]
+            )
+        }
         // V6.21.4 (audit fix #1): progress countdown task — duration 秒内 progress 1 → 0
         //   task(id: duration) view 出现时启动, 消失时自动 cancel (toast 主动 dismiss / 队列下一 toast)
         //   50ms tick 平衡精度 + CPU (避免 16ms 触发过度)

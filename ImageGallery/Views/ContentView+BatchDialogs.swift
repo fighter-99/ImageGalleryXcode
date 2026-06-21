@@ -31,10 +31,13 @@ extension View {
         onCancelDuplicateImport: @escaping () -> Void
     ) -> some View {
         self
-            .confirmationDialog(
+            // V6.64.4 (UX polish): 改 .alert — 之前 V6.45 SettingsView 已经转 .alert
+            //   .confirmationDialog 是 iOS 风格 action sheet, macOS Photos 真版用 NSAlert
+            //   .alert 是 SwiftUI 包装的 macOS 真版 NSAlert (window-style modal)
+            //   destructive 操作 (batchDelete / emptyTrash) Photos 真版用真版 alert
+            .alert(
                 batchDeleteTitle,
-                isPresented: showingBatchDelete,
-                titleVisibility: .visible
+                isPresented: showingBatchDelete
             ) {
                 Button(Copy.delete, role: .destructive, action: onConfirmBatchDelete)
                 Button(Copy.cancel, role: .cancel) {}
@@ -53,22 +56,20 @@ extension View {
             } message: {
                 Text(Copy.newFolderPrompt)
             }
-            // V3.6.6: 清空回收站二次确认
-            .confirmationDialog(
+            // V6.64.4: 清空回收站 — 改 .alert (跟 batchDelete 一致, Photos 真版 destructive alert)
+            .alert(
                 Copy.emptyRecycleBinConfirmTitle,
-                isPresented: showingEmptyTrash,
-                titleVisibility: .visible
+                isPresented: showingEmptyTrash
             ) {
                 Button(Copy.empty, role: .destructive, action: onConfirmEmptyTrash)
                 Button(Copy.cancel, role: .cancel) {}
             } message: {
                 Text(Copy.emptyRecycleBinConfirm)
             }
-            // V3.6.24: 导入时重复检测 dialog
-            .confirmationDialog(
+            // V6.64.4: 导入时重复检测 dialog — 改 .alert (跟其他 destructive 一致)
+            .alert(
                 duplicateDialogTitle,
-                isPresented: showingDuplicateCheck,
-                titleVisibility: .visible
+                isPresented: showingDuplicateCheck
             ) {
                 Button(Copy.skipAll, action: onConfirmSkipDuplicates)
                 Button(Copy.importAll, role: .destructive, action: onConfirmImportAllDuplicates)

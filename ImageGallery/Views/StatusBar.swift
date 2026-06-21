@@ -40,6 +40,10 @@ struct StatusBar: View {
             Spacer(minLength: Spacing.md)
 
         }
+        // V6.64.1 (A11y): 状态栏整行作为单一 a11y 元素 — VoiceOver 朗读时一次性听到完整信息
+        //   "当前视图 [viewTitle], N 张照片, 总大小 X MB" 而不是分两次朗读
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(viewTitle), \(viewSubtitle)")
         .padding(.horizontal, Spacing.md)
         .frame(height: 24)
         // V4.0.0: 改用 .regularMaterial 替代 Surface.panel（NSColor.controlBackgroundColor）

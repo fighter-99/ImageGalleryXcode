@@ -40,6 +40,11 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
     var onBatchExport: (() -> Void)?
     var onDelete: (() -> Void)?
     var onImport: (() -> Void)?
+    // V_move_toolbar_poc: 批量移动到文件夹 — 集成进 NSToolbar 主操作组
+    //   之前走 ContextualSelectionBar.moveMenu (V6.38.2) — 选中时挤占 grid 44pt
+    //   现在常驻 toolbar item,选中时 enable (与 export/delete 镜像模式)
+    //   nil folder = 移出文件夹 (走 batchMove(to: nil) 路径)
+    var onMove: ((Folder?) -> Void)?
     var onQuickLook: (() -> Void)?   // V4.37.1 NEW: ⌘Y Quick Look → ContentView.showQuickLook() → V5.42 改走 enterImmersiveFromSelection()
     var onPrev: (() -> Void)?        // V4.37.2 NEW: ⌘[ 上一张（ContentView 接 goPrev）
     var onNext: (() -> Void)?        // V4.37.2 NEW: ⌘] 下一张（ContentView 接 goNext）
@@ -140,6 +145,10 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
     var deleteEnabled: Bool = false {
         didSet { updateItemEnabled(.delete, enabled: deleteEnabled) }
     }
+    /// V_move_toolbar_poc: Move 按钮 enable 状态 — 仅选中时可用(与 export/delete 镜像)
+    var moveEnabled: Bool = false {
+        didSet { updateItemEnabled(.move, enabled: moveEnabled) }
+    }
     /// V4.37.1 NEW: Quick Look 仅在单选时可用（多选/无选时灰显）
     var quickLookEnabled: Bool = false {
         didSet { updateItemEnabled(.quickLook, enabled: quickLookEnabled) }
@@ -166,6 +175,7 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
         case export
         case delete
         case importItem      // 避开 `import` 关键字
+        case move            // V_move_toolbar_poc: 批量移动到文件夹
         case filter          // V4.36.x NEW: 工具栏筛选按钮
         // V5.39.3: 砍 viewOptions case——布局模式 + 排序都搬到独立 toolbar 按钮
         //   popover 只剩空壳, 直接删
@@ -205,6 +215,8 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
             Identifier.sidebarToggle.nsIdentifier,
             NSToolbarItem.Identifier.space,  // V6.13.2: 跟视图组视觉分隔
             Identifier.importItem.nsIdentifier,
+            // V_move_toolbar_poc: Move 在 import 后——导入→移动→导出→删除, 都是"操作"语义连贯
+            Identifier.move.nsIdentifier,
             Identifier.export.nsIdentifier,
             Identifier.delete.nsIdentifier,
             Identifier.quickLook.nsIdentifier,  // V4.37.1 NEW
@@ -277,6 +289,16 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
                 action: #selector(handleImport),
                 shortcut: Copy.toolbarShortcutImport  // V6.24: ⌘O
             )
+        case .move:  // V_move_toolbar_poc: 批量移动到文件夹
+            // SF Symbol: folder.badge.plus 表达"放到某个文件夹"的语义
+            //   Photos.app 的 "Add to Album" 用 similar 模式 (rectangle.stack.badge.plus)
+            //   action 走 handleMoveButton → 弹 NSMenu (与 layoutMode/density/sort 同样的下拉模式)
+            item = makeSimpleItem(
+                id: id,
+                image: "folder.badge.plus",
+                label: Copy.miniToolbarMove,  // 复用 ContextualSelectionBar 文案
+                action: #selector(handleMoveButton(_:))
+            )
         case .filter:  // V4.36.x NEW + V4.54.0 状态感知升级
             // V4.36.x: 回归 NSButton 风格——与其他 5 actions 完全一致
             //   SwiftUI popover 在 NSToolbar 里点击响应不可靠（事件被 toolbar 拦截）
@@ -332,6 +354,7 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
         // V5.7: 砍 .favorite case
         case .export: return exportEnabled
         case .delete: return deleteEnabled
+        case .move: return moveEnabled  // V_move_toolbar_poc
         case .quickLook: return quickLookEnabled   // V4.37.1 NEW
         default: return true
         }
@@ -359,6 +382,8 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
     ) {
         exportEnabled = hasSelection
         deleteEnabled = hasSelection
+        // V_move_toolbar_poc: Move 与 export/delete 镜像 — 选中时 enable
+        moveEnabled = hasSelection
         // V4.37.1: Quick Look 仅在单张选中时可用（多张 / 0 张 都灰显）
         quickLookEnabled = hasSelection && !hasMultipleSelection
 
@@ -417,6 +442,17 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
         // V6.24: 按钮 tooltip 也加快捷键 — item.tooltip 显示 toolbar hover, button.tooltip 显示更近距离 hover
         button.toolTip = item.toolTip
         button.isBordered = true
+        // V6.64.1 (A11y): button.accessibilityLabel = label — 之前 item.label = "" 隐藏文字
+        //   同时隐藏 VoiceOver label, 盲人用户听不到按钮功能.
+        //   现在 button 显式设 accessibilityLabel (跟 item.label 解耦) + accessibilityHelp 显示快捷键.
+        //   macOS Sonoma+ Photos 真版范式: button label + help 跟视觉 tooltip 同步.
+        button.setAccessibilityLabel(label)
+        if let shortcut {
+            // 帮助: "导入照片 (⌘O)" — VoiceOver 朗读时告诉用户快捷键
+            button.setAccessibilityHelp("\(Copy.a11yShortcutPrefix) \(shortcut)")
+        } else {
+            button.setAccessibilityHelp(label)
+        }
         // V6.22.10 (XCUITest): accessibilityIdentifier 在 NSButton 上 (NSToolbarItem 没这个属性)
         //   importItem 设 "toolbar.importButton" — ImportTest 找按钮用
         //   其他 item 不设 (XCUIElementQuery 用 label 也行, 不强制)
@@ -467,6 +503,9 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
         container.addSubview(button)
         let badge = makeFilterBadgeLabel()
         container.addSubview(badge)
+        // V6.64.1 (A11y): filter button label (跟 toolbar label 一致)
+        button.setAccessibilityLabel(Copy.filter)
+        button.setAccessibilityHelp(Copy.filter)
         item.view = container
         // V6.29.2: 存引用, updateFilterBadge 更新 badge 文本/可见
         filterButtonContainer = container
@@ -532,6 +571,9 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
         button.image = NSImage(systemSymbolName: image, accessibilityDescription: label)
         button.imagePosition = .imageOnly
         button.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        // V6.64.1 (A11y): button label — 覆盖 item.label = "" 负面效果
+        button.setAccessibilityLabel(label)
+        button.setAccessibilityHelp(label)
         item.view = button
 
         return item
@@ -601,6 +643,9 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
             button.widthAnchor.constraint(equalToConstant: 28),
             button.heightAnchor.constraint(equalToConstant: 28)
         ])
+        // V6.64.1 (A11y): menu button label — layoutMode/density/sort 等菜单按钮
+        button.setAccessibilityLabel(label)
+        button.setAccessibilityHelp(label)
         item.view = button
 
         return item
@@ -819,6 +864,9 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
         searchField.sendsWholeSearchString = false
         searchField.target = self
         searchField.action = #selector(handleSearchAction)
+        // V6.64.1 (A11y): search field placeholder 已自带 label, 加 help 说明用途
+        searchField.setAccessibilityLabel(Copy.search)
+        searchField.setAccessibilityHelp(Copy.searchHint)
 
         // V4.8.2: 加宽搜索框——成为 toolbar 主要元素
         //   NSSearchToolbarItem.preferredWidthForSearchField 控制搜索框展开宽度
@@ -865,6 +913,8 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
         // 初始 selectedSegment = defaultValue (0 = .square)
         segment.selectedSegment = ThumbnailLayoutMode.defaultValue.rawValue
         segment.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        // V6.64.1 (A11y): NSSegmentedControl 段标签 — VoiceOver 朗读当前段 + 位置
+        segment.setAccessibilityLabel(Copy.layoutMode)
         item.view = segment
 
         return item
@@ -898,6 +948,8 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
         // 初始 selectedSegment = medium.index (V5.30 默认)
         segment.selectedSegment = ThumbnailDensity.allCases.firstIndex(of: .medium) ?? 0
         segment.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        // V6.64.1 (A11y): 缩略图密度 segment label
+        segment.setAccessibilityLabel(Copy.thumbnailSize)
         item.view = segment
 
         return item
@@ -937,6 +989,82 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
     @objc private func handleShowQuickLook() { onQuickLook?() }   // V4.37.1 NEW
     @objc private func handleNavigatePrev() { onPrev?() }          // V4.37.2 NEW
     @objc private func handleNavigateNext() { onNext?() }          // V4.37.2 NEW
+
+    // V_move_toolbar_poc: 批量移动 handler — 弹 NSMenu 列出 folders
+    //   用 NSMenu 而非 NSPopover:这是单次选择菜单(选完就关),NSPopover 适合"展开多选视图"
+    //   NSMenu 是 macOS 原生 popup menu 范式(Finder 的"Move to" / Mail 的"Archive" 同款)
+    //   folders 列表来自 ContentView 注入(moveFoldersProvider closure),避免 ToolbarController 直接依赖 SwiftData @Query
+    //   nil = 移到未分组 (走 batchMove(to: nil) 路径,与 ContextualSelectionBar.moveMenu 一致)
+    //
+    // V_move_toolbar_fix (#1): representedObject 不传 Folder 引用,改传 UUID 字符串
+    //   原因 1: 避开 Swift 6 strict concurrency 下 Any 类型转换警告
+    //   原因 2: 避开 Folder @Model 对象在 menu item 里被强引用,延迟 SwiftData 释放
+    //   原因 3: Swift 编译器对 representedObject: nil 推断 NSMenuItem init 重载有歧义
+    //   handler 里拿 UUID,再走 onMove 桥接回 ContentView(在 ContentView 侧从 grid.folders 找 Folder)
+    @objc private func handleMoveButton(_ sender: NSButton) {
+        let menu = NSMenu(title: Copy.miniToolbarMove)
+        menu.autoenablesItems = false
+
+        // 移出文件夹(tray icon)——representedObject 传空字符串当哨兵,"" = 移出文件夹
+        let unfileItem = NSMenuItem(
+            title: Copy.sidebarUnfiled,
+            action: #selector(moveMenuItemSelected(_:)),
+            keyEquivalent: ""
+        )
+        unfileItem.image = NSImage(systemSymbolName: "tray", accessibilityDescription: Copy.sidebarUnfiled)
+        unfileItem.target = self
+        unfileItem.representedObject = "" as NSString
+        unfileItem.isEnabled = true
+        menu.addItem(unfileItem)
+
+        let folders = self.moveFoldersProvider?() ?? []
+        if !folders.isEmpty {
+            menu.addItem(.separator())
+            for folder in folders {
+                let item = NSMenuItem(
+                    title: folder.name,
+                    action: #selector(moveMenuItemSelected(_:)),
+                    keyEquivalent: ""
+                )
+                item.image = NSImage(systemSymbolName: folder.icon, accessibilityDescription: folder.name)
+                item.target = self
+                // V_move_toolbar_fix: 用 NSString 包装 UUID,避免 Any 强转 + @Model 引用
+                item.representedObject = folder.id.uuidString as NSString
+                item.isEnabled = true
+                menu.addItem(item)
+            }
+        }
+
+        // 弹出位置:NSButton 下方(macOS 标准 popup 范式)
+        let location = NSPoint(x: sender.bounds.midX, y: sender.bounds.maxY)
+        menu.popUp(positioning: nil, at: location, in: sender)
+    }
+
+    /// V_move_toolbar_poc: folders 数据源 — ContentView 注入,避免 ToolbarController 直接依赖 SwiftData
+    ///   返回当前所有 folders (跟 ContextualSelectionBar.moveMenu 用 model.grid.folders 同源)
+    /// V_move_toolbar_fix (#2): @MainActor 标注 closure — ToolbarController 整个类 @MainActor,
+    ///   Swift 6 strict concurrency 要求 closure 显式标注 actor 隔离,否则报
+    ///   "Closure captures non-sendable 'Folder' type" 或 "Type 'Folder' does not conform to 'Sendable'"
+    @MainActor var moveFoldersProvider: (() -> [Folder])?
+
+    /// V_move_toolbar_fix (#1): NSMenu item 选中回调
+    ///   representedObject 是 NSString:"" 表示移到未分组,否则是 folder.id.uuidString
+    ///   UUID 反查 Folder 在 onMove 桥接时做(由 ContentView 注入 handler 完成)
+    @objc private func moveMenuItemSelected(_ sender: NSMenuItem) {
+        guard let idString = sender.representedObject as? String else { return }
+        if idString.isEmpty {
+            onMove?(nil)
+        } else if let uuid = UUID(uuidString: idString) {
+            // V_move_toolbar_fix: 传 UUID 给 onMove,ContentView 侧从 grid.folders 找 Folder
+            onMoveByID?(uuid)
+        }
+    }
+
+    /// V_move_toolbar_fix (#1): 新增 — onMove 接受 UUID,ContentView 侧反查 Folder
+    ///   与 onMove 二选一:如果 caller 方便拿 Folder,直接走 onMove(folder);如果 caller 只能拿 UUID,走 onMoveByID
+    ///   PoC 阶段两个都暴露,后续看 caller 偏好再决定留哪个
+    /// V_move_toolbar_fix (#2): @MainActor 标注 — 跟 moveFoldersProvider 同根因
+    @MainActor var onMoveByID: ((UUID) -> Void)?
     // V5.39.3: 删 handleShowViewOptions——布局模式 + 排序都搬到独立 toolbar 按钮
     //   走 NSMenu (handleMenuButtonClicked) + handleMenuItemSelected, 不再需要 NSPopover
     @objc private func handleSearchAction() {

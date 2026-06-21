@@ -4,9 +4,6 @@
     "" : {
 
     },
-    "(%lld)" : {
-
-    },
     "#%@" : {
 
     },
@@ -9818,6 +9815,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "顯示資訊面板 (⌘I)"
+          }
+        }
+      }
+    },
+    "toastBatchMoveFetchFailed" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "移动照片失败：%@"
           }
         }
       }

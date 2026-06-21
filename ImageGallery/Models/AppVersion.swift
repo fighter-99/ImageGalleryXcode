@@ -31,4 +31,8 @@ struct AppVersion: Equatable {
 
     /// "v1.0 (build 1)" 之类——AboutSettingsView 直接显示
     var displayString: String { "v\(marketing) (build \(build))" }
+
+    /// V6.64.2: 简版版本字符串 — CrashReporter / debug log 用
+    ///   "1.0 (1)" 比 displayString 短, 适合 log header
+    var shortString: String { "\(marketing) (\(build))" }
 }

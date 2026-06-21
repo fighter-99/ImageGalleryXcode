@@ -51,6 +51,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             NSLog("V6.22.10: reset hasSeenOnboarding for XCUITest")
         }
 
+        // V6.64.2: 启动 crash reporter — 监听 uncaught exception + 5 POSIX signals
+        //   早挂早保护 — applicationDidFinishLaunching 早期, 防 SwiftData init 崩没监听
+        CrashReporter.install()
+
        NSApp.setActivationPolicy(.regular)
        NSApp.activate(ignoringOtherApps: true)
 
@@ -96,15 +100,38 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
               let y = defaults.object(forKey: Self.posYKey) as? Double else {
             return
         }
-        // 验证 frame 合理 (e.g. 不超出屏幕)
         let frame = NSRect(x: x, y: y, width: w, height: h)
-        // 屏幕可见性 check: 至少部分在主屏上
-        guard let mainScreen = NSScreen.main else { return }
-        let screenFrame = mainScreen.visibleFrame
-        let intersection = frame.intersection(screenFrame)
-        // 至少 50pt 宽 + 50pt 高 visible — 否则 frame 几乎全在屏幕外, 不恢复
-        guard intersection.width > 50, intersection.height > 50 else { return }
-        window.setFrame(frame, display: true)
+
+        // 验证 frame 合理:遍历所有屏幕(外接屏 + 主屏),任一屏 visible ≥ 30% 才恢复
+        //   之前只验 NSScreen.main —— 外接显示器拔掉后,frame 落在已消失的屏幕上
+        //   主屏可见性 0,被误判"不可见"丢弃 → 用户感觉窗口"消失"
+        let visibleRatio: CGFloat = 0.3
+        let isVisibleOnAnyScreen = NSScreen.screens.contains { screen in
+            let intersection = frame.intersection(screen.visibleFrame)
+            // 至少 30% 面积在屏幕 visible 区域 (macOS 可见 frame 排除 Dock/menu bar)
+            guard intersection.width > 0, intersection.height > 0 else { return false }
+            let visibleArea = intersection.width * intersection.height
+            let frameArea = frame.width * frame.height
+            return frameArea > 0 && visibleArea / frameArea >= visibleRatio
+        }
+
+        if isVisibleOnAnyScreen {
+            window.setFrame(frame, display: true)
+        } else {
+            // 兜底:frame 几乎完全在所有屏幕外(常见于外接显示器切换)
+            //   保留用户偏好尺寸,居中到主屏,避免窗口"消失"
+            let primaryVisible = NSScreen.main?.visibleFrame ?? .zero
+            let safeOrigin = NSPoint(
+                x: primaryVisible.midX - frame.width / 2,
+                y: primaryVisible.midY - frame.height / 2
+            )
+            let safeOriginClamped = NSPoint(
+                x: max(primaryVisible.minX, min(safeOrigin.x, primaryVisible.maxX - frame.width)),
+                y: max(primaryVisible.minY, min(safeOrigin.y, primaryVisible.maxY - frame.height))
+            )
+            let safeFrame = NSRect(origin: safeOriginClamped, size: frame.size)
+            window.setFrame(safeFrame, display: true)
+        }
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
@@ -359,9 +386,14 @@ struct ImageGalleryApp: App {
             // V5.60-7: ⌘? 弹 cheat sheet——macOS 14+ CommandGroup(replacing: .help) 标准
             //   Help 菜单是系统默认菜单, macOS 自动接管 ⌘? shortcut
             //   加 Button("Keyboard Shortcuts…") 替代无操作
+            // V6.64.2: 加 Divider + Reveal Crash Logs 项 — 让用户附 log 给 bug report
             CommandGroup(replacing: .help) {
                 Button(Copy.keyboardShortcutsMenu) {
                     showShortcutsSheet = true
+                }
+                Divider()
+                Button(Copy.helpRevealCrashLogs) {
+                    CrashReporter.revealLogsInFinder()
                 }
             }
         }

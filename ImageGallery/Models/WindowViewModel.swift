@@ -64,6 +64,9 @@ final class WindowViewModel {
     /// V6.28: Grid 业务闭包走 model.grid.X()
     /// V6.28.1: Import 业务闭包走 model.importVM.X()
     /// V6.28.2: 整方法搬到 WindowViewModel (纯 chrome 配置, 不污染 Core observation)
+    /// V_window_layout_v2 (#4): closure capture 由 [weak self] + self?.core?.X
+    ///   改为 capture core weak (CoreViewModel?, 一层 weak). 既避免双层 weak chain 失联,
+    ///   也避免 closure body 内 4 层 optional chain 难读
     func configureToolbar(window: NSWindow) {
         // 只在第一次设置
         guard window.toolbar == nil else { return }
@@ -82,35 +85,52 @@ final class WindowViewModel {
 
         // 绑 action closures
         let controller = ToolbarController.shared
-        controller.onToggleSidebar = { [weak self] in
-            guard let model = self?.core else { return }
+        // 统一 helper:把 ToolbarController closure body 写成单层 [weak core] + 早期 return
+        //   替代之前每个 closure 单独写 [weak self] + self?.core?.X 模板
+        controller.onToggleSidebar = { [weak core] in
+            guard let model = core else { return }
             withAnimation(Animations.medium) { model.settings.showSidebar.toggle() }
         }
         // V5.7: 砍 onToggleFavorite——工具栏 ❤ 收藏按钮已移除
-        controller.onBatchExport = { [weak self] in
-            self?.core?.grid.batchExport()
+        controller.onBatchExport = { [weak core] in
+            core?.grid.batchExport()
         }
-        controller.onDelete = { [weak self] in
-            self?.core?.grid.handleDelete()
+        controller.onDelete = { [weak core] in
+            core?.grid.handleDelete()
         }
-        controller.onImport = { [weak self] in
-            self?.core?.importVM.startImport()
+        controller.onImport = { [weak core] in
+            core?.importVM.startImport()
+        }
+        // V_move_toolbar_poc: Move 按钮桥接 — folder=nil 表示移到未分组
+        controller.onMove = { [weak core] folder in
+            core?.grid.batchMove(to: folder)
+        }
+        // V_move_toolbar_fix (#1): UUID 路径桥接 — 从 toolbar menu 拿到的 representedObject 是 UUID 字符串
+        //   ContentView 侧反查 Folder(避免 @Model 跨 boundary)
+        controller.onMoveByID = { [weak core] uuid in
+            guard let folder = core?.grid.folders.first(where: { $0.id == uuid }) else { return }
+            core?.grid.batchMove(to: folder)
+        }
+        // V_move_toolbar_poc: folders 数据源 — 避免 ToolbarController 直接依赖 SwiftData @Query
+        //   每次 menu 弹时调一次,fresh 数据;grid.folders 已 cached (V6.28 GridViewModel)
+        controller.moveFoldersProvider = { [weak core] in
+            core?.grid.folders ?? []
         }
         // V4.37.1: ⌘Y Quick Look——复用 showQuickLook()（与空格键同路径）
-        controller.onQuickLook = { [weak self] in
-            self?.core?.grid.showQuickLook()
+        controller.onQuickLook = { [weak core] in
+            core?.grid.showQuickLook()
         }
         // V4.37.2: ⌘[ / ⌘] 上下张切换（macOS Quick Look 标准）
-        controller.onPrev = { [weak self] in
-            self?.core?.grid.goPrev()
+        controller.onPrev = { [weak core] in
+            core?.grid.goPrev()
         }
-        controller.onNext = { [weak self] in
-            self?.core?.grid.goNext()
+        controller.onNext = { [weak core] in
+            core?.grid.goNext()
         }
         // V5.24: 布局模式 + 密度 toolbar 集成桥接
         // V6.12.14: ThumbnailLayoutMode 加 .list 后——选 .list 切 viewMode = .list
-        controller.onLayoutModeChange = { [weak self] mode in
-            guard let model = self?.core else { return }
+        controller.onLayoutModeChange = { [weak core] mode in
+            guard let model = core else { return }
             model.layoutMode = mode
             switch mode {
             case .list:
@@ -119,24 +139,34 @@ final class WindowViewModel {
                 model.viewMode = .grid
             }
         }
-        controller.onDensityChange = { [weak self] density in
-            guard let model = self?.core else { return }
+        controller.onDensityChange = { [weak core] density in
+            guard let model = core else { return }
             model.grid.thumbnailSize = density
             // 同步 storedThumbnailSize 以便重启后恢复（V4.15.0 ⌘0 行为一致）
             model.settings.thumbnailSize = Double(density)
         }
         // V5.39.3: 排序 toolbar 桥接
-        controller.onSortOptionChange = { [weak self] newSort in
-            self?.core?.grid.sortOption = newSort
+        controller.onSortOptionChange = { [weak core] newSort in
+            core?.grid.sortOption = newSort
         }
         // V4.90.0: filterContentProvider 改 filterCoordinatorFactory
         //   folders/allTags 是 Q-bucket (view-owned), 由 GridViewModel 缓存
-        controller.filterCoordinatorFactory = { [weak self] onStateChange in
-            FilterPopoverCoordinator(
-                folders: self?.core?.grid.folders ?? [],
-                tags: self?.core?.grid.allTags ?? [],
+        controller.filterCoordinatorFactory = { [weak core] onStateChange in
+            // factory 签名固定返回非可选 coordinator (ToolbarController:91)
+            //   core 已释放 → 返回空 coordinator,不再绑 state change
+            //   folders/tags 空数组 (toolbar 内部已 early-return 检查)
+            guard let model = core else {
+                return FilterPopoverCoordinator(
+                    folders: [],
+                    tags: [],
+                    onStateChange: { _ in }
+                )
+            }
+            return FilterPopoverCoordinator(
+                folders: model.grid.folders,
+                tags: model.grid.allTags,
                 onStateChange: { newState in
-                    self?.core?.filterState = newState
+                    model.filterState = newState
                     onStateChange(newState)
                 }
             )
@@ -144,8 +174,8 @@ final class WindowViewModel {
         // V4.36.x: 首次同步角标
         controller.filterActiveCount = core?.filterState.activeCount ?? 0
         // V4.8.1: search field 改用 NSSearchField
-        controller.onSearchTextChanged = { [weak self] newText in
-            guard let model = self?.core else { return }
+        controller.onSearchTextChanged = { [weak core] newText in
+            guard let model = core else { return }
             if model.grid.searchText != newText {
                 model.grid.searchText = newText
             }

@@ -218,11 +218,17 @@ struct DetailPane: View {
             }
         }
         .id(viewKind)  // V3.6.44: 视图类型变化时强制 transition
-        .transition(.opacity)
+        // V6.64.4 (UX polish): transition 加 scale 0.96 — 之前 V3.6.46 只有 opacity
+        //   Photos.app Sonoma+ 实测: crossfade 0.25s + scale 0.96 (旧 view 缩小 + fade)
+        //   视觉: detail 切换时旧 view "退后" 消失, 新 view "前进" 出现, 比纯 opacity 流畅
+        .transition(.asymmetric(
+            insertion: .opacity.combined(with: .scale(scale: 0.96)),
+            removal: .opacity.combined(with: .scale(scale: 1.02))
+        ))
         // V4.20.0: 撤回 .glassEffectID 回归单 view glassEffect（玻璃 effect 限定在 detail panel 边界内）
         // V3.6.46: 用户反馈详情面板"向右翻页"感太重，去掉 .move，只保留 .opacity
-        //   切到 .standard（0.2s easeInOut）—— 详情面板切换不需 Q 弹，平滑即可
-        .animation(Animations.standard, value: viewKind)
+        // V6.64.4: .standard (0.2s) → .easeInOut(0.25) — Photos 真版匹配
+        .animation(.easeInOut(duration: 0.25), value: viewKind)
     }
 }
 

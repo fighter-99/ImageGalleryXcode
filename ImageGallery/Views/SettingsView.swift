@@ -30,11 +30,14 @@ private enum SettingsMetrics {
     static let titleSubtitleGap: CGFloat = Spacing.sm
 }
 
-// MARK: - V6.39.0: 关于页面链接 (占位 → 真实 URL)
-private enum SettingsLinks {
-    static let projectHomepage = "https://github.com/"
-    static let helpDocs = "https://github.com/"
-    static let issueTracker = "https://github.com/"
+// MARK: - V6.39.0 + V6.64.2: 关于页面链接 (占位 → 真实 GitHub URL)
+// V6.64.2: 改 internal — 测试 Wave1A11yCrashTests 锁定 URL 防回退到 placeholder
+enum SettingsLinks {
+    // V6.64.2: 从占位 "github.com/" 改为 fighter-99/ImageGalleryXcode 真项目 URL
+    //   跟 git remote origin 一致. 即使项目还没正式发布, 链接打开也是有效仓库 (404 之前是 better than placeholder)
+    static let projectHomepage = "https://github.com/fighter-99/ImageGalleryXcode"
+    static let helpDocs = "https://github.com/fighter-99/ImageGalleryXcode#readme"
+    static let issueTracker = "https://github.com/fighter-99/ImageGalleryXcode/issues"
 }
 
 // MARK: - V6.08: 安全的 Link (沿用)

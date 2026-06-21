@@ -36,6 +36,9 @@ struct ContextualSelectionBar: View {
                     .font(.callout.weight(.medium))
             }
             .padding(.leading, 12)
+            // V6.64.1 (A11y): 选中数标签让 VoiceOver 朗读完整 — "已选 X 张"
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(Copy.selectedCount(model.grid.selection.selectedIDs.count))
 
             Divider()
                 .frame(height: 24)
@@ -122,6 +125,11 @@ struct ContextualSelectionBar: View {
             Label(Copy.tagLabel, systemImage: IconNames.tag)
         }
         .help(Copy.miniToolbarTagHelp)
+        // V6.64.1 (A11y): 朗读 "给选中的照片打标签, N 张"
+        .accessibilityLabel(Copy.miniToolbarTagHelp)
+        .accessibilityHint(model.grid.selection.selectedIDs.count > 0
+            ? Copy.a11yActionOnSelectedHint(model.grid.selection.selectedIDs.count)
+            : "")
         .popover(isPresented: $showTagPicker, arrowEdge: .bottom) {
             TagPickerPopover(model: model)
         }
@@ -143,6 +151,8 @@ struct ContextualSelectionBar: View {
             Label(Copy.miniToolbarMove, systemImage: IconNames.folder)
         }
         .help(Copy.miniToolbarMoveHelp)
+        // V6.64.1 (A11y): 朗读 "移动选中的照片到文件夹"
+        .accessibilityLabel(Copy.miniToolbarMoveHelp)
     }
 
     /// Rename (P4.2): sheet (模板批量重命名, V6.28: grid 业务)
@@ -153,6 +163,8 @@ struct ContextualSelectionBar: View {
             Label(Copy.batchRenameTitle, systemImage: "pencil.and.list.clipboard")
         }
         .help(Copy.miniToolbarRenameHelp)
+        // V6.64.1 (A11y)
+        .accessibilityLabel(Copy.miniToolbarRenameHelp)
     }
 
     /// Export — 直接调 (内部 file panel, V6.28: grid 业务)
@@ -163,6 +175,8 @@ struct ContextualSelectionBar: View {
             Label(Copy.miniToolbarExport, systemImage: IconNames.squareAndArrowUp)
         }
         .help(Copy.miniToolbarExportHelp)
+        // V6.64.1 (A11y)
+        .accessibilityLabel(Copy.miniToolbarExportHelp)
     }
 
     /// Delete — 弹确认 dialog (Photos.app 范式: 不静默删, 弹 confirm + undo)
@@ -173,6 +187,11 @@ struct ContextualSelectionBar: View {
             Label(Copy.delete, systemImage: IconNames.trash)
         }
         .help(Copy.miniToolbarDeleteHelp)
+        // V6.64.1 (A11y): destructive 标签朗读时强调 "删除" + selected count
+        .accessibilityLabel(Copy.miniToolbarDeleteHelp)
+        .accessibilityHint(model.grid.selection.selectedIDs.count > 0
+            ? Copy.a11yActionOnSelectedHint(model.grid.selection.selectedIDs.count)
+            : "")
     }
 }
 

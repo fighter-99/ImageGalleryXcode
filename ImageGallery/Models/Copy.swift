@@ -589,6 +589,14 @@ enum Copy {
     static let shortcutsZoomOut = String(localized: "shortcutsZoomOut", defaultValue: "缩小缩略图")
     static let shortcutsResetZoom = String(localized: "shortcutsResetZoom", defaultValue: "重置缩略图大小")
     static let shortcutsOpenSettings = String(localized: "shortcutsOpenSettings", defaultValue: "设置")
+    // V6.64.1 (A11y): toolbar button VoiceOver help 前缀 — "快捷键: ⌘O"
+    static let a11yShortcutPrefix = String(localized: "a11yShortcutPrefix", defaultValue: "快捷键")
+    // V6.64.2: Help 菜单 — "在 Finder 中显示崩溃日志" (附给 bug report 用)
+    static let helpRevealCrashLogs = String(localized: "helpRevealCrashLogs", defaultValue: "在 Finder 中显示崩溃日志")
+    // V6.64.1 (A11y): "对 X 张照片执行操作" hint — 给 destructive action 用
+    static func a11yActionOnSelectedHint(_ count: Int) -> String {
+        String.localizedStringWithFormat(String(localized: "a11yActionOnSelectedHint", defaultValue: "对 %lld 张照片执行操作"), count)
+    }
 
     // MARK: - V6.37.4: 侧栏 + 智能文件夹
     // SidebarRow — a11y label (含 %@)
