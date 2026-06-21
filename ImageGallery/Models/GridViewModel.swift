@@ -121,21 +121,59 @@ final class GridViewModel {
     // MARK: - Sidebar 派生 flag (读 core.sidebarSelection)
 
     /// V6.08: 当前侧栏选中的 folder——从 modelContext 按 UUID fetch
+    /// V6.38.0 (P0 perf): 加 cache — SidebarSelection 是 Hashable, 缓存命中避免 SwiftData fetch
+    ///   之前每次访问 = 1 次 SQLite round-trip; 现在仅 sidebarSelection 真变时 fetch
+    ///   invalidation: cachedSidebarSelection 跟当前 core.sidebarSelection 不等 → 重 fetch
+    @ObservationIgnored private var cachedCurrentFolder: Folder? = nil
+    @ObservationIgnored private var cachedFolderSelection: SidebarSelection? = nil  // sentinel: nil = 未 resolve
     var currentFolder: Folder? {
-        guard case .folder(let id) = core?.sidebarSelection, let modelContext = core?.modelContext else { return nil }
-        return (try? modelContext.fetch(FetchDescriptor<Folder>(predicate: #Predicate { $0.id == id })))?.first
+        let sel = core?.sidebarSelection
+        if sel == cachedFolderSelection, let cached = cachedCurrentFolder { return cached }
+        guard case .folder(let id) = sel, let modelContext = core?.modelContext else {
+            cachedCurrentFolder = nil
+            cachedFolderSelection = sel
+            return nil
+        }
+        let folder = (try? modelContext.fetch(FetchDescriptor<Folder>(predicate: #Predicate { $0.id == id })))?.first
+        cachedCurrentFolder = folder
+        cachedFolderSelection = sel
+        return folder
     }
 
     /// V6.08: 当前侧栏选中的 tag——同 currentFolder 模式
+    /// V6.38.0 (P0 perf): 加 cache (同 currentFolder 模式)
+    @ObservationIgnored private var cachedCurrentTag: Tag? = nil
+    @ObservationIgnored private var cachedTagSelection: SidebarSelection? = nil
     var currentTag: Tag? {
-        guard case .tag(let id) = core?.sidebarSelection, let modelContext = core?.modelContext else { return nil }
-        return (try? modelContext.fetch(FetchDescriptor<Tag>(predicate: #Predicate { $0.id == id })))?.first
+        let sel = core?.sidebarSelection
+        if sel == cachedTagSelection, let cached = cachedCurrentTag { return cached }
+        guard case .tag(let id) = sel, let modelContext = core?.modelContext else {
+            cachedCurrentTag = nil
+            cachedTagSelection = sel
+            return nil
+        }
+        let tag = (try? modelContext.fetch(FetchDescriptor<Tag>(predicate: #Predicate { $0.id == id })))?.first
+        cachedCurrentTag = tag
+        cachedTagSelection = sel
+        return tag
     }
 
     /// P4.1.1: 当前侧栏选中的 smartFolder——跟 currentFolder/currentTag 同 UUID fetch 模式
+    /// V6.38.0 (P0 perf): 加 cache (同 currentFolder 模式)
+    @ObservationIgnored private var cachedCurrentSmartFolder: SmartFolder? = nil
+    @ObservationIgnored private var cachedSmartFolderSelection: SidebarSelection? = nil
     var currentSmartFolder: SmartFolder? {
-        guard case .smartFolder(let id) = core?.sidebarSelection, let modelContext = core?.modelContext else { return nil }
-        return (try? modelContext.fetch(FetchDescriptor<SmartFolder>(predicate: #Predicate { $0.id == id })))?.first
+        let sel = core?.sidebarSelection
+        if sel == cachedSmartFolderSelection, let cached = cachedCurrentSmartFolder { return cached }
+        guard case .smartFolder(let id) = sel, let modelContext = core?.modelContext else {
+            cachedCurrentSmartFolder = nil
+            cachedSmartFolderSelection = sel
+            return nil
+        }
+        let sf = (try? modelContext.fetch(FetchDescriptor<SmartFolder>(predicate: #Predicate { $0.id == id })))?.first
+        cachedCurrentSmartFolder = sf
+        cachedSmartFolderSelection = sel
+        return sf
     }
 
     /// P4.1.1: 当前 smartFolder 的 filter (decoded)
@@ -177,12 +215,40 @@ final class GridViewModel {
     // MARK: - 选中派生
 
     /// V3.6.52: 3 个 O(n) lookup 合并——photo + index 一次扫描
+    /// V6.38.2 (P0 perf): 加 cache — singleSelectedPhoto/currentIndex/canPrev/canNext 每次 body 各调一次
+    ///   之前每次 resolvedSingle = O(n) firstIndex lookup; 一次 body 调 4 次 = 4× O(n) = 4000 ops (1000 photos)
+    ///   现在 cache hit: O(1) tuple return
+    @ObservationIgnored private var cachedResolvedSingle: (photo: Photo, visibleIndex: Int)? = nil
+    @ObservationIgnored private var cachedResolvedSingleKey: Int = 0
+    @ObservationIgnored private var resolvedSingleCacheValid: Bool = false
     var resolvedSingle: (photo: Photo, visibleIndex: Int)? {
+        let key = resolvedSingleCacheKey()
+        if resolvedSingleCacheValid && key == cachedResolvedSingleKey {
+            return cachedResolvedSingle
+        }
         guard let id = selection.singleSelectedID,
               let idx = visiblePhotos.firstIndex(where: { $0.id == id }) else {
+            cachedResolvedSingle = nil
+            cachedResolvedSingleKey = key
+            resolvedSingleCacheValid = true
             return nil
         }
-        return (visiblePhotos[idx], idx)
+        let result = (visiblePhotos[idx], idx)
+        cachedResolvedSingle = result
+        cachedResolvedSingleKey = key
+        resolvedSingleCacheValid = true
+        return result
+    }
+
+    /// V6.38.2: cache key — singleSelectedID + visiblePhotos cache key 复合
+    ///   singleSelectedID 变化 (单选切换) → cache miss
+    ///   visiblePhotos 变化 (filter) → cache miss (visibleCacheKey 变)
+    private func resolvedSingleCacheKey() -> Int {
+        var hasher = Hasher()
+        hasher.combine(selection.singleSelectedID)
+        hasher.combine(cachedVisibleKey)
+        hasher.combine(visibleCacheValid)
+        return hasher.finalize()
     }
 
     var singleSelectedPhoto: Photo? { resolvedSingle?.photo }
@@ -197,8 +263,25 @@ final class GridViewModel {
     /// V4.36.6: 共享 helper——3 视图 (grid/list/timeline) 共用
     ///   V4.36.x: 加 4 参 (工具栏筛选 4 维)
     ///   V5.8: 砍 filterFavorites
+    ///   V6.38.0 (P0 perf): 加 cache — ContentView body 5-10× 读 visiblePhotos,
+    ///     之前每次都跑全库 filter+sort (~50K array ops for 1000 photos).
+    ///     仿 V6.20.0 libraryStats pattern: filterSignature hash 作 invalidation key.
+    ///     仅 filter inputs 真变时才重算. Hash key 包含:
+    ///       - allPhotos.count (新增/删除触发)
+    ///       - currentFolder.id / currentTag.id / currentSmartFolder.id (sidebar 切换)
+    ///       - searchText / sortOption (text 输入 + 排序)
+    ///       - 5 个 sidebar flag (unfiled/duplicates/recent7Days/largeFiles/inTrash)
+    ///       - filterState 4 维 (folders/tags/shapes/minRating)
+    ///     注意: smartFolderFilter 跟 currentSmartFolder.id 同步变, 已包含
+    @ObservationIgnored private var cachedVisiblePhotos: [Photo] = []
+    @ObservationIgnored private var cachedVisibleKey: Int = 0
+    @ObservationIgnored private var visibleCacheValid: Bool = false
     var visiblePhotos: [Photo] {
-        PhotoStats.filtered(
+        let key = visiblePhotosCacheKey()
+        if visibleCacheValid && key == cachedVisibleKey {
+            return cachedVisiblePhotos
+        }
+        let computed = PhotoStats.filtered(
             allPhotos,
             folder: currentFolder,
             tag: currentTag,
@@ -216,6 +299,33 @@ final class GridViewModel {
             // P4.1.1: smart folder filter 跟 toolbar filter 独立 AND 应用
             smartFolderFilter: smartFolderFilter
         )
+        cachedVisiblePhotos = computed
+        cachedVisibleKey = key
+        visibleCacheValid = true
+        return computed
+    }
+
+    /// V6.38.0: 算 visiblePhotos 缓存 key — 复合 hash of all filter inputs
+    ///   用 Hasher 而不是手动位运算: Swift 标准库优化, Set/UUID/Int 自动 hash 正确
+    ///   任何 input 变 → key 变 → cache miss → 重算 + 更新 cache
+    private func visiblePhotosCacheKey() -> Int {
+        var hasher = Hasher()
+        hasher.combine(allPhotos.count)
+        hasher.combine(currentFolder?.id)
+        hasher.combine(currentTag?.id)
+        hasher.combine(currentSmartFolder?.id)
+        hasher.combine(searchText)
+        hasher.combine(sortOption.rawValue)
+        hasher.combine(filterUnfiled)
+        hasher.combine(filterDuplicates)
+        hasher.combine(filterRecent7Days)
+        hasher.combine(filterLargeFiles)
+        hasher.combine(filterInTrash)
+        hasher.combine(core?.filterState.folders)
+        hasher.combine(core?.filterState.tags)
+        hasher.combine(core?.filterState.shapes)
+        hasher.combine(core?.filterState.minRating)
+        return hasher.finalize()
     }
 
     // MARK: - 状态栏 / 详情面板数据
@@ -227,9 +337,43 @@ final class GridViewModel {
     }
 
     /// V3.5.19: 当前选中图片总大小
+    /// V6.38.1: 走 selectedPhotosInVisible cache (单次 evaluate, O(1) cache hit)
     var selectedTotalSize: Int64 {
-        selection.selectedPhotos(in: visiblePhotos)
+        selectedPhotosInVisible
             .reduce(0) { $0 + $1.fileSize }
+    }
+
+    /// V6.38.1 (P0 perf): `selectedPhotosInVisible` cache
+    ///   12 处 caller (selectedTotalSize computed + 11 user actions), 之前每次都 O(n) filter
+    ///     - copyToPasteboard / shareSelectedURLs / rotateSelected / speakSelection
+    ///     - batchDelete / batchMove / batchAddTag / batchRename / batchSetRating / batchExport
+    ///     - performOnSelectedTrash
+    ///   现在 cache 命中: O(1). key 复合 (selection.selectedIDs + visible cache key)
+    ///     任一变化 → cache miss → 重算
+    @ObservationIgnored private var cachedSelectedInVisible: [Photo] = []
+    @ObservationIgnored private var cachedSelectedInVisibleKey: Int = 0
+    @ObservationIgnored private var selectedInVisibleCacheValid: Bool = false
+    var selectedPhotosInVisible: [Photo] {
+        let key = selectedInVisibleCacheKey()
+        if selectedInVisibleCacheValid && key == cachedSelectedInVisibleKey {
+            return cachedSelectedInVisible
+        }
+        let computed = selection.selectedPhotos(in: visiblePhotos)
+        cachedSelectedInVisible = computed
+        cachedSelectedInVisibleKey = key
+        selectedInVisibleCacheValid = true
+        return computed
+    }
+
+    /// V6.38.1: cache key — selectedIDs + visiblePhotos cache key 复合
+    ///   selection.selectedIDs 变化 (用户操作) → cache miss
+    ///   visiblePhotos 变化 (filter 变化) → cache miss (visibleCacheKey 变)
+    private func selectedInVisibleCacheKey() -> Int {
+        var hasher = Hasher()
+        hasher.combine(selection.selectedIDs)
+        hasher.combine(cachedVisibleKey)
+        hasher.combine(visibleCacheValid)
+        return hasher.finalize()
     }
 
     /// V3.6: 回收站视图 count + size
@@ -298,9 +442,12 @@ final class GridViewModel {
 
     /// V4.2.0 P0❸: subtitle——"N 张 · X MB"
     ///   V4.36.x: 工具栏筛选激活时追加 "· 已筛选 (N)"
+    ///   V6.38.0 (P0 perf): 单次 evaluate visiblePhotos (之前 .count + .reduce = 2 次 cache miss,
+    ///     即使 cache 后也是 2 次 hashtable lookup). 提取到 let 单次访问.
     var currentViewSubtitle: String {
-        let count = visiblePhotos.count
-        let bytes = visiblePhotos.reduce(Int64(0)) { $0 + $1.fileSize }
+        let photos = visiblePhotos
+        let count = photos.count
+        let bytes = photos.reduce(Int64(0)) { $0 + $1.fileSize }
         let size = ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)
         var s = Copy.statusCountAndSize(count, size: size)
         if let activeCount = core?.filterState.activeCount, core?.filterState.isActive == true {
@@ -348,7 +495,7 @@ final class GridViewModel {
         pasteboard.clearContents()
         let urls: [URL]
         if !selection.selectedIDs.isEmpty {
-            urls = selection.selectedPhotos(in: visiblePhotos).map { $0.fileURL }
+            urls = selectedPhotosInVisible.map { $0.fileURL }
         } else if let photo = singleSelectedPhoto {
             urls = [photo.fileURL]
         } else {
@@ -381,7 +528,7 @@ final class GridViewModel {
     func shareSelectedURLs() -> [URL] {
         let urls: [URL]
         if !selection.selectedIDs.isEmpty {
-            urls = selection.selectedPhotos(in: visiblePhotos).map { $0.fileURL }
+            urls = selectedPhotosInVisible.map { $0.fileURL }
         } else if let photo = singleSelectedPhoto {
             urls = [photo.fileURL]
         } else {
@@ -398,7 +545,7 @@ final class GridViewModel {
     ///   - selection 空时 toast 提示用户先选图 (跟 shareSelected 一致 UX)
     ///   - Photos.app 范式: 旋转是 in-place file 修改, 无 undo (用户可 export 原图 + 重新 import 复原)
     func rotateSelected(clockwise: Bool) {
-        let photos = selection.selectedPhotos(in: visiblePhotos)
+        let photos = selectedPhotosInVisible
         guard !photos.isEmpty else {
             enqueueToastHandler(Copy.toastSelectRotateFirst, .info, .normal, nil)
             return
@@ -454,7 +601,7 @@ final class GridViewModel {
     ///   - N 张 → 读 "已选 N 张照片, 第一张 XXX"
     ///   zh-CN 语音; AVSpeechSynthesizer 一次性 utterance (不持久 synthesizer)
     func speakSelection() {
-        let photos = selection.selectedPhotos(in: visiblePhotos)
+        let photos = selectedPhotosInVisible
         guard !photos.isEmpty else {
             enqueueToastHandler(Copy.toastSelectSpeakFirst, .info, .normal, nil)
             return
@@ -611,7 +758,7 @@ final class GridViewModel {
     /// V6.29.1: undo = 全部 restore from trash (Photos.app 撤销范式)
     func batchDelete() {
         // 提前 capture photos (performOnSelectedTrash 会清 selection)
-        let photos = selection.selectedPhotos(in: visiblePhotos)
+        let photos = selectedPhotosInVisible
         guard !photos.isEmpty else { return }
         let count = performOnSelectedTrash({ svc, photos in photos.forEach { svc.recycle($0) } })
         guard count > 0 else { return }
@@ -643,7 +790,7 @@ final class GridViewModel {
     ///   undoStack 持 entry, entry 持闭包, 但 self 是 weak → self 释放时闭包失效,
     ///   undo 调用时不做事不崩)。
     func batchMove(to folder: Folder?) {
-        let photosToMove = selection.selectedPhotos(in: visiblePhotos)
+        let photosToMove = selectedPhotosInVisible
         guard !photosToMove.isEmpty, let modelContext = core?.modelContext else { return }
         let oldFolders = photosToMove.map { $0.folder }
         let count = photosToMove.count
@@ -672,7 +819,7 @@ final class GridViewModel {
 
     /// 批量加标签
     func batchAddTag(_ tag: Tag) {
-        let photosToTag = selection.selectedPhotos(in: visiblePhotos)
+        let photosToTag = selectedPhotosInVisible
         guard let modelContext = core?.modelContext else { return }
         for photo in photosToTag {
             if !photo.tags.contains(where: { $0.id == tag.id }) {
@@ -688,7 +835,7 @@ final class GridViewModel {
     /// - 执行阶段: 走 undoManager.registerAction, 单步撤销整批
     /// - 错误处理: per-photo try, 失败计数, 单次 toast 汇总 (V6.08 教训: 不静默)
     func batchRename(template: String) {
-        let photos = selection.selectedPhotos(in: visiblePhotos)
+        let photos = selectedPhotosInVisible
         guard !photos.isEmpty, let modelContext = core?.modelContext else { return }
         let trimmed = template.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return }
@@ -795,7 +942,7 @@ final class GridViewModel {
     /// V5.12: 批量评分
     /// V6.35.3: 加 undo + coalesceId="rate" — 1s 内连续评分合并 (Photos.app 行为)
     func batchSetRating(_ rating: Int) {
-        let photosToRate = selection.selectedPhotos(in: visiblePhotos)
+        let photosToRate = selectedPhotosInVisible
         guard !photosToRate.isEmpty, let modelContext = core?.modelContext else { return }
         // V6.35.3: capture 原 rating — undo 还原用
         let originalRatings = photosToRate.map { $0.rating }
@@ -823,7 +970,7 @@ final class GridViewModel {
 
     /// 批量导出
     func batchExport() {
-        let photosToExport = selection.selectedPhotos(in: visiblePhotos)
+        let photosToExport = selectedPhotosInVisible
         guard !photosToExport.isEmpty else { return }
 
         let panel = NSOpenPanel()
@@ -880,7 +1027,7 @@ final class GridViewModel {
     func performOnSelectedTrash(
         _ operation: (RecycleBinService, [Photo]) -> Void
     ) -> Int {
-        let photos = selection.selectedPhotos(in: visiblePhotos)
+        let photos = selectedPhotosInVisible
         guard !photos.isEmpty, let modelContext = core?.modelContext else { return 0 }
         let service = RecycleBinService(
             storage: .shared,
