@@ -136,8 +136,11 @@ struct ActiveFiltersBar: View {
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
-            .background(Color.accentColor.opacity(0.15))
-            .clipShape(Capsule())
+            // V6.52 (design polish): .quaternary 容器色 — 跟单 chip 的 accent 实色区分
+            //   视觉: 单 chip = "已激活", grouped menu = "容器 (可展开)"
+            //   Photos 真版 .quaternary 是 popover/segmented container 标准
+            //   之前用 Color.accentColor.opacity(0.15) 跟单 chip 同色 — 视觉"都是已激活"失分层
+            .background(.quaternary, in: Capsule())
         }
         .menuStyle(.borderlessButton)  // V5.61-2: 去掉 Menu 默认边框, 视觉与 chip 一致
         .menuIndicator(.hidden)  // V5.61-2: 隐藏默认 chevron (我们手动加了)
@@ -162,6 +165,10 @@ struct ActiveFiltersBar: View {
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
+        // V6.52 (design polish): 单 chip 保留 accent.opacity(0.15) — "已激活" 视觉锤
+        //   跟 grouped menu 的 .quaternary 容器色形成对比:
+        //   - 单 chip = "已激活" (accent 实色暗示激活状态)
+        //   - grouped menu = "容器 (可展开)" (.quaternary 暗示中性容器)
         .background(Color.accentColor.opacity(0.15))
         .clipShape(Capsule())
         // V4.56.0: chip 渐出过渡——filterState 变化时（chip 从 ForEach 移除）触发

@@ -810,7 +810,11 @@ struct ContentView: View {
         // V3.5.6 Finder 化：Status Bar（底部信息条）
         // V6.38.1 (Phase 1): 简化 — 只传全局 meta (总数 + 大小 + 缩略图档位)
         //   删: selectedCount / activeFilterCount / importProgress (重复显示, 搬到触发按钮附近)
+        // V6.52: 加 viewTitle + viewSubtitle — V6.38.1 简化过头让 StatusBar 太空 (3 项 + 2 分隔符)
+        //   现在 4 段: 当前视图标题 + N 张 · X MB + 缩略图档位, 视觉更平衡
         StatusBar(
+            viewTitle: model.grid.currentViewTitle,
+            viewSubtitle: model.grid.currentViewSubtitle,
             totalCount: allPhotos.count,
             // V6.28: totalSizeFormatted 在 grid
             totalSize: model.grid.totalSizeFormatted,

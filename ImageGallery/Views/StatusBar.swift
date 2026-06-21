@@ -15,6 +15,11 @@
 import SwiftUI
 
 struct StatusBar: View {
+    // V6.52: viewTitle + viewSubtitle 加回来 — V6.38.1 简化过头让 StatusBar 太空
+    //   决策: A 加内容 (用户选) — viewTitle 给当前视图语义 (所有照片/folder name/#tag),
+    //   viewSubtitle 给 N 张 · X MB, 后跟缩略图档位
+    let viewTitle: String
+    let viewSubtitle: String
     let totalCount: Int
     let totalSize: String
     // V5.60-7: 缩略图大小 (CGFloat) — 唯一保留的全局 meta
@@ -30,24 +35,36 @@ struct StatusBar: View {
         //     - 筛选条件数 → ToolbarController filter button badge (V6.29.2 红点 + count)
         //     - 导入进度 → Import 按钮 progress ring (Phase 1 同时加)
         //   Photos.app 范式: 底部状态栏只显示全局 meta,临时状态在触发它的按钮附近
+        // V6.52: 加 viewTitle + viewSubtitle — V6.38.1 简化过头让 StatusBar 太空 (3 项 + 2 分隔符)
+        //   现在 4 段: [viewTitle] · [viewSubtitle] · [thumbnail tier], 中间用 caption 分隔符 (不等宽),
+        //   数字部分仍用 captionMono (等宽)
         HStack(spacing: Spacing.sm) {
-            // 总数
-            Text(Copy.totalCount(totalCount))
+            // 视图标题 — 所有照片 / folder 名 / #tag / 智能文件夹名 / 最近删除
+            // V6.52: 用 .font(.callout.weight(.medium)) + .primary — 比其他项略重 + 更深,
+            //   视觉锤 "当前在看哪个视图"
+            Text(viewTitle)
+                .font(.callout.weight(.medium))
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+                .truncationMode(.tail)
 
-            separator
+            // 视图副标题 — N 张 · X MB (+ 已筛选 N 跟 toolbar 同步)
+            // V6.52: captionMono 等宽数字 + caption 不等宽文字混合节奏
+            //   " · " 用 caption 不等宽避免视觉拥挤
+            Text(viewSubtitle)
+                .font(Typography.captionMono)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .truncationMode(.tail)
 
-            // 占用空间
-            Text(totalSize)
+            Spacer(minLength: Spacing.md)
 
             // V5.60-7: 缩略图档位 ("中 200pt" / "大 250pt")——Photos 风格
             //   跟 .controlSize 档位 (compact/small/medium/large) 映射
-            separator
             Text(thumbnailSizeLabel)
-
-            Spacer(minLength: 0)
+                .font(Typography.caption)
+                .foregroundStyle(.tertiary)
         }
-        .font(Typography.captionMono)
-        .foregroundStyle(.secondary)
         .padding(.horizontal, Spacing.md)
         .frame(height: 24)
         // V4.0.0: 改用 .regularMaterial 替代 Surface.panel（NSColor.controlBackgroundColor）
@@ -70,11 +87,5 @@ struct StatusBar: View {
         case ..<220:   return Copy.thumbnailSizeMedium
         default:       return Copy.thumbnailSizeLarge
         }
-    }
-
-    /// 中点分隔符
-    private var separator: some View {
-        Text(Copy.statusSeparator)
-            .foregroundStyle(.tertiary)
     }
 }

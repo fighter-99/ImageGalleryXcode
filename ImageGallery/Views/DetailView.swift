@@ -72,6 +72,9 @@ struct DetailView: View {
         //   + image maxWidth/Height 按 bigImageCard 实际尺寸 (双方向受约束)
         //   + aspectRatio(.fit) min 缩放
         //   image 不超 detail panel 实际可见 right 边界 + 高度 ≤ bigImageCard 高度
+        // V6.52 (design polish): 删 3 个内 Divider — V4.24.0 注释说 "sections 间 Divider 分隔",
+        //   实际造成 4 个 section 看起来像平级. Photos 真版无内 Divider, 靠 Spacing.lg 自然分组
+        //   现在: 大图 (60%) + spacing.lg + [info+tags+operations] 1 个 VStack 内部 spacing.md
         GeometryReader { geo in
             ScrollViewReader { proxy in
                 ScrollView {
@@ -82,22 +85,22 @@ struct DetailView: View {
                             //   1080×1503 竖向图在 (500, 450) 容器内:
                             //   min(500, 450) = 450 → image width 324pt, height 450pt (不拉伸)
                             //   元数据 + 标签 + 操作 ≈ 300pt < 余下 300pt (visible - bigImageCard) → 整体 fit
-                            .frame(height: geo.size.height * 0.60)
+                            .frame(height: geo.size.height * 0.55)
 
-                        Divider().padding(.vertical, Spacing.xs)
+                        // V6.52: 删 3 个 Divider — 改用 VStack spacing.lg 让 4 section 自然分组
+                        //   之前 4 个 Divider 让 info/tags/operations 看起来像平级,
+                        //   现在 operationsCard 是 "底部 actions 区" 视觉更清晰
+                        VStack(alignment: .leading, spacing: Spacing.lg) {
+                            // 2️⃣ 信息区（文件名 + 元数据）
+                            infoCard
 
-                        // 2️⃣ 信息区（文件名 + 元数据）
-                        infoCard
+                            // 3️⃣ 标签区
+                            tagsCard
 
-                        Divider().padding(.vertical, Spacing.xs)
-
-                        // 3️⃣ 标签区
-                        tagsCard
-
-                        Divider().padding(.vertical, Spacing.xs)
-
-                        // 4️⃣ 操作区
-                        operationsCard
+                            // 4️⃣ 操作区
+                            operationsCard
+                        }
+                        .padding(.top, Spacing.lg)
 
                         Spacer(minLength: 0)
                     }
@@ -336,7 +339,9 @@ struct DetailView: View {
                 Divider().opacity(0.5)
 
                 // 元数据 grid（2 列：图标 + 内容）
-                VStack(alignment: .leading, spacing: Spacing.xs) {
+                // V6.52 (design polish): row spacing xs(4) → sm(8) — 之前 4pt 太挤, 字段读起来"挤在一起"
+                //   + icon font caption(11pt) → caption2(9pt) — icon 二级化, 不抢字段值
+                VStack(alignment: .leading, spacing: Spacing.sm) {
                     if let folder = photo.folder {
                         infoRow(icon: "folder", text: folder.name)
                     }
@@ -352,10 +357,12 @@ struct DetailView: View {
     }
 
     /// 信息行（图标 + 文字）
+    /// V6.52 (design polish): icon font caption(11pt) → caption2 — icon 二级化不抢字段值
+    ///   字段值用 .primary (之前已对), 视觉层级 icon < value 更清晰
     private func infoRow(icon: String, text: String, mono: Bool = false) -> some View {
         HStack(spacing: Spacing.sm) {
             Image(systemName: icon)
-                .font(Typography.caption)
+                .font(.caption2)
                 .foregroundStyle(.secondary)
                 .frame(width: 14)
             if mono {
@@ -575,7 +582,9 @@ struct DetailView: View {
         let formatter = DateFormatter()
         formatter.dateStyle = .medium
         formatter.timeStyle = .short
-        formatter.locale = Locale(identifier: "zh_CN")
+        // V6.52 (i18n bug fix): 之前 hardcode "zh_CN" 让英文用户看中文日期格式
+        //   现在用 .autoupdatingCurrent 走系统 locale — en/zh-Hans/zh-Hant 都正确
+        formatter.locale = .autoupdatingCurrent
         return formatter.string(from: date)
     }
 
