@@ -155,7 +155,7 @@ private struct OnboardingPageView: View {
                     .padding(.horizontal, 8)
                     .padding(.vertical, 2)
                     .background(
-                        RoundedRectangle(cornerRadius: 4)
+                        RoundedRectangle(cornerRadius: Radius.xs)
                             .fill(Color.secondary.opacity(0.15))
                     )
             }

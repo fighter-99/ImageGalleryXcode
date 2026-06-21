@@ -821,7 +821,7 @@ private struct PhotosRadioOption<Trailing: View>: View {
         return Button(action: onTap) {
             HStack(alignment: .firstTextBaseline, spacing: Spacing.sm) {
                 Image(systemName: isSelected ? "circle.inset.filled" : "circle")
-                    .font(.system(size: 16))
+                    .font(Typography.subheadline)
                     .foregroundStyle(isSelected ? Color.accentColor : .secondary)
                 VStack(alignment: .leading, spacing: Spacing.xxs) {
                     Text(title)
@@ -875,7 +875,7 @@ private struct PhotosCheckbox: View {
         } label: {
             HStack(alignment: .firstTextBaseline, spacing: Spacing.sm) {
                 Image(systemName: isOn ? "checkmark.square.fill" : "square")
-                    .font(.system(size: 16))
+                    .font(Typography.subheadline)
                     .foregroundStyle(isOn ? Color.accentColor : .secondary)
                 VStack(alignment: .leading, spacing: Spacing.xxs) {
                     Text(title)

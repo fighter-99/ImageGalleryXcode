@@ -101,7 +101,7 @@ struct ContextualSelectionBar: View {
                 Button {
                     model.grid.batchExport()
                 } label: {
-                    Label(Copy.miniToolbarExport, systemImage: "square.and.arrow.up")
+                    Label(Copy.miniToolbarExport, systemImage: IconNames.squareAndArrowUp)
                 }
             } label: {
                 Label(Copy.more, systemImage: "ellipsis.circle")
@@ -119,7 +119,7 @@ struct ContextualSelectionBar: View {
         Button {
             showTagPicker.toggle()
         } label: {
-            Label(Copy.tagLabel, systemImage: "tag")
+            Label(Copy.tagLabel, systemImage: IconNames.tag)
         }
         .help(Copy.miniToolbarTagHelp)
         .popover(isPresented: $showTagPicker, arrowEdge: .bottom) {
@@ -140,7 +140,7 @@ struct ContextualSelectionBar: View {
                 }
             }
         } label: {
-            Label(Copy.miniToolbarMove, systemImage: "folder")
+            Label(Copy.miniToolbarMove, systemImage: IconNames.folder)
         }
         .help(Copy.miniToolbarMoveHelp)
     }
@@ -160,7 +160,7 @@ struct ContextualSelectionBar: View {
         Button {
             model.grid.batchExport()
         } label: {
-            Label(Copy.miniToolbarExport, systemImage: "square.and.arrow.up")
+            Label(Copy.miniToolbarExport, systemImage: IconNames.squareAndArrowUp)
         }
         .help(Copy.miniToolbarExportHelp)
     }
@@ -170,7 +170,7 @@ struct ContextualSelectionBar: View {
         Button(role: .destructive) {
             model.grid.showingBatchDeleteConfirm = true
         } label: {
-            Label(Copy.delete, systemImage: "trash")
+            Label(Copy.delete, systemImage: IconNames.trash)
         }
         .help(Copy.miniToolbarDeleteHelp)
     }

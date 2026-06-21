@@ -77,7 +77,7 @@ struct CellContextMenuModifier: ViewModifier {
                         modelContext.saveWithLog()
                     } label: {
                         if photo.rating == 0 {
-                            Label(Copy.clearRating, systemImage: "checkmark")
+                            Label(Copy.clearRating, systemImage: IconNames.checkmark)
                         } else {
                             Text(Copy.clearRating)
                         }
@@ -107,14 +107,14 @@ struct CellContextMenuModifier: ViewModifier {
                             modelContext.saveWithLog()
                         } label: {
                             if photo.folder?.id == folder.id {
-                                Label(folder.name, systemImage: "checkmark")
+                                Label(folder.name, systemImage: IconNames.checkmark)
                             } else {
                                 Text(folder.name)
                             }
                         }
                     }
                 } label: {
-                    Label(Copy.moveToFolder, systemImage: "folder")
+                    Label(Copy.moveToFolder, systemImage: IconNames.folder)
                 }
 
                 Menu {
@@ -123,14 +123,14 @@ struct CellContextMenuModifier: ViewModifier {
                             toggleTag(tag, photo)
                         } label: {
                             if photo.tags.contains(where: { $0.id == tag.id }) {
-                                Label(tag.name, systemImage: "checkmark")
+                                Label(tag.name, systemImage: IconNames.checkmark)
                             } else {
                                 Text(tag.name)
                             }
                         }
                     }
                 } label: {
-                    Label(Copy.manageTags, systemImage: "tag")
+                    Label(Copy.manageTags, systemImage: IconNames.tag)
                 }
 
                 Divider()
@@ -159,7 +159,7 @@ struct CellContextMenuModifier: ViewModifier {
                 Button {
                     NSWorkspace.shared.activateFileViewerSelecting([photo.fileURL])
                 } label: {
-                    Label(Copy.revealInFinder, systemImage: "folder")
+                    Label(Copy.revealInFinder, systemImage: IconNames.folder)
                 }
             } label: {
                 Label(Copy.contextMenuEdit, systemImage: "square.and.pencil")
@@ -175,7 +175,7 @@ struct CellContextMenuModifier: ViewModifier {
                     image: Image(systemName: "photo")
                 )
             ) {
-                Label(Copy.contextMenuShare, systemImage: "square.and.arrow.up")
+                Label(Copy.contextMenuShare, systemImage: IconNames.squareAndArrowUp)
             }
 
             Divider()

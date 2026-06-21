@@ -66,7 +66,7 @@ struct ImmersivePhotoView: View {
                     } else {
                         // shimmer 骨架 — 黑色背景上白点流动, 暗示"正在加载"
                         ZStack {
-                            RoundedRectangle(cornerRadius: 4)
+                            RoundedRectangle(cornerRadius: Radius.xs)
                                 .fill(.white.opacity(0.05))
                                 .shimmer()
                             Text(photo.filename)

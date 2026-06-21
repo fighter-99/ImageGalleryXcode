@@ -53,5 +53,5 @@ struct MarqueeHintView: View {
 #Preview {
     MarqueeHintView(onDismiss: {})
         .padding(40)
-        .frame(width: 600, height: 400)
+        .frame(width: SheetMetrics.standardWidth, height: SheetMetrics.standardHeight)
 }

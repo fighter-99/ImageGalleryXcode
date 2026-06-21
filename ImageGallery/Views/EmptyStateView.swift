@@ -19,7 +19,7 @@
 //      style: .accent,
 //      primaryAction: EmptyStateView.Action(
 //          label: "导入图片",
-//          systemImage: "square.and.arrow.down",
+//          systemImage: IconNames.squareAndArrowDown,
 //          onTap: onImport
 //      ),
 //      secondaryAction: EmptyStateView.Action(
@@ -117,7 +117,7 @@ struct EmptyStateView: View {
                 .fill(backdropFill)
                 .frame(width: 120, height: 120)
             Image(systemName: icon)
-                .font(.system(size: 56, weight: .light))
+                .font(Typography.heroBackdropIcon)
                 .symbolRenderingMode(.hierarchical)
                 .foregroundStyle(iconTint)
         }
@@ -160,7 +160,7 @@ struct EmptyStateView: View {
         title: "选择一张图片",
         subtitle: "← → 切换 · ⌘+点击 多选 · ⌥+拖动 框选"
     )
-    .frame(width: 320, height: 480)
+    .frame(width: SheetMetrics.compactWidth, height: SheetMetrics.compactHeight)
 }
 
 #Preview("带主 CTA") {
@@ -170,10 +170,10 @@ struct EmptyStateView: View {
         subtitle: "拖入图片，或点击下方按钮开始添加",
         primaryAction: EmptyStateView.Action(
             label: "导入图片",
-            systemImage: "square.and.arrow.down"
+            systemImage: IconNames.squareAndArrowDown
         ) {}
     )
-    .frame(width: 600, height: 400)
+    .frame(width: SheetMetrics.standardWidth, height: SheetMetrics.standardHeight)
 }
 
 #Preview("带主+次 CTA") {
@@ -183,13 +183,13 @@ struct EmptyStateView: View {
         subtitle: "试试其他关键词，或清除搜索",
         primaryAction: EmptyStateView.Action(
             label: "清除搜索",
-            systemImage: "xmark.circle"
+            systemImage: IconNames.xmarkCircle
         ) {},
         secondaryAction: EmptyStateView.Action(
             label: Copy.viewAll
         ) {}
     )
-    .frame(width: 600, height: 400)
+    .frame(width: SheetMetrics.standardWidth, height: SheetMetrics.standardHeight)
 }
 
 #Preview("中性 (空回收站)") {
@@ -203,7 +203,7 @@ struct EmptyStateView: View {
             systemImage: "photo.on.rectangle.angled"
         ) {}
     )
-    .frame(width: 600, height: 400)
+    .frame(width: SheetMetrics.standardWidth, height: SheetMetrics.standardHeight)
 }
 
 #Preview("错误 (存储不可用)") {
@@ -217,5 +217,5 @@ struct EmptyStateView: View {
             systemImage: "arrow.clockwise"
         ) {}
     )
-    .frame(width: 600, height: 400)
+    .frame(width: SheetMetrics.standardWidth, height: SheetMetrics.standardHeight)
 }

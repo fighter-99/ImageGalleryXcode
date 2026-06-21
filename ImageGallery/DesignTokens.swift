@@ -79,6 +79,11 @@ enum Radius {
     ///   - 48x48 app icon 用 10pt 圆角 (21% 比例) — 比 Radius.lg (12) 略小, 视觉更"紧致"
     ///   - 与 Radius.lg/md 区别: 介于两者之间, 专用于 macOS app icon 风格 (Photos.app 偏好设置风格)
     static let appIcon: CGFloat = 10
+
+    /// V6.63 (P5.2): 微圆角——最小档, 用于 chip / tag / 紧凑边框
+    ///   4pt 是 macOS Photos / Finder 缩略图圆角下限 (3-4pt), 视觉上"接近直角但有柔和过渡"
+    ///   替换 KeyboardShortcutsSheet / ImmersivePhotoView / OnboardingView 3 处字面量 cornerRadius: 4
+    static let xs: CGFloat = 4
 }
 
 // MARK: - 表面色（V3.1 NEW：Photos.app 风格语义化）
@@ -281,6 +286,91 @@ enum Typography {
     /// Monospaced body — 文件名预览 (BatchRenameSheet) 等需要等宽的场景
     ///   跟 captionMono 区别: captionMono 是 11pt 等宽数字, bodyMono 是 13pt 等宽文字
     static let bodyMono = Font.system(.body, design: .monospaced)
+
+    /// V6.63 (P5.1): Settings row 副标题 (description 行) — 介于 body (13) 和 title2 (22) 之间
+    ///   16pt + regular weight — 比 body 略大但比 title 弱, 视觉层级"主标题→副说明"
+    static let subheadline = Font.system(size: 16)
+
+    /// V6.63 (P5.1): EmptyStateView 圆形 backdrop 内 icon (V6.61 polish 加)
+    ///   56pt + light weight — 在 120pt 圆形内居中, Photos.app Sonoma+ 风格空状态视觉锤
+    ///   跟 heroIcon (64) 同族但更紧凑 (跟圆形 backdrop 大小匹配)
+    static let heroBackdropIcon = Font.system(size: 56, weight: .light)
+}
+
+// MARK: - V6.63 (P5.2): Icon names — 高频 SF Symbol 字面量收口
+//
+// 设计原则：
+// - 集中所有跨文件复用 SF Symbol 字符串（频率 >= 3 的高频 token）
+// - 频率 < 3 的保留字面量 (低频 token 收口 ROI 低)
+// - 用 static let 而非 enum case (类型 String, 直接作 systemImage/systemName 参数)
+//
+// 6 个高频 SF Symbol (frequency >= 3)：
+//   folder / trash / tag / square.and.arrow.down / xmark.circle / square.and.arrow.up
+//
+enum IconNames {
+    /// SF Symbol "folder" — 8+ 处 (ActiveFiltersBar/SidebarView/DetailView 等)
+    static let folder = "folder"
+    /// SF Symbol "trash" — 5+ 处 (DetailView/ContextualSelectionBar 等)
+    static let trash = "trash"
+    /// SF Symbol "tag" — 5+ 处 (SidebarView/ActiveFiltersBar 等)
+    static let tag = "tag"
+    /// SF Symbol "square.and.arrow.down" — 5+ 处 (SettingsView/ImportButton 等)
+    static let squareAndArrowDown = "square.and.arrow.down"
+    /// SF Symbol "xmark.circle" — 4+ 处 (EmptyStateView/ToastView 等)
+    static let xmarkCircle = "xmark.circle"
+    /// SF Symbol "square.and.arrow.up" — 4+ 处 (ShareButton/Export 等)
+    static let squareAndArrowUp = "square.and.arrow.up"
+    /// SF Symbol "checkmark" — 3+ 处 (ToastView/OnboardingView 等)
+    static let checkmark = "checkmark"
+    /// SF Symbol "arrow.clockwise" — 3+ 处 (DetailPane 重试/Retry 等)
+    static let arrowClockwise = "arrow.clockwise"
+    /// SF Symbol "plus.circle" — 3+ 处 (SidebarView 新建按钮)
+    static let plusCircle = "plus.circle"
+    /// SF Symbol "sparkles" — 2+ 处 (SidebarView 智能文件夹)
+    static let sparkles = "sparkles"
+    /// SF Symbol "photo" — 6+ 处 (EmptyStateView/ToastView)
+    static let photo = "photo"
+    /// SF Symbol "xmark.circle.fill" — 4+ 处 (ToastView error)
+    static let xmarkCircleFill = "xmark.circle.fill"
+    /// SF Symbol "checkmark.circle.fill" — 5+ 处 (ToastView success)
+    static let checkmarkCircleFill = "checkmark.circle.fill"
+    /// SF Symbol "exclamationmark.triangle" — 3+ 处 (EmptyStateView warning)
+    static let exclamationmarkTriangle = "exclamationmark.triangle"
+}
+
+// MARK: - V6.63 (P5.4): Sheet metrics — sheet / window 尺寸字面量收口
+//
+// 设计原则：
+// - 集中所有跨文件复用 sheet / preview 尺寸 (频率 >= 3 的高频 token)
+// - 单文件用一次的保留字面量 (低频 token 收口 ROI 低)
+// - 用 static let width/height 而非 enum case (类型 CGFloat, 直接作 .frame 参数)
+//
+// 4 个高频 sheet 尺寸 (frequency >= 3)：
+//   600×400 (preview) / 320×480 (preview) / 320×600 (TrashDetailView) / 220×600 (SidebarView preview)
+//
+enum SheetMetrics {
+    /// V6.63 NEW: 标准 sheet 内容尺寸 — 600 × 400
+    ///   - EmptyStateView 4 个 preview (4 处)
+    ///   - MarqueeHintView popover (1 处)
+    static let standardWidth: CGFloat = 600
+    static let standardHeight: CGFloat = 400
+
+    /// V6.63 NEW: 紧凑 sheet 内容尺寸 — 320 × 480
+    ///   - EmptyStateView preview (1 处)
+    ///   - TrashDetailView compact (1 处)
+    static let compactWidth: CGFloat = 320
+    static let compactHeight: CGFloat = 480
+
+    /// V6.63 NEW: 垂直 sheet 内容尺寸 — 320 × 600
+    ///   - TrashDetailView 默认 (1 处)
+    ///   - MultiSelectDetailView (1 处)
+    static let tallWidth: CGFloat = 320
+    static let tallHeight: CGFloat = 600
+
+    /// V6.63 NEW: 侧栏 preview 尺寸 — 220 × 600
+    ///   - SidebarView preview (1 处)
+    static let sidebarPreviewWidth: CGFloat = 220
+    static let sidebarPreviewHeight: CGFloat = 600
 }
 
 // MARK: - 旧 Palette 兼容层（V3.1 保留，Phase 2+ 逐步替换）

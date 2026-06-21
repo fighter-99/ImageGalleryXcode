@@ -207,7 +207,7 @@ struct DetailView: View {
                         // NSWorkspace.open fileURL.dirname — Finder 显示该目录, 用户可手动检查文件
                         NSWorkspace.shared.open(photo.fileURL.deletingLastPathComponent())
                     } label: {
-                        Label(Copy.detailShowInFinder, systemImage: "folder")
+                        Label(Copy.detailShowInFinder, systemImage: IconNames.folder)
                             .font(.caption)
                     }
                     .buttonStyle(.bordered)

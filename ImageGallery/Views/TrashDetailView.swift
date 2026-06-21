@@ -126,7 +126,7 @@ struct TrashDetailView: View {
         onEmptyTrash: {},
         onExitTrash: {}
     )
-    .frame(width: 320, height: 600)
+    .frame(width: SheetMetrics.tallWidth, height: SheetMetrics.tallHeight)
 }
 
 #Preview("回收站为空") {
@@ -139,5 +139,5 @@ struct TrashDetailView: View {
         onEmptyTrash: {},
         onExitTrash: {}
     )
-    .frame(width: 320, height: 480)
+    .frame(width: SheetMetrics.compactWidth, height: SheetMetrics.compactHeight)
 }

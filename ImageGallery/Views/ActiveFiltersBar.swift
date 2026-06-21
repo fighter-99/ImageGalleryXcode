@@ -46,7 +46,7 @@ struct ActiveFiltersBar: View {
                                 } label: {
                                     Label(
                                         folderName(for: id) ?? Copy.unknownFolder,
-                                        systemImage: "folder"
+                                        systemImage: IconNames.folder
                                     )
                                 }
                             }
@@ -65,7 +65,7 @@ struct ActiveFiltersBar: View {
                                 } label: {
                                     Label(
                                         "#\(tagName(for: id) ?? Copy.unknownTag)",
-                                        systemImage: "tag"
+                                        systemImage: IconNames.tag
                                     )
                                 }
                             }

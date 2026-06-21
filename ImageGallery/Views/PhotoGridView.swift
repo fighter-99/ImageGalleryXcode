@@ -850,5 +850,5 @@ struct PhotoGridView: View {
         // V6.22.1: Preview no-op 旋转
         onRotate: { _, _ in }
     )
-    .frame(width: 600, height: 400)
+    .frame(width: SheetMetrics.standardWidth, height: SheetMetrics.standardHeight)
 }

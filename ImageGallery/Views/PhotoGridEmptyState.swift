@@ -71,7 +71,7 @@ struct PhotoGridEmptyState: View {
         if !searchText.trimmingCharacters(in: .whitespaces).isEmpty {
             return PhotoGridEmptyCTA(
                 label: Copy.clearSearch,
-                systemImage: "xmark.circle",
+                systemImage: IconNames.xmarkCircle,
                 onTap: { onClearFilters() }
             )
         }
@@ -82,7 +82,7 @@ struct PhotoGridEmptyState: View {
         if showImport {
             return PhotoGridEmptyCTA(
                 label: "\(Copy.importAction) (⌘O)",  // 拼接主 CTA + 系统快捷键
-                systemImage: "square.and.arrow.down",
+                systemImage: IconNames.squareAndArrowDown,
                 onTap: onImport
             )
         }

@@ -83,5 +83,5 @@ struct DuplicatesDetailView: View {
         retentionDays: 30,
         onKeepNewestPerGroup: {}
     )
-    .frame(width: 320, height: 600)
+    .frame(width: SheetMetrics.tallWidth, height: SheetMetrics.tallHeight)
 }

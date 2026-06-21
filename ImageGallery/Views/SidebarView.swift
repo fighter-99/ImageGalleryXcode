@@ -163,7 +163,7 @@ struct SidebarView: View {
                     .buttonStyle(.plain)
                     .font(.callout)
                 } label: {
-                    Label(Copy.sidebarSectionSmartFolders, systemImage: "folder")
+                    Label(Copy.sidebarSectionSmartFolders, systemImage: IconNames.folder)
                 }
             }
 
@@ -181,7 +181,7 @@ struct SidebarView: View {
                 .buttonStyle(.plain)
                 .font(.callout)
             } label: {
-                Label(Copy.sidebarSectionFolders, systemImage: "folder")
+                Label(Copy.sidebarSectionFolders, systemImage: IconNames.folder)
             }
 
             // ─── 标签（DisclosureGroup 原生展开/折叠）───
@@ -198,7 +198,7 @@ struct SidebarView: View {
                         Button(role: .destructive) {
                             deleteTag(tag)
                         } label: {
-                            Label(Copy.deleteTag, systemImage: "trash")
+                            Label(Copy.deleteTag, systemImage: IconNames.trash)
                         }
                     }
                 }
@@ -212,7 +212,7 @@ struct SidebarView: View {
                 .buttonStyle(.plain)
                 .font(.callout)
             } label: {
-                Label(Copy.sidebarSectionTags, systemImage: "tag")
+                Label(Copy.sidebarSectionTags, systemImage: IconNames.tag)
             }
 
             // ─── Section 4: 最近删除（单独 section，底部入口）───
@@ -535,7 +535,7 @@ struct SidebarView: View {
             Button(role: .destructive) {
                 deleteFolder(folder)
             } label: {
-                Label(Copy.deleteFolder, systemImage: "trash")
+                Label(Copy.deleteFolder, systemImage: IconNames.trash)
             }
         }
     }
@@ -556,7 +556,7 @@ struct SidebarView: View {
             Button(role: .destructive) {
                 deleteSmartFolder(sf)
             } label: {
-                Label(Copy.sidebarDeleteSmartFolder, systemImage: "trash")
+                Label(Copy.sidebarDeleteSmartFolder, systemImage: IconNames.trash)
             }
         }
     }
@@ -592,5 +592,5 @@ struct SidebarView: View {
         sortOption: .constant(.importedAtDesc),
         model: ContentViewModel(settings: UserSettings(defaults: previewDefaults))
     )
-    .frame(width: 220, height: 600)
+    .frame(width: SheetMetrics.sidebarPreviewWidth, height: SheetMetrics.sidebarPreviewHeight)
 }

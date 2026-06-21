@@ -74,7 +74,7 @@ struct MultiSelectDetailView: View {
                         }
                     } label: {
                         HStack {
-                            Label(Copy.moveToFolder, systemImage: "folder")
+                            Label(Copy.moveToFolder, systemImage: IconNames.folder)
                             Spacer()
                         }
                     }
@@ -94,7 +94,7 @@ struct MultiSelectDetailView: View {
                         }
                     } label: {
                         HStack {
-                            Label(Copy.addTagAction, systemImage: "tag")
+                            Label(Copy.addTagAction, systemImage: IconNames.tag)
                             Spacer()
                         }
                     }
@@ -135,7 +135,7 @@ struct MultiSelectDetailView: View {
                     onExport()
                 } label: {
                     HStack {
-                        Label(Copy.toolbarExport, systemImage: "square.and.arrow.up")
+                        Label(Copy.toolbarExport, systemImage: IconNames.squareAndArrowUp)
                         Spacer()
                     }
                 }
@@ -151,7 +151,7 @@ struct MultiSelectDetailView: View {
                     onDelete()
                 } label: {
                     HStack {
-                        Label(Copy.delete, systemImage: "trash")
+                        Label(Copy.delete, systemImage: IconNames.trash)
                         Spacer()
                     }
                 }
@@ -163,7 +163,7 @@ struct MultiSelectDetailView: View {
                     onClearSelection()
                 } label: {
                     HStack {
-                        Label(Copy.cancelMultiSelect, systemImage: "xmark.circle")
+                        Label(Copy.cancelMultiSelect, systemImage: IconNames.xmarkCircle)
                         Spacer()
                     }
                 }
@@ -190,5 +190,5 @@ struct MultiSelectDetailView: View {
         onDelete: { },
         onClearSelection: { }
     )
-    .frame(width: 320, height: 600)
+    .frame(width: SheetMetrics.tallWidth, height: SheetMetrics.tallHeight)
 }

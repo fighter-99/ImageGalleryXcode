@@ -133,7 +133,7 @@ private struct ShortcutRow: View {
                 .padding(.horizontal, Spacing.sm)
                 .padding(.vertical, 2)
                 .background(
-                    RoundedRectangle(cornerRadius: 4)
+                    RoundedRectangle(cornerRadius: Radius.xs)
                         .fill(.quaternary.opacity(0.5))
                 )
         }
