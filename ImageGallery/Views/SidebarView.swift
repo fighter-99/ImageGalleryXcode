@@ -79,7 +79,7 @@ struct SidebarView: View {
     @Binding var sortOption: SortOption
 
     // V4.36.6: 侧栏 section 折叠状态（绑定到 header 和 content）
-    //   旧版 SidebarSectionHeader 用 storageKey 自管 UserDefaults, 但 Section content 永远显示
+    //   旧版 SidebarSectionHeader (V6.61 删) 用 storageKey 自管 UserDefaults, 但 Section content 永远显示
     //   新版 @AppStorage 在 SidebarView 持有, 共享给 header (chevron) + content (if 包裹)
     //   关键: 同一个 binding 让点击 header 真正控制 content 可见性
     @AppStorage("sidebar.section.library") private var isLibraryExpanded: Bool = true
@@ -391,10 +391,16 @@ struct SidebarView: View {
         // 拉取要移动的 photos（V6.11: 一次 fetch 替 N+1——N 张图 = N 次 SQLite round-trip
         //   之前 for id in idsToMove { FetchDescriptor; fetch; first } 每次拖 100 张 = 100 次
         //   改 #Predicate { idsToMove.contains($0.id) } 一次拿所有, 跟 ContentViewModel.batchMove 模式一致
+        // V6.62 (P3.1): try? → do/catch + toast 错误 — 之前静默 fail-open (drag drop 完全无反馈)
         let photos: [Photo]
-        if let fetched = try? context.fetch(FetchDescriptor<Photo>(predicate: #Predicate { idsToMove.contains($0.id) })) {
-            photos = fetched
-        } else {
+        do {
+            photos = try context.fetch(FetchDescriptor<Photo>(predicate: #Predicate { idsToMove.contains($0.id) }))
+        } catch {
+            // V6.62: fetch 失败 (DB corruption / schema mismatch) toast 提示 — 之前静默无响应
+            model.enqueueToast(
+                Copy.toastBatchMoveFetchFailed(error.localizedDescription),
+                type: .error
+            )
             return
         }
         guard !photos.isEmpty else { return }
@@ -453,10 +459,16 @@ struct SidebarView: View {
 
         // 拉取 photos（V6.11: 一次 fetch 替 N+1, 跟 performMove 同模式）
         //   之前 N 张 trash = N 次 fetch, 改 #Predicate { idsToTrash.contains($0.id) } 一次
+        // V6.62 (P3.2): try? → do/catch + toast 错误 — 跟 performMove 同模式
         let allPhotos: [Photo]
-        if let fetched = try? context.fetch(FetchDescriptor<Photo>(predicate: #Predicate { idsToTrash.contains($0.id) })) {
-            allPhotos = fetched
-        } else {
+        do {
+            allPhotos = try context.fetch(FetchDescriptor<Photo>(predicate: #Predicate { idsToTrash.contains($0.id) }))
+        } catch {
+            // V6.62: fetch 失败 toast 提示
+            model.enqueueToast(
+                Copy.toastBatchMoveFetchFailed(error.localizedDescription),
+                type: .error
+            )
             return 0
         }
         // V6.11: 过滤掉已在 trash 的——保留原 isInTrash 过滤

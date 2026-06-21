@@ -372,34 +372,9 @@ extension View {
         }.value
     }
 
-    /// V6.22.11 (XCUITest): launch arg auto-trigger
-    ///   - 在 .task 末尾调, 保证 model.modelContext 已 set
-    ///   - prod 完全 noop (无 -uitest-import-dir 时直接 return)
-    ///   - standalone func 接收 model 参数 (extension View scope 拿不到 model)
-    private func uitestAutoImportIfNeeded(model: ContentViewModel) {
-        let args = ProcessInfo.processInfo.arguments
-        NSLog("V6.22.11: uitestAutoImportIfNeeded entered, args=\(args)")
-        guard let idx = args.firstIndex(of: "-uitest-import-dir"),
-              idx + 1 < args.count else {
-            NSLog("V6.22.11: no -uitest-import-dir in args, skip")
-            return
-        }
-        let dir = args[idx + 1]
-        NSLog("V6.22.11: import dir = \(dir)")
-        let dirURL = URL(fileURLWithPath: dir)
-        let imageExts: Set<String> = ["jpg", "jpeg", "png", "heic", "heif", "tiff", "tif", "bmp", "gif", "webp"]
-        guard let contents = try? FileManager.default.contentsOfDirectory(at: dirURL, includingPropertiesForKeys: nil) else {
-            NSLog("V6.22.11: cannot list dir contents")
-            return
-        }
-        let urls = contents.filter { imageExts.contains($0.pathExtension.lowercased()) }
-        NSLog("V6.22.11: found \(urls.count) images in dir: \(urls.map { $0.lastPathComponent })")
-        guard !urls.isEmpty else { return }
-        // V6.22.11: 调 ImportViewModel.runImportWithDuplicateCheck 走 async 检查 + import
-        model.importVM.importProgress = ImportProgress(current: 0, total: 0, isImporting: true)
-        model.importVM.runImportWithDuplicateCheck(urls: urls)
-        NSLog("V6.22.11: runImportWithDuplicateCheck called with \(urls.count) urls")
-    }
+    /// V6.62 (P4.8): 删 uitestAutoImportIfNeeded (-25 LOC dead code) —
+    ///   0 caller since V6.22.11 inline version adopted at .task L245-262
+    ///   之前的 standalone func 已被 inline 取代, 保留无意义
 }
 
 // V6.19.0 (P0 #1): NSSharingServicePicker SwiftUI wrapper

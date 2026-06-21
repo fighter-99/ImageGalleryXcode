@@ -472,6 +472,7 @@ enum SidebarStyle {
     static let headerIconSpacing: CGFloat = 5
     // V6.23: 删 headerFontSize + headerIconSize 死代码 (0 引用, 跟 SidebarSectionHeader 的 .font(headerFont) 重复定义)
     //   之前注释混乱: V4.48.0 改 11pt → 12pt, 跟 PopoverStyle 同名 token 撞名 — 全部清掉
+    // V6.62 (P4.1): SidebarSectionHeader.swift 已删 — header* token 改用 DisclosureGroup 系统风格, 保留作未来扩展用
 
     // ─── 智能 folder icon 语义色 ───
     //

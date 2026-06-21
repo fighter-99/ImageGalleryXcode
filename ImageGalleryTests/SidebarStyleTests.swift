@@ -151,7 +151,7 @@ struct SidebarStyleTests {
     // MARK: - Font token 引用一致性
     //
     // SwiftUI Font 没有公共 Equatable——这些测试是"引用一致性"守护：
-    // SidebarRow/SidebarSectionHeader 引用了这些 token 常量
+    // SidebarRow 引用了这些 token 常量 (V6.62 P4.1: SidebarSectionHeader 已删, 仅 SidebarRow 引用)
     // （如果某天有人改成硬编码 ".callout"，会失去单一真相源）
     //
     // 测试意义：编译通过即代表 token 存在 + 被引用

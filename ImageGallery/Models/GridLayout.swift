@@ -18,7 +18,7 @@
 //      · 用户决定不再保留 justified row 选项
 //      · 现在所有模式都走 .square 路径 (1:1 方格 + dynamic cellSize)
 //      · .square vs .squareFit 差异在 PhotoThumbnailView 渲染分支 + cell card
-//    - JustifiedRowLayout.swift 模型保留 (V5.39 era 算法沉淀)——但 GridLayout dispatcher 不再调
+//    - V6.62 (P4.2): JustifiedRowLayout.swift 已删 (220 LOC dead code) — 0 caller since V5.47
 //
 //  复用 MasonryMath.groupIntoRows 低阶原语 (V5.16 已有)
 //  复用 ThumbnailLayoutMode.masonryParams 模式映射 (V5.17 已有)
@@ -107,8 +107,7 @@ struct GridLayout: Equatable {
     }
 
     // V5.47: 删 .masonry / .masonryStretch 模式 + computeJustifiedMasonryRows 整段——dead code
-    //   JustifiedRowLayout.swift 保留 (V5.39 era 算法沉淀, 注释 + 测试还在)
-    //   任何 .masonry 引用都走 .square 路径 (1:1 方格)
+    // V6.62 (P4.2): JustifiedRowLayout.swift 已删 — 任何 .masonry 引用都走 .square 路径 (1:1 方格)
 
     /// V5.16: 单张照片宽高比 (aspectRatio 为 0 或缺省时 fallback 1.0)
     static func aspectRatio(of photo: Photo) -> CGFloat {

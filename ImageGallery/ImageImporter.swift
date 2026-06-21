@@ -67,54 +67,10 @@ struct ImageImporter {
         var hasDuplicates: Bool { !existing.isEmpty }
     }
 
-    /// 扫现有 photo 的 fileHash + 算新 urls 的 fileHash，找出已存在的
-    /// 性能：fileHash 算 SHA256（小文件几十 ms），50 张图 ~2s
-    /// 异步：不在 main thread 跑算 hash（V3.6.27 NEW：后台 actor）
-    static func checkDuplicates(
-        newURLs: [URL],
-        in modelContext: ModelContext
-    ) -> DuplicateCheckResult {
-        // V3.6.27: 同步版本仍保留（向后兼容），实际推荐用 checkDuplicatesAsync
-        // 1. 收集所有现有 photo 的 fileHash → URL 映射
-        // V6.59 (audit P2.3): FetchDescriptor 加 predicate `fileHash != nil`
-        //   之前 FetchDescriptor<Photo>() (无 predicate) 拉 ALL photos 进内存
-        //   5000-photo library = 5000 Photo alloc on main thread per dup-check
-        //   现在仅拉有 hash 的 (绝大多数), 大库 50x+ 快
-        let existingHashes = (try? modelContext.fetch(
-            FetchDescriptor<Photo>(predicate: #Predicate { $0.fileHash != nil })
-        )) ?? []
-        let existingByHash = Dictionary(
-            grouping: existingHashes.compactMap { photo -> (String, Photo)? in
-                guard let hash = photo.fileHash else { return nil }
-                return (hash, photo)
-            },
-            by: { $0.0 }
-        )
-
-        // 2. 算新 urls 的 fileHash
-        var existing: [URL] = []
-        var newCount = 0
-        for url in newURLs {
-            guard let hash = computeFileHashSync(at: url) else {
-                newCount += 1  // 算不了 hash 当成新文件
-                continue
-            }
-            if existingByHash[hash] != nil {
-                existing.append(url)
-            } else {
-                newCount += 1
-            }
-        }
-        return DuplicateCheckResult(
-            existing: existing,
-            newCount: newCount,
-            totalCount: newURLs.count
-        )
-    }
-
     /// V3.6.27 NEW: 异步版本（在后台 actor 跑 SHA256，不阻塞 main thread）
     /// - 进度回调 onProgress(current, total) — 算完一张调一次
     /// - onProgress 在 @MainActor 上下文调用（content view 用 await + 闭包自动 MainActor 跳）
+    /// V6.62 (P4.4): 删 V3.6.27 同步版本 (37 LOC dead code) — 0 caller since V3.6.27 async 引入
     static func checkDuplicatesAsync(
         newURLs: [URL],
         in modelContext: ModelContext,

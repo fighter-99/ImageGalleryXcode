@@ -591,10 +591,6 @@ enum Copy {
     static let shortcutsOpenSettings = String(localized: "shortcutsOpenSettings", defaultValue: "设置")
 
     // MARK: - V6.37.4: 侧栏 + 智能文件夹
-    // SidebarSectionHeader — 新建按钮 a11y + 折叠/展开 hint
-    static let sidebarAddAccessibility = String(localized: "sidebarAddAccessibility", defaultValue: "新建")
-    static let sidebarAccessibilityCollapse = String(localized: "sidebarAccessibilityCollapse", defaultValue: "单击折叠")
-    static let sidebarAccessibilityExpand = String(localized: "sidebarAccessibilityExpand", defaultValue: "单击展开")
     // SidebarRow — a11y label (含 %@)
     static func sidebarRowShowLabel(_ name: String) -> String {
         String.localizedStringWithFormat(String(localized: "sidebarRowShowLabel", defaultValue: "显示 %@"), name)
@@ -781,6 +777,10 @@ enum Copy {
     // V6.58 (audit P1.4): BatchRenameTemplate 极端撞名 _1.._9999 耗尽 报告
     static func toastBatchRenameCollisions(_ count: Int) -> String {
         String.localizedStringWithFormat(String(localized: "toastBatchRenameCollisions", defaultValue: "%lld 张照片重命名跳过（已有 _1.._9999 同名文件）"), count)
+    }
+    // V6.62 (P3.1 + P3.2): drag-drop fetch 失败 toast — 之前 try? 静默 fail-open
+    static func toastBatchMoveFetchFailed(_ reason: String) -> String {
+        String.localizedStringWithFormat(String(localized: "toastBatchMoveFetchFailed", defaultValue: "移动照片失败：%@"), reason)
     }
     static func toastBatchRenameUndoPartialFail(_ count: Int) -> String {
         String.localizedStringWithFormat(String(localized: "toastBatchRenameUndoPartialFail", defaultValue: "部分撤销失败:%lld 张"), count)

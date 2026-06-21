@@ -250,9 +250,7 @@ struct ImageGalleryApp: App {
             // V4.36.x: File 菜单——Open Recent（macOS 标准子菜单）
             //   显示最近 20 个导入的照片 URL
             //   点击 → NSWorkspace.activateFileViewerSelecting 在 Finder 中揭示
-            CommandGroup(replacing: .newItem) {
-                // 替换默认的 New 菜单组
-            }
+            // V6.62 (P4.13): 删空 CommandGroup(replacing: .newItem) { } (-3 LOC dead code) — 默认 New 已替换
             CommandGroup(after: .newItem) {
                 // 标准的 "File > Open Recent" 位置
                 Menu(Copy.openRecent) {
@@ -449,43 +447,8 @@ struct NavigateMenuItems: View {
     }
 }
 
-/// V4.36.x: RecentPhotosStore 的 ObservableObject 包装
-/// V6.11: 删除整个包装类——RecentPhotosStore 升级 @Observable 后不需要包装
-///   RecentPhotosMenu 改 @State 直持 RecentPhotosStore.shared
-///   之前 2 处 recordImport/recordImports 显式同步 urls = store.urls 是为触发
-///   @Published 重渲, 跟 @Observable 集成后 store.urls 写操作自动追踪
-/*
-@MainActor
-final class RecentPhotosStoreObservable: ObservableObject {
-    static let shared = RecentPhotosStoreObservable()
-    private let store = RecentPhotosStore.shared
-
-    @Published var urls: [URL] = []
-
-    private init() {
-        urls = store.urls
-    }
-
-    func recordImport(_ url: URL) {
-        store.recordImport(url)
-        urls = store.urls
-    }
-
-    func recordImports(_ newURLs: [URL]) {
-        store.recordImports(newURLs)
-        urls = store.urls
-    }
-
-    func clear() {
-        store.clear()
-        urls = store.urls
-    }
-
-    func revealInFinder(_ url: URL) {
-        store.revealInFinder(url)
-    }
-}
-*/
+/// V6.62 (P4.14): 删 commented-out RecentPhotosStoreObservable class (-32 LOC dead code)
+///   之前 V4.36.x 加, V6.11 升级 @Observable 后注释保留 — 现在直接删
 
 struct UndoRedoMenuButtons: View {
     @FocusedValue(\.imageGalleryUndoManager) private var undoManager

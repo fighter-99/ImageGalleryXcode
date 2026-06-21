@@ -6,13 +6,13 @@
 //    解决单文件 740 行胖 VC 痛点
 //    为 Phase 2+ 拆 2 层 popover 重构预备（4 个子 popover 共用这些工厂）
 //
-//  从 FilterPopoverViewController 抽出的 6 个方法：
+//  从 FilterPopoverViewController 抽出的 5 个方法 (V6.62 P4.7 删 makeIconTextSegmentItem)：
 //    1. makeCheckItem(label:isOn:action:)           —— V4.36.x #5 范式 + V4.58.0 截断
 //    2. makeOneColumnCheckList(items:itemBuilder:) —— V4.63.0 1 列化
 //    3. makeSegmentRow()                            —— V4.42.0 segmentGap
 //    4. makeIconOnlySegmentItem(...)                —— V4.36.x #1 + V4.68.0 isBordered=false
-//    5. makeIconTextSegmentItem(...)                —— V4.45.1 icon + text
-//    6. applySegmentStyle(...)                      —— V4.41.1 + V4.62.0 + V4.68.0 + V4.69.0 + V4.72.0 精修
+//    5. applySegmentStyle(...)                      —— V4.41.1 + V4.62.0 + V4.68.0 + V4.69.0 + V4.72.0 精修
+//    6. makeIconTextSegmentItem(...)                —— V4.45.1 icon + text [V6.62 P4.7 删, 11 LOC dead code]
 //
 //  Why 抽 enum：
 //    - 6 个方法都是 static（无状态）——enum 是 Swift 命名空间惯例
@@ -103,24 +103,7 @@ enum PopoverItemFactory {
         return button
     }
 
-    // MARK: - 5. icon + text segment item（V4.45.1 评分段用，V4.46.0 后改用 icon-only）
-
-    /// V4.45.1: icon + text segment item
-    ///   评分段改用真 ⭐ SF Symbol "star.fill" + "n+" 文字
-    ///   之后 V4.46.0 改为纯 icon-only——本方法保留供未来扩展
-    static func makeIconTextSegmentItem(
-        icon: String?,
-        text: String,
-        isActive: Bool,
-        action: @escaping () -> Void
-    ) -> NSButton {
-        let button = ClosureButton(title: "", action: action)
-        button.bezelStyle = .recessed
-        applySegmentStyle(button, isActive: isActive, text: text, symbolName: icon)
-        return button
-    }
-
-    // MARK: - 6. apply segment style
+    // MARK: - 5. apply segment style
 
     /// V4.41.1 + V4.62.0 + V4.68.0 + V4.69.0 + V4.72.0 + V5.5 精修
     ///   - active: accent bg + 白字/icon

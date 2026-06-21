@@ -19,6 +19,7 @@
 //  V5.39 砍除 V5.36 packJustifiedRows + JustifiedRow struct——
 //    V5.36 算法搬至 JustifiedRowLayout.swift (user spec 形式, targetRowHeight × scaleFactor)
 //  V5.47: stretchLastRow 参数已无 caller——保留 groupIntoRows API 兼容
+//  V6.62 (P4.2): JustifiedRowLayout.swift 已删 (220 LOC dead code) — 0 caller since V5.47
 //    MasonryMath 只保留 .square / .squareFit 模式需要的 groupIntoRows + Item/Row
 //
 //  Why 独立 enum（不放 PhotoGridView 内部 static func）：
