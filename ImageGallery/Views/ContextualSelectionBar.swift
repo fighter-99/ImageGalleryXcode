@@ -41,56 +41,21 @@ struct ContextualSelectionBar: View {
                 .frame(height: 24)
                 .padding(.horizontal, 4)
 
-            // Tag — popover picker
-            Button {
-                showTagPicker.toggle()
-            } label: {
-                Label(Copy.tagLabel, systemImage: "tag")
-            }
-            .help(Copy.miniToolbarTagHelp)
-            .popover(isPresented: $showTagPicker, arrowEdge: .bottom) {
-                TagPickerPopover(model: model)
-            }
+            // V6.56 (design polish): 5 actions → ViewThatFits 自动窄窗口退化
+            //   之前: 窗口 < 800pt 时按钮挤压文字, 标签被截断或重排
+            //   现在:
+            //     - Variant 1 (够宽): Tag | Move | Rename | Export | Delete (全 5)
+            //     - Variant 2 (窄): Tag | Move | '⋯' menu (Rename + Export) | Delete
+            //   - Delete 始终可见 (destructive 操作 Photos 真版不允许藏到 menu)
+            //   - Tag/Move 是高频, 保留主 row; Rename/Export 是中频, 折叠到 menu
+            //   - ViewThatFits 自动选能 fit 的 variant, 不需 GeometryReader 测量
+            ViewThatFits(in: .horizontal) {
+                // Variant 1: 全 5 actions (主 row)
+                fullActionsRow
 
-            // Move — menu picker (V6.28: folders + batchMove 在 model.grid)
-            Menu {
-                Button(Copy.sidebarUnfiled) {
-                    model.grid.batchMove(to: nil)
-                }
-                Divider()
-                ForEach(model.grid.folders) { folder in
-                    Button(folder.name) {
-                        model.grid.batchMove(to: folder)
-                    }
-                }
-            } label: {
-                Label(Copy.miniToolbarMove, systemImage: "folder")
+                // Variant 2: Tag | Move | ⋯ menu | Delete (窄窗口)
+                compactActionsRow
             }
-            .help(Copy.miniToolbarMoveHelp)
-
-            // Rename (P4.2): sheet (模板批量重命名, V6.28: grid 业务)
-            Button {
-                model.grid.showingBatchRenameSheet = true
-            } label: {
-                Label(Copy.batchRenameTitle, systemImage: "pencil.and.list.clipboard")
-            }
-            .help(Copy.miniToolbarRenameHelp)
-
-            // Export — 直接调 (内部 file panel, V6.28: grid 业务)
-            Button {
-                model.grid.batchExport()
-            } label: {
-                Label(Copy.miniToolbarExport, systemImage: "square.and.arrow.up")
-            }
-            .help(Copy.miniToolbarExportHelp)
-
-            // Delete — 弹确认 dialog (Photos.app 范式: 不静默删, 弹 confirm + undo)
-            Button(role: .destructive) {
-                model.grid.showingBatchDeleteConfirm = true
-            } label: {
-                Label(Copy.delete, systemImage: "trash")
-            }
-            .help(Copy.miniToolbarDeleteHelp)
 
             Spacer(minLength: 0)
         }
@@ -104,6 +69,110 @@ struct ContextualSelectionBar: View {
             Divider()
                 .opacity(0.5)
         }
+    }
+
+    /// V6.56: 全 5 actions (够宽窗口: Tag / Move / Rename / Export / Delete)
+    private var fullActionsRow: some View {
+        HStack(spacing: 8) {
+            tagButton
+            moveMenu
+            renameButton
+            exportButton
+            deleteButton
+        }
+    }
+
+    /// V6.56: 紧凑 3 + '⋯' menu (窄窗口: Tag / Move / [Rename + Export] menu / Delete)
+    ///   - 保留 Tag/Move 高频操作在主 row
+    ///   - Rename/Export 折叠到 '⋯' menu (中频, 用户主动点 menu 找)
+    ///   - Delete 始终主 row 可见 (destructive 操作 Photos 真版不允许藏)
+    private var compactActionsRow: some View {
+        HStack(spacing: 8) {
+            tagButton
+            moveMenu
+
+            // ⋯ overflow menu — Rename + Export (中频)
+            Menu {
+                Button {
+                    model.grid.showingBatchRenameSheet = true
+                } label: {
+                    Label(Copy.batchRenameTitle, systemImage: "pencil.and.list.clipboard")
+                }
+                Button {
+                    model.grid.batchExport()
+                } label: {
+                    Label(Copy.miniToolbarExport, systemImage: "square.and.arrow.up")
+                }
+            } label: {
+                Label(Copy.more, systemImage: "ellipsis.circle")
+            }
+            .help(Copy.miniToolbarMoreHelp)
+
+            deleteButton
+        }
+    }
+
+    // MARK: - 5 action button sub-views (V6.56: 抽 helper 供 full + compact 复用)
+
+    /// Tag — popover picker
+    private var tagButton: some View {
+        Button {
+            showTagPicker.toggle()
+        } label: {
+            Label(Copy.tagLabel, systemImage: "tag")
+        }
+        .help(Copy.miniToolbarTagHelp)
+        .popover(isPresented: $showTagPicker, arrowEdge: .bottom) {
+            TagPickerPopover(model: model)
+        }
+    }
+
+    /// Move — menu picker (V6.28: folders + batchMove 在 model.grid)
+    private var moveMenu: some View {
+        Menu {
+            Button(Copy.sidebarUnfiled) {
+                model.grid.batchMove(to: nil)
+            }
+            Divider()
+            ForEach(model.grid.folders) { folder in
+                Button(folder.name) {
+                    model.grid.batchMove(to: folder)
+                }
+            }
+        } label: {
+            Label(Copy.miniToolbarMove, systemImage: "folder")
+        }
+        .help(Copy.miniToolbarMoveHelp)
+    }
+
+    /// Rename (P4.2): sheet (模板批量重命名, V6.28: grid 业务)
+    private var renameButton: some View {
+        Button {
+            model.grid.showingBatchRenameSheet = true
+        } label: {
+            Label(Copy.batchRenameTitle, systemImage: "pencil.and.list.clipboard")
+        }
+        .help(Copy.miniToolbarRenameHelp)
+    }
+
+    /// Export — 直接调 (内部 file panel, V6.28: grid 业务)
+    private var exportButton: some View {
+        Button {
+            model.grid.batchExport()
+        } label: {
+            Label(Copy.miniToolbarExport, systemImage: "square.and.arrow.up")
+        }
+        .help(Copy.miniToolbarExportHelp)
+    }
+
+    /// Delete — 弹确认 dialog (Photos.app 范式: 不静默删, 弹 confirm + undo)
+    private var deleteButton: some View {
+        Button(role: .destructive) {
+            model.grid.showingBatchDeleteConfirm = true
+        } label: {
+            Label(Copy.delete, systemImage: "trash")
+        }
+        .help(Copy.miniToolbarDeleteHelp)
     }
 }
 

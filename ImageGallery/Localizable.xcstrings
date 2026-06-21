@@ -1717,6 +1717,17 @@
         }
       }
     },
+    "detailLoadFailed" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "无法读取文件, 可能已被移动或删除"
+          }
+        }
+      }
+    },
     "detailNextHelp" : {
       "comment" : "V6.37.2: Copy.detailNextHelp → 下一张 (→)",
       "extractionState" : "manual",
@@ -1785,6 +1796,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "上一張 (←)"
+          }
+        }
+      }
+    },
+    "detailShowInFinder" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "在 Finder 中显示"
           }
         }
       }

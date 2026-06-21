@@ -643,6 +643,11 @@ enum Copy {
     static let miniToolbarExport = String(localized: "miniToolbarExport", defaultValue: "导出")
     static let miniToolbarExportHelp = String(localized: "miniToolbarExportHelp", defaultValue: "导出选中照片")
     static let miniToolbarDeleteHelp = String(localized: "miniToolbarDeleteHelp", defaultValue: "移到回收站")
+    // V6.56 (design polish): ContextualSelectionBar 紧凑模式 overflow menu
+    //   窄窗口 (< 800pt) 自动隐藏 Rename + Export 到 '⋯' menu
+    //   Copy.more 用于 menu label, miniToolbarMoreHelp 用于 menu tooltip
+    static let more = String(localized: "more", defaultValue: "更多")
+    static let miniToolbarMoreHelp = String(localized: "miniToolbarMoreHelp", defaultValue: "更多操作 (重命名, 导出)")
     static let miniToolbarAddTagTitle = String(localized: "miniToolbarAddTagTitle", defaultValue: "加标签")
     static let miniToolbarEmptyTags = String(localized: "miniToolbarEmptyTags", defaultValue: "还没有标签")
     static let miniToolbarNewTagPlaceholder = String(localized: "miniToolbarNewTagPlaceholder", defaultValue: "新标签")
