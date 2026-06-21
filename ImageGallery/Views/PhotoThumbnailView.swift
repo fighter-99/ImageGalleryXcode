@@ -67,6 +67,9 @@ private struct PhotoCellContent: View {
     @State private var loadFailed = false
     // V3.6.10: 键盘聚焦
     @FocusState private var isFocused: Bool
+    // V6.65 (Wave 2): hover lift 1.02 + Elevation.subtle → prominent 渐变
+    //   Photos.app Sonoma+ 实测: hover 时 cell 微 scale + 阴影加深
+    @State private var isHovered: Bool = false
     // V6.38.1 (Phase 1): onDelete + showingDeleteConfirm 移除 — 删除不再从 cell 触发
     //   之前 V5.30 加: cell context menu Delete 按钮 → confirmationDialog
     //   现在: 删除从右键菜单搬到 ⌘⌫ (Photos.app 范式), 直接走 model.grid.handleDelete() → batchDeleteConfirm / deleteSinglePhoto
@@ -444,6 +447,15 @@ private struct PhotoCellContent: View {
         .focused($isFocused)
         .focusable(true)
         .focusEffectDisabled(true)  // V4.4.6: 禁用系统 focus ring
+        // V6.65 (Wave 2): hover lift 微交互 — Photos 真版范式
+        //   hover: 1.02 scale + Elevation.subtle → prominent 渐变 + spring 0.18s
+        //   非 hover: 1.0 + Elevation.subtle 静止
+        //   reduce motion 时跳过 scale (Photos 真版行为)
+        .onHover { hovering in
+            isHovered = hovering
+        }
+        .scaleEffect(isHovered ? 1.02 : 1.0)
+        .animation(Animations.standard, value: isHovered)
         .help(tooltipText)
         // 拖拽：V6.22.8 (Bug fix): 条件化 .draggable — 只在 cell 已选中时启用
         //   V6.22.7 之前无条件 .draggable → .draggable (AppKit NSItemProvider) 抢父 VStack 的

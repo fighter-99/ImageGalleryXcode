@@ -193,8 +193,19 @@ enum Elevation {
     /// 极轻：缩略图、按钮的 resting 状态
     /// V3.6.14: 暗色下用更高 alpha（0.10）让阴影可见
     static let subtle  = ElevationStyle(color: Color(nsColor: .shadowColor).opacity(0.08), radius: 2,  x: 0, y: 1)
-    /// 强：hover 状态的缩略图
-    static let strong  = ElevationStyle(color: Color(nsColor: .shadowColor).opacity(0.20), radius: 12, x: 0, y: 4)
+    /// V6.65 (Wave 2): 标准——浮层 card / 选中态 thumbnail
+    ///   介于 subtle (resting) 和 prominent (popover) 之间, Photos 真版选中态 hover
+    static let standard = ElevationStyle(color: Color(nsColor: .shadowColor).opacity(0.12), radius: 4,  x: 0, y: 2)
+    /// V6.65 (Wave 2): 强：hover 状态的缩略图 (原 strong, 改 prominent 更准确表达 hover lift)
+    ///   替代 V3.6.14 strong——现在 prominent 用于 hover, elevated 用于浮层
+    static let prominent = ElevationStyle(color: Color(nsColor: .shadowColor).opacity(0.16), radius: 8, x: 0, y: 3)
+    /// V6.65 (Wave 2): 极高：popover / sheet 浮层
+    ///   Photos 真版 popover 阴影——比 prominent 更深 + 更远 y offset
+    ///   适用: NSPopover / SwiftUI sheet / context menu
+    static let elevated = ElevationStyle(color: Color(nsColor: .shadowColor).opacity(0.20), radius: 12, x: 0, y: 4)
+    /// V6.65 (Wave 2): 兼容——保留 strong alias 指向 elevated 防 regression
+    ///   之前 V3.6.14 strong = 0.20/12pt → 现在 elevated 同值. 老调用点不破坏
+    static let strong = elevated
 }
 
 // MARK: - 字体（V3.1 NEW：语义化字体层级）

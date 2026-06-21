@@ -17,8 +17,40 @@
         }
       }
     },
+    "%@, %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$@"
+          }
+        }
+      }
+    },
     "%lld." : {
 
+    },
+    "a11yActionOnSelectedHint" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "对 %lld 张照片执行操作"
+          }
+        }
+      }
+    },
+    "a11yShortcutPrefix" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "快捷键"
+          }
+        }
+      }
     },
     "accentColorBlue" : {
       "comment" : "V6.37.1: Copy.accentColorBlue → 蓝色",
@@ -2954,6 +2986,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "所有照片"
+          }
+        }
+      }
+    },
+    "helpRevealCrashLogs" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "在 Finder 中显示崩溃日志"
           }
         }
       }
