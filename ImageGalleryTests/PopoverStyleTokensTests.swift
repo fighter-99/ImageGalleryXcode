@@ -73,7 +73,7 @@ struct PopoverStyleTokensTests {
     @Test func popoverHostAndTransitionTokens() {
         #expect(PopoverStyle.stateTransitionDuration == 0.15)  // V4.43.1
         #expect(PopoverStyle.hostCornerRadius == 12)           // V4.79.0
-        #expect(PopoverStyle.hostBorderWidth == 0.5)           // V4.67.0
+        #expect(PopoverStyle.hostBorderWidth == 0)             // V6.61: 0.5 → 0 (Photos 真版 popover 无 border)
     }
 
     // MARK: - PopoverStyle 4 类别行专用（V4.79.0 NEW）

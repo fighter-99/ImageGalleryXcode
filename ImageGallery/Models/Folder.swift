@@ -19,7 +19,7 @@ final class Folder {
     @Relationship(deleteRule: .nullify, inverse: \Photo.folder)
     var photos: [Photo] = []
 
-    init(name: String, icon: String = "folder") {
+    init(name: String, icon: String = "folder.fill") {
         self.id = UUID()
         self.name = name
         self.createdAt = Date()

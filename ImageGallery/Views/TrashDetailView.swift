@@ -33,7 +33,7 @@ struct TrashDetailView: View {
                 icon: "trash",
                 title: Copy.emptyRecycleBin,
                 subtitle: Copy.hintTrashAutoPurge(days: retentionDays),
-                iconColor: Surface.textTertiary,
+                style: .neutral,
                 primaryAction: EmptyStateView.Action(
                     label: Copy.viewAll,
                     systemImage: "photo.on.rectangle.angled",

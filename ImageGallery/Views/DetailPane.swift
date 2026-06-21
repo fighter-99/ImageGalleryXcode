@@ -156,7 +156,7 @@ struct DetailPane: View {
                     icon: "exclamationmark.triangle",
                     title: Copy.storageUnavailableTitle,
                     subtitle: storageError,
-                    iconColor: .red,
+                    style: .destructive,
                     primaryAction: EmptyStateView.Action(
                         label: Copy.storageRetry,
                         systemImage: "arrow.clockwise",

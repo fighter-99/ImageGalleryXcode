@@ -31,7 +31,9 @@ struct DetailView: View {
     let currentIndex: Int    // 1-based, 0 表示无
     let totalCount: Int
     // V6.08: 错误回调 (rename 失败等) — 父视图负责 show toast
-    var onError: (String) -> Void = { _ in }
+   var onError: (String) -> Void = { _ in }
+    // V6.XX: 搜索结果高亮——接收搜索文本，文件名匹配时用 accent 色标记
+    var searchText: String = ""
 
     // 弹窗控制
     @State private var showingAddTagAlert = false
@@ -78,43 +80,22 @@ struct DetailView: View {
         // V6.52 (design polish): 删 3 个内 Divider — V4.24.0 注释说 "sections 间 Divider 分隔",
         //   实际造成 4 个 section 看起来像平级. Photos 真版无内 Divider, 靠 Spacing.lg 自然分组
         //   现在: 大图 (60%) + spacing.lg + [info+tags+operations] 1 个 VStack 内部 spacing.md
-        GeometryReader { geo in
-            ScrollViewReader { proxy in
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 0) {
-                        // 1️⃣ 大图区（顶部，0 padding 紧贴 detail panel 边缘）
-                        bigImageCard
-                            // V4.35.0: 大图 60% × visible height——元数据 + 标签 + 操作 fit 余下
-                            //   1080×1503 竖向图在 (500, 450) 容器内:
-                            //   min(500, 450) = 450 → image width 324pt, height 450pt (不拉伸)
-                            //   元数据 + 标签 + 操作 ≈ 300pt < 余下 300pt (visible - bigImageCard) → 整体 fit
-                            .frame(height: geo.size.height * 0.55)
+        VStack(alignment: .leading, spacing: 0) {
+            // 1️⃣ 大图区（layoutPriority 让图片占满可用空间，元数据区自然高度）
+            bigImageCard
+                .layoutPriority(1)
 
-                        // V6.52: 删 3 个 Divider — 改用 VStack spacing.lg 让 4 section 自然分组
-                        //   之前 4 个 Divider 让 info/tags/operations 看起来像平级,
-                        //   现在 operationsCard 是 "底部 actions 区" 视觉更清晰
-                        VStack(alignment: .leading, spacing: Spacing.lg) {
-                            // 2️⃣ 信息区（文件名 + 元数据）
-                            infoCard
+            VStack(alignment: .leading, spacing: Spacing.lg) {
+                // 2️⃣ 信息区（文件名 + 元数据）
+                infoCard
 
-                            // 3️⃣ 标签区
-                            tagsCard
+                // 3️⃣ 标签区
+                tagsCard
 
-                            // 4️⃣ 操作区
-                            operationsCard
-                        }
-                        .padding(.top, Spacing.lg)
-
-                        Spacer(minLength: 0)
-                    }
-                }
-                .onChange(of: photo.id) { _, _ in
-                    // V4.27.0: photo 切换时滚到大图顶部
-                    withAnimation(Animations.quick) {
-                        proxy.scrollTo("bigImage", anchor: .top)
-                    }
-                }
+                // 4️⃣ 操作区
+                operationsCard
             }
+            .padding(.top, Spacing.lg)
         }
         // V4.1.0d: 改用 .regularMaterial——与侧栏、主工具栏统一
         //   整个控制区 = 半透明毛玻璃；主区 = opaque canvas（照片焦点）
@@ -273,15 +254,7 @@ struct DetailView: View {
         .id(photo.id)
         .transition(.opacity.combined(with: .scale(scale: 0.95)))
         .animation(.spring(response: 0.4, dampingFraction: 0.8), value: photo.id)
-        .background(
-            RoundedRectangle(cornerRadius: Radius.md)
-                .fill(Palette.cellFilled.opacity(0.3))
-        )
-        .clipShape(RoundedRectangle(cornerRadius: Radius.md))
-        .overlay(
-            RoundedRectangle(cornerRadius: Radius.md)
-                .stroke(Surface.cardBorder, lineWidth: 0.5)
-        )
+        // macOS Quick Look 风格：大图无边框、无卡片背景
         // 导航覆盖层：← / 索引 / →
         .overlay(alignment: .bottom) {
             HStack(spacing: 0) {
@@ -342,7 +315,7 @@ struct DetailView: View {
                 // V4.5.0: 字号 .title3.semibold → .headline（13pt semibold，窄 panel 不换行）
                 //         重命名按钮 .plain → .borderless（hover 出系统圆角灰底，可识别为按钮）
                 HStack(spacing: Spacing.sm) {
-                    Text(photo.filename)
+                    HighlightedText(text: photo.filename, query: searchText)
                         .font(Typography.headline)
                         .lineLimit(2)
                         .truncationMode(.middle)
@@ -363,7 +336,7 @@ struct DetailView: View {
                     .fixedSize()  // 不被 Spacer 挤压
                 }
 
-                Divider().opacity(0.5)
+                // macOS 原生 info 面板不用 Divider，用 spacing 自然分隔
 
                 // 元数据 grid（2 列：图标 + 内容）
                 // V6.52 (design polish): row spacing xs(4) → sm(8) — 之前 4pt 太挤, 字段读起来"挤在一起"
@@ -389,9 +362,9 @@ struct DetailView: View {
     private func infoRow(icon: String, text: String, mono: Bool = false) -> some View {
         HStack(spacing: Spacing.sm) {
             Image(systemName: icon)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .frame(width: 14)
+                    .font(Typography.caption)
+                    .foregroundStyle(.secondary)
+                    .frame(width: 14)
             if mono {
                 Text(text)
                     .font(Typography.captionMono)
@@ -686,30 +659,40 @@ private struct RatingStarsView: View {
 }
 
 // ─── 标签 chip ───
+// ─── 标签 chip（Eagle 风格——彩色圆角 pill，颜色铺满背景）───
 struct TagChip: View {
     let tag: Tag
     let onRemove: () -> Void
+    @State private var isHovered = false
+
+    private var tagColor: Color { Color(hex: tag.colorHex) }
 
     var body: some View {
         HStack(spacing: 4) {
             Circle()
-                .fill(Color(hex: tag.colorHex))
-                .frame(width: 8, height: 8)
+                .fill(tagColor)
+                .frame(width: 10, height: 10)
             Text(tag.name)
                 .font(Typography.caption)
+                .foregroundStyle(tagColor.opacity(0.85))
             Button {
                 onRemove()
             } label: {
-                Image(systemName: "xmark")
-                    .font(Typography.caption)
-                    .foregroundStyle(.secondary)
+                Image(systemName: "xmark.circle.fill")
+                    .font(.caption2)
+                    .foregroundStyle(isHovered ? tagColor : .secondary)
             }
             .buttonStyle(.plain)
         }
-        .padding(.horizontal, Spacing.sm)
-        .padding(.vertical, Spacing.xs)
-        .background(Palette.chipBackground)
-        .cornerRadius(Radius.lg)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(tagColor.opacity(0.12), in: Capsule())
+        .overlay(Capsule().stroke(tagColor.opacity(0.20), lineWidth: 0.5))
+        .onHover { hovering in
+            withAnimation(Animations.quick) {
+                isHovered = hovering
+            }
+        }
     }
 }
 

@@ -138,156 +138,81 @@ struct SidebarView: View {
             //   4. 最近删除（单独 section，底部独立入口）
             //   5. 存储信息（在 List 外，固定在侧栏底部）
 
-            // ─── Section 1: 我的图馆（5 个 built-in 智能项）───
-            // V6.23 (Bug fix): smartFolders ForEach + addAction 移走 — 智能文件夹独立 section
-            //   之前 V4.1.0 把两者合并, 但 5 个 built-in 智能项 (固定) 跟用户 smart folders (可变) 语义不同
-            //   现在: 我的图馆只放 5 智能项 (无 "+"); 智能文件夹单独 section (有 "+" 创建入口)
-            Section {
-                if isLibraryExpanded {
-                    // 5 个 built-in 智能项
-                    // V4.6.0: 智能 folder icon 用语义色（SidebarStyle.iconColor* token）——
-                    //   一眼区分内容类型（重复/最近/大图/收藏/最近删除）
-                    //   色板：色相分散（HLS space 60°+ 间隔），避免混淆
-                    // V6.14.3: 5 个智能文件夹 label 入 Copy 字典（之前 hardcoded 中文）
-                    //   String(localized:defaultValue:) — 走 xcstrings String Catalog
-                    //   跟 Copy.sidebarCount / Copy.toolbarExport 同样模式
-                    sidebarRow(icon: "photo.on.rectangle.angled", label: Copy.sidebarAll, count: libraryStats.inLibraryCount, target: .all)
-                    // V5.7: 砍 sidebarRow "收藏"——侧边栏只放主导航
-                    //   收藏 = 评分 ≥ 5 走筛选 popover（用户在筛选 popover 内点击 ≥5 星即可看收藏）
-                    sidebarRow(icon: "tray", label: Copy.sidebarUnfiled, count: libraryStats.unfiledCount, target: .unfiled)
-                    if libraryStats.duplicatePhotoCount > 0 {
-                        sidebarRow(icon: "doc.on.doc", label: Copy.sidebarDuplicates, count: libraryStats.duplicatePhotoCount, target: .duplicates, iconColor: SidebarStyle.iconColorDuplicate)
-                    }
-                    // V6.19.2: 全部走 libraryStats (PhotoStatsSnapshot 单遍 O(n) 替 5+ 遍)
-                    sidebarRow(icon: "clock.arrow.circlepath", label: Copy.sidebarRecent7Days, count: libraryStats.recent7DaysCount, target: .recent7Days, iconColor: SidebarStyle.iconColorRecent)
-                    sidebarRow(icon: "large.circle", label: Copy.sidebarLargeFiles, count: libraryStats.largeFilesCount, target: .largeFiles, iconColor: SidebarStyle.iconColorLarge)
+            // ─── 我的图馆（DisclosureGroup 原生展开/折叠）───
+            DisclosureGroup(isExpanded: $isLibraryExpanded) {
+                sidebarRow(icon: "photo.on.rectangle.angled", label: Copy.sidebarAll, count: libraryStats.inLibraryCount, target: .all)
+                sidebarRow(icon: "tray", label: Copy.sidebarUnfiled, count: libraryStats.unfiledCount, target: .unfiled)
+                if libraryStats.duplicatePhotoCount > 0 {
+                    sidebarRow(icon: "doc.on.doc", label: Copy.sidebarDuplicates, count: libraryStats.duplicatePhotoCount, target: .duplicates, iconColor: SidebarStyle.iconColorDuplicate)
                 }
-            } header: {
-                // V4.1.0: 可见 header（V3.6.25 之前被隐藏）
-                // V6.14.3: 4 个 section header label 入 Copy 字典
-                // V6.23: 不再带 addAction — 智能文件夹创建入口搬到独立 section header
-                SidebarSectionHeader(
-                    Copy.sidebarSectionLibrary,
-                    icon: "sparkles",
-                    isExpanded: $isLibraryExpanded
-                )
+                sidebarRow(icon: "clock.arrow.circlepath", label: Copy.sidebarRecent7Days, count: libraryStats.recent7DaysCount, target: .recent7Days, iconColor: SidebarStyle.iconColorRecent)
+                sidebarRow(icon: "large.circle", label: Copy.sidebarLargeFiles, count: libraryStats.largeFilesCount, target: .largeFiles, iconColor: SidebarStyle.iconColorLarge)
+            } label: {
+                Label(Copy.sidebarSectionLibrary, systemImage: "sparkles")
             }
 
-            // ─── Section 1.5: 智能文件夹 (V6.23 新增 — 独立 section) ───
-            //   语义: 用户自定义资产, 跟 Folders (用户文件夹) 同性质
-            //   Photos.app 范式: "Smart Albums" 独立 section, 跟 Library 平级
-            //   V6.23 (用户决策): 创建入口走 chevron menu (方案 2+B2)
-            //   - 点 chevron → menu = [新建智能文件夹, 展开/折叠]
-            //   - 不再 inline `+ 智能文件夹` 行 (跟 folder/tag 不一致 → 故意差异化)
-            //   - 设计意图: smart folder 是 power user 功能, menu 模式降低误触
+            // ─── 智能文件夹（DisclosureGroup + 底部新建入口）───
             Section {
-                ForEach(smartFolders) { sf in
-                    smartFolderRow(sf)
-                }
-            } header: {
-                SidebarSectionHeader(
-                    Copy.sidebarSectionSmartFolders,
-                    // V6.23 (用户决策 方案 A): icon 从 "sparkles.rectangle.stack" 改 "folder"
-                    //   跟其他 3 个 section header 视觉同质 (单一 SF Symbol, 不复合)
-                    //   智能文件夹的"智能"特性靠 menu 入口 + per-row 自选图标表达
-                    icon: "folder",
-                    count: smartFolders.count,
-                    isExpanded: $isSmartFoldersExpanded,
-                    // V6.23 (用户决策方案 2+B2): chevron menu 模式
-                    // V6.23.1: 加 .divider — action 跟 toggle 视觉分层 (新建 vs 展开/折叠)
-                    menuItems: [
-                        .action(
-                            label: Copy.sidebarNewSmartFolder,
-                            systemImage: "sparkles",
-                            action: { onCreateSmartFolder() }
-                        ),
-                        .divider,
-                        .action(
-                            // V6.23: dynamic label — 跟 Photos 一样显示当前状态
-                            label: isSmartFoldersExpanded ? Copy.sidebarCollapse : Copy.sidebarExpand,
-                            systemImage: isSmartFoldersExpanded ? "chevron.up" : "chevron.down",
-                            action: { isSmartFoldersExpanded.toggle() }
-                        ),
-                    ]
-                )
-            }
-
-            // ─── Section 2: 我的文件夹 ───
-            Section {
-                if isFoldersExpanded {
-                    ForEach(folders) { folder in
-                        folderSidebarRow(folder)
+                DisclosureGroup(isExpanded: $isSmartFoldersExpanded) {
+                    ForEach(smartFolders) { sf in
+                        smartFolderRow(sf)
                     }
-
-                    Button {
-                        newFolderName = ""
-                        showingNewFolderAlert = true
-                    } label: {
-                        HStack(spacing: SidebarStyle.rowIconTextSpacing) {
-                            Image(systemName: "plus")
-                                .frame(width: SidebarStyle.iconFrameWidth)
-                                .foregroundStyle(Color.accentColor)
-                            // V6.55 (design polish): '+ 新建文件夹' 改 caption + secondary (italic 风格 placeholder)
-                            //   之前 SidebarStyle.labelFont (13pt regular accent) 跟主内容 row 视觉权重一样
-                            //   用户可能误以为是 "已有 folder" 而不是创建入口
-                            //   现在 caption (11pt secondary italic) 视觉"次要 placeholder",
-                            //   跟 macOS Finder sidebar '+ 新建文件夹' 风格一致
-                            Text(Copy.newFolder)
-                                .font(.caption)
-                                .italic()
-                                .foregroundStyle(.secondary)
-                        }
+                    Button(action: onCreateSmartFolder) {
+                        Label(Copy.sidebarNewSmartFolder, systemImage: "sparkles")
                     }
                     .buttonStyle(.plain)
+                    .font(.callout)
+                } label: {
+                    Label(Copy.sidebarSectionSmartFolders, systemImage: "folder")
                 }
-            } header: {
-                SidebarSectionHeader(Copy.sidebarSectionFolders, icon: "folder", count: folders.count, isExpanded: $isFoldersExpanded)
             }
 
-            // ─── Section 3: 标签 ───
-            Section {
-                if isTagsExpanded {
-                    // V6.23 (回滚): 删空状态 hint — 跟"我的文件夹"section 一致, 空就空
-                    //   之前 V6.23 加的 hint (一行 caption + icon) 占 28pt row 空间
-                    //   用户看到 inline "+ 新建标签" 行已经知道怎么创建, 不需要文字提示
-                    ForEach(tags) { tag in
-                        sidebarRow(
-                            icon: "tag",
-                            label: tag.name,
-                            count: PhotoStats.inLibraryCount(tag),
-                            // V6.08: 传 UUID 而非 @Model 引用
-                            target: .tag(tag.id),
-                            iconColor: Color(hex: tag.colorHex)  // 标签用 tag 颜色
-                        )
-                        .contextMenu {
-                            Button(role: .destructive) {
-                                deleteTag(tag)
-                            } label: {
-                                Label(Copy.deleteTag, systemImage: "trash")
-                            }
-                        }
-                    }
-
-                    Button {
-                        newTagName = ""
-                        showingNewTagAlert = true
-                    } label: {
-                        HStack(spacing: SidebarStyle.rowIconTextSpacing) {
-                            Image(systemName: "plus")
-                                .frame(width: SidebarStyle.iconFrameWidth)
-                                .foregroundStyle(Color.accentColor)
-                            // V6.55 (design polish): 跟 '+ 新建文件夹' 同 caption + italic + secondary
-                            //   视觉锤 '这是 placeholder 而非主内容 row'
-                            Text(Copy.newTag)
-                                .font(.caption)
-                                .italic()
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .buttonStyle(.plain)
+            // ─── 我的文件夹（DisclosureGroup 原生展开/折叠）───
+            DisclosureGroup(isExpanded: $isFoldersExpanded) {
+                ForEach(folders) { folder in
+                    folderSidebarRow(folder)
                 }
-            } header: {
-                SidebarSectionHeader(Copy.sidebarSectionTags, icon: "tag", count: tags.count, isExpanded: $isTagsExpanded)
+                Button {
+                    newFolderName = ""
+                    showingNewFolderAlert = true
+                } label: {
+                    Label(Copy.newFolder, systemImage: "plus.circle")
+                }
+                .buttonStyle(.plain)
+                .font(.callout)
+            } label: {
+                Label(Copy.sidebarSectionFolders, systemImage: "folder")
+            }
+
+            // ─── 标签（DisclosureGroup 原生展开/折叠）───
+            DisclosureGroup(isExpanded: $isTagsExpanded) {
+                ForEach(tags) { tag in
+                    sidebarRow(
+                        icon: "tag",
+                        label: tag.name,
+                        count: PhotoStats.inLibraryCount(tag),
+                        target: .tag(tag.id),
+                        iconColor: Color(hex: tag.colorHex)
+                    )
+                    .contextMenu {
+                        Button(role: .destructive) {
+                            deleteTag(tag)
+                        } label: {
+                            Label(Copy.deleteTag, systemImage: "trash")
+                        }
+                    }
+                }
+
+                Button {
+                    newTagName = ""
+                    showingNewTagAlert = true
+                } label: {
+                    Label(Copy.newTag, systemImage: "plus.circle")
+                }
+                .buttonStyle(.plain)
+                .font(.callout)
+            } label: {
+                Label(Copy.sidebarSectionTags, systemImage: "tag")
             }
 
             // ─── Section 4: 最近删除（单独 section，底部入口）───

@@ -96,22 +96,27 @@ enum Surface {
 
     // ─── 交互态 ───
     /// hover 时的微妙高亮（两种模式下都自然）
-    static let hover = Color.primary.opacity(0.04)
+    /// macOS 原生 hover 高亮约 0.06–0.08 opacity——0.04 太微妙，提升可见度
+    static let hover = Color.primary.opacity(0.06)
     /// 选中态的浅 accent 背景 (light mode default)
     /// V4.6.0: 0.10 → 0.12——sidebar active row 视觉锤（"胶囊"效果更明确）
-    static let selectedLight = Color.accentColor.opacity(0.12)
+    /// light 模式选中态 0.12→0.15——更接近 macOS 原生选中视觉重量
+    static let selectedLight = Color.accentColor.opacity(0.15)
     /// V6.32.1: dark mode 选中态 — 0.18 (比 light 0.12 更醒目, Photos.app 暗色用 ~0.20)
     ///   浅色 0.12 在暗色下视觉对比不够 (accent 在暗色下更亮, 但 0.12 opacity 仍偏弱)
-    static let selectedDark = Color.accentColor.opacity(0.18)
+    /// dark 模式选中态 0.18→0.22——暗色下选中更醒目
+    static let selectedDark = Color.accentColor.opacity(0.22)
     /// 选中态 — V6.32.1 加 colorScheme 参数 (light/dark opacity 不同)
     ///   调用方传 environment(\.colorScheme) 拿到的 ColorScheme
     static func selected(for colorScheme: ColorScheme) -> Color {
         colorScheme == .dark ? selectedDark : selectedLight
     }
     /// 多选/强选中态 (light)
-    static let selectedStrongLight = Color.accentColor.opacity(0.16)
+    /// 多选/强选中态 (light) — 与 selectedLight (0.15) 保持 0.03 差值
+    static let selectedStrongLight = Color.accentColor.opacity(0.18)
     /// V6.32.1: dark mode 强选中态 — 0.22
-    static let selectedStrongDark = Color.accentColor.opacity(0.22)
+    /// 多选/强选中态 (dark) — 与 selectedDark (0.22) 保持 0.04 差值
+    static let selectedStrongDark = Color.accentColor.opacity(0.26)
     /// 多选/强选中态 — V6.32.1 加 colorScheme 参数
     static func selectedStrong(for colorScheme: ColorScheme) -> Color {
         colorScheme == .dark ? selectedStrongDark : selectedStrongLight
@@ -123,13 +128,14 @@ enum Surface {
     static let accentEmphasis = Color.accentColor.opacity(0.6)
 
     // ─── 分隔线 ───
-    static let separator = Color.primary.opacity(0.08)
+    static let separator = Color(nsColor: .separatorColor)
     static let separatorStrong = Color.primary.opacity(0.15)
 
     // ─── 文本层级 ───
     static let textPrimary = Color.primary
     static let textSecondary = Color.secondary
-    static let textTertiary = Color.secondary.opacity(0.7)
+    /// 用 NSColor.tertiaryLabelColor 替代 secondary.opacity(0.7)——系统色自动适配暗色
+    static let textTertiary = Color(nsColor: .tertiaryLabelColor)
 
     // ─── 状态色 ───
     static let favorite = Color.yellow
@@ -233,7 +239,7 @@ enum Typography {
 
     /// V5.45 NEW: 年份大标题 (ViewMode 时间线年份分隔)
     ///   - Photos.app "Years" 视图风格——年份是最大视觉锤
-    ///   - .rounded + bold——既醒目又亲切
+    ///   - largeTitle 是 macOS 标准大标题字体（自动响应 Dynamic Type）
     static let yearTitle = Font.system(size: 34, weight: .bold, design: .rounded)
 
     /// V5.45 NEW: 详情面板小标签 (DetailView "标签"/"删除" 等字段标题)
@@ -270,8 +276,8 @@ enum Typography {
     ///   32pt 介于 icon (13-15) 和 hero (64) 之间, 视觉层级清晰
     static let sectionIcon = Font.system(size: 32, weight: .light)
     /// Form/sheet 标题 (SmartFolderCreateSheet "新建智能文件夹" 等)
-    ///   20pt 跟 body (13) 拉开 7pt 视觉差, 不需要 bold — section header 已在外面
-    static let formTitle = Font.system(size: 20)
+    ///   用 .title2（22pt macOS 默认）替代写死的 20pt——响应 Dynamic Type
+    static let formTitle = Font.title2
     /// Monospaced body — 文件名预览 (BatchRenameSheet) 等需要等宽的场景
     ///   跟 captionMono 区别: captionMono 是 11pt 等宽数字, bodyMono 是 13pt 等宽文字
     static let bodyMono = Font.system(.body, design: .monospaced)
@@ -318,14 +324,12 @@ extension EnvironmentValues {
     }
 }
 
-// MARK: - 动效（V3.6.11 NEW：统一动画 token；V4.0.0 升级）
+// MARK: - 动效（V3.6.11 NEW：统一动画 token；V6.XX reduceMotion）
 //
 // 设计原则：
-// - 5 个标准时长（按"感知速度"命名，不用"slow/medium"等模糊词）
-// - 1 个 spring 曲线（toast 弹出专用，比 easeInOut 更有"物理感"）
-// - 集中调整一处即可全局影响（如未来调成更"快"或更"慢"风格）
-// - V4.0.0: standard / medium 改从 easeInOut → spring（统一 spring 风格）
-// - V4.0.0: springGentle 重命名为 interactive（语义更清晰）
+// - 增加 reduceMotionOverride 标志——系统开启"减少动态效果"时所有 token 返回 nil
+// - V4.0.0: standard / medium 改从 easeInOut → spring
+// - V4.0.0: springGentle 重命名为 interactive
 //
 // 用法：
 // ```
@@ -333,24 +337,24 @@ extension EnvironmentValues {
 // withAnimation(Animations.quick) { ... }
 // ```
 
+/// 全局减少动态效果标志——由 AppDelegate 在启动时从 NSWorkspace 读取并监听系统设置变化
+var reduceMotionOverride: Bool = false
+
 enum Animations {
-    /// 最快：100ms，按压反馈（最高即时性）
-    static let press: Animation = .easeInOut(duration: 0.1)
+    /// 按压反馈——macOS 原生按压几乎无动画，极短 50ms 避免闪烁
+    static var press: Animation? { reduceMotionOverride ? nil : .easeInOut(duration: 0.05) }
     /// 快：150ms，多选 toggle、焦点切换、沉浸式淡入
-    static let quick: Animation = .easeInOut(duration: 0.15)
-    /// 标准：200ms spring，hover、选中、Chrome 显示
-    /// V4.0.0: 改从 easeInOut → spring
-    static let standard: Animation = .spring(response: 0.3, dampingFraction: 0.85)
-    /// 中等：250ms spring，视图模式切换、sidebar 显隐
-    /// V4.0.0: 改从 easeInOut → spring
-    static let medium: Animation = .spring(response: 0.3, dampingFraction: 0.85)
+    static var quick: Animation? { reduceMotionOverride ? nil : .easeInOut(duration: 0.15) }
+    /// 标准 spring——hover、选中、Chrome 显示（macOS 系统默认弹簧曲线）
+    static var standard: Animation? { reduceMotionOverride ? nil : .interactiveSpring }
+    /// 中等 spring——视图模式切换、sidebar 显隐（同 standard，语义别名）
+    static var medium: Animation? { reduceMotionOverride ? nil : .interactiveSpring }
     /// 弹性 spring：toast 弹出 / 选中 / sidebar 进出
-    /// V4.0.0: 重命名 springGentle → interactive（语义更清晰）
-    static let interactive: Animation = .spring(response: 0.35, dampingFraction: 0.85)
-    /// V4.0.0 兼容别名——旧代码用 springGentle 的地方仍能编译（过渡期）
-    static var springGentle: Animation { interactive }
-    /// V4.0.0 NEW: 弹性更"Q"的 spring（带轻微反弹，用于 toast / 重要操作确认）
-    static let bouncy: Animation = .spring(response: 0.4, dampingFraction: 0.7)
+    static var interactive: Animation? { reduceMotionOverride ? nil : .spring(response: 0.35, dampingFraction: 0.85) }
+    /// V4.0.0 兼容别名——旧代码用 springGentle 的地方仍能编译
+    static var springGentle: Animation? { interactive }
+    /// 弹性更"Q"的 spring（带轻微反弹，用于 toast / 重要操作确认）
+    static var bouncy: Animation? { reduceMotionOverride ? nil : .spring(response: 0.4, dampingFraction: 0.7) }
 }
 
 // MARK: - V4.0.0 NEW: 工具栏样式 token
@@ -426,24 +430,25 @@ enum SidebarStyle {
     // ─── 状态色 ───
     /// hover 背景色——Surface.hover 0.04
     static let hoverBackground: Color = Surface.hover
-    /// 选中背景色（向后兼容 — light mode 默认值）——Surface.selectedLight 0.12
-    /// V6.32.1: dark mode 用 activeBackground(for: colorScheme) 走 Surface.selectedDark 0.18
-    /// 保留 Color 静态属性供 SidebarStyleTests 等不感知 colorScheme 的 caller 用
-    static let activeBackground: Color = Surface.selectedLight
-    /// V6.32.1: colorScheme 感知选中背景色 — dark 模式 0.18 / light 0.12
+    /// 选中背景色——NSColor.alternateSelectedControlBackgroundColor（macOS 标准 sidebar 选中实色）
+    ///   系统色自动适配暗/浅色模式，不依赖 colorScheme 参数
+    /// 选中背景色——NSColor.selectedContentBackgroundColor（macOS 标准 list/outline 选中实色）
+    static let activeBackground: Color = Color(nsColor: .selectedContentBackgroundColor)
+    /// colorScheme 感知选中背景色（保留签名兼容旧调用方，实际不再需要）
     static func activeBackground(for colorScheme: ColorScheme) -> Color {
-        Surface.selected(for: colorScheme)
+        activeBackground
     }
     /// 默认 label 颜色
-    static let labelDefault: Color = Color.primary.opacity(0.85)
+    /// macOS 原生 sidebar 标签用 .labelColor（等价于 .primary），不做 0.85 降权
+    static let labelDefault: Color = .primary
     /// hover label 颜色
     static let labelHover: Color = Color.primary
-    /// 选中 label 颜色
-    static let labelActive: Color = Color.accentColor
+    /// 选中 label 颜色——macOS 标准选中行用白字
+    static let labelActive: Color = .white
     /// 默认 icon 颜色
     static let iconDefault: Color = Color.secondary
-    /// hover/选中 icon 颜色（保持与 label 一致——视觉关联）
-    static let iconActive: Color = Color.accentColor
+    /// hover/选中 icon 颜色——与 label 一致用白字
+    static let iconActive: Color = .white
 
     // ─── section header ───
     /// V6.23 (文本 token 统一): section header 字号 12pt → 11pt
@@ -454,7 +459,8 @@ enum SidebarStyle {
     /// V6.23: section header 颜色 secondary @ 0.85 → 0.65
     ///   之前 0.85 跟 labelDefault 0.85 平级, header 视觉权重跟 row label 一样 → header 不像"次要"
     ///   现在 0.65 = header 是"分组标签", 比 row label 浅一档, 视觉层级清晰
-    static let headerColor: Color = Color.secondary.opacity(0.65)
+    /// 用 NSColor.tertiaryLabelColor 替代 secondary.opacity(0.65)——系统色自动适配暗色
+    static let headerColor: Color = Color(nsColor: .tertiaryLabelColor)
     /// section header 上下 padding——视觉分组空间
     static let headerPaddingHorizontal: CGFloat = 12
     static let headerPaddingTop: CGFloat = 10
@@ -681,7 +687,8 @@ enum PopoverStyle {
     static let hostCornerRadius: CGFloat = 12
     /// popover host 边框宽度——0.5pt
     ///   V4.67.0 引入——dark mode + transl material 边界强化
-    static let hostBorderWidth: CGFloat = 0.5
+    /// macOS Sonoma+ NSPopover 默认无边框——0.5pt 边框是旧版遗留，移除让系统接管
+    static let hostBorderWidth: CGFloat = 0
 
     // ─── V4.79.0 NEW: 顶层 popover 4 类别行专用 token ───
     /// V5.63-3: 类别行高度 32→40pt——更易点击 target + 视觉 breathing, 仿 macOS Photos

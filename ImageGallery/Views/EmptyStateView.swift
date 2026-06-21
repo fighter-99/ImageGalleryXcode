@@ -3,16 +3,12 @@
 //  ImageGallery
 //
 //  V3.6.9 NEW: 统一空状态组件。
-//  之前 3 处各自实现（PhotoGridView.emptyState / EmptyDetailView / TrashDetailView 等），
-//  集中后：
-//  - 统一间距 / 字号 / 颜色 token
-//  - 可选 CTA 按钮（PhotoGridView 的"导入图片" 按钮）
-//  - 统一 iconColor（accent / secondary / destructive）
-//
 //  V4.9.0: 加 secondaryAction 支持双 CTA
-//  - primaryAction: 主操作（borderedProminent + 大尺寸）
-//  - secondaryAction: 次要操作（bordered + 中尺寸）
-//  - 区分"空状态"（icon + 引导文案）vs "错误状态"（exclamationmark.triangle + 重试）
+//  V6.61: 视觉重做——圆形软色背景 + Photos.app 风格 icon 居中
+//    - 新增 Style 枚举 (accent / neutral / warning / destructive)
+//    - 取代 iconColor 参数 (style 自动派生 icon + backdrop 颜色)
+//    - CTA 横向排列 (主右 / 次左), 符合 macOS 按钮惯例
+//    - 标题改 .title2.semibold, 副标题限最大宽度 360pt 防止大窗口下拉伸
 //
 //  用法：
 //  ```
@@ -20,6 +16,7 @@
 //      icon: "photo.on.rectangle.angled",
 //      title: "还没有图片",
 //      subtitle: "拖入图片，或点击下方按钮开始添加",
+//      style: .accent,
 //      primaryAction: EmptyStateView.Action(
 //          label: "导入图片",
 //          systemImage: "square.and.arrow.down",
@@ -36,6 +33,19 @@
 import SwiftUI
 
 struct EmptyStateView: View {
+    /// V6.61 NEW: 视觉样式——派生 backdrop 圆形填充色 + icon tint
+    ///   取代之前的 iconColor 单独参数,让"视觉意图"统一管控
+    enum Style {
+        /// 引导类: 导入、查看 (蓝色圆形 + 蓝色 icon)
+        case accent
+        /// 预期空: 空文件夹/标签/回收站 (浅灰圆形 + 灰 icon)
+        case neutral
+        /// 警告: 临时性提示 (橙色圆形 + 橙色 icon)
+        case warning
+        /// 错误: 存储不可用等 (红色圆形 + 红色 icon)
+        case destructive
+    }
+
     /// 可选的 CTA 动作（按钮）
     struct Action {
         let label: String
@@ -46,65 +56,101 @@ struct EmptyStateView: View {
     let icon: String
     let title: String
     var subtitle: String? = nil
-    var iconColor: Color = .accentColor
-    /// V4.9.0: 重命名 action → primaryAction（更清晰区分主/次 CTA）
+    /// V6.61: 用 style 取代 iconColor,集中管控"意图 → 颜色"映射
+    var style: Style = .accent
+    /// 主操作（borderedProminent + 大尺寸）
     var primaryAction: Action? = nil
-    /// V4.9.0 NEW: 次要 CTA——bordered + 中尺寸（不抢主 CTA 视觉）
+    /// 次要操作（bordered + 中尺寸）
     var secondaryAction: Action? = nil
 
     var body: some View {
-        VStack(spacing: Spacing.lg) {
-            // 大图标（hierarchical rendering 自动适配暗色）
-            Image(systemName: icon)
-                .font(Typography.emptyStateIcon)
-                .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(iconColor)
-                .accessibilityHidden(true)
+        VStack(spacing: Spacing.xxl) {
+            backdropIcon
 
-            // 标题 + 副标题
             VStack(spacing: Spacing.xs) {
                 Text(title)
-                    .font(Typography.title2)
+                    .font(.title2.weight(.semibold))
                     .foregroundStyle(Surface.textPrimary)
+                    .multilineTextAlignment(.center)
                 if let subtitle {
                     Text(subtitle)
-                        .font(Typography.body)
+                        .font(.body)
                         .foregroundStyle(Surface.textSecondary)
                         .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
+            .frame(maxWidth: 360)
 
-            // CTA 按钮区（主 + 次）
             if primaryAction != nil || secondaryAction != nil {
-                VStack(spacing: Spacing.sm) {
-                    if let primaryAction {
-                        Button(action: primaryAction.onTap) {
-                            if let systemImage = primaryAction.systemImage {
-                                Label(primaryAction.label, systemImage: systemImage)
-                            } else {
-                                Text(primaryAction.label)
-                            }
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .controlSize(.large)
-                        .buttonStyle(.pressable)
-                    }
+                // V6.61: CTA 横向——次左 / 主右,符合 macOS 按钮次序惯例
+                HStack(spacing: Spacing.sm) {
                     if let secondaryAction {
                         Button(action: secondaryAction.onTap) {
-                            if let systemImage = secondaryAction.systemImage {
-                                Label(secondaryAction.label, systemImage: systemImage)
-                            } else {
-                                Text(secondaryAction.label)
-                            }
+                            actionLabel(secondaryAction)
                         }
                         .buttonStyle(.bordered)
                         .controlSize(.regular)
                     }
+                    if let primaryAction {
+                        Button(action: primaryAction.onTap) {
+                            actionLabel(primaryAction)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.large)
+                    }
                 }
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(Spacing.xxl)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    // MARK: - 视觉子组件
+
+    /// V6.61 NEW: 圆形软色背景 + 居中 icon——Photos.app 风格空状态视觉锤
+    ///   120pt 圆形 + 56pt hierarchical icon — 取代之前"裸 icon 浮在中间"
+    ///   圆形 fill 由 style 派生 (accent 12% / neutral 6% / warning 12% / destructive 12%)
+    private var backdropIcon: some View {
+        ZStack {
+            Circle()
+                .fill(backdropFill)
+                .frame(width: 120, height: 120)
+            Image(systemName: icon)
+                .font(.system(size: 56, weight: .light))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(iconTint)
+        }
+        .accessibilityHidden(true)
+    }
+
+    @ViewBuilder
+    private func actionLabel(_ action: Action) -> some View {
+        if let systemImage = action.systemImage {
+            Label(action.label, systemImage: systemImage)
+        } else {
+            Text(action.label)
+        }
+    }
+
+    // MARK: - 样式解析
+
+    private var backdropFill: Color {
+        switch style {
+        case .accent:       return Color.accentColor.opacity(0.12)
+        case .neutral:      return Color.primary.opacity(0.06)
+        case .warning:      return Color.orange.opacity(0.12)
+        case .destructive:  return Color.red.opacity(0.12)
+        }
+    }
+
+    private var iconTint: Color {
+        switch style {
+        case .accent:       return .accentColor
+        case .neutral:      return Surface.textSecondary
+        case .warning:      return Color.orange
+        case .destructive:  return .red
+        }
     }
 }
 
@@ -141,6 +187,34 @@ struct EmptyStateView: View {
         ) {},
         secondaryAction: EmptyStateView.Action(
             label: Copy.viewAll
+        ) {}
+    )
+    .frame(width: 600, height: 400)
+}
+
+#Preview("中性 (空回收站)") {
+    EmptyStateView(
+        icon: "trash",
+        title: "回收站是空的",
+        subtitle: "删除的图片会在 30 天后自动清除",
+        style: .neutral,
+        primaryAction: EmptyStateView.Action(
+            label: "查看全部",
+            systemImage: "photo.on.rectangle.angled"
+        ) {}
+    )
+    .frame(width: 600, height: 400)
+}
+
+#Preview("错误 (存储不可用)") {
+    EmptyStateView(
+        icon: "exclamationmark.triangle",
+        title: "无法访问存储",
+        subtitle: "请检查磁盘权限或重新连接",
+        style: .destructive,
+        primaryAction: EmptyStateView.Action(
+            label: "重试",
+            systemImage: "arrow.clockwise"
         ) {}
     )
     .frame(width: 600, height: 400)

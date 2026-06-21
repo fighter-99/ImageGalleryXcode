@@ -818,7 +818,6 @@ struct ContentView: View {
             totalCount: allPhotos.count,
             // V6.28: totalSizeFormatted 在 grid
             totalSize: model.grid.totalSizeFormatted,
-            thumbnailSize: thumbnailSize
         )
     }
 

@@ -51,8 +51,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             NSLog("V6.22.10: reset hasSeenOnboarding for XCUITest")
         }
 
-        NSApp.setActivationPolicy(.regular)
-        NSApp.activate(ignoringOtherApps: true)
+       NSApp.setActivationPolicy(.regular)
+       NSApp.activate(ignoringOtherApps: true)
+
+        // V6.XX: 减少动态效果——读取系统 accessibility 设置
+        //   Animations 枚举检查 reduceMotionOverride 标志，开启时所有 token 返回 nil
+        reduceMotionOverride = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+        DistributedNotificationCenter.default().addObserver(
+            forName: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification,
+            object: nil,
+            queue: .main
+        ) { _ in
+            reduceMotionOverride = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+        }
 
         // V3.7.1: 挂 NSWindowDelegate 到所有 window + 恢复 stored frame
         //   SwiftUI Scene 创建的 NSWindow 在 applicationDidFinishLaunching 之后

@@ -3941,6 +3941,17 @@
         }
       }
     },
+    "miniToolbarMoreHelp" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "更多操作 (重命名, 导出)"
+          }
+        }
+      }
+    },
     "miniToolbarMove" : {
       "comment" : "V6.37.5: Copy.miniToolbarMove → 移动",
       "extractionState" : "manual",
@@ -4081,6 +4092,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "≥ %lld 星"
+          }
+        }
+      }
+    },
+    "more" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "更多"
           }
         }
       }
@@ -9868,6 +9890,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "顯示資訊面板 (⌘I)"
+          }
+        }
+      }
+    },
+    "toastBatchRenameCollisions" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%lld 张照片重命名跳过（已有 _1.._9999 同名文件）"
           }
         }
       }

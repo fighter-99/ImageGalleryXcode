@@ -3,12 +3,14 @@
 //  ImageGalleryTests
 //
 //  V4.6.0: SidebarStyle token 单元测试。
+//  V6.61: 选中态改用 NSColor.selectedContentBackgroundColor 系统实色 (macOS 标准)
+//         labelActive/iconActive 改 .white (跟系统选中白字一致)
 //
 //  设计原则：
 //  - 行高 28pt 是 macOS Photos / Finder 侧栏标准——锁定数值防止回归
 //  - 字号 13pt label + 11pt count 平衡"内容可读性"与"密度"
 //  - 智能 folder icon 用 5 种语义色（橙/蓝/紫/金/橙），色相互不重叠
-//  - 选中态高亮 0.12 opacity——比 hover (0.04) 强 3 倍
+//  - 选中态用系统 NSColor.selectedContentBackgroundColor + 白字
 //
 //  锁定这些 token 数值后，sidebar 视觉打磨的所有边界条件就有了
 //  "测试守护线"——避免未来某次改动偷偷调大字号或调小行高。
@@ -67,11 +69,12 @@ struct SidebarStyleTests {
 
     // MARK: - 状态色
 
-    @Test func activeBackgroundMatchesSurfaceSelected() {
-        // V4.6.0: Surface.selected 0.10 → 0.12——视觉锤更明确
-        // V6.32.1: Surface.selected 变函数 (for: ColorScheme), activeBackground 走 selectedLight
-        // SidebarStyle.activeBackground 是 Surface.selectedLight 的别名 (向后兼容 light mode)
-        #expect(SidebarStyle.activeBackground == Surface.selectedLight)
+    @Test func activeBackgroundUsesSystemSelectedContent() {
+        // V6.61: 选中态改用 NSColor.selectedContentBackgroundColor 系统实色
+        //   替代 V6.32.1 的 Surface.selectedLight (0.12 opacity accent)
+        //   理由: macOS Photos / Finder 选中态都用系统实色, light/dark 自动适配
+        let systemColor = Color(nsColor: .selectedContentBackgroundColor)
+        #expect(SidebarStyle.activeBackground == systemColor)
     }
 
     @Test func hoverBackgroundMatchesSurfaceHover() {
@@ -79,11 +82,13 @@ struct SidebarStyleTests {
         #expect(SidebarStyle.hoverBackground == Surface.hover)
     }
 
-    @Test func labelColorsDifferByState() {
-        // 三档 label 颜色必须互不相同
-        #expect(SidebarStyle.labelDefault != SidebarStyle.labelHover)
-        #expect(SidebarStyle.labelHover != SidebarStyle.labelActive)
-        #expect(SidebarStyle.labelDefault != SidebarStyle.labelActive)
+    @Test func labelActiveIsWhiteAndDifferFromDefault() {
+        // V6.61: labelActive 改 .white (跟 macOS 系统选中行白字一致)
+        //   labelDefault + labelHover 都是 .primary (hover 不变色, 只 active 变白)
+        //   只 active 一档跟 default/hover 不同, 通过背景 activeBackground 反衬
+        #expect(SidebarStyle.labelActive == Color.white)
+        #expect(SidebarStyle.labelDefault == Color.primary)
+        #expect(SidebarStyle.labelActive != SidebarStyle.labelDefault)
     }
 
     @Test func iconDefaultIsSecondary() {
@@ -91,9 +96,11 @@ struct SidebarStyleTests {
         #expect(SidebarStyle.iconDefault == Color.secondary)
     }
 
-    @Test func iconActiveIsAccent() {
-        // hover/选中 icon 用 accent——与 label 同步
-        #expect(SidebarStyle.iconActive == Color.accentColor)
+    @Test func iconActiveIsWhite() {
+        // V6.61: 选中态 icon 改 .white (跟 macOS 系统选中白字一致)
+        //   替代 V4.6.0 的 Color.accentColor
+        //   hover 态仍走 iconActive (跟 labelActive 同步)
+        #expect(SidebarStyle.iconActive == Color.white)
     }
 
     // MARK: - section header
@@ -105,12 +112,12 @@ struct SidebarStyleTests {
         #expect(SidebarStyle.headerPaddingBottom == 8)
     }
 
-    @Test func headerColorIsTertiaryEquivalent() {
-        // V6.23.0: 0.85 → 0.65 opacity (跟 labelDefault 0.85 拉开差 — 视觉层级清晰)
-        //   之前 V4.48.0 写 0.85 跟 labelDefault 撞色, 段头"小一圈"不协调
-        //   V6.23 改 0.65 拉低 header opacity, 让 label/row 是视觉锤
-        //   production token (SidebarStyle.headerColor) 已跟 V6.23 同步 0.65
-        let expected = Color.secondary.opacity(0.65)
+    @Test func headerColorIsTertiaryLabelSystem() {
+        // V6.61: headerColor 改用 NSColor.tertiaryLabelColor 系统实色 (light/dark 自动适配)
+        //   替代 V6.23 的 Color.secondary.opacity(0.65) — 旧值在 dark 下偏暗
+        //   注意: 由于 polish 后 SidebarView 用 DisclosureGroup 原生 header, headerColor
+        //   主要供未来 section header 引用; 当前 caller = 0
+        let expected = Color(nsColor: .tertiaryLabelColor)
         #expect(SidebarStyle.headerColor == expected)
     }
 

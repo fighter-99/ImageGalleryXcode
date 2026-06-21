@@ -126,7 +126,9 @@ struct SettingsView: View {
     //   macOS 标准窗口入场 (easeOut 200ms) — 视觉锤"窗口活过来"
     //   跟 macOS Sonoma+ System Settings 行为对齐
     @State private var appearanceProgress: Double = 0
-    @State private var showingShortcutsSheet = false
+   @State private var showingShortcutsSheet = false
+    // V6.XX: 键盘焦点导航——标记侧栏和内容区为独立 focus section
+    @FocusState private var focusedCategory: SettingsCategory?
 
     private var selectedCategory: Binding<SettingsCategory> {
         Binding(
@@ -140,23 +142,25 @@ struct SettingsView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            // V6.41.1: Photos 风格顶部 tab 栏 — 替代 NavigationSplitView sidebar
-            //   之前误判截图: 以为 Photos 用 sidebar, 实际是顶部 3 个 tab (通用/iCloud/共享图库)
-            //   我们 7 category 用 ScrollView(.horizontal) 支持横向滚动
-            //   选中态: 圆角背景 + tint 色图标/文字 (跟 Photos iCloud tab 选中态一致)
-            // V6.50: tab bar 加 .background(.bar) — macOS 标准 toolbar 视觉
-            //   之前透明背景, 跟 content 区域无视觉分隔. 现在 frosted glass 效果
-            //   跟 macOS Sonoma+ Photos 真版 Preferences 顶部 tab 视觉一致
-            CategoryTabBar(selection: selectedCategory)
-                .background(.bar)
-            Divider()
+        HSplitView {
+            // 左侧类别侧栏（macOS 标准 Preferences 布局）
+            List(selection: selectedCategory) {
+                ForEach(SettingsCategory.allCases) { category in
+                    Label(category.title, systemImage: category.icon)
+                        .tag(category)
+                        .help("\(category.title) — \(category.subtitle)")
+                }
+            }
+           .listStyle(.sidebar)
+           .frame(minWidth: 160, idealWidth: 210)
+            .focusSection()
+
+            // 右侧内容区
             ScrollView {
-                VStack(alignment: .leading, spacing: Spacing.lg) {
-                    // V6.41: Photos 风格 detail 顶部 — 大标题 + subtitle
+                VStack(alignment: .leading, spacing: Spacing.md) {
                     VStack(alignment: .leading, spacing: Spacing.xs) {
                         Text(selectedCategory.wrappedValue.title)
-                            .font(.system(size: 28, weight: .semibold))
+                            .font(.title2.weight(.semibold))
                             .foregroundStyle(.primary)
                         Text(selectedCategory.wrappedValue.subtitle)
                             .font(Typography.body)
@@ -194,13 +198,13 @@ struct SettingsView: View {
                     .animation(Animations.standard, value: selectedCategory.wrappedValue)
                 }
                 .padding(Spacing.xl)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            }
+               .frame(maxWidth: .infinity, alignment: .leading)
+           }
+            .focusSection()
         }
         .frame(
-            // V6.47: 缩 window minimum — Photos 真版 ~520pt wide × 400pt tall
-            //   之前 640x480 让小屏用户被迫滚动, 不灵活
-            minWidth: 520, idealWidth: 720,
+            // HSplitView 侧栏布局需要更宽的默认尺寸
+            minWidth: 640, idealWidth: 800,
             minHeight: 400, idealHeight: 560
         )
         // V6.51: Window 入场 fade + scale 动画 — macOS 标准 200ms ease-out
@@ -673,18 +677,23 @@ private struct ShortcutsSettingsView: View {
 private struct AboutSettingsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.xxl) {
-            // V6.42: Photos 风格 row — 应用信息 (icon + name + version)
-            PhotosSettingRow(
-                title: Copy.appName,
-                description: AppVersion.current.displayString
-            ) {
+            // 标准 macOS 关于布局 — app icon + 名称 + 版本左对齐
+            HStack(spacing: Spacing.lg) {
                 if let appIcon = NSApp.applicationIconImage {
                     Image(nsImage: appIcon)
                         .resizable()
-                        .frame(width: 48, height: 48)
-                        .clipShape(RoundedRectangle(cornerRadius: Radius.appIcon, style: .continuous))
+                        .frame(width: 64, height: 64)
+                        .clipShape(RoundedRectangle(cornerRadius: Radius.sm, style: .continuous))
+                }
+                VStack(alignment: .leading, spacing: Spacing.xxs) {
+                    Text(Copy.appName)
+                        .font(.title2.weight(.bold))
+                    Text(AppVersion.current.displayString)
+                        .font(.body)
+                        .foregroundStyle(.secondary)
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
 
             // 链接 section — 多个 external links, 用 SettingsSection 容器
             SettingsSection(title: Copy.settingsLinksTitle, subtitle: nil) {
@@ -727,105 +736,6 @@ private struct AboutSettingsView: View {
     }
 }
 
-// MARK: - V6.41.1: Photos 风格顶部 tab 栏 (替代 NavigationSplitView sidebar)
-//
-// 截图1.png 观察: Photos.app macOS Sonoma+ Settings 用顶部 tab 切换 (3 个),
-// 不是 sidebar. 选中 tab: 圆角背景 + tint 色图标/文字 + tint 文字 label.
-// 我们 7 category 用 ScrollView(.horizontal) 支持横向滚动.
-//
-// 视觉规范 (跟截图 iCloud tab 一致):
-//   - tab 宽 80pt, 高 56pt
-//   - icon 24pt (跟 sidebar 字号 13pt 区分, 更突出)
-//   - label caption (11pt)
-//   - 选中: Color.accentColor.opacity(0.15) 圆角背景 + tint 图标/文字
-//   - 未选: 透明背景 + secondary 图标/文字
-//   - hover: 极轻 .quaternary 背景
-
-private struct CategoryTabBar: View {
-    @Binding var selection: SettingsCategory
-
-    // V6.49: @FocusState — auto-focus 当前选中 tab (键盘 accessibility)
-    //   打开 Settings 时焦点自动落在 "通用" tab, 用户可直接 ↑↓ ←→ 切换 (macOS 真版模式)
-    //   Photos 真版也这样做 — 打开 Preferences 焦点立即可操作
-    @FocusState private var focusedCategory: SettingsCategory?
-
-    var body: some View {
-        // V6.47: ScrollViewReader 监听 selection 变化 → 自动滚到选中 tab
-        //   之前: 7 个 tab 横排, 选中 tab 若超出视口会被截断, 用户看不到自己选的
-        //   现在: scrollTo(selection, anchor: .center) 自动滚到选中 (类似 macOS Sonoma+ Photos)
-        // V6.49: 加 onAppear auto-focus — 焦点自动落到当前 selection
-        ScrollViewReader { proxy in
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: Spacing.xs) {
-                    ForEach(SettingsCategory.allCases) { category in
-                        CategoryTabButton(
-                            category: category,
-                            isSelected: selection == category,
-                            onTap: { selection = category }
-                        )
-                        .id(category)  // ScrollViewReader anchor (SettingsCategory Hashable)
-                        // V6.49: focus binding — 每个 tab 都跟 focusedCategory 关联, 切 tab 时焦点跟着走
-                        .focused($focusedCategory, equals: category)
-                    }
-                }
-                .padding(.horizontal, Spacing.lg)
-                .padding(.vertical, Spacing.md)
-                .frame(maxWidth: .infinity)  // 居中 (跟 Photos 顶部 tab 居中布局一致)
-            }
-            .onChange(of: selection) { _, new in
-                withAnimation(Animations.quick) {
-                    proxy.scrollTo(new, anchor: .center)
-                }
-            }
-        }
-        // V6.49: Auto-focus 当前选中 tab (Settings 打开时焦点立即可操作)
-        //   DispatchQueue.main.asyncAfter 0.05s — 等 window focus + onAppear 都稳定后再设焦点
-        //   避免 macOS window 还没 focus 时调用 focusedCategory = nil
-        .onAppear {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                focusedCategory = selection
-            }
-        }
-    }
-}
-
-private struct CategoryTabButton: View {
-    let category: SettingsCategory
-    let isSelected: Bool
-    let onTap: () -> Void
-    // V6.58 (audit P1.6 follow-up): @State 提到 struct 字段 (之前在 body 内是非 idiomatic)
-    @State private var isHovered = false
-
-    var body: some View {
-        // V6.45: hover state — 未选 tab 鼠标悬停时背景变 .quaternary (轻浮视觉反馈)
-        //   选中 tab 用 accent 圆角背景 (已有), hover 在未选 tab 上才有意义
-        // V6.46: hierarchical rendering — SF Symbol 多色梯度 (跟 macOS Sonoma+ System Settings 一致)
-        //   默认 monochrome 是单色, hierarchical 给我们 tint 颜色的多色梯度 (视觉更丰富)
-        return Button(action: onTap) {
-            VStack(spacing: 4) {
-                Image(systemName: category.icon)
-                    .font(.system(size: 24))
-                    // V6.46: hierarchical — 多色梯度, macOS Sonoma+ 真版 System Settings 风格
-                    .symbolRenderingMode(.hierarchical)
-                Text(category.title)
-                    .font(Typography.caption)
-            }
-            .foregroundStyle(isSelected ? Color.accentColor : Surface.textSecondary)
-            .frame(width: 80, height: 56)
-            .background(
-                isSelected ? Color.accentColor.opacity(0.15)
-                : (isHovered ? Color.primary.opacity(0.06) : .clear),
-                in: RoundedRectangle(cornerRadius: Radius.md)
-            )
-        }
-        .buttonStyle(.plain)
-        // V6.47: tooltip 显示 "Title — Subtitle" — 让用户 hover 时理解 category 用途
-        //   之前只显示 title (例如 "回收站"), 用户不知道里面有什么
-        //   现在显示 "回收站 — 回收站保留时长与清空" — 跟 macOS Sonoma+ Settings 一致
-        .help("\(category.title) — \(category.subtitle)")
-        .onHover { isHovered = $0 }
-    }
-}
 
 // MARK: - V6.42: Photos 风格 setting row 组件
 //
@@ -863,7 +773,7 @@ private struct PhotosSettingRow<Trailing: View>: View {
         HStack(alignment: .firstTextBaseline, spacing: Spacing.md) {
             VStack(alignment: .leading, spacing: Spacing.xxs) {
                 Text(title)
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.body)
                     .foregroundStyle(.primary)
                 if let description {
                     Text(description)
@@ -915,7 +825,7 @@ private struct PhotosRadioOption<Trailing: View>: View {
                     .foregroundStyle(isSelected ? Color.accentColor : .secondary)
                 VStack(alignment: .leading, spacing: Spacing.xxs) {
                     Text(title)
-                        .font(.system(size: 14, weight: .regular))
+                        .font(.body)
                         .foregroundStyle(.primary)
                     if let description {
                         Text(description)
@@ -969,7 +879,7 @@ private struct PhotosCheckbox: View {
                     .foregroundStyle(isOn ? Color.accentColor : .secondary)
                 VStack(alignment: .leading, spacing: Spacing.xxs) {
                     Text(title)
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.body)
                         .foregroundStyle(.primary)
                     if let description {
                         Text(description)
@@ -1023,7 +933,7 @@ private struct PhotosSettingRadios<T: Hashable>: View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
             VStack(alignment: .leading, spacing: Spacing.xxs) {
                 Text(title)
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.body)
                     .foregroundStyle(.primary)
                 if let description {
                     Text(description)
@@ -1074,7 +984,17 @@ private struct SettingsSection<Content: View>: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
-            content()
+            // macOS System Settings 风格：分组背景容器
+            Group {
+                content()
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, Spacing.md)
+            .padding(.vertical, Spacing.md)
+            .background(
+                RoundedRectangle(cornerRadius: Radius.md)
+                    .fill(Color(nsColor: .controlBackgroundColor))
+            )
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }

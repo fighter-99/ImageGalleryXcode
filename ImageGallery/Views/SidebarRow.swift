@@ -90,33 +90,31 @@ struct SidebarRow: View {
     }
 
     /// 背景色：选中 > hover > 默认
-    /// V6.32.1: 选中态走 Surface.selected(for: colorScheme) — dark 模式用 0.18 opacity (比 light 0.12 更醒目)
+    /// macOS 标准 sidebar 选中态——NSColor.alternateSelectedControlBackgroundColor 系统实色
     private var backgroundColor: Color {
-        if isSelected { return Surface.selected(for: colorScheme) }
+        if isSelected { return SidebarStyle.activeBackground(for: colorScheme) }
         if isHovered { return SidebarStyle.hoverBackground }
         return .clear
     }
 
-    /// 计数 text 颜色：选中 → secondary (跟 title 同色), 默认 → secondary.opacity
-    /// V6.32.1: dark mode opacity 0.7 → 0.85 — .secondary 在 dark 下偏暗, 0.7 几乎看不到
+    /// 计数 text 颜色：选中 → white (跟 macOS 标准选中白字一致), 默认 → secondary.opacity
     private var currentCountColor: Color {
-        if isSelected { return Color.secondary }
+        if isSelected { return .white }
         return colorScheme == .dark ? Color.secondary.opacity(0.85) : Color.secondary.opacity(0.7)
     }
 
-    /// label 颜色：选中 > hover > 默认
-    /// V4.6.0: 选中态用 labelActive（accent）而非 primary，加视觉锤
+    /// label 颜色：选中 > hover > 默认——选中时用 white（系统标准）
     private var currentLabelColor: Color {
         if isSelected { return SidebarStyle.labelActive }
         if isHovered { return SidebarStyle.labelHover }
         return SidebarStyle.labelDefault
     }
 
-    /// icon 颜色：显式 iconColor（tag/智能 folder） > 选中/hover 用 accent > secondary
-    /// V4.6.0: 与 label 颜色逻辑同步——视觉关联
+    /// icon 颜色：显式 iconColor（tag/智能 folder） > 选中/hover 用 white > secondary
     private var currentIconColor: Color {
         if let iconColor { return iconColor }
-        if isSelected || isHovered { return SidebarStyle.iconActive }
+        if isSelected { return SidebarStyle.iconActive }
+        if isHovered { return SidebarStyle.iconActive }
         return SidebarStyle.iconDefault
     }
 

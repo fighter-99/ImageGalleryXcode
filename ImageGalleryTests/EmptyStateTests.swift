@@ -3,10 +3,11 @@
 //  ImageGalleryTests
 //
 //  V4.9.0: EmptyStateView 单元测试——守护 V3.6.9 起的统一空状态组件
+//  V6.61: 适配新 Style 枚举 (取代 iconColor) — Style 4 档 accent/neutral/warning/destructive
 //  验证：
 //  - Action struct 构造（必填 + 可选字段）
 //  - 4 个场景的构造可用性（无 CTA / 仅主 CTA / 仅次 CTA / 主+次 CTA）
-//  - iconColor 默认值（accent）
+//  - style 默认值（accent）
 //
 //  6 个空状态场景（V4.9.0 覆盖 3 个）:
 //  1. 无图片（首次启动）→ 导入图片 [PhotoGridView 路径]
@@ -66,7 +67,7 @@ struct EmptyStateTests {
         #expect(view.subtitle == "← → 切换 · ⌘+点击 多选")
         #expect(view.primaryAction == nil)
         #expect(view.secondaryAction == nil)
-        #expect(view.iconColor == .accentColor)  // 默认值
+        #expect(view.style == .accent)  // 默认值
     }
 
     @Test func emptyStateWithPrimaryActionOnly() {
@@ -95,7 +96,7 @@ struct EmptyStateTests {
             icon: "exclamationmark.triangle",
             title: "出错了",
             subtitle: "请重试或返回",
-            iconColor: .orange,
+            style: .warning,
             secondaryAction: EmptyStateView.Action(
                 label: "重试",
                 systemImage: "arrow.clockwise"
@@ -104,6 +105,7 @@ struct EmptyStateTests {
         #expect(view.primaryAction == nil)
         #expect(view.secondaryAction != nil)
         #expect(view.secondaryAction?.label == "重试")
+        #expect(view.style == .warning)
         view.secondaryAction?.onTap()
         #expect(tapped == true)
     }
@@ -133,23 +135,30 @@ struct EmptyStateTests {
         #expect(secondaryTapped == true)
     }
 
-    // MARK: - iconColor 定制
+    // MARK: - Style 定制 (V6.61 取代 iconColor)
 
-    @Test func emptyStateWithCustomIconColor() {
-        // 场景: 错误状态用 destructive 色，警示状态用 orange
+    @Test func emptyStateWithCustomStyle() {
+        // 场景: 错误状态用 destructive，警示状态用 warning
         let errorView = EmptyStateView(
             icon: "exclamationmark.triangle",
             title: "权限不足",
-            iconColor: .red
+            style: .destructive
         )
-        #expect(errorView.iconColor == .red)
+        #expect(errorView.style == .destructive)
 
         let warningView = EmptyStateView(
             icon: "trash",
             title: "回收站是空的",
-            iconColor: Surface.textTertiary
+            style: .warning
         )
-        #expect(warningView.iconColor == Surface.textTertiary)
+        #expect(warningView.style == .warning)
+
+        let neutralView = EmptyStateView(
+            icon: "tray",
+            title: "未分类文件夹",
+            style: .neutral
+        )
+        #expect(neutralView.style == .neutral)
     }
 
     // MARK: - 6 个空状态场景文档（V4.9.0 覆盖）

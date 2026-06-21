@@ -506,12 +506,12 @@ enum CellSelectionState {
     case single
     case multi
 
-    /// V5.99.2: 3pt 跟 macOS Photos 真版接近, 4 边都明显
+    /// 2pt——比 3pt 更干净，减少对照片内容的视觉干扰
     var borderWidth: CGFloat {
         switch self {
         case .none:   return 0
-        case .single: return 3
-        case .multi:  return 3
+        case .single: return 2
+        case .multi:  return 2
         }
     }
 
@@ -519,8 +519,8 @@ enum CellSelectionState {
     var tintOpacity: Double {
         switch self {
         case .none:   return 0
-        case .single: return 0.15
-        case .multi:  return 0.22
+        case .single: return 0.10
+        case .multi:  return 0.18
         }
     }
 

@@ -44,9 +44,9 @@ struct PhotoGridEmptyState: View {
             icon: icon,
             title: text,
             subtitle: hint,
-            // V6.12: Color.accentColor.opacity(0.6) → Surface.accentEmphasis (Q12)
-            //   0.6 是"装饰性 accent"——空状态 icon 居中时饱和度不能拉满
-            iconColor: Surface.accentEmphasis,
+            // V6.61: Surface.accentEmphasis → .accent (空状态视觉重做)
+            //   .accent 让 EmptyStateView 自动派生 12% 圆形 backdrop + 全饱和 icon tint
+            style: .accent,
             primaryAction: primaryAction.map {
                 EmptyStateView.Action(
                     label: $0.label,

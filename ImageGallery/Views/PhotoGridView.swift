@@ -283,6 +283,7 @@ struct PhotoGridView: View {
             PhotoListView(
                 photos: photos,
                 selection: selection,
+                searchText: searchText,
                 onTap: handleTap,
                 onDoubleTap: onDoubleTap
             )
@@ -324,12 +325,10 @@ struct PhotoGridView: View {
             // V5.27: 20pt → 8pt, 16pt → 8pt——macOS Photos Library 节奏
             // V5.28: 8pt → 4pt——更紧凑的 Photos.app 实际 (2-3pt 太紧, 4pt 折衷)
             // V5.37: 4pt → 8pt——User 反馈'行与行之间没有间距'
-            // V5.39.1: 8pt → Spacing.md (12pt) + 去掉内层 ScrollView, 行间隙终于可见
-            //   之前 cell letterbox 透明 (V5.27) + 内层 ScrollView 吞掉 LazyVStack spacing,
-            //   即使 8pt 也是看不出来. 12pt 更明显 + cell 加 4% primary tint
-            //   (从 V5.21 0.04 white tint 沿用, 略浅) 让 cell 边缘可见 → row gap 视觉清晰
-            let rowSpacing: CGFloat = Spacing.md    // V5.39.1: 8 → 12 (Spacing.md)
-            let cellSpacing: CGFloat = 8            // V5.37: 4 → 8 保持
+            // 均匀网格间距 6pt——比之前 12/8 更紧凑，左右/上下一致，视觉更精致
+            //   Photos.app / Lightroom 用 4-6pt 均匀间距，创建 uniform 网格节奏
+            let rowSpacing: CGFloat = 6
+            let cellSpacing: CGFloat = 6
 
             // V6.17.0: 算 cell frames — 给矩形圈选 hit test 用
             //   用同一套 layout params (cellSize/cellSpacing/rowSpacing/padding)

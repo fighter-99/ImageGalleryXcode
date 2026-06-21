@@ -52,10 +52,11 @@ struct PhotoListOrTimelinePane: View {
         // V5.60-3: kind 路由到具体 view——1 个 Pane 替代之前的 2 个
         switch kind {
         case .list:
-            PhotoListView(
-                photos: photos,
-                selection: selection,
-                onTap: onTap,
+           PhotoListView(
+               photos: photos,
+               selection: selection,
+                searchText: searchText,
+               onTap: onTap,
                 onDoubleTap: onDoubleTap
             )
         case .timeline:

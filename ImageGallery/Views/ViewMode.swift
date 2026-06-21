@@ -39,6 +39,7 @@ struct PhotoListView: View {
     let photos: [Photo]
     // V3.6.52: 2 let (selectedIDs/singleSelectedID) 合并为 1 SelectionState
     let selection: SelectionState
+    let searchText: String
     let onTap: (Photo) -> Void
     let onDoubleTap: (Photo) -> Void
 
@@ -50,7 +51,8 @@ struct PhotoListView: View {
                     PhotoListRow(
                         photo: photo,
                         isInMultiSelect: selection.contains(photo.id),
-                        isActive: selection.singleSelectedID == photo.id
+                        isActive: selection.singleSelectedID == photo.id,
+                        searchText: searchText
                     )
                     .contentShape(Rectangle())
                     .onTapGesture { onTap(photo) }
@@ -69,6 +71,7 @@ struct PhotoListRow: View {
     let photo: Photo
     let isInMultiSelect: Bool
     let isActive: Bool
+    let searchText: String
 
     @State private var isHovered = false
     // V4.38.0: 异步缩略图加载——避免列表快速滚动时 100px 缩略图主线程解码
@@ -119,7 +122,7 @@ struct PhotoListRow: View {
             // 文件名
             // V5.7: 砍收藏星标——收藏 = 评分 ≥ 5，列表行只显示文件名
             HStack(spacing: 4) {
-                Text(photo.filename)
+                HighlightedText(text: photo.filename, query: searchText)
                     .lineLimit(1)
                     .truncationMode(.middle)
                     .foregroundStyle(textColor)
