@@ -628,7 +628,7 @@ private struct RatingStarsView: View {
                 } label: {
                     Image(systemName: n <= displayedRating ? "star.fill" : "star")
                         .font(Typography.detailCount)
-                        .foregroundStyle(n <= displayedRating ? Color.yellow : unfilledStarColor)
+                        .foregroundStyle(n <= displayedRating ? Surface.ratingFilled : unfilledStarColor)
                 }
                 .buttonStyle(.plain)
                 .onHover { isHovered in

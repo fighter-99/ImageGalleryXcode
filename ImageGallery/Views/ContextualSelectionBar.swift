@@ -150,7 +150,7 @@ struct TagPickerPopover: View {
                     .disabled(newTagName.trimmingCharacters(in: .whitespaces).isEmpty)
             }
         }
-        .padding(12)
+        .padding(Spacing.md)
         .frame(minWidth: 200)
     }
 

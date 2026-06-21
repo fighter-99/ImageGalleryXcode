@@ -97,11 +97,11 @@ struct BatchRenameSheet: View {
                     ForEach(previews, id: \.index) { item in
                         HStack(spacing: 6) {
                             Text("\(item.index).")
-                                .font(.system(.body, design: .monospaced))
+                                .font(Typography.bodyMono)
                                 .foregroundStyle(.secondary)
                                 .frame(width: 24, alignment: .trailing)
                             Text(item.name)
-                                .font(.system(.body, design: .monospaced))
+                                .font(Typography.bodyMono)
                                 .lineLimit(1)
                                 .truncationMode(.middle)
                         }
@@ -137,7 +137,7 @@ struct BatchRenameSheet: View {
                 .disabled(!isValid)
             }
         }
-        .padding(20)
+        .padding(Spacing.xl)
         .frame(width: 440, height: 360)
     }
 

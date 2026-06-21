@@ -18,12 +18,23 @@ import AppKit
 // MARK: - 间距系统（4 的倍数）
 
 enum Spacing {
+    static let xxs: CGFloat = 2     // V6.40: 极紧 — icon 描边 inset / checkmark 背景
     static let xs: CGFloat = 4      // 紧凑：chip 内边距
     static let sm: CGFloat = 8      // 小：元素间
     static let md: CGFloat = 12     // 中：组件内（默认）
     static let lg: CGFloat = 16     // 大：组件间
     static let xl: CGFloat = 20     // 特大：区域间
     static let xxl: CGFloat = 24    // 超大：主区域分隔
+
+    // V6.40 (Polish): 行间距语义别名 — 已有 6 个数值 token, 但代码里用哪个
+    //   取决于视觉意图. rowTight / rowNormal / rowLoose 让 "行间距" 语义清晰化:
+    //   - rowTight (8pt)  = sidebar row / chip 内边距 / cell 内元素间距
+    //   - rowNormal (16pt) = settings section 间 / detail panel section 间
+    //   - rowLoose (24pt) = view mode 切换间 / 主区域分隔
+    //   数值上跟 sm / lg / xxl 一一对应, 纯命名升级 — 后续 review 改起来方便
+    static let rowTight: CGFloat = sm
+    static let rowNormal: CGFloat = lg
+    static let rowLoose: CGFloat = xxl
 }
 
 // MARK: - 圆角系统
@@ -112,6 +123,15 @@ enum Surface {
     static let favorite = Color.yellow
     static let destructive = Color.red
     static let success = Color.green
+    // V6.40 (Polish): 警告色 — 回收站 badge / drop target 高亮
+    //   之前散落 Color.orange (PhotoThumbnailView trash badge / SidebarView drop target)
+    //   token 化确保暗色下色彩统一 (Photos.app 暗色用稍深橙)
+    static let warningOrange = Color.orange
+    /// 评分已点亮色 (rating stars 实心)
+    ///   之前 DetailView.swift:631 用 Color.yellow 字面量
+    ///   favorite 跟 rating 是同一语义 (评分 ≥ 1 = "感兴趣"), 但语义不同 token 命名更清晰
+    ///   实际值一样 (都是 Color.yellow), 区分命名便于未来差异化调整
+    static let ratingFilled = Color.yellow
 
     // ─── 卡片 ───
     static let cardBackground = Color(NSColor.controlBackgroundColor)
@@ -220,6 +240,20 @@ enum Typography {
     ///   - 100pt SF Symbol "photo" + scaleEffect 0.3..1.0 模拟缩略图大小
     ///   - 跟 emptyStateIconLarge (80) / emptyStateIcon (60) 同族但更大, 专用于"预览整张图"的场景
     static let thumbnailPreview = Font.system(size: 100)
+
+    // V6.40 (Polish): 装饰性 icon + form title — 之前 4 处 .system(size: ...) 字面量
+    /// Onboarding 3-card 主图标 — 比 emptyStateIcon (60) 略大
+    ///   64pt 是 macOS Sonoma+ ContentUnavailableView 默认 hero icon size
+    static let heroIcon = Font.system(size: 64, weight: .light)
+    /// Section 顶部装饰 icon (MarqueeHintView / SmartFolderCreateSheet 等)
+    ///   32pt 介于 icon (13-15) 和 hero (64) 之间, 视觉层级清晰
+    static let sectionIcon = Font.system(size: 32, weight: .light)
+    /// Form/sheet 标题 (SmartFolderCreateSheet "新建智能文件夹" 等)
+    ///   20pt 跟 body (13) 拉开 7pt 视觉差, 不需要 bold — section header 已在外面
+    static let formTitle = Font.system(size: 20)
+    /// Monospaced body — 文件名预览 (BatchRenameSheet) 等需要等宽的场景
+    ///   跟 captionMono 区别: captionMono 是 11pt 等宽数字, bodyMono 是 13pt 等宽文字
+    static let bodyMono = Font.system(.body, design: .monospaced)
 }
 
 // MARK: - 旧 Palette 兼容层（V3.1 保留，Phase 2+ 逐步替换）

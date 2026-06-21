@@ -61,7 +61,7 @@ struct SmartFolderCreateSheet: View {
             // Header: icon 预览 + Name
             HStack(spacing: 12) {
                 Image(systemName: selectedIcon.rawValue)
-                    .font(.system(size: 32))
+                    .font(Typography.sectionIcon)
                     .foregroundStyle(Color.accentColor)
                     .frame(width: 48, height: 48)
                     .background(
@@ -118,7 +118,7 @@ struct SmartFolderCreateSheet: View {
                     .disabled(!isValid)
             }
         }
-        .padding(20)
+        .padding(Spacing.xl)
         .frame(width: 480, height: 420)
     }
 
@@ -137,7 +137,7 @@ private struct IconCell: View {
 
     var body: some View {
         Image(systemName: icon.rawValue)
-            .font(.system(size: 20))
+            .font(Typography.formTitle)
             .frame(width: 40, height: 36)
             .background(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)

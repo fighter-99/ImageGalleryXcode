@@ -109,9 +109,9 @@ struct PhotoListRow: View {
                         .font(Typography.body)
                         .foregroundStyle(.white, Color.accentColor)
                         .background(
-                            Circle().fill(.background).padding(2)
+                            Circle().fill(.background).padding(Spacing.xxs)
                         )
-                        .padding(2)
+                        .padding(Spacing.xxs)
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
                 }
             }
@@ -399,9 +399,9 @@ struct TimelineThumbnail: View {
                     .font(Typography.body)
                     .foregroundStyle(.white, Color.accentColor)
                     .background(
-                        Circle().fill(.background).padding(2)
+                        Circle().fill(.background).padding(Spacing.xxs)
                     )
-                    .padding(2)
+                    .padding(Spacing.xxs)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
             }
         }

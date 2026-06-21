@@ -118,6 +118,13 @@ struct PhotoGridView: View {
     //   改: recomputePhotos() 同步算好, masonryDateGroupedLayout 直接读 cachedDateGroups
     //   仅 sort 是 .importedAt* 时 (masonryDateGroupedLayout 路径) 实际用——非 date sort 不读
     @State private var cachedDateGroups: [DateGroup] = []
+    // V6.38.2 (P0 perf): computeCellFrames cache — GeometryReader 内 O(n) 重算避免
+    //   之前每次 GeometryReader 求值 (window resize / zoom / sidebar 显隐 / view mode 切换)
+    //   都跑 1000+ photos + GridLayout.computeRows + CGRect alloc = ~3000 ops
+    //   现在 cache hit: O(1). Invalidation: layout 参数 + photos.count + cachedDateGroups.count 变化
+    @State private var cachedCellFrames: [CellFrame] = []
+    @State private var cachedCellFramesKey: Int = 0
+    @State private var cellFramesCacheValid: Bool = false
     // V5.61-1: 滚动位置——.scrollPosition(id:) 绑定, SwiftUI 自动追踪顶部可见 item
     //   onAppear 初始化为 scrollAnchorPhotoID (从 ContentView 传, 来自 model.UserDefaults)
     //   onChange 自动回调 onScrollAnchorChange 写回 model
@@ -388,6 +395,18 @@ struct PhotoGridView: View {
         cellSpacing: CGFloat,
         gridPadding: CGFloat
     ) -> [CellFrame] {
+        // V6.38.2: cache check — 5 layout 参 + photos.count + cachedDateGroups.count + layoutMode + sortOption
+        let key = cellFramesCacheKey(
+            availableWidth: availableWidth,
+            rowHeight: rowHeight,
+            rowSpacing: rowSpacing,
+            cellSpacing: cellSpacing,
+            gridPadding: gridPadding
+        )
+        if cellFramesCacheValid && key == cachedCellFramesKey {
+            return cachedCellFrames
+        }
+
         let cellSize = SquareLayout.cellSize(
             availableWidth: availableWidth,
             rowHeight: rowHeight,
@@ -455,7 +474,33 @@ struct PhotoGridView: View {
                 y += row.rowHeight + rowSpacing
             }
         }
+        // V6.38.2: 写 cache
+        cachedCellFrames = result
+        cachedCellFramesKey = key
+        cellFramesCacheValid = true
         return result
+    }
+
+    /// V6.38.2: cellFrames cache key — 5 layout 参 + photos.count + cachedDateGroups.count + layoutMode + sortOption
+    ///   任一变化 → cache miss → 重算
+    private func cellFramesCacheKey(
+        availableWidth: CGFloat,
+        rowHeight: CGFloat,
+        rowSpacing: CGFloat,
+        cellSpacing: CGFloat,
+        gridPadding: CGFloat
+    ) -> Int {
+        var hasher = Hasher()
+        hasher.combine(availableWidth)
+        hasher.combine(rowHeight)
+        hasher.combine(rowSpacing)
+        hasher.combine(cellSpacing)
+        hasher.combine(gridPadding)
+        hasher.combine(photos.count)
+        hasher.combine(cachedDateGroups.count)
+        hasher.combine(layoutMode)
+        hasher.combine(sortOption)
+        return hasher.finalize()
     }
 
     // V5.16: masonry 日期分组布局

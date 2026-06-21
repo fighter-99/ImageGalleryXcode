@@ -105,7 +105,7 @@ struct OnboardingView: View {
                 .keyboardShortcut(.defaultAction)
                 .accessibilityIdentifier("onboarding.startButton")  // V6.22.10 (XCUITest)
             }
-            .padding(20)
+            .padding(Spacing.xl)
         }
         .frame(width: 640, height: 460)
         // V6.22.3: .sheet present 时用 environment dismiss
@@ -121,7 +121,7 @@ private struct OnboardingPageView: View {
         VStack(spacing: 24) {
             Spacer()
             Image(systemName: page.icon)
-                .font(.system(size: 64, weight: .light))
+                .font(Typography.heroIcon)
                 .symbolRenderingMode(.hierarchical)
                 .foregroundStyle(page.iconColor)
                 .accessibilityHidden(true)  // title 已经描述了功能

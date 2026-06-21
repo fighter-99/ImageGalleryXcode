@@ -92,7 +92,7 @@ private struct PhotoCellContent: View {
         if days <= 3 {
             return BadgeColor(foreground: .white, background: Palette.destructive)
         } else if days <= 7 {
-            return BadgeColor(foreground: .white, background: Color.orange)
+            return BadgeColor(foreground: .white, background: Surface.warningOrange)
         } else if days <= 14 {
             return BadgeColor(foreground: .primary, background: Surface.favorite.opacity(0.85))
         } else {
@@ -351,8 +351,8 @@ private struct PhotoCellContent: View {
                 Image(systemName: "checkmark.circle.fill")
                     .font(Typography.detailCount)
                     .foregroundStyle(.white, Color.accentColor)
-                    .background(Circle().fill(.background).padding(3))
-                    .padding(6)
+                    .background(Circle().fill(.background).padding(Spacing.xs))
+                    .padding(Spacing.xs)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
                     .transition(.scale.combined(with: .opacity))
                     .allowsHitTesting(false)
@@ -413,7 +413,7 @@ private struct PhotoCellContent: View {
                 .background(
                     Capsule().fill(badgeColor.background)
                 )
-                .padding(6)
+                .padding(Spacing.xs)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
         }

@@ -302,7 +302,7 @@ struct SidebarView: View {
                 }
                 .background(
                     RoundedRectangle(cornerRadius: Radius.sm)
-                        .fill(isTrashDropTargeted ? Color.orange.opacity(0.28) : Color.clear)
+                        .fill(isTrashDropTargeted ? Surface.warningOrange.opacity(0.28) : Color.clear)
                         .padding(-4)
                 )
                 .animation(Animations.interactive, value: isTrashDropTargeted)

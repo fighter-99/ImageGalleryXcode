@@ -18,7 +18,7 @@ struct MarqueeHintView: View {
     var body: some View {
         VStack(spacing: 12) {
             Image(systemName: "rectangle.dashed")
-                .font(.system(size: 32, weight: .light))
+                .font(Typography.sectionIcon)
                 .foregroundStyle(.tint)
             Text(Copy.onboardingMarqueeTitle)
                 .font(.headline)
@@ -38,7 +38,7 @@ struct MarqueeHintView: View {
             .controlSize(.small)
             .padding(.top, 4)
         }
-        .padding(20)
+        .padding(Spacing.xl)
         .frame(maxWidth: 280)
         // V6.16.1: 暗色模式 — 半透明 + 模糊背景, 视觉分层
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))

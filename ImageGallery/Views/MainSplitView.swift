@@ -120,7 +120,7 @@ struct MainSplitView<Sidebar: View, Center: View, Detail: View>: View {
                             Color.accentColor,
                             style: StrokeStyle(lineWidth: 4, dash: [8, 4])
                         )
-                        .padding(8)
+                        .padding(Spacing.sm)
                     VStack(spacing: 12) {
                         Image(systemName: "square.and.arrow.down.fill")
                             .font(Typography.emptyStateIconLarge)
