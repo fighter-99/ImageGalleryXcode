@@ -206,6 +206,11 @@ extension View {
             .onReceive(NotificationCenter.default.publisher(for: .speakRequested)) { _ in
                 model.grid.speakSelection()
             }
+            // V6.39.0: Settings page "清空回收站" button → NotificationCenter → ContentView
+            //   跟 .newFolderRequested / .speakRequested 同 pattern (Settings 不持有 model 直接引用)
+            .onReceive(NotificationCenter.default.publisher(for: .emptyTrashRequested)) { _ in
+                model.grid.emptyTrash()
+            }
             .onChange(of: filterState.activeCount) { _, count in
                 ToolbarController.shared.filterActiveCount = count
             }

@@ -41,6 +41,11 @@ final class UserSettings {
     var viewModeRaw: String = ViewMode.grid.rawValue {
         didSet { defaults.set(viewModeRaw, forKey: "viewModeRaw") }
     }
+    /// V6.39.0: typed wrapper — SettingsView Picker 直接绑 ViewMode enum 而非 String
+    var appViewMode: ViewMode {
+        get { ViewMode(rawValue: viewModeRaw) ?? .grid }
+        set { viewModeRaw = newValue.rawValue }
+    }
 
     /// V3.6.13: 侧栏可见性 (ImageGalleryApp 菜单 ⌃⌘S 写)
     var showSidebar: Bool = true {
@@ -63,6 +68,11 @@ final class UserSettings {
     /// V3.6.13: 回收站保留天数 (SettingsView LibrarySettingsView 写)
     var trashRetentionDays: Int = TrashRetentionDays.defaultValue.rawValue {
         didSet { defaults.set(trashRetentionDays, forKey: "trashRetentionDays") }
+    }
+    /// V6.43: typed wrapper — SettingsView PhotosSettingRadios 直接绑 TrashRetentionDays enum
+    var appTrashRetentionDays: TrashRetentionDays {
+        get { TrashRetentionDays(rawValue: trashRetentionDays) ?? .defaultValue }
+        set { trashRetentionDays = newValue.rawValue }
     }
 
     /// V3.6.22: 外观模式 (SettingsView AppearanceSettingsView 写)
@@ -110,6 +120,11 @@ final class UserSettings {
     /// V5.90: 默认导出格式 (jpg/png/heic)
     var defaultExportFormat: String = ExportFormat.defaultValue.rawValue {
         didSet { defaults.set(defaultExportFormat, forKey: "defaultExportFormat") }
+    }
+    /// V6.43: typed wrapper — SettingsView PhotosSettingRadios 直接绑 ExportFormat enum
+    var appExportFormat: ExportFormat {
+        get { ExportFormat(rawValue: defaultExportFormat) ?? .defaultValue }
+        set { defaultExportFormat = newValue.rawValue }
     }
 
     /// V5.90: 默认导出质量 (0.5..1.0)
@@ -171,6 +186,31 @@ final class UserSettings {
     var appFontScale: FontScale {
         get { FontScale(rawValue: fontScale) ?? .defaultValue }
         set { fontScale = newValue.rawValue }
+    }
+
+    // MARK: - V6.45: Settings 最后选中 category — 跨 app 重启记忆
+    //   之前 @SceneStorage 只在 Settings scene 生命周期内保留, 关 app 后丢失
+    //   现在持久化到 UserDefaults, 重启 app 后 Settings 默认打开上次的 category
+    var lastSettingsCategory: String = SettingsCategory.general.rawValue {
+        didSet { defaults.set(lastSettingsCategory, forKey: "lastSettingsCategory") }
+    }
+
+    // MARK: - V6.39.0 (Settings Refactor): 默认导入位置 (LibrarySettingsView 选择)
+    //   nil = 不记忆, 每次 ⌘O 弹 NSOpenPanel; 有值 = ⌘O 自动开这个文件夹
+    //   用 file:// URL 持久化 (UserDefaults 接受 String)
+    var defaultImportLocation: String? = nil {
+        didSet { defaults.set(defaultImportLocation, forKey: "defaultImportLocation") }
+    }
+
+    // MARK: - V6.39.0 (Settings Refactor): 双击照片行为 (GeneralSettingsView 选择)
+    //   .immersive: 现有行为, 双击进 ImmersivePhotoView 全屏
+    //   .quickLook: macOS Photos 真版行为, 双击进系统 Quick Look panel
+    var doubleClickAction: String = DoubleClickAction.defaultValue.rawValue {
+        didSet { defaults.set(doubleClickAction, forKey: "doubleClickAction") }
+    }
+    var appDoubleClickAction: DoubleClickAction {
+        get { DoubleClickAction(rawValue: doubleClickAction) ?? .defaultValue }
+        set { doubleClickAction = newValue.rawValue }
     }
 
     // MARK: - V5.58-1: init() 从 UserDefaults 读 13 字段
@@ -246,6 +286,17 @@ final class UserSettings {
         if let stored = defaults.string(forKey: "language") {
             self.language = stored
         }
+        // V6.39.0: 新增 2 字段
+        if let stored = defaults.string(forKey: "defaultImportLocation") {
+            self.defaultImportLocation = stored
+        }
+        if let stored = defaults.string(forKey: "doubleClickAction") {
+            self.doubleClickAction = stored
+        }
+        // V6.45: 持久化最后选中 category (跨 app restart 记忆)
+        if let stored = defaults.string(forKey: "lastSettingsCategory") {
+            self.lastSettingsCategory = stored
+        }
     }
 
     // MARK: - V5.58-2: reset() 恢复 12 字段到默认
@@ -281,6 +332,10 @@ final class UserSettings {
         hasShownMarqueeHint = false
         // V6.22.3 (P2 #10): hasSeenOnboarding 也 reset — 让用户重新看 onboarding (跟 marquee hint 同步)
         hasSeenOnboarding = false
+        // V6.39.0: 新增 2 字段也 reset
+        defaultImportLocation = nil
+        doubleClickAction = DoubleClickAction.defaultValue.rawValue
+        fontScale = FontScale.defaultValue.rawValue
         // scrollAnchorPhotoID 不在 reset 范围——是 per-window 状态
     }
 }

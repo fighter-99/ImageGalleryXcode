@@ -11,7 +11,12 @@ import Testing
 import Foundation
 @testable import ImageGallery
 
+// V6.19.6: 加 @Suite(.serialized) — 避免 parallel test 共享 isolatedDefaults 状态
+//   defaultImportLocation_initFromUserDefaults 写入值后, parallel 跑的
+//   defaultImportLocation_defaultsToNil 可能读到上次的值导致 fail
+//   ContentViewModel*Tests 同款 pattern (memory: swift-testing-userdefaults-parallel-crash)
 @MainActor
+@Suite(.serialized)
 struct UserSettingsTests {
 
     // V6.14.7: 改 isolatedDefaults pattern (跟 ContentViewModel*Tests 同源)
@@ -155,5 +160,74 @@ struct UserSettingsTests {
         // 验证 reset() 内部赋值也走 didSet → UserDefaults 同步回滚
         #expect(Self.isolatedDefaults.string(forKey: "viewModeRaw") == ViewMode.grid.rawValue)
         #expect(Self.isolatedDefaults.double(forKey: "thumbnailSize") == 200.0)
+    }
+
+    // MARK: - V6.39.0: 新字段 + DoubleClickAction
+
+    @Test func defaultImportLocation_defaultsToNil() {
+        let settings = Self.isolatedSettings()
+        #expect(settings.defaultImportLocation == nil)
+    }
+
+    @Test func defaultImportLocation_writesToUserDefaults() {
+        let settings = Self.isolatedSettings()
+        settings.defaultImportLocation = "file:///tmp/photos"
+        #expect(settings.defaultImportLocation == "file:///tmp/photos")
+        #expect(Self.isolatedDefaults.string(forKey: "defaultImportLocation") == "file:///tmp/photos")
+    }
+
+    @Test func defaultImportLocation_initFromUserDefaults() {
+        Self.isolatedDefaults.set("file:///Users/x/Photos", forKey: "defaultImportLocation")
+        let settings = UserSettings(defaults: Self.isolatedDefaults)
+        #expect(settings.defaultImportLocation == "file:///Users/x/Photos")
+    }
+
+    @Test func doubleClickAction_defaultsToImmersive() {
+        let settings = Self.isolatedSettings()
+        #expect(settings.appDoubleClickAction == .immersive)
+        #expect(settings.doubleClickAction == DoubleClickAction.immersive.rawValue)
+    }
+
+    @Test func doubleClickAction_canBeSetToQuickLook() {
+        let settings = Self.isolatedSettings()
+        settings.appDoubleClickAction = .quickLook
+        #expect(settings.appDoubleClickAction == .quickLook)
+        #expect(Self.isolatedDefaults.string(forKey: "doubleClickAction") == "quickLook")
+    }
+
+    @Test func doubleClickAction_initFromUserDefaults() {
+        Self.isolatedDefaults.set("quickLook", forKey: "doubleClickAction")
+        let settings = UserSettings(defaults: Self.isolatedDefaults)
+        #expect(settings.appDoubleClickAction == .quickLook)
+    }
+
+    @Test func doubleClickAction_invalidRawValueFallsBackToDefault() {
+        Self.isolatedDefaults.set("nonexistent", forKey: "doubleClickAction")
+        let settings = UserSettings(defaults: Self.isolatedDefaults)
+        #expect(settings.appDoubleClickAction == DoubleClickAction.defaultValue)
+    }
+
+    @Test func appViewMode_typedWrapperRoundtripsThroughRawValue() {
+        let settings = Self.isolatedSettings()
+        settings.appViewMode = .timeline
+        #expect(settings.viewModeRaw == ViewMode.timeline.rawValue)
+        #expect(settings.appViewMode == .timeline)
+        settings.appViewMode = .list
+        #expect(settings.viewModeRaw == ViewMode.list.rawValue)
+    }
+
+    @Test func reset_clearsNewFields() {
+        let settings = Self.isolatedSettings()
+        settings.defaultImportLocation = "file:///tmp/x"
+        settings.appDoubleClickAction = .quickLook
+        settings.appFontScale = .large
+        settings.reset()
+        #expect(settings.defaultImportLocation == nil)
+        #expect(settings.appDoubleClickAction == DoubleClickAction.defaultValue)
+        #expect(settings.appFontScale == .defaultValue)
+        // V6.39.0: scrollAnchorPhotoID 不在 reset 范围 (跟之前一致)
+        settings.scrollAnchorPhotoID = "abc-123"
+        settings.reset()
+        #expect(settings.scrollAnchorPhotoID == "abc-123")
     }
 }
