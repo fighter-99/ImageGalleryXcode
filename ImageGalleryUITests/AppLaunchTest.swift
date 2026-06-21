@@ -30,11 +30,16 @@ final class AppLaunchTest: BaseUITestCase {
         sleep(1)            // wait for animation
         startButton.tap()  // page 1 → page 2 (开始使用 page)
         sleep(1)
-        // 现在 button 是 "开始使用", 再点 dismiss
+        // 现在 button 是 "开始使用" (zh-Hans/zh-Hant) / "Get Started" (en), 再点 dismiss
+        // V6.52 fix: 之前 assert 只查 "开始使用", 但 BaseUITestCase launch arg -AppleLanguages (en)
+        //   强制英文 → button label 是 "Get Started" → assert 永远 fail (从 V6.22.10 引入就 broken)
+        //   改成 locale-aware: 接受 zh-Hans/zh-Hant/en 任一翻译, 验证我们到了 last page
         let dismissButton = app.buttons["onboarding.startButton"]
         let dismissLabel = dismissButton.label
-        XCTAssertTrue(dismissLabel.contains("开始使用"),
-                      "Onboarding button should be '开始使用' on last page, got '\(dismissLabel)'")
+        let isStartPage = dismissLabel.contains("开始使用")   // zh-Hans "开始使用" / zh-Hant "開始使用"
+            || dismissLabel.contains("Get Started")            // en
+        XCTAssertTrue(isStartPage,
+                      "Onboarding button should be '开始使用' (zh) or 'Get Started' (en) on last page, got '\(dismissLabel)'")
         dismissButton.tap()
 
         // V6.22.10: sheet dismiss — button 不再存在
