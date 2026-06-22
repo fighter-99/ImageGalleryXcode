@@ -3,7 +3,10 @@
 //  ImageGallery
 //
 //  V3.6.7 NEW: SwiftData 显式 SchemaMigrationPlan。
-//  P4.1: V1 → V2 加 SmartFolder 表
+//  P4.1: V1 → V2 加 SmartFolder 表 (lightweight).
+//
+//  V6.75 设计变更: 不开 V3 schema. Photo.isFavorite 改 computed, 但 V2 schema 仍描述老字段集.
+//    决策: SwiftData 容忍 runtime Photo 字段集与 V2 schema 不同, 多余 isFavorite 列忽略
 //
 
 import Foundation
@@ -16,11 +19,10 @@ enum ImageGalleryMigrationPlan: SchemaMigrationPlan {
     }
 
     /// 迁移阶段列表
-    /// - V1 → V2: lightweight (新增 SmartFolder 表, SwiftData 自动建表, 不需 custom migration)
+    /// - V1 → V2: lightweight (新增 SmartFolder 表, SwiftData 自动建表)
     static var stages: [MigrationStage] {
         [
-            // V1 → V2: 仅新增 @Model 表, SwiftData 自带 .lightweight 推断
-            // (不需要 MigrationPlan.customMigration, 告诉 SwiftData "加表就 OK")
+            // V1 → V2: lightweight
             .lightweight(fromVersion: ImageGallerySchemaV1.self, toVersion: ImageGallerySchemaV2.self)
         ]
     }

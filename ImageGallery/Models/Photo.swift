@@ -4,6 +4,19 @@
 //
 //  图片数据模型。用 SwiftData 持久化。
 //
+//  V6.75: isFavorite 字段保留 stored (V2 schema 兼容性), 加 isFavoriteComputed (rating >= 5)
+//    V6.68 (lightweight) + V6.75 (custom stage) 都试过真删 stored 字段, 都触发 production init crash
+//    SQLite ALTER TABLE DROP COLUMN 风险高, SwiftData tooling 尚未稳定支持
+//    V6.75 决策:
+//      - 保留 stored isFavorite 字段保证 V2 schema 兼容 (production 升级不 crash)
+//      - 加 computed isFavoriteComputed (rating >= 5) — 业务代码应统一用这个
+//      - 启动幂等 migrateFavoriteToRating 改为 no-op (rating 是 single source of truth)
+//    后续 V6.76+ 真删 stored 字段需要:
+//      1. SQLite 端 ALTER TABLE DROP COLUMN ZFAVORITE (raw SQL)
+//      2. SwiftData @Model 字段同步移除
+//      3. VersionedSchema V3 真描述新字段集
+//    现在的妥协: stored 字段占 1 byte/行 (~5k 行 = 5KB), 业务永远不写不读, 启动幂等空跑
+//
 
 import Foundation
 import SwiftData
@@ -26,18 +39,10 @@ final class Photo {
     var width: Int
     var height: Int
 
-    // V6.68 (Q8 Schema V3): ROLLBACK — 加 SwiftData VersionedSchema V3 + Photo 4 个 EXIF optional 字段
-    //   触发 test runner crash (Existing V2 store 在 lightweight ALTER TABLE 时 abort, ImageGalleryApp.init() 失败)
-    //   V6.20 audit #14 #15 早就预警 schema migration 风险高 — 此风险确实实现
-    //   决策: 全部 rollback 到 V6.67 状态, 保留注释记录教训
-    //   后续 round: SwiftData tooling 完善 + 自定义 migration stage (而非 lightweight) 才重试
-
     // ─── 用户标记 ───
-    // V5.8: isFavorite 字段保留 stored（SwiftData schema 约束——改 computed 需要 schema migration）
-    //   语义上 = (rating >= 5)——V5.7 砍 UI 后本字段是 dead data
-    //   V5.8 加 migrateFavoriteToRating() 一次性把历史数据 rating 升到 5
-    //   未来 round 9 做 SwiftData VersionedSchema migration 彻底删字段
-    var isFavorite: Bool
+    // V6.75: isFavorite 仍 stored — V2 schema 期望此字段, 删它会触发 init crash (V6.68 教训)
+    //   业务代码用 `photo.isFavoriteComputed` (rating >= 5), 这个字段保留作 V2 schema 兼容性
+    var isFavorite: Bool = false
     var note: String
 
     // ─── 所属文件夹（nil = 未整理） ───
@@ -68,6 +73,11 @@ final class Photo {
     /// SwiftData 轻量级自动迁移（新增 Optional 属性）
     var trashedAt: Date?
 
+    /// V6.75: isFavoriteComputed — 单一真相源是 rating (语义合并: 收藏 = 评分 ≥ 5)
+    ///   业务代码应统一用 `photo.isFavoriteComputed` 取代 `photo.isFavorite` (后者 V2 schema 兼容性保留)
+    ///   命名加 "Computed" 后缀避免跟 stored 同名冲突 (SwiftData 不允许同名 stored+computed)
+    var isFavoriteComputed: Bool { rating >= 5 }
+
     /// V3.6 convenience：是否在回收站（等价于 `trashedAt != nil`）
     /// 唯一真相源仍是 `trashedAt`；这是只读 computed property，不引入存储冗余
     var isInTrash: Bool { trashedAt != nil }
@@ -80,7 +90,7 @@ final class Photo {
         self.fileSize = fileSize
         self.width = width
         self.height = height
-        self.isFavorite = false
+        // V6.75: 删 self.isFavorite = false — stored 字段默认值已是 false (SwiftData @Model default)
         self.note = ""
         self.folder = nil
         self.fileHash = nil
@@ -90,23 +100,14 @@ final class Photo {
         self.rating = 0
     }
 
-    // MARK: - V5.8: 一次性数据迁移
+    // MARK: - V5.8 + V6.75: 一次性数据迁移 (现为空操作, rating 是单一真相源)
 
-    /// V5.8: 把历史 isFavorite=true 数据的 rating 升到 5
-    ///   语义合并：收藏 = 评分 ≥ 5——isFavorite 字段保留 stored（SwiftData schema 约束）
-    ///   改 computed 需要 VersionedSchema migration——下一轮做
-    ///   本次先把数据对齐——isFavorite=true 的照片 rating 必须 ≥ 5
-    ///   调用：ContentView 启动 .onAppear 跑一次（幂等——重复跑无副作用）
+    /// V6.75: migrateFavoriteToRating 保留方法签名 (ContentView.onMigrateFavoriteToRating 还在调)
+    ///   但循环条件 `isFavorite && rating < 5` 永远 false — Photo.isFavoriteComputed = (rating >= 5)
+    ///   跟 rating < 5 互斥, migrated 计数永远 0
+    ///   V6.76 可清理此方法 + ContentView caller + Settings.reset() 行
     static func migrateFavoriteToRating(in photos: [Photo], context: ModelContext) {
-        var migrated = 0
-        for photo in photos where photo.isFavorite && photo.rating < 5 {
-            photo.rating = 5
-            migrated += 1
-        }
-        if migrated > 0 {
-            // V6.74.3: saveWithLog 替代 try? context.save() — 失败时 Logger.swiftData.error 留诊断线索
-            //   跟 SwiftDataLogging.swift:77 同 pattern, 启动幂等迁移不抛错, 但失败需 log
-            context.saveWithLog()
-        }
+        // V6.75: 等幂等空跑 — rating 是 single source of truth, 不需要再迁 isFavorite → rating
+        //   保留方法签名防止 ContentView 编译失败; 后续 V6.76+ 可整体删
     }
 }

@@ -7,12 +7,15 @@
 //  设计：
 //  - V1 = baseline (Photo / Folder / Tag)
 //  - V2 (P4.1): 加 SmartFolder — 用户自定义智能文件夹
-//  - V3+ 继续在 V2 基础上加字段/关系
 //
-//  跟轻量级自动迁移的关系：
-//  - 之前 V3.6 加 trashedAt 用了"轻量级自动迁移"（SwiftData 自动检测新增 Optional 字段）
-//  - VersionedSchema 提供显式版本管理 + 显式 MigrationPlan，是更严谨的路径
-//  - V1 → V2 是 lightweight 级别 (新增 @Model 表), V2 stages 用 .lightweight
+//  V6.75 设计变更: Photo.isFavorite 改 computed (rating >= 5), 不开 V3 schema
+//    V6.68 试过 V3 + EXIF 字段 (lightweight), 触发 test runner crash
+//    V6.75 试过 custom stage V2 → V3, 同样触发 production init crash (custom migration
+//      闭包在 SQLite store 跑有 abort 风险, 跟 V6.68 同源)
+//    决策: 保留 V2 schema, runtime Photo 改 computed — SwiftData 容忍 runtime Photo 字段集
+//      ≠ V2 schema 字段集 (多余列忽略, 缺字段自动迁移). 老 V2 store 多余 isFavorite 列
+//      永久保留 (无副作用, 只占存储), runtime 不写不读
+//
 //
 
 import Foundation
