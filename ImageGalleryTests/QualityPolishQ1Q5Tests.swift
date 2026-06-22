@@ -4,7 +4,7 @@
 //
 //  V6.67 (Q1-Q5 code quality polish): 行为测试
 //  - Q2: batchRename 拆分前后行为一致 (RenamePlan struct 提取到 file-scope)
-//  - Q5: showingOnboarding 删后不影响 model.settings.hasSeenOnboarding round-trip
+//  - V6.70: hasSeenOnboarding 字段已删, 改测 hasShownMarqueeHint round-trip
 //
 
 import Testing
@@ -30,17 +30,17 @@ struct QualityPolishQ1Q5Tests {
         #expect(rendered == "1")
     }
 
-    // MARK: - Q5 hasSeenOnboarding round-trip
+    // MARK: - V6.70: hasShownMarqueeHint round-trip (替代已删的 hasSeenOnboarding test)
 
-    @Test func hasSeenOnboardingTogglesCorrectly() {
-        // V6.67 (Q5): 删 ContentView.showingOnboarding 死代码后
-        //   model.settings.hasSeenOnboarding 仍然是真相源, .sheet(isPresented:) 直接读
+    @Test func hasShownMarqueeHintTogglesCorrectly() {
+        // V6.70 (Onboarding removal): hasSeenOnboarding 字段删, 改测同样 bool flag round-trip
+        //   hasShownMarqueeHint 控制 MarqueeHintView 首次显示 (V6.21.0 加), 同 UserDefaults flag pattern
         let settings = UserSettings(defaults: Self.isolatedDefaults)
-        #expect(settings.hasSeenOnboarding == false)
-        settings.hasSeenOnboarding = true
-        #expect(settings.hasSeenOnboarding == true)
-        settings.hasSeenOnboarding = false
-        #expect(settings.hasSeenOnboarding == false)
+        #expect(settings.hasShownMarqueeHint == false)
+        settings.hasShownMarqueeHint = true
+        #expect(settings.hasShownMarqueeHint == true)
+        settings.hasShownMarqueeHint = false
+        #expect(settings.hasShownMarqueeHint == false)
     }
 
     // V6.19.6 + V6.14.7: isolatedDefaults pattern 防 parallel test 共享状态

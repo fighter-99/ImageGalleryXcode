@@ -543,21 +543,11 @@ enum Copy {
     static let settingsAboutSystemInfoTitle = String(localized: "settingsAboutSystemInfoTitle", defaultValue: "系统信息")
     static let settingsAboutMacOSVersionLabel = String(localized: "settingsAboutMacOSVersionLabel", defaultValue: "macOS 版本")
 
-    // OnboardingView — 3 卡 sheet
-    static let onboardingImportTitle = String(localized: "onboardingImportTitle", defaultValue: "导入你的照片")
-    static let onboardingImportSubtitle = String(localized: "onboardingImportSubtitle", defaultValue: "支持 JPG、PNG、HEIC、TIFF 等常见格式\n拖入文件夹即可批量导入，或按 ⌘O 选择文件")
-    static let onboardingImportHint = String(localized: "onboardingImportHint", defaultValue: "导入快捷键")
+    // V6.70 (Onboarding removal): 删 12 onboarding* key — OnboardingView 已删
+    //   保留 onboardingMarqueeTitle 复用 (MarqueeHintView.swift:23 用)
+    //   名字仍叫 onboardingMarqueeTitle 是历史原因 (V6.21.0 MarqueeHintView 加时复用)
+    //   改名 marqueeHintTitle 是 future cleanup — 当前跳过避免 xcstrings 14 entry 迁移
     static let onboardingMarqueeTitle = String(localized: "onboardingMarqueeTitle", defaultValue: "拖动鼠标框选多张照片")
-    static let onboardingMarqueeSubtitle = String(localized: "onboardingMarqueeSubtitle", defaultValue: "在空白处按下左键拖动，可一次性选择一片区域内的所有照片\n类似 macOS Finder 和 Photos.app 的交互")
-    static let onboardingMarqueeHint = String(localized: "onboardingMarqueeHint", defaultValue: "尝试")
-    static let onboardingMarqueeHintValue = String(localized: "onboardingMarqueeHintValue", defaultValue: "空白处拖动")
-    static let onboardingMoreTitle = String(localized: "onboardingMoreTitle", defaultValue: "更多功能")
-    static let onboardingMoreSubtitle = String(localized: "onboardingMoreSubtitle", defaultValue: "右键图片可看到分享、旋转、评分等操作\n按 ⌘? 查看所有快捷键，按 ⌘, 打开设置")
-    static let onboardingMoreHint = String(localized: "onboardingMoreHint", defaultValue: "快捷键")
-    static let onboardingSkip = String(localized: "onboardingSkip", defaultValue: "跳过")
-    static let onboardingBack = String(localized: "onboardingBack", defaultValue: "上一步")
-    static let onboardingNext = String(localized: "onboardingNext", defaultValue: "下一步")
-    static let onboardingStart = String(localized: "onboardingStart", defaultValue: "开始使用")
 
     // KeyboardShortcutsSheet — ⌘? 速查 6 section 28 entry
     static let shortcutsSectionFile = String(localized: "shortcutsSectionFile", defaultValue: "文件")
@@ -829,10 +819,9 @@ enum Copy {
     static let settingsOpenDataFolderButton = String(localized: "settingsOpenDataFolderButton", defaultValue: "在 Finder 中显示")
     // V6.46: destructive button tooltips — .help() tooltip 详细说明 (Photos 真版模式)
     static let settingsOpenDataFolderTooltip = String(localized: "settingsOpenDataFolderTooltip", defaultValue: "在 Finder 中显示 App 数据存储目录 (Application Support/ImageGallery)")
-    static let settingsResetOnboardingTooltip = String(localized: "settingsResetOnboardingTooltip", defaultValue: "重新弹出新手引导 3 张卡片")
+    // V6.70: 删 settingsResetOnboardingTooltip — OnboardingView 取消
     static let settingsEmptyTrashTooltip = String(localized: "settingsEmptyTrashTooltip", defaultValue: "永久删除回收站中所有照片, 无法撤销")
-    static let settingsResetOnboardingLabel = String(localized: "settingsResetOnboardingLabel", defaultValue: "新手引导")
-    static let settingsResetOnboardingButton = String(localized: "settingsResetOnboardingButton", defaultValue: "重新查看")
+    // V6.70: 删 settingsResetOnboardingLabel/Button — OnboardingView 取消
     // 缩略图大小 — min/max label
     static let settingsThumbnailSizeSmall = String(localized: "settingsThumbnailSizeSmall", defaultValue: "小")
     static let settingsThumbnailSizeLarge = String(localized: "settingsThumbnailSizeLarge", defaultValue: "大")
@@ -877,10 +866,10 @@ enum Copy {
     static let settingsShortcutsSubtitle = String(localized: "settingsShortcutsSubtitle", defaultValue: "查看 app 内所有快捷键。也可以按 ⌘? 随时打开速查。")
     static let settingsShortcutsLabel = String(localized: "settingsShortcutsLabel", defaultValue: "完整快捷键列表")
     static let settingsShortcutsShowButton = String(localized: "settingsShortcutsShowButton", defaultValue: "打开速查")
-    // Reset Onboarding confirm
-    static let settingsResetOnboardingConfirmTitle = String(localized: "settingsResetOnboardingConfirmTitle", defaultValue: "重新查看新手引导?")
-    static let settingsResetOnboardingConfirmMessage = String(localized: "settingsResetOnboardingConfirmMessage", defaultValue: "关闭设置后会立即弹出 3 张引导卡。")
-    static let settingsResetOnboardingConfirmAction = String(localized: "settingsResetOnboardingConfirmAction", defaultValue: "重新查看")
+    // V6.70: 删 Reset Onboarding confirm 3 key — OnboardingView 取消
+    // static let settingsResetOnboardingConfirmTitle = String(...) // deleted
+    // static let settingsResetOnboardingConfirmMessage = String(...) // deleted
+    // static let settingsResetOnboardingConfirmAction = String(...) // deleted
 
     // MARK: - V6.39.1: File menu 清空回收站 + 默认导入位置相关
     static let menuEmptyTrash = String(localized: "menuEmptyTrash", defaultValue: "清空回收站…")

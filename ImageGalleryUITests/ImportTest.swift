@@ -32,6 +32,5 @@ final class ImportTest: BaseUITestCase {
         throw XCTSkip("V6.22.11 follow-up: 用户累积 SwiftData 数据污染 grid 验证, 待 V6.22.12 全 store reset")
 
         // V6.22.10: dismiss onboarding + import 1 photo
-        dismissOnboardingIfPresent()
     }
 }

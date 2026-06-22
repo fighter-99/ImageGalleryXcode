@@ -142,12 +142,8 @@ final class UserSettings {
     }
 
     // MARK: - V6.22.3 (P2 #10): 是否显示过 onboarding 3-card sheet
-    ///   true = 已看过 (用户点 "开始使用" / "跳过" / 已 dismiss 过)
-    ///   false = 首次启动 → 弹 OnboardingView
-    ///   Settings reset() 也清零 (跟 hasShownMarqueeHint 同步)
-    var hasSeenOnboarding: Bool = false {
-        didSet { defaults.set(hasSeenOnboarding, forKey: "hasSeenOnboarding") }
-    }
+    ///   V6.70: 删 — 新手引导取消, 字段不再使用
+    ///   老 UserDefaults key "hasSeenOnboarding" 变 orphan (无害, 不读不写)
 
     /// 详情列宽持久化
     var detailColumnWidth: Double = 360 {
@@ -335,8 +331,7 @@ final class UserSettings {
         // V6.21.4 (audit fix #3): hasShownMarqueeHint 也 reset — "恢复全部为默认" 应该包括 UX hint flag
         //   之前 reset 漏掉, 用户清空库后无法重新触发 MarqueeHintView (audit #5 related)
         hasShownMarqueeHint = false
-        // V6.22.3 (P2 #10): hasSeenOnboarding 也 reset — 让用户重新看 onboarding (跟 marquee hint 同步)
-        hasSeenOnboarding = false
+        // V6.22.3 (P2 #10): hasSeenOnboarding 也 reset — V6.70 删字段, 这行删
         // V6.39.0: 新增 2 字段也 reset
         defaultImportLocation = nil
         doubleClickAction = DoubleClickAction.defaultValue.rawValue

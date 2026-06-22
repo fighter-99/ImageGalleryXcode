@@ -31,7 +31,6 @@ final class SelectionAndDeleteTest: BaseUITestCase {
         throw XCTSkip("V6.22.11 follow-up: 用户累积 SwiftData 数据污染 grid 验证, 待 V6.22.12 全 store reset")
 
         // V6.22.10: dismiss onboarding
-        dismissOnboardingIfPresent()
 
         // V6.22.10: 点 cell 选中
         let cell = app.collectionViews.cells.element(boundBy: 0)

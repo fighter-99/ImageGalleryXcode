@@ -6,7 +6,7 @@
 //   - setUp: 全 wipe (UserDefaults + PhotoStorage) → 启动 app with -uitest-reset-all
 //   - tearDown: wipe PhotoStorage (UserDefaults 每次 setUp 都 wipe)
 //   - 每个 test 互不依赖, 失败立即 fail 不 continue
-//   - 提供 helper: dismissOnboardingIfPresent / importTestPhoto
+//   - 提供 helper: importTestPhoto (V6.70: 删 dismissOnboardingIfPresent)
 //
 
 import XCTest
@@ -72,18 +72,8 @@ class BaseUITestCase: XCTestCase {
     }
 
     /// dismiss onboarding sheet 如果存在 (不在 AppLaunchTest 调用, 那个 test 故意保留它)
-    ///   V6.22.11: tap skip button (Copy.onboardingSkip) 而不是 start button
-    ///   原因: SwiftUI 重渲染时 onboarding.startButton (label "下一步" → "开始使用")
-    ///   accessibilityIdentifier 在 label 变化时被 SwiftUI 视为新 view, tap 失败
-    ///   skip button (`onboarding.skipButton`) 是固定 identifier, label 永远 "跳过"
-    ///   Photos.app 范式: 用户可立即跳过, 不强制走完 3 页
-    ///   这跟 AppLaunchTest 的 "走完 3 页" 测试不冲突 (那是测 start 流程本身)
-    func dismissOnboardingIfPresent() {
-        let skipButton = app.buttons["onboarding.skipButton"]
-        guard skipButton.waitForExistence(timeout: 5) else { return }
-        skipButton.tap()
-        sleep(1)
-    }
+    ///   V6.70: 删 dismissOnboardingIfPresent — OnboardingView 取消, helper 无 caller
+    //   ImportTest / UndoTest / SelectionAndDeleteTest 各删 1 行 caller
 
     /// V6.22.11: deprecated — 改用子类 uitestLaunchArguments 静态属性
     ///   之前 terminate+relaunch 不可靠 (Xcode 26 runner 60s hang)

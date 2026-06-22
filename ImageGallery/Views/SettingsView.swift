@@ -115,7 +115,7 @@ struct SettingsView: View {
     @State private var selectedCategoryRaw: String
 
     @State private var showingResetConfirm = false
-    @State private var showingResetOnboardingConfirm = false
+    // V6.70: 删 showingResetOnboardingConfirm — OnboardingView 取消
     @State private var showingEmptyTrashConfirm = false
 
     // V6.45: custom init — 用 settings.lastSettingsCategory 初始化 selectedCategoryRaw
@@ -175,7 +175,7 @@ struct SettingsView: View {
                         case .general:
                             GeneralSettingsView(
                                 settings: settings,
-                                onResetOnboarding: { showingResetOnboardingConfirm = true },
+                                // V6.70: 删 onResetOnboarding 参数 — OnboardingView 取消
                                 onOpenDataFolder: openDataFolder,
                                 onResetAll: { showingResetConfirm = true }
                             )
@@ -251,18 +251,7 @@ struct SettingsView: View {
         } message: {
             Text(Copy.settingsResetConfirmMessage)
         }
-        // V6.45: Reset Onboarding → .alert
-        .alert(
-            Copy.settingsResetOnboardingConfirmTitle,
-            isPresented: $showingResetOnboardingConfirm
-        ) {
-            Button(Copy.settingsResetOnboardingConfirmAction, role: .destructive) {
-                settings.hasSeenOnboarding = false
-            }
-            Button(Copy.cancel, role: .cancel) {}
-        } message: {
-            Text(Copy.settingsResetOnboardingConfirmMessage)
-        }
+        // V6.70: 删 Reset Onboarding alert — OnboardingView 取消
         // V6.45: Empty Trash → .alert
         .alert(
             Copy.settingsEmptyTrashConfirmTitle,
@@ -311,9 +300,9 @@ extension Notification.Name {
 // MARK: - 通用 (启动默认值 + 双击行为 + 高级 actions)
 private struct GeneralSettingsView: View {
     @Bindable var settings: UserSettings
-    let onResetOnboarding: () -> Void
+    // V6.70: 删 onResetOnboarding 参数 — OnboardingView 取消
     let onOpenDataFolder: () -> Void
-    // V6.41: 从 toolbar 移下来 — Reset 跟"重置 Onboarding"同 section (destructive 上下文就近)
+    // V6.41: 从 toolbar 移下来 — Reset 跟 destructive actions 同 section
     let onResetAll: () -> Void
 
     var body: some View {
@@ -403,14 +392,7 @@ private struct GeneralSettingsView: View {
                     .controlSize(.regular)
                     .help(Copy.settingsOpenDataFolderTooltip)  // V6.46: 详细 tooltip
             }
-            HStack {
-                Text(Copy.settingsResetOnboardingLabel)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                Button(Copy.settingsResetOnboardingButton, role: .destructive, action: onResetOnboarding)
-                    .buttonStyle(.bordered)
-                    .controlSize(.regular)
-                    .help(Copy.settingsResetOnboardingTooltip)  // V6.46: 详细 tooltip
-            }
+            // V6.70: 删 HStack onboarding row — OnboardingView 取消 (8 行)
             HStack {
                 Text(Copy.settingsResetAllLabel)
                     .frame(maxWidth: .infinity, alignment: .leading)

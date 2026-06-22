@@ -40,15 +40,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         // V6.22.10 (XCUITest): UI test launch arg 解析 — 在 setUp/tearDown 之前清 UserDefaults
         //   launch arg 在 appDidFinishLaunching 早期解析, 比 UserSettings init 早
         //   XCUITest 不能从 app 外部 reset UserDefaults, 必须 launch 时带 arg
+        // V6.70: 删 -uitest-reset-onboarding 处理 — OnboardingView 取消
         let args = ProcessInfo.processInfo.arguments
         if args.contains("-uitest-reset-all") {
             let domain = Bundle.main.bundleIdentifier ?? ""
             UserDefaults.standard.removePersistentDomain(forName: domain)
             NSLog("V6.22.10: reset UserDefaults domain=\(domain) for XCUITest")
-        }
-        if args.contains("-uitest-reset-onboarding") {
-            UserDefaults.standard.removeObject(forKey: "hasSeenOnboarding")
-            NSLog("V6.22.10: reset hasSeenOnboarding for XCUITest")
         }
 
         // V6.64.2: 启动 crash reporter — 监听 uncaught exception + 5 POSIX signals

@@ -187,10 +187,9 @@ extension View {
                 showingSheet: bindableGrid.showingNewSmartFolderSheet,
                 pendingFilter: model.grid.pendingSmartFolderFilter ?? .empty
             )
-            // V6.22.3 (P2 #10): Onboarding 3-card sheet — first-run 弹, 用户 dismiss 后不再出现
-            //   showingOnboarding getter 直接读 !model.settings.hasSeenOnboarding
-            //   OnboardingView dismiss → model.settings.hasSeenOnboarding = true → getter 返 false → sheet 关
-            .onboardingSheet(model: model)
+            // V6.70 (Onboarding removal): 删 onboardingSheet — 新手引导取消, 用户首启动直接看到 PhotoGridEmptyState
+            //   之前: 首次启动弹 3-card sheet, dismiss 后再出现 — V6.22.3 P2 #10 加
+            //   现在: 用户首启动直接看到 PhotoGridEmptyState (V6.21.2) + 导入 CTA
             // V6.19.0 (P0 #1): 分享 sheet — File 菜单 ⌘⇧E 触发 NSSharingServicePicker
             .shareSheet(model: model)
             // V6.19.5 (P0 #16): File 菜单 ⌘⇧N (新文件夹) + Edit > Speech (开始朗读) 监听
@@ -454,20 +453,11 @@ extension View {
 
 // MARK: - V6.22.3 (P2 #10): Onboarding sheet extension
 //
-// First-run 3-card sheet — 弹 import / marquee / 快捷键介绍
-// 类似 P4.2 batchRenameSheet pattern, 用 bindableModel 控制 sheet 可见性
-extension View {
-    @MainActor
-    func onboardingSheet(model: ContentViewModel) -> some View {
-        self
-            .sheet(isPresented: bindable(!model.settings.hasSeenOnboarding)) {
-                OnboardingView(hasSeenOnboarding: Binding(
-                    get: { model.settings.hasSeenOnboarding },
-                    set: { model.settings.hasSeenOnboarding = $0 }
-                ))
-            }
-    }
-}
+// V6.70 (Onboarding removal): 删 onboardingSheet extension — 新手引导取消
+//   之前 15 行 (含 1 个 bindable getter + OnboardingView 调用)
+//   现在直接 0 行, 整 extension 删
+//   对应 OnboardingView.swift 已删, hasSeenOnboarding 字段下一步删
+//   替代: 用户首启动直接看到 PhotoGridEmptyState + 导入 CTA (V6.21.2)
 
 // MARK: - V3.5.18: 设置面板 chrome helper (从 ContentView+SettingsChrome.swift 合并过来)
 //
