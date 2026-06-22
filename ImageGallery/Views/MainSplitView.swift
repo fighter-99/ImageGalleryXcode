@@ -18,8 +18,39 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
+/// V6.62: SwiftUI 工具栏动作合集 — 替代 AppKit NSToolbar 回调链
+/// V6.74.1: 加 onToggleDetail — titlebar ⓘ 按钮迁移到 SwiftUI .toolbar primaryAction
+struct ToolbarActions {
+    var onImport: () -> Void = {}
+    var onExport: () -> Void = {}
+    var onDelete: () -> Void = {}
+    var onQuickLook: () -> Void = {}
+    var onToggleFilter: () -> Void = {}
+    var onToggleSortDirection: () -> Void = {}
+    var onToggleDetail: () -> Void = {}  // V6.74.1 NEW
+}
+
 struct MainSplitView<Sidebar: View, Center: View, Detail: View>: View {
+    /// V6.62: SwiftUI 工具栏动作
+    let toolbarActions: ToolbarActions
+    
     @Binding var showDetail: Bool
+    @Binding var searchText: String
+    @Binding var sortOption: SortOption
+    @Binding var viewMode: ViewMode
+    @Binding var thumbnailSize: CGFloat
+    @Binding var filterState: FilterState
+    @Binding var selectionEmpty: Bool
+    @Binding var selectionSingle: Bool
+    @Binding var importProgress: Double
+    @Binding var recentSearches: [String]
+    // V6.74.4: onSearchSubmit 闭包 — 用户回车时调, ContentView 注入 { model.grid.recordRecentSearch($0) }
+    let onSearchSubmit: (String) -> Void
+    let allFolders: [Folder]
+    let allTags: [Tag]
+    @State private var showingFilter = false
+    @State private var showingSortPopover = false
+    @State private var showingViewPopover = false
     @Binding var isDropTargeted: Bool
     @Binding var isBoxSelecting: Bool
 
@@ -33,11 +64,37 @@ struct MainSplitView<Sidebar: View, Center: View, Detail: View>: View {
         isDropTargeted: Binding<Bool>,
         isBoxSelecting: Binding<Bool>,
         onDrop: @escaping ([NSItemProvider]) -> Bool,
+        toolbarActions: ToolbarActions = ToolbarActions(),
+        searchText: Binding<String> = .constant(""),
+        sortOption: Binding<SortOption> = .constant(.importedAtDesc),
+        viewMode: Binding<ViewMode> = .constant(.grid),
+        thumbnailSize: Binding<CGFloat> = .constant(200),
+        filterState: Binding<FilterState> = .constant(.empty),
+        selectionEmpty: Binding<Bool> = .constant(true),
+        selectionSingle: Binding<Bool> = .constant(false),
+        importProgress: Binding<Double> = .constant(0),
+        recentSearches: Binding<[String]> = .constant([]),
+        onSearchSubmit: @escaping (String) -> Void = { _ in },
+        allFolders: [Folder] = [],
+        allTags: [Tag] = [],
         @ViewBuilder sidebar: () -> Sidebar,
         @ViewBuilder center: () -> Center,
         @ViewBuilder detail: () -> Detail
     ) {
+        self.toolbarActions = toolbarActions
         self._showDetail = showDetail
+        self._searchText = searchText
+        self._sortOption = sortOption
+        self._viewMode = viewMode
+        self._thumbnailSize = thumbnailSize
+        self._filterState = filterState
+        self._selectionEmpty = selectionEmpty
+        self._selectionSingle = selectionSingle
+        self._importProgress = importProgress
+        self._recentSearches = recentSearches
+        self.onSearchSubmit = onSearchSubmit
+        self.allFolders = allFolders
+        self.allTags = allTags
         self._isDropTargeted = isDropTargeted
         self._isBoxSelecting = isBoxSelecting
         self.onDrop = onDrop
@@ -58,6 +115,149 @@ struct MainSplitView<Sidebar: View, Center: View, Detail: View>: View {
                     .navigationSplitViewColumnWidth(min: 200, ideal: 280, max: 500)
             }
         }
+        .toolbar {
+            ToolbarItem {
+                Button { toolbarActions.onExport() } label: {
+                    Label("导出", systemImage: "square.and.arrow.up").labelStyle(.iconOnly)
+                }.help("导出")
+            }
+            ToolbarItem {
+                Button { toolbarActions.onDelete() } label: {
+                    Label("删除", systemImage: "trash").labelStyle(.iconOnly)
+                }.disabled(selectionEmpty).help("删除")
+            }
+            ToolbarItem {
+                Button { toolbarActions.onQuickLook() } label: {
+                    Label("预览", systemImage: "eye").labelStyle(.iconOnly)
+                }.disabled(selectionEmpty || !selectionSingle).help("快速查看 (空格)")
+            }
+            ToolbarItem {
+                Button { showingFilter.toggle() } label: {
+                    Label("筛选", systemImage: "line.3.horizontal.decrease.circle").labelStyle(.iconOnly)
+                }.help("筛选")
+                .overlay(alignment: .topTrailing) {
+                    if filterState.isActive {
+                        Text("\(filterState.activeCount)")
+                            .font(.system(size: 10)).foregroundStyle(.white)
+                            .padding(4).background(Color.red).clipShape(Circle())
+                            .offset(x: 8, y: -8)
+                    }
+                }
+                .popover(isPresented: $showingFilter) {
+                    FilterPanelView(filterState: $filterState, folders: allFolders, tags: allTags, onClose: { showingFilter = false })
+                }
+            }
+            ToolbarItem {
+                Button { showingSortPopover.toggle() } label: {
+                    Label("排序", systemImage: sortOption.toolbarIcon).labelStyle(.iconOnly)
+                }.help("排序")
+                .popover(isPresented: $showingSortPopover) {
+                    VStack(alignment: .leading, spacing: 0) {
+                        sortFieldRow(icon: "calendar", name: "导入时间", 
+                                      isActive: sortOption == .importedAtDesc || sortOption == .importedAtAsc,
+                                      direction: sortOption == .importedAtDesc ? "↓ 最新" : sortOption == .importedAtAsc ? "↑ 最早" : nil)
+                            .onTapGesture {
+                                if sortOption == .importedAtDesc { sortOption = .importedAtAsc }
+                                else { sortOption = .importedAtDesc }
+                                showingSortPopover = false
+                            }
+                        sortFieldRow(icon: "doc", name: "文件名",
+                                      isActive: sortOption == .filenameDesc || sortOption == .filenameAsc,
+                                      direction: sortOption == .filenameDesc ? "↓ Z→A" : sortOption == .filenameAsc ? "↑ A→Z" : nil)
+                            .onTapGesture {
+                                if sortOption == .filenameDesc { sortOption = .filenameAsc }
+                                else { sortOption = .filenameDesc }
+                                showingSortPopover = false
+                            }
+                        sortFieldRow(icon: "externaldrive.fill", name: "文件大小",
+                                      isActive: sortOption == .fileSizeDesc || sortOption == .fileSizeAsc,
+                                      direction: sortOption == .fileSizeDesc ? "↓ 最大" : sortOption == .fileSizeAsc ? "↑ 最小" : nil)
+                            .onTapGesture {
+                                if sortOption == .fileSizeDesc { sortOption = .fileSizeAsc }
+                                else { sortOption = .fileSizeDesc }
+                                showingSortPopover = false
+                            }
+                        Divider().padding(.vertical, 2)
+                        sortFieldRow(icon: "arrow.up.arrow.down", name: "自定义排序",
+                                      isActive: sortOption == .customOrder, direction: nil)
+                            .onTapGesture { sortOption = .customOrder; showingSortPopover = false }
+                    }.padding(8).frame(width: 200)
+                }
+            }
+            ToolbarItem {
+                Button { showingViewPopover.toggle() } label: {
+                    Label("视图", systemImage: viewMode.icon).labelStyle(.iconOnly)
+                }.help("视图模式")
+                .popover(isPresented: $showingViewPopover) {
+                    VStack(alignment: .leading, spacing: 0) {
+                        ForEach(ViewMode.allCases) { mode in
+                            Button { viewMode = mode; showingViewPopover = false } label: {
+                                Label(mode.label, systemImage: mode.icon).font(.body)
+                                    .frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
+                            }.buttonStyle(.plain)
+                            .padding(.horizontal, 12).padding(.vertical, 5)
+                            .background(mode == viewMode ? Color.accentColor.opacity(0.12) : Color.clear)
+                            .cornerRadius(4)
+                        }
+                    }.padding(6).frame(width: 140)
+                }
+            }
+            ToolbarItem {
+                HStack(spacing: 0) {
+                    Button { thumbnailSize = max(100, thumbnailSize - 10) } label: {
+                        Label("缩小", systemImage: "minus").labelStyle(.iconOnly)
+                    }.help("缩小缩略图")
+                    Button { thumbnailSize = min(300, thumbnailSize + 10) } label: {
+                        Label("放大", systemImage: "plus").labelStyle(.iconOnly)
+                    }.help("放大缩略图")
+                }
+            }
+            ToolbarItem {
+                Button { toolbarActions.onImport() } label: {
+                    if importProgress > 0 {
+                        HStack(spacing: 4) {
+                            ProgressView(value: importProgress).progressViewStyle(.linear).frame(width: 36)
+                            Text("\(Int(importProgress * 100))%").font(.caption2.monospacedDigit())
+                        }
+                    } else {
+                        Label("导入", systemImage: "square.and.arrow.down").labelStyle(.iconOnly)
+                    }
+                }
+                .help(importProgress > 0 ? "导入中..." : "导入 (⌘O)")
+            }
+            // V6.74.1: Photos 范式 titlebar ⓘ 按钮 — 从 TitlebarAccessoryController (AppKit) 迁到 SwiftUI .toolbar
+            //   原视觉位 titlebar 紧邻 traffic light (NSTitlebarAccessoryViewController, V4.37.4)
+            //   新视觉位 toolbar 末位右侧 (.primaryAction placement, macOS 14+)
+            //   双 symbol 切换 (info.circle ↔ info.circle.fill) + tint 强调色 + tooltip 复用现有 Copy
+            //   一致性收益 (toolbar 全 SwiftUI) > 视觉位差异
+            ToolbarItem(placement: .primaryAction) {
+                Button { toolbarActions.onToggleDetail() } label: {
+                    Label(
+                        showDetail ? Copy.titlebarInfoTooltipHide : Copy.titlebarInfoTooltipShow,
+                        systemImage: showDetail ? "info.circle.fill" : "info.circle"
+                    )
+                    .labelStyle(.iconOnly)
+                    .foregroundStyle(showDetail ? Color.accentColor : Color.primary)
+                }
+                .help(showDetail ? Copy.titlebarInfoTooltipHide : Copy.titlebarInfoTooltipShow)
+                .accessibilityLabel(Copy.titlebarInfoLabel)
+            }
+        }        .searchable(text: $searchText, placement: .toolbar, prompt: Copy.searchPlaceholder) {
+            // V6.74.4: 搜索自动建议 — 显示最近 20 个搜索词 (Photos / Finder 范式)
+            //   点 suggestion → searchCompletion 自动填入 searchText → 走 binding setter
+            ForEach(recentSearches, id: \.self) { recent in
+                Text(recent)
+                    .searchCompletion(recent)
+            }
+            // V6.74.4: 清空最近搜索 — suggestion 末尾 button (History 概念)
+            if !recentSearches.isEmpty {
+                Divider()
+                Button(Copy.clearRecentSearches) {
+                    recentSearches = []
+                }
+            }
+        }
+        .onSubmit(of: .search) { onSearchSubmit(searchText) }
         .scrollDisabled(isBoxSelecting)
         .onDrop(of: [.fileURL], isTargeted: $isDropTargeted, perform: onDrop)
         .overlay {
@@ -66,6 +266,20 @@ struct MainSplitView<Sidebar: View, Center: View, Detail: View>: View {
                     .transition(.opacity)
             }
         }
+    }
+
+    private func sortFieldRow(icon: String, name: String, isActive: Bool, direction: String?) -> some View {
+        HStack {
+            Label(name, systemImage: icon).font(.body).foregroundStyle(isActive ? .primary : .secondary)
+            Spacer()
+            if let dir = direction {
+                Text(dir).font(.caption).foregroundStyle(.secondary)
+            }
+        }
+        .padding(.horizontal, 10).padding(.vertical, 6)
+        .background(isActive ? Color.accentColor.opacity(0.12) : Color.clear)
+        .cornerRadius(4)
+        .contentShape(Rectangle())
     }
 
     // MARK: - Drop Overlay

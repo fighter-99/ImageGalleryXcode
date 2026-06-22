@@ -55,7 +55,8 @@ struct ContentViewModelSmokeTests {
         #expect(model.grid.immersivePhoto == nil)
         #expect(model.grid.immersiveIndex == 0)
         #expect(model.storageErrorMessage == nil)
-        #expect(model.windowVM.titlebarAccessory == nil)
+        // V6.74.2: 删 model.windowVM.titlebarAccessory 检查 — TitlebarAccessoryController 整文件删
+        //   ⓘ 按钮改走 SwiftUI .toolbar .primaryAction (V6.74.1), 无 NSObject 引用
         #expect(model.toastQueue.isEmpty == true)
         #expect(model.toastTask == nil)
         #expect(model.importVM.importProgress == nil)

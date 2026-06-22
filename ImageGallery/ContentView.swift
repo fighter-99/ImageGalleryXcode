@@ -199,16 +199,8 @@ struct ContentView: View {
     // V4.12.0 删: QuickLookPreviewController (@State) 整段——V5.42 走 ImmersivePhotoView, 不再需要
     // V5.42 替代: showQuickLook() 调 enterImmersiveFromSelection() 走系统 ImmersivePhotoView
 
-    // V4.37.4: titlebar 右上角小按钮引用——@State 持 NSObject 引用
-    //   onChange(of: showDetail) 时调 setActive / setTooltip 同步状态
-    //   configureNSToolbar 内构造（一次），SwiftUI 重渲不重新构造（@State 持久）
-    // V4.37.4: titlebar 右上角小按钮引用——@State 持 NSObject 引用
-    //   onChange(of: showDetail) 时调 setActive / setTooltip 同步状态
-    //   configureNSToolbar 内构造（一次），SwiftUI 重渲不重新构造（@State 持久）
-    private var titlebarAccessory: TitlebarAccessoryController? {
-        get { model.windowVM.titlebarAccessory }
-        nonmutating set { model.windowVM.titlebarAccessory = newValue }
-    }
+    // V6.74.2: 删 titlebarAccessory proxy + syncTitlebarAccessory helper — TitlebarAccessoryController 整文件删
+    //   ⓘ 按钮已迁 MainSplitView SwiftUI .toolbar .primaryAction (V6.74.1), 不再需要 AppKit 桥接
 
     // V4.20.0: 撤回 V4.19.0 glassNamespace + glassEffectUnion
     //   macOS 26 glassEffectUnion 在 sidebar 边界外产生 outline 痕迹（用户截图反馈）
@@ -342,26 +334,17 @@ struct ContentView: View {
     // V5.60-5: 尝试抽到 ContentView+ColumnLayout.swift extension 失败——`private var model` 跨文件不可见
     //   撤回, 保留在 ContentView 内——20 行不值得做跨文件重构
     var body: some View {
-        mainLayout
+        ZStack {
+            mainLayout
             // V6.33.1: Dynamic Type 注入 — 用户选的 fontScale 走 .dynamicTypeSize 环境
             //   只影响用 semantic font 的 view (V6.34 慢慢把 Typography 迁 semantic)
             .environment(\.dynamicTypeSize, model.settings.appFontScale.dynamicTypeSize)
-            // V4.10.0: 6 个 chrome modifier 打包（title/subtitle/colorScheme/WindowAccessor/NSToolbar sync）
-            // V5.24: 加 layoutMode + thumbnailSize 参数——传给 windowChromeAndToolbar 推 NSToolbar segment/slider
-            // V5.39.3: 加 sortOption 参数——推 NSToolbar sortMenu 按钮 (image 跟 sortOption 走)
-            .windowChromeAndToolbar(
-                title: model.grid.currentViewTitle,
-                subtitle: model.grid.currentViewSubtitle,
-                colorScheme: model.appearanceMode.colorScheme,
-                selection: selection,
-                searchText: searchText,
-                // V6.38.1 (Phase 1): model 透传 — syncNSToolbarImportProgress 读 model.importVM.importProgress
-                model: model,
-                layoutMode: layoutMode,
-                thumbnailSize: thumbnailSize,
-                sortOption: sortOption,
-                configureWindow: { model.windowVM.configureToolbar(window: $0) }
-            )
+            // V6.74.2: 删 windowChromeAndToolbar modifier 链 — NSToolbar dead code 全清
+            //   ContentView 直接挂 .navigationTitle/.navigationSubtitle/.preferredColorScheme 3 个 modifier
+            //   原 helper (ContentView+WindowChrome.swift) 整个文件删
+            .navigationTitle(model.grid.currentViewTitle)
+            .navigationSubtitle(model.grid.currentViewSubtitle)
+            .preferredColorScheme(model.appearanceMode.colorScheme)
             // V5.59-2: 抽离 4 dialog + 4 onChange + 1 task 到 contentBodyModifiers 解决 type-check 超时
             // V6.28: grid 业务 closure 走 model.grid.X() — Core (startImport/restoreSelection/etc) 仍 model
             .contentBodyModifiers(
@@ -419,12 +402,16 @@ struct ContentView: View {
                 onRestoreSelection: { model.restoreSelection(model.settings.sidebarSelection) },
                 onSerializeSidebarSelection: { model.serializeSelection($0) },
                 onClearSelectionOnFilterChange: { model.grid.clearSelectionOnFilterChange() },
-                onSyncTitlebarAccessory: { syncTitlebarAccessory(isActive: $0) },
-                onToggleShowDetail: { showDetail = $0 },
+                // V6.74.2: 删 onSyncTitlebarAccessory / onToggleShowDetail — ⓘ 按钮走 SwiftUI .toolbar .primaryAction
+                //   showDetail 现在只受 MainSplitView .primaryAction 按钮 / ⌘I / ⌘⌃D toggle (ImageGalleryApp Toggle menu)
                 onPurgeExpiredTrashOnStartup: { model.purgeExpiredTrashOnStartup() },
                 onCheckStorage: { model.checkStorage() },
                 onMigrateFavoriteToRating: { Photo.migrateFavoriteToRating(in: allPhotos, context: modelContext) }
             )
+        }
+    .onDrop(of: [.fileURL], isTargeted: $isDropTargeted) { providers in
+        model.importVM.handleDrop(providers: providers)
+    }
     }
 
     // V5.52-3: @Bindable shadow @State model——macOS 14+ 推荐模式
@@ -459,29 +446,25 @@ struct ContentView: View {
 
     // V5.59-2: 拆出 helper 函数, 避免 .onChange(of: showDetail) body 复杂导致 type-check 超时
     // V6.19.3 (P0 #13): titlebarAccessoryTooltip 1-line forwarder 删了, 这里直接走 model.X
-    private func syncTitlebarAccessory(isActive: Bool) {
-        titlebarAccessory?.setActive(isActive)
-        let tooltip = model.windowVM.titlebarAccessoryTooltip(isActive: isActive)
-        titlebarAccessory?.setTooltip(tooltip)
-    }
+    // V6.74.2: 删 syncTitlebarAccessory helper — TitlebarAccessoryController 整文件删, 无需 AppKit 桥接
 
     // V5.7: 砍 toggleFavorite()——工具栏 ❤ 收藏按钮已移除
     //   原逻辑：单选切换 / 多选批量反向——通过右键菜单评分 / 筛选 popover 替代
 
     // V4.8.0: 删 toolbarContent 定义——NSToolbar (AppKit) 接管所有 toolbar items
     // V4.9.1: 删 showViewOptions @State——View Options popover 改用 NSPopover 由 ToolbarController 管
-    //   SwiftUI .toolbar 是降级实现，Photos.app 风格必须用 NSToolbar
+    // V6.74.2: 删 V4.9.1 注释 — NSToolbar / ToolbarController 整文件删, SwiftUI .toolbar 接管所有 toolbar
+    //   SwiftUI .toolbar 在 macOS 14+ 是首选实现, 跟 Photos 真版对齐 (.toolbar .primaryAction ⓘ + 9 items)
     //   新 toolbar 配置在 configureNSToolbar(window:) 方法里
     //   （V4.7.1-V4.7.7 7 个 commit 探索 SwiftUI toolbar 限制都失败）
 
     // 主布局（V3.5.17：拆到 Views/MainLayoutView.swift；V4.0.0 toolbar 迁出到 native .toolbar；V4.8.0 改为 NSToolbar）
-    // V4.10.0: 把 4 个区块抽到 private var pane（sidebarPane/gridPane/detailPane/statusBarPane）
+    // V4.10.0: 把 3 个区块抽到 private var pane（sidebarPane/gridPane/detailPane）
     //   避免 mainLayout body 内 100+ 行的 PhotoGridPane / DetailPane 闭包列表触发 type-check 超时
     private var mainLayout: some View {
         MainLayoutView(
             pathBar: { pathBarPane },
             split: { mainSplitPane },
-            statusBar: { statusBarPane },
             showSidebar: Binding(get: { showSidebar }, set: { showSidebar = $0 }),
             undoManager: undoManager,
             toastQueue: toastQueue,
@@ -539,6 +522,33 @@ struct ContentView: View {
             isDropTargeted: $isDropTargeted,
             isBoxSelecting: $isBoxSelecting,
             onDrop: { providers in model.importVM.handleDrop(providers: providers) },
+            toolbarActions: ToolbarActions(
+                onImport: { model.importVM.startImport() },
+                onExport: { model.grid.batchExport() },
+                onDelete: { model.grid.handleDelete() },
+                onQuickLook: { model.grid.enterImmersiveFromSelection() },
+                onToggleFilter: { model.grid.resetFilters() },
+                onToggleSortDirection: { model.toggleSortDirection() },
+                // V6.74.1: ⓘ 按钮 toggle 详情面板 — Photos 范式 (V4.37.4 旧走 AppKit, 现迁 SwiftUI .toolbar)
+                //   withAnimation 包裹: 跟 ⌘I / ⌘⌃D 菜单 Toggle 行为一致, 触发 DetailView transition
+                onToggleDetail: { withAnimation(Animations.medium) { showDetail.toggle() } }
+            ),
+            searchText: Binding(get: { searchText }, set: { searchText = $0 }),
+            sortOption: Binding(get: { sortOption }, set: { sortOption = $0 }),
+            viewMode: Binding(get: { viewMode }, set: { viewMode = $0 }),
+            thumbnailSize: Binding(get: { CGFloat(model.settings.thumbnailSize) }, set: { model.settings.thumbnailSize = Double($0) }),
+            filterState: Binding(get: { model.filterState }, set: { model.filterState = $0 }),
+            selectionEmpty: Binding(get: { selection.selectedIDs.isEmpty }, set: { _ in }),
+            selectionSingle: Binding(get: { selection.selectedIDs.count == 1 }, set: { _ in }),
+            importProgress: Binding(get: {
+                guard let p = model.importVM.importProgress else { return 0.0 }
+                return Double(p.current) / Double(max(p.total, 1))
+            }, set: { _ in }),
+            recentSearches: Binding(get: { model.grid.recentSearches }, set: { model.grid.recentSearches = $0 }),
+            // V6.74.4: 搜索提交时记录最近搜索 — Photos 范式 (回车 / 失焦)
+            onSearchSubmit: { model.grid.recordRecentSearch($0) },
+            allFolders: folders,
+            allTags: allTags,
             sidebar: { sidebarPane },
             center: { gridPane },
             detail: { detailPane }
@@ -563,10 +573,10 @@ struct ContentView: View {
                 .transition(.scale(scale: 0.85).combined(with: .opacity))
             }
         }
-        .animation(.easeInOut(duration: 0.25), value: model.settings.hasShownMarqueeHint)
-        .animation(.easeInOut(duration: 0.25), value: model.grid.allPhotos.isEmpty)
-        .animation(.easeInOut(duration: 0.2), value: model.grid.isMultiSelect)
-        .animation(.easeInOut(duration: 0.2), value: model.grid.selection.selectedIDs.isEmpty)
+        .animation(Animations.standard, value: model.settings.hasShownMarqueeHint)
+        .animation(Animations.standard, value: model.grid.allPhotos.isEmpty)
+        .animation(Animations.quick, value: model.grid.isMultiSelect)
+        .animation(Animations.quick, value: model.grid.selection.selectedIDs.isEmpty)
     }
 
     private var sidebarPane: some View {
@@ -646,11 +656,6 @@ struct ContentView: View {
                 onExportComplete: { count in
                     model.showToast(Copy.exported(count), type: .success)
                 },
-                // V5.39.6: 拖入导入——从 Finder 拖文件/文件夹到 grid 直接导入
-                //   走 ImageImporter.importURLs (同 NSOpenPanel 路径), 含 progress 跟踪 + toast 反馈
-                //   filter 文件/文件夹筛选交给 ImageImporter.collectFiles 内部处理
-                // V6.28: handleDropImport 仍 Core (Import 业务)
-                onDropImport: { model.importVM.handleDropImport($0) },
                 // V5.39.7: 重排回调——no-op (PhotoGridView 内部 @State trigger 已处理刷新)
                 //   透传 onReorder 闭包到 cell → 调时增 reorderRefreshTrigger → .onChange → recomputePhotos
                 //   ContentView 不需要做事, 闭包仅用于保持 chain 类型一致
@@ -717,7 +722,7 @@ struct ContentView: View {
         // V6.31.1: view mode 切换过渡 — crossfade + scale 0.95→1 (Photos.app 范式)
         //   .transition 只在 view 出现/消失时触发, 配合 .animation(value: viewMode) 让 SwiftUI 跑 transition
         .transition(.opacity.combined(with: .scale(scale: 0.96)))
-        .animation(.easeInOut(duration: 0.3), value: viewMode)
+        .animation(Animations.standard, value: viewMode)
     }
 
     private var detailPane: some View {
@@ -770,23 +775,6 @@ struct ContentView: View {
         )
     }
 
-    private var statusBarPane: some View {
-        // V3.5.6 Finder 化：Status Bar（底部信息条）
-        // V6.38.1 (Phase 1): 简化 — 只传全局 meta (总数 + 大小 + 缩略图档位)
-        //   删: selectedCount / activeFilterCount / importProgress (重复显示, 搬到触发按钮附近)
-        // V6.52: 加 viewTitle + viewSubtitle — V6.38.1 简化过头让 StatusBar 太空 (3 项 + 2 分隔符)
-        //   现在 4 段: 当前视图标题 + N 张 · X MB + 缩略图档位, 视觉更平衡
-        // V6.71 (取消 ContextualSelectionBar): 传 selectedCount 给 StatusBar — 选中 >0 时
-        //   强化显示 "已选 N 张" 替代 contextual bar 视觉锤
-        StatusBar(
-            viewTitle: model.grid.currentViewTitle,
-            viewSubtitle: model.grid.currentViewSubtitle,
-            totalCount: allPhotos.count,
-            // V6.28: totalSizeFormatted 在 grid
-            totalSize: model.grid.totalSizeFormatted,
-            selectedCount: selection.selectedIDs.count
-        )
-    }
 
     // V6.39.1: 双击行为 — 读 settings.appDoubleClickAction 决定走 immersive 或 NSWorkspace.open (QuickLook via Preview.app)
     //   默认 .immersive (跟 V6.39.0 之前完全兼容), 可选 .quickLook 让系统 Preview.app 打开

@@ -104,7 +104,9 @@ final class Photo {
             migrated += 1
         }
         if migrated > 0 {
-            try? context.save()
+            // V6.74.3: saveWithLog 替代 try? context.save() — 失败时 Logger.swiftData.error 留诊断线索
+            //   跟 SwiftDataLogging.swift:77 同 pattern, 启动幂等迁移不抛错, 但失败需 log
+            context.saveWithLog()
         }
     }
 }

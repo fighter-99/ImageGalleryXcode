@@ -230,6 +230,8 @@ enum Copy {
     static let search = String(localized: "search", defaultValue: "搜索")
     static let searchHint = String(localized: "searchHint", defaultValue: "搜索照片、标签、笔记")
     static let searchPlaceholder = String(localized: "searchPlaceholder", defaultValue: "搜索照片、标签…")
+    /// V6.74.4: 清空最近搜索 — .searchSuggestions 末尾 button
+    static let clearRecentSearches = String(localized: "clearRecentSearches", defaultValue: "清空最近搜索")
     /// 筛选 badge——"筛选 (3)" 表示激活 3 个筛选条件
     static func filterWithCount(_ count: Int) -> String { String.localizedStringWithFormat(String(localized: "filterWithCount", defaultValue: "筛选 (%lld)"), count) }
 

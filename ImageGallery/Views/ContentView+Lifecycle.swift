@@ -96,8 +96,8 @@ extension View {
         onRestoreSelection: @escaping () -> SidebarSelection?,
         onSerializeSidebarSelection: @escaping (SidebarSelection?) -> String,
         onClearSelectionOnFilterChange: @escaping () -> Void,
-        onSyncTitlebarAccessory: @escaping (Bool) -> Void,
-        onToggleShowDetail: @escaping (Bool) -> Void,
+        // V6.74.2: 删 onSyncTitlebarAccessory / onToggleShowDetail — ⓘ 按钮走 SwiftUI .toolbar .primaryAction (V6.74.1)
+        //   showDetail 现在只受 MainSplitView .primaryAction 按钮 / ⌘I / ⌘⌃D toggle (ImageGalleryApp Toggle menu)
         onPurgeExpiredTrashOnStartup: @escaping () -> Void,
         onCheckStorage: @escaping () -> Void,
         onMigrateFavoriteToRating: @escaping () -> Void
@@ -210,20 +210,32 @@ extension View {
             .onReceive(NotificationCenter.default.publisher(for: .emptyTrashRequested)) { _ in
                 model.grid.emptyTrash()
             }
-            .onChange(of: filterState.activeCount) { _, count in
-                ToolbarController.shared.filterActiveCount = count
+            // V6.74.0: View 菜单 ⌘Y / ⌘[ / ⌘] 桥接 — 取代 ToolbarController.shared.onXxx nil closure 死路径
+            //   V6.62 注释说 "SwiftUI toolbar 替代 AppKit NSToolbar", 但 menu button 仍调 ToolbarController.shared.onQuickLook?()
+            //   onQuickLook 永远 nil (configureToolbar 早返没赋值). 修法跟 .newFolderRequested 同 pattern — NotificationCenter.
+            .onReceive(NotificationCenter.default.publisher(for: .quickLookRequested)) { _ in
+                model.grid.showQuickLook()
             }
+            .onReceive(NotificationCenter.default.publisher(for: .navigatePrevRequested)) { _ in
+                model.grid.goPrev()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .navigateNextRequested)) { _ in
+                model.grid.goNext()
+            }
+            // V6.74.2: 删 .onChange(of: filterState.activeCount) → ToolbarController.shared.filterActiveCount = count
+            //   ToolbarController 整文件删, SwiftUI .toolbar 红圈 badge 直接读 filterState.activeCount (MainSplitView.swift:133)
             // V5.62-2: 外部 filterState 变化推送 (如 chip × 删除, ActiveFiltersBar 弹 Menu 删)
             //   若 child popover open, coordinator 调对应子 popover.updateState() 同步视觉
             .onChange(of: filterState) { _, newState in
-                ToolbarController.shared.pushFilterStateToOpenChild(newState)
+                // V6.74.2: 删 ToolbarController.shared.pushFilterStateToOpenChild(newState) — NSToolbar 不存在
+                //   SwiftUI .toolbar Filter button popover 直接读 filterState binding (MainSplitView.swift:140), 无需 push
                 if !selection.isEmpty {
                     onSelectionEscape()
                 }
             }
-            .onChange(of: showDetail) { _, newValue in
-                onSyncTitlebarAccessory(newValue)
-            }
+            // V6.74.2: 删 .onChange(of: showDetail) → onSyncTitlebarAccessory(newValue)
+            //   ⓘ 按钮走 SwiftUI .toolbar .primaryAction (V6.74.1), showDetail 变化由 SwiftUI 自动 re-render ⓘ icon
+            //   不需要 ContentView 桥接 syncTitlebarAccessory (TitlebarAccessoryController 整文件删)
             // V5.60-8: 删 V5.23 的 .onChange(of: selection.hasSelection) { showDetail = hasSelection }
             //   原因: 用户要求"详情面板常驻" (V5.60-1), V5.23 的"选即显/取消即隐" 冲突
             //   Bug 表现: 点缩略图进入 immersive → ESC 退出 → 详情面板消失 (因 hasSelection 在 re-render

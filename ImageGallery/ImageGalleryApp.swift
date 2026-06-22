@@ -19,6 +19,12 @@ extension Notification.Name {
     static let shareRequested = Notification.Name("com.iridescent.ImageGallery.shareRequested")
     static let newFolderRequested = Notification.Name("com.iridescent.ImageGallery.newFolderRequested")
     static let speakRequested = Notification.Name("com.iridescent.ImageGallery.speakRequested")
+    // V6.74.0: View 菜单 ⌘Y / ⌘[ / ⌘] 走 NotificationCenter (跟 .newFolderRequested 同 pattern)
+    //   原 ToolbarController.shared.onQuickLook?() 等 closure 永远 nil (configureToolbar 早返没赋值)
+    //   menu button 发通知, ContentView .onReceive 转给 model.grid.showQuickLook() / goPrev() / goNext()
+    static let quickLookRequested = Notification.Name("com.iridescent.ImageGallery.quickLookRequested")
+    static let navigatePrevRequested = Notification.Name("com.iridescent.ImageGallery.navigatePrevRequested")
+    static let navigateNextRequested = Notification.Name("com.iridescent.ImageGallery.navigateNextRequested")
 }
 
 // AppDelegate：处理应用层 macOS 事件
@@ -229,18 +235,6 @@ struct ImageGalleryApp: App {
     var body: some Scene {
         // V3.5.D：WindowGroup 加 id 让 macOS 能稳定追踪窗口(用于 frame autosave)
         // 同时加 defaultSize 给首次启动一个合理尺寸
-        // V4.0.0: 加 .windowToolbarStyle(.unified) + .windowStyle(.hiddenTitleBar)——
-        //   原生 toolbar 半透明材质 + 隐藏 title bar 让 toolbar 延伸到顶部
-        // V4.0.0.1: 改 .unified → .unifiedCompact——blur 太重与图标不和谐，
-        //   unified 风格让背景抢戏；compact 更"贴底"，让 icon 主导
-        //   （参考 Photos.app / Things / Bear：toolbar 是 backdrop，icon 才是主角）
-        // V4.7.5: 探索 .unified 回归（去掉 compact）试图解决 .principal section 背景
-        // V4.7.6: 回滚 V4.7.5——.unifiedCompact 与 .unified 都会给 .principal 加 section 背景
-        //   根本解法：5 actions 改 .primaryAction placement（不再使用 .principal）
-        //   .primaryAction 在 .unifiedCompact 下也不会被加 section 背景
-        //   回归 V4.0.0.1 的 .unifiedCompact（blur 轻，符合"toolbar 是 backdrop"原意）
-        // V5.51: "图馆" → "图库" typo 修复 + 走 Term.library 字典
-        // V5.59-3: ContentView 传 sharedSettings——与 menu/SettingsView 共享同一 UserSettings 实例
         WindowGroup(Term.library, id: "main") {
             ContentView(settings: sharedSettings)
                 // V5.60-7: cheat sheet 挂在 WindowGroup root view——Scene 级不支持 .sheet
@@ -258,7 +252,7 @@ struct ImageGalleryApp: App {
         //   13" MacBook (1280×800) 能完整用；更小屏幕 contentMinSize 会兜底
         .defaultSize(width: 1280, height: 800)
         .windowResizability(.contentMinSize)
-        .windowStyle(.hiddenTitleBar)            // V4.0.0: 合并 title bar + toolbar
+        // V6.62: SwiftUI toolbar — NavigationSplitView 管理自己的工具栏
         // V4.8.0: 删 .windowToolbarStyle——NSToolbar 在 ContentView.configureNSToolbar
         //   直接设置 window.toolbarStyle = .unified（避免双重设置冲突）
         .modelContainer(modelContainer)  // V3.6.7：显式 VersionedSchema 容器
@@ -449,28 +443,28 @@ struct RecentPhotosMenu: View {
 }
 
 /// V4.37.1: 快速查看菜单项——⌘Y Quick Look
-/// 复用 ToolbarController.onQuickLook closure（与 toolbar 按钮 / 空格键 同路径）
+/// V6.74.0: 改走 NotificationCenter.quickLookRequested (取代 ToolbarController.shared.onQuickLook?() nil closure 死路径)
 /// ContentView.showQuickLook 内部检查 singleSelectedPhoto——无选时是 no-op 不需要 disabled
 struct QuickLookMenuItem: View {
     var body: some View {
         Button(Copy.quickLook) {
-            ToolbarController.shared.onQuickLook?()
+            NotificationCenter.default.post(name: .quickLookRequested, object: nil)
         }
         .keyboardShortcut("y", modifiers: .command)
     }
 }
 
 /// V4.37.2: 上一张/下一张菜单项——⌘[ / ⌘]
-/// 复用 ToolbarController.onPrev/onNext closures（与 ←→ 方向键 同路径）
+/// V6.74.0: 改走 NotificationCenter (取代 ToolbarController.shared.onPrev/onNext?() nil closure 死路径)
 /// ContentView.goPrev/goNext 内部 canPrev/canNext 边界检查——无边界时是 no-op 不需要 disabled
 struct NavigateMenuItems: View {
     var body: some View {
         Button(Copy.previousPhoto) {
-            ToolbarController.shared.onPrev?()
+            NotificationCenter.default.post(name: .navigatePrevRequested, object: nil)
         }
         .keyboardShortcut("[", modifiers: .command)
         Button(Copy.nextPhoto) {
-            ToolbarController.shared.onNext?()
+            NotificationCenter.default.post(name: .navigateNextRequested, object: nil)
         }
         .keyboardShortcut("]", modifiers: .command)
     }
