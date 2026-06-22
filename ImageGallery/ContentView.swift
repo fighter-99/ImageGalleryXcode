@@ -249,56 +249,18 @@ struct ContentView: View {
         self._model = State(initialValue: ContentViewModel(settings: settings))
     }
 
-    // V3.5 Phase 1 Step 4：撤销/重做（@Observable + @State 模式）
-    // V3.5 Phase 1 Step 4：撤销/重做（@Observable + @State 模式）
-    private var undoManager: ImageGalleryUndoManager {
-        get { model.undoManager }
-        nonmutating set { model.undoManager = newValue }
-    }
+    // V6.76: 删 undoManager / layoutMode / sidebarColumnWidth / detailColumnWidth /
+//   sidebarDragStartWidth / detailDragStartWidth 6 个 read-only proxy
+//   caller 全部直读 model.X (无需 setter 包装)
+//   19 个 get/set 业务 state proxy 保留 (跨边界 setter 需要包装, V6.77 再处理)
 
     // 启动记忆
-    // V5.30: 240pt → 200pt 默认
-    //   - V5.20 设 240pt 是"Photos Library 容器更大"——但实际是单图视觉权重而非 grid 密度
-    //   - macOS Photos.app Library 默认 cell 边长 ~180-200pt, 更密集
-    //   - 240pt 太稀 (3-4 cell/row), 200pt 是 Photos 真版 (4-5 cell/row, 1188pt 窗口)
-    //   - 4 cell 档仍可切: compact 70 / small 110 / medium 200 / large 240
-    // V5.59-2: 删 @AppStorage storedThumbnailSize/storedSidebarKey/storedSortOption
-    //   改用 model.thumbnailSize/model.settings.sidebarSelection/model.sortOption
-    //   (thumbnailSize 是 CGFloat, sortOption 是 SortOption, sidebarSelection 是 SidebarSelection?)
-    //   已有 computed proxy 透传 (上 L70-78), 无需重复声明
-    // V5.31: 默认 sort 改 filenameAsc——Photos.app Library 视图无 date header
-    //   - Photos 真版: Library 连续流, 无 date section
-    //   - 改 filenameAsc: 字母序, isDateBased=false → masonryFlatLayout (无 header)
-    //   - 老用户 @AppStorage 已有 storedSortOption 不受影响 (仅新装/重置生效)
-    // V5.59-2: 删 @AppStorage storedSortOption, sortOption computed (L75) 已走 model.sortOption
-    // V5.17: 缩略图布局模式 (2 选项 .square / .squareFit, V5.47 砍 .masonry)
     //   镜像 AppearanceMode Int-backed pattern
     //   @AppStorage 持久化 + computed 读写 + 透传给 ViewOptionsPopover/PhotoGridPane
-    //   nonmutating set 必备——否则 closure 内 [self] capture 后 setter 改 self 编译失败
     // V5.59-2: 删 @AppStorage storedLayoutModeRaw, layoutMode computed 走 model.layoutMode
-    private var layoutMode: ThumbnailLayoutMode {
-        get { model.layoutMode }
-        nonmutating set { model.layoutMode = newValue }
-    }
+    // V6.76: 删 layoutMode / sidebarColumnWidth / detailColumnWidth / sidebarDragStartWidth /
+    //   detailDragStartWidth 5 个 read-only proxy — caller 全部直读 model.X (read-only, 0 setter 风险)
 
-    // V3.5.12：三栏列宽（HStack + 自定义 drag handles，避开 NSSplitView）
-    // V5.59-2: 删 @AppStorage storedSidebarWidth/storedDetailWidth, computed proxy 走 model
-    private var sidebarColumnWidth: CGFloat {
-        get { model.sidebarColumnWidth }
-        nonmutating set { model.sidebarColumnWidth = newValue }
-    }
-    private var detailColumnWidth: CGFloat {
-        get { model.detailColumnWidth }
-        nonmutating set { model.detailColumnWidth = newValue }
-    }
-    private var sidebarDragStartWidth: CGFloat {
-        get { model.sidebarDragStartWidth }
-        nonmutating set { model.sidebarDragStartWidth = newValue }
-    }
-    private var detailDragStartWidth: CGFloat {
-        get { model.detailDragStartWidth }
-        nonmutating set { model.detailDragStartWidth = newValue }
-    }
     private let sidebarMinWidth: CGFloat = 160
     private let sidebarMaxWidth: CGFloat = 320
     // V4.35.x 修复: 3 个按钮等分 (收藏/在 Finder 中显示/删除) 至少需要 ~360pt
@@ -366,7 +328,7 @@ struct ContentView: View {
                 visiblePhotos: model.grid.visiblePhotos,
                 batchDeleteTitle: model.grid.batchDeleteTitle,
                 duplicateDialogTitle: model.grid.duplicateDialogTitle,
-                undoManager: undoManager,
+                undoManager: model.undoManager,
                 accentColor: model.accentColor,
                 hasPurgedExpiredTrash: $hasPurgedExpiredTrash,
                 showingNewFolderAlert: Binding(get: { showingNewFolderAlert }, set: { showingNewFolderAlert = $0 }),
@@ -466,7 +428,7 @@ struct ContentView: View {
             pathBar: { pathBarPane },
             split: { mainSplitPane },
             showSidebar: Binding(get: { showSidebar }, set: { showSidebar = $0 }),
-            undoManager: undoManager,
+            undoManager: model.undoManager,
             toastQueue: toastQueue,
             immersivePhoto: Binding(get: { model.grid.immersivePhoto }, set: { model.grid.immersivePhoto = $0 }),
             immersiveIndex: Binding(get: { model.grid.immersiveIndex }, set: { model.grid.immersiveIndex = $0 }),
@@ -610,7 +572,7 @@ struct ContentView: View {
                 thumbnailSize: thumbnailSize,
                 // V5.17: 缩略图布局模式 3 选项（方格 / 按比例 / 按比例满行）
                 //   透传到 PhotoGridView.masonryRowsView 决定 uniformWidth/stretchLastRow
-                layoutMode: layoutMode,
+                layoutMode: model.layoutMode,
                 sortOption: sortOption,
                 // V5.60-6 启动恢复 + V5.61-1 auto-save——PhotoGridView 双向读写 model
                 scrollAnchorPhotoID: model.grid.scrollAnchorPhotoID,
