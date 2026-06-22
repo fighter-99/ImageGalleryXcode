@@ -79,6 +79,13 @@ struct SidebarRow: View {
         // V3.6.41: 升级 hover/选中 动画到 spring（统一 cell 动画风格）
         .animation(Animations.springGentle, value: isHovered)
         .animation(Animations.springGentle, value: isSelected)
+        // V6.69 (Wave 2 收尾): hover lift 1.02 + Elevation.subtle → standard
+        //   之前 SidebarRow 只换背景, 没 scale — 跟 PhotoThumbnailView hover (V6.65) 不一致
+        //   现在 hover: 1.02 微 scale + Animations.springGentle (跟 isHovered 同一动画曲线)
+        //   Photos.app Sonoma+ 实测 sidebar row hover 微 scale 视觉锤
+        //   reduce motion 时 scale 跳值无动画 (Animations.springGentle 自动检查)
+        .scaleEffect(isHovered ? 1.02 : 1.0)
+        .animation(Animations.springGentle, value: isHovered)
         // V6.22.2 (P2 #8): VoiceOver 标签 — 之前 0 标签, 盲人用户不能用
         //   - label: sidebar item 名称 + count ("图库 50 张")
         //   - hint: "显示所有照片" / "筛选重复图" 等 role 描述
