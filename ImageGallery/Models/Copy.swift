@@ -627,25 +627,9 @@ enum Copy {
     static let smartFolderIconSparkle = String(localized: "smartFolderIconSparkle", defaultValue: "精选集")
 
     // MARK: - V6.37.5: 选中操作条 + Toast + 上下文菜单
-    // ContextualSelectionBar — 5 action label + .help tooltip
-    //   注: 复用 Copy.tagLabel / Copy.delete / Copy.selectedCount / Copy.sidebarUnfiled / Copy.create
-    //     "未整理" → Copy.sidebarUnfiled ("待整理") — 跟 sidebar 命名统一
-    //     "X 张已选" → Copy.selectedCount(_:) ("已选 X 张") — 跟既有格式统一
-    static let miniToolbarTagHelp = String(localized: "miniToolbarTagHelp", defaultValue: "给选中照片加标签")
-    static let miniToolbarMove = String(localized: "miniToolbarMove", defaultValue: "移动")
-    static let miniToolbarMoveHelp = String(localized: "miniToolbarMoveHelp", defaultValue: "移动到文件夹")
-    static let miniToolbarRenameHelp = String(localized: "miniToolbarRenameHelp", defaultValue: "按模板批量重命名 (⌘⇧R)")
-    static let miniToolbarExport = String(localized: "miniToolbarExport", defaultValue: "导出")
-    static let miniToolbarExportHelp = String(localized: "miniToolbarExportHelp", defaultValue: "导出选中照片")
-    static let miniToolbarDeleteHelp = String(localized: "miniToolbarDeleteHelp", defaultValue: "移到回收站")
-    // V6.56 (design polish): ContextualSelectionBar 紧凑模式 overflow menu
-    //   窄窗口 (< 800pt) 自动隐藏 Rename + Export 到 '⋯' menu
-    //   Copy.more 用于 menu label, miniToolbarMoreHelp 用于 menu tooltip
-    static let more = String(localized: "more", defaultValue: "更多")
-    static let miniToolbarMoreHelp = String(localized: "miniToolbarMoreHelp", defaultValue: "更多操作 (重命名, 导出)")
-    static let miniToolbarAddTagTitle = String(localized: "miniToolbarAddTagTitle", defaultValue: "加标签")
-    static let miniToolbarEmptyTags = String(localized: "miniToolbarEmptyTags", defaultValue: "还没有标签")
-    static let miniToolbarNewTagPlaceholder = String(localized: "miniToolbarNewTagPlaceholder", defaultValue: "新标签")
+    // V6.71 (取消 ContextualSelectionBar): 删 11 个 miniToolbar* key — ContextualSelectionBar.swift 已删
+    //   复用 Copy.tagLabel / Copy.delete / Copy.selectedCount / Copy.sidebarUnfiled / Copy.create (不变)
+    //   Copy.more 保留 (跟 contextual 无关, 是通用 label)
     // ToastView — undo/close .help (含 ⌘Z glyph)
     //   注: 复用 Copy.undo ("撤销") 给主 Text, .help 单独走新 key 保留快捷键 glyph
     static let toastUndoHelp = String(localized: "toastUndoHelp", defaultValue: "撤销 (⌘Z)")

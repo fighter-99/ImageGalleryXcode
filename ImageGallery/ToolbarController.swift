@@ -296,7 +296,7 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
             item = makeSimpleItem(
                 id: id,
                 image: "folder.badge.plus",
-                label: Copy.miniToolbarMove,  // 复用 ContextualSelectionBar 文案
+                label: Copy.moveToFolder,  // V6.71: 改用通用 moveToFolder (替代 ContextualSelectionBar 文案)
                 action: #selector(handleMoveButton(_:))
             )
         case .filter:  // V4.36.x NEW + V4.54.0 状态感知升级
@@ -1002,7 +1002,7 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
     //   原因 3: Swift 编译器对 representedObject: nil 推断 NSMenuItem init 重载有歧义
     //   handler 里拿 UUID,再走 onMove 桥接回 ContentView(在 ContentView 侧从 grid.folders 找 Folder)
     @objc private func handleMoveButton(_ sender: NSButton) {
-        let menu = NSMenu(title: Copy.miniToolbarMove)
+        let menu = NSMenu(title: Copy.moveToFolder)
         menu.autoenablesItems = false
 
         // 移出文件夹(tray icon)——representedObject 传空字符串当哨兵,"" = 移出文件夹
