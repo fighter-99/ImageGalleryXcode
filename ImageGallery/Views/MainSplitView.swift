@@ -19,7 +19,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 /// V6.62: SwiftUI 工具栏动作合集 — 替代 AppKit NSToolbar 回调链
-/// V6.74.1: 加 onToggleDetail — titlebar ⓘ 按钮迁移到 SwiftUI .toolbar primaryAction
+/// V6.74.5: 删 onToggleDetail — 用户不要 toolbar 上 ⓘ 按钮, 详情面板走 ⌘I/⌘⌃D 菜单 Toggle
 struct ToolbarActions {
     var onImport: () -> Void = {}
     var onExport: () -> Void = {}
@@ -27,7 +27,6 @@ struct ToolbarActions {
     var onQuickLook: () -> Void = {}
     var onToggleFilter: () -> Void = {}
     var onToggleSortDirection: () -> Void = {}
-    var onToggleDetail: () -> Void = {}  // V6.74.1 NEW
 }
 
 struct MainSplitView<Sidebar: View, Center: View, Detail: View>: View {
@@ -225,23 +224,9 @@ struct MainSplitView<Sidebar: View, Center: View, Detail: View>: View {
                 }
                 .help(importProgress > 0 ? "导入中..." : "导入 (⌘O)")
             }
-            // V6.74.1: Photos 范式 titlebar ⓘ 按钮 — 从 TitlebarAccessoryController (AppKit) 迁到 SwiftUI .toolbar
-            //   原视觉位 titlebar 紧邻 traffic light (NSTitlebarAccessoryViewController, V4.37.4)
-            //   新视觉位 toolbar 末位右侧 (.primaryAction placement, macOS 14+)
-            //   双 symbol 切换 (info.circle ↔ info.circle.fill) + tint 强调色 + tooltip 复用现有 Copy
-            //   一致性收益 (toolbar 全 SwiftUI) > 视觉位差异
-            ToolbarItem(placement: .primaryAction) {
-                Button { toolbarActions.onToggleDetail() } label: {
-                    Label(
-                        showDetail ? Copy.titlebarInfoTooltipHide : Copy.titlebarInfoTooltipShow,
-                        systemImage: showDetail ? "info.circle.fill" : "info.circle"
-                    )
-                    .labelStyle(.iconOnly)
-                    .foregroundStyle(showDetail ? Color.accentColor : Color.primary)
-                }
-                .help(showDetail ? Copy.titlebarInfoTooltipHide : Copy.titlebarInfoTooltipShow)
-                .accessibilityLabel(Copy.titlebarInfoLabel)
-            }
+            // V6.74.5: 删 .primaryAction ⓘ 按钮 — 用户不要 toolbar 上 toggle 详情面板的入口
+            //   详情面板仍可通过 ⌘I / ⌘⌃D (ImageGalleryApp View menu Toggle) 控制
+            //   隐藏详情面板 + showDetail toggle 路径: ImageGalleryApp.swift:323/329 Toggle menu
         }        .searchable(text: $searchText, placement: .toolbar, prompt: Copy.searchPlaceholder) {
             // V6.74.4: 搜索自动建议 — 显示最近 20 个搜索词 (Photos / Finder 范式)
             //   点 suggestion → searchCompletion 自动填入 searchText → 走 binding setter

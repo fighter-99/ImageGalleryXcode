@@ -528,10 +528,8 @@ struct ContentView: View {
                 onDelete: { model.grid.handleDelete() },
                 onQuickLook: { model.grid.enterImmersiveFromSelection() },
                 onToggleFilter: { model.grid.resetFilters() },
-                onToggleSortDirection: { model.toggleSortDirection() },
-                // V6.74.1: ⓘ 按钮 toggle 详情面板 — Photos 范式 (V4.37.4 旧走 AppKit, 现迁 SwiftUI .toolbar)
-                //   withAnimation 包裹: 跟 ⌘I / ⌘⌃D 菜单 Toggle 行为一致, 触发 DetailView transition
-                onToggleDetail: { withAnimation(Animations.medium) { showDetail.toggle() } }
+                onToggleSortDirection: { model.toggleSortDirection() }
+                // V6.74.5: 删 onToggleDetail 注入 — ⓘ 按钮从 toolbar 撤掉, 详情面板走 ⌘I/⌘⌃D 菜单 Toggle
             ),
             searchText: Binding(get: { searchText }, set: { searchText = $0 }),
             sortOption: Binding(get: { sortOption }, set: { sortOption = $0 }),
