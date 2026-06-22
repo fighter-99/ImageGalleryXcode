@@ -121,10 +121,16 @@ struct ToastView: View {
                 .strokeBorder(type.tint.opacity(0.3), lineWidth: 0.5)
         )
         // V6.16.1: 暗色模式阴影加强
+        // V6.66 (Wave 2 调用点迁移): 改用 Elevation.elevated (0.20/12pt/4)
+        //   之前 light/dark 分别硬编码 0.15/10 vs 0.55/14 — token 化统一
+        //   Photos 真版 toast 阴影匹配 elevated 档位
+        //   dark mode 视觉锤更强 (colorScheme 派生 shadow color)
+        //   Elevation.elevated.color 已 opacity(0.20), light mode 直接用
+        //   dark mode 强 opacity 0.55 — Photos 真版 dark shadow 范式
         .shadow(
-            color: .black.opacity(colorScheme == .dark ? 0.55 : 0.15),
-            radius: colorScheme == .dark ? 14 : 10,
-            y: 4
+            color: colorScheme == .dark ? Color.black.opacity(0.55) : Elevation.elevated.color,
+            radius: colorScheme == .dark ? 14 : Elevation.elevated.radius,
+            y: Elevation.elevated.y
         )
         // V6.64.1 (A11y): toast 整行作为单一 a11y 元素 + announce 触发时通知 VoiceOver
         //   undoAction 存在时 hint 告诉用户 "按 ⌘Z 或点撤销按钮恢复"

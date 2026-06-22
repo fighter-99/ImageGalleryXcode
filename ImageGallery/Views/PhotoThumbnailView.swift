@@ -212,7 +212,10 @@ private struct PhotoCellContent: View {
                 RoundedRectangle(cornerRadius: Radius.thumb)
                     .fill(Palette.cellBackground)
                     .frame(width: 96, height: 96)
-                    .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
+                    // V6.66 (Wave 2 调用点迁移): 失败占位阴影 → Elevation.prominent
+                    //   0.30/8pt/4 — 比 Elevation.prominent (0.16/8pt/3) 强, 表达"破坏"语义
+                    //   保持破坏性视觉锤同时 token 化 radius/y
+                    .shadow(color: Color.black.opacity(0.30), radius: Elevation.prominent.radius, x: 0, y: Elevation.prominent.y)
                     .overlay(
                         RoundedRectangle(cornerRadius: Radius.thumb)
                             .strokeBorder(Surface.accentEmphasis, lineWidth: 1.5)

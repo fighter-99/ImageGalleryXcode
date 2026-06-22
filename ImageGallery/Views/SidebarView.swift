@@ -497,11 +497,16 @@ struct SidebarView: View {
                         : Color.clear,
                         lineWidth: 2)
                 .padding(-4)
+                // V6.66 (Wave 2 调用点迁移): drop target 阴影改 Elevation.standard
+                //   之前: hardcode radius 6 + opacity 0.4 (accent)
+                //   现在: standard.radius 6 + 标准 elevation opacity (但用 accent 颜色强调 drop)
+                //   token 提供 radius / y 单一真相源, color 仍走 accent (drop 强提示)
                 .shadow(
                     color: dropTargetFolderID == folder.id
                         ? Color.accentColor.opacity(0.4)
                         : .clear,
-                    radius: 6
+                    radius: Elevation.standard.radius,
+                    y: Elevation.standard.y
                 )
         }
         .animation(Animations.springGentle, value: dropTargetFolderID == folder.id)
