@@ -837,27 +837,29 @@ final class GridViewModel {
 
     // MARK: - P4.2: 批量重命名
     /// 模板: {n} {n:N} {originalName} (见 BatchRenameTemplate)
-    /// - 规划阶段: render + uniquify (within-batch + on-disk 双层)
-    /// - 执行阶段: 走 undoManager.registerAction, 单步撤销整批
+    /// - 规划阶段: prepareRenamePlans 渲染 + 去重 (within-batch + on-disk 双层)
+    /// - 执行阶段: executeRenamePlans 走 undoManager.registerAction, 单步撤销整批
     /// - 错误处理: per-photo try, 失败计数, 单次 toast 汇总 (V6.08 教训: 不静默)
+    /// V6.67 (Q2 god method 拆分): 拆成 prepareRenamePlans + executeRenamePlans,
+    ///   batchRename 主体从 125 行 → 22 行 (只有 wiring), 2 helper 各 30-50 行
     func batchRename(template: String) {
         let photos = selectedPhotosInVisible
         guard !photos.isEmpty, let modelContext = core?.modelContext else { return }
         let trimmed = template.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return }
+        // 规划阶段: 渲染 + 去重 + 收集 Plan
+        guard let result = prepareRenamePlans(template: trimmed, photos: photos) else { return }
+        // 执行阶段: 注册 undoManager action + 弹 toast
+        executeRenamePlans(plans: result.plans, collisionCount: result.collisionCount, modelContext: modelContext)
+    }
 
-        // V6.58 (audit P1.4): 极端 adversarial state 撞名 _1.._9999 耗尽 → 跳过这条 + 末尾 toast 报告
+    /// V6.67 (Q2): 批量重命名 — 规划阶段
+    /// - 渲染 template + within-batch uniquify + on-disk collision check
+    /// - V6.58 (audit P1.4): 撞名 _1.._9999 耗尽 → collisionCount++, 跳过这条 (其他 photo 仍 rename)
+    /// - 返回 nil 表示没有可执行 plan (空 selection 或 template 全 fail)
+    private func prepareRenamePlans(template: String, photos: [Photo]) -> (plans: [RenamePlan], collisionCount: Int)? {
         var collisionCount = 0
-
-        // Plan: 渲染 + 去重, 收集 (photo, oldURL, oldFilename, newBase, newExt)
-        struct Plan {
-            let photo: Photo
-            let oldURL: URL
-            let oldFilename: String
-            let newBase: String
-            let newExt: String
-        }
-        var plans: [Plan] = []
+        var plans: [RenamePlan] = []
         var reserved = Set<String>()
 
         for (i, photo) in photos.enumerated() {
@@ -868,7 +870,7 @@ final class GridViewModel {
 
             // 1) render
             guard let rendered = try? BatchRenameTemplate.render(
-                template: trimmed, index: i + 1, totalCount: photos.count,
+                template: template, index: i + 1, totalCount: photos.count,
                 originalFilename: originalBase
             ) else { continue }
 
@@ -901,15 +903,20 @@ final class GridViewModel {
             }
             let (finalBase, finalExt) = uniquifyResult
             reserved.insert("\(finalBase).\(finalExt)")
-            plans.append(Plan(
+            plans.append(RenamePlan(
                 photo: photo, oldURL: oldURL, oldFilename: oldFilename,
                 newBase: finalBase, newExt: finalExt
             ))
         }
+        guard !plans.isEmpty else { return nil }
+        return (plans, collisionCount)
+    }
 
-        guard !plans.isEmpty else { return }
+    /// V6.67 (Q2): 批量重命名 — 执行阶段
+    /// - 走 undoManager.registerAction, coalesceId="rename" 合并连续操作
+    /// - per-photo try, 失败计数, 单次 toast 汇总
+    private func executeRenamePlans(plans: [RenamePlan], collisionCount: Int, modelContext: ModelContext) {
         let count = plans.count
-
         // V6.36.3: coalesceId="rename" — 1s 内连续 batchRename 合并
         //   用 labeled closure 参数 (action/undo 显式 label) — coalesceId 必须在末位
         //   trailing closure 语法只能用在最后一个 closure 参数, 多个 closure 必须 labeled
@@ -966,6 +973,16 @@ final class GridViewModel {
         )
     }
 
+    /// V6.67 (Q2): RenamePlan — 改名方案 (extracted from local struct in batchRename V6.58)
+    /// 提到 file-scope 让 helper method 也能用
+    private struct RenamePlan {
+        let photo: Photo
+        let oldURL: URL
+        let oldFilename: String
+        let newBase: String
+        let newExt: String
+    }
+
     /// V5.12: 批量评分
     /// V6.35.3: 加 undo + coalesceId="rate" — 1s 内连续评分合并 (Photos.app 行为)
     func batchSetRating(_ rating: Int) {
@@ -996,10 +1013,21 @@ final class GridViewModel {
     }
 
     /// 批量导出
+    /// V6.67 (Q2 god method 拆分): 拆成 runExportPanel + executeExportCopy,
+    ///   batchExport 主体从 33 行 → 11 行 (只有 wiring), 2 helper 各 10-15 行
     func batchExport() {
         let photosToExport = selectedPhotosInVisible
         guard !photosToExport.isEmpty else { return }
+        // 1) 弹目录选择 panel
+        guard let destDir = runExportPanel() else { return }
+        // 2) copy 每张照片 + toast 汇总
+        executeExportCopy(photos: photosToExport, destDir: destDir)
+    }
 
+    /// V6.67 (Q2): 弹 NSOpenPanel 让用户选导出目录
+    /// - 返回 nil 表示用户取消
+    /// - canChooseDirectories + canCreateDirectories: macOS 标准 export panel
+    private func runExportPanel() -> URL? {
         let panel = NSOpenPanel()
         panel.title = Copy.exportPanelTitle
         panel.prompt = "导出"
@@ -1007,11 +1035,16 @@ final class GridViewModel {
         panel.canChooseDirectories = true
         panel.allowsMultipleSelection = false
         panel.canCreateDirectories = true
+        guard panel.runModal() == .OK else { return nil }
+        return panel.url
+    }
 
-        guard panel.runModal() == .OK, let destDir = panel.url else { return }
-
+    /// V6.67 (Q2): 实际 copy 文件到 destDir
+    /// - per-photo try, 失败 toast (单 photo), 成功累计 successCount
+    /// - 末尾弹汇总 toast
+    private func executeExportCopy(photos: [Photo], destDir: URL) {
         var successCount = 0
-        for photo in photosToExport {
+        for photo in photos {
             let destURL = destDir.appendingPathComponent(photo.filename)
             do {
                 if FileManager.default.fileExists(atPath: destURL.path) {

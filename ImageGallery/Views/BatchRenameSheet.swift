@@ -154,6 +154,9 @@ struct BatchRenameSheet: View {
 
 #Preview {
     // Preview 需要 in-memory ModelContainer
+    // V6.67 (Q1 force unwrap cleanup): try! 在 Preview 宏里是 idiomatic Swift 范式
+    //   - 失败时 Preview 不渲染 (vs app 崩), dev-only 副作用
+    //   - 真 production init 路径走 ImageGalleryApp.modelContainer (do/catch + 自动重置)
     let container = try! ModelContainer(
         for: Photo.self, Folder.self, Tag.self,
         configurations: ModelConfiguration(isStoredInMemoryOnly: true)

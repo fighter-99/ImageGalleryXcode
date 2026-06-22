@@ -182,13 +182,10 @@ struct ContentView: View {
     // ContentView 可能多次出现（开关窗口、切 sidebar），用 flag 避免重复清理
     @State private var hasPurgedExpiredTrash = false
 
-    // V6.22.3 (P2 #10): Onboarding sheet 状态 — 第一次启动 + 未看过 → 弹 3-card sheet
-    //   用户点 "开始使用" / "跳过" → model.settings.hasSeenOnboarding = true → sheet dismiss
-    //   跟 P4.2 batchRenameSheet / P4.1.1 smartFolderCreateSheet 同 pattern
-    private var showingOnboarding: Bool {
-        get { !model.settings.hasSeenOnboarding }
-        nonmutating set { _ = newValue }
-    }
+    // V6.22.3 (P2 #10): Onboarding sheet 状态 — 通过 .sheet(isPresented:) 直接读 model.settings.hasSeenOnboarding
+    //   V6.67 (Q5 dead code 二次清理): 删 showingOnboarding computed property
+    //   之前: 8 行死代码 (private getter + dummy setter), 0 caller since V6.22.3
+    //   现在: 直接 model.settings.hasSeenOnboarding in .sheet(isPresented:)
 
     // V4.11.0: 存储不可写错误（nil = 正常）
     //   onAppear 调 PhotoStorage.verifyStorage()——失败时填错误消息，detail panel 显示错误态

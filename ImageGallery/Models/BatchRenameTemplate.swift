@@ -156,6 +156,8 @@ enum BatchRenameTemplate {
         // pattern: \{ (n|originalName) (?::(\d+))? \}
         //   group 1 永远是 token name (n / originalName)
         //   group 2 是可选 padding (只有 n:N 才有)
+        // V6.67 (Q1 force unwrap cleanup): try! 保留 + 加注释 — literal regex pattern 编译期保证 valid,
+        //   Apple docs 明确推荐 try! literal NSRegularExpression (无 runtime 失败可能)
         return try! NSRegularExpression(pattern: #"\{(n|originalName)(?::(\d+))?\}"#)
     }()
 }
