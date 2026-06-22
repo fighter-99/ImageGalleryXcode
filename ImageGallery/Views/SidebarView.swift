@@ -146,7 +146,7 @@ struct SidebarView: View {
                     sidebarRow(icon: "doc.on.doc", label: Copy.sidebarDuplicates, count: libraryStats.duplicatePhotoCount, target: .duplicates, iconColor: SidebarStyle.iconColorDuplicate)
                 }
                 sidebarRow(icon: "clock.arrow.circlepath", label: Copy.sidebarRecent7Days, count: libraryStats.recent7DaysCount, target: .recent7Days, iconColor: SidebarStyle.iconColorRecent)
-                sidebarRow(icon: "large.circle", label: Copy.sidebarLargeFiles, count: libraryStats.largeFilesCount, target: .largeFiles, iconColor: SidebarStyle.iconColorLarge)
+                sidebarRow(icon: "externaldrive", label: Copy.sidebarLargeFiles, count: libraryStats.largeFilesCount, target: .largeFiles, iconColor: SidebarStyle.iconColorLarge)
             } label: {
                 Label(Copy.sidebarSectionLibrary, systemImage: "sparkles")
             }

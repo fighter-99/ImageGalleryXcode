@@ -128,7 +128,7 @@ struct PhotoGridEmptyState: View {
         if tag != nil { return "tag" }
         if filterDuplicates { return "doc.on.doc" }
         if filterRecent7Days { return "clock.arrow.circlepath" }
-        if filterLargeFiles { return "large.circle" }
+        if filterLargeFiles { return "externaldrive" }
         if filterInTrash { return "trash" }  // V3.6 NEW
         return "photo.on.rectangle.angled"
     }

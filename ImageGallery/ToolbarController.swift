@@ -35,7 +35,6 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
 
     // MARK: - Action 桥接（ContentView 设置 closure）
 
-    var onToggleSidebar: (() -> Void)?
     // V5.7: 砍 onToggleFavorite——工具栏 ❤ 收藏按钮移除
     var onBatchExport: (() -> Void)?
     var onDelete: (() -> Void)?
@@ -134,15 +133,6 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
     @ObservationIgnored private var filterBadgeLabel: NSTextField?
     // V6.38.1 (Phase 1): Import 按钮 NSButton 引用 — 导入进度变化时调 updateImportButtonAppearance
     @ObservationIgnored private var importButton: NSButton?
-    // V6.73 (#18): delete/move/export 按钮 + selection count badge (NSTextField 右上角红点)
-    //   跟 V6.29.2 filter badge 模式一致: NSView container 包 button + badge NSTextField overlay
-    //   之前 V6.72 改 button.title 引发 hit-test 冲突 — 用 badge overlay 不修改 button 本身
-    @ObservationIgnored private var deleteButton: NSButton?
-    @ObservationIgnored private var deleteBadgeLabel: NSTextField?
-    @ObservationIgnored private var moveButton: NSButton?
-    @ObservationIgnored private var moveBadgeLabel: NSTextField?
-    @ObservationIgnored private var exportButton: NSButton?
-    @ObservationIgnored private var exportBadgeLabel: NSTextField?
 
     // MARK: - 状态桥接
 
@@ -177,8 +167,9 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
     // MARK: - Item Identifiers
 
     enum Identifier: String {
-        case sidebarToggle
         case search
+        // V6.24: ⌃⌘S → ⌘\ 避开 sort 撞键
+
         case flexibleSpace
         // V5.7: 砍 favorite case——工具栏 ❤ 收藏按钮移除（走右键菜单评分 / 筛选 popover）
         case export
@@ -224,7 +215,6 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
     func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
         [
             // 主操作组 (left side)
-            Identifier.sidebarToggle.nsIdentifier,
             NSToolbarItem.Identifier.space,  // V6.13.2: 跟视图组视觉分隔
             Identifier.importItem.nsIdentifier,
             // V_move_toolbar_poc: Move 在 import 后——导入→移动→导出→删除, 都是"操作"语义连贯
@@ -253,20 +243,9 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
 
     /// 单个 item 的创建
     func toolbar(_ toolbar: NSToolbar, itemForItemIdentifier itemIdentifier: NSToolbarItem.Identifier, willBeInsertedIntoToolbar flag: Bool) -> NSToolbarItem? {
-        guard let id = Identifier(rawValue: itemIdentifier.rawValue) else { return nil }
-
         let item: NSToolbarItem?
+        guard let id = Identifier(rawValue: itemIdentifier.rawValue) else { return nil }
         switch id {
-        case .sidebarToggle:
-            item = makeSimpleItem(
-                id: id,
-                image: "sidebar.leading",
-                // V4.14.0: 本地化——之前 V4.8.0 硬编码英文，hover tooltip + Customize Toolbar 面板显示英文
-                label: Copy.toolbarToggleSidebar,
-                action: #selector(handleToggleSidebar),
-                shortcut: Copy.toolbarShortcutToggleSidebar  // V6.24: ⌃⌘S → V6.58 ⌘\ 避开 sort 撞键
-            )
-        // V5.7: 砍 .favorite case——工具栏 ❤ 收藏按钮移除
         case .quickLook:  // V4.37.1 NEW
             // V4.37.1: ⌘Y 快速查看——macOS Finder/Photos 标准 eye 图标
             //   复用 makeSimpleItem 模式，行为与 5 actions 一致
@@ -278,8 +257,7 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
                 shortcut: Copy.toolbarShortcutQuickLook  // V6.24: ⌘Y
             )
         case .export:
-            // V6.73 (#18): 改用 makeSimpleItemWithBadge — 加 selection badge
-            item = makeSimpleItemWithBadge(
+            item = makeSimpleItem(
                 id: id,
                 image: "square.and.arrow.up",
                 label: Copy.toolbarExport,
@@ -287,8 +265,7 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
                 shortcut: nil  // V6.24: export 用 ⌘⇧E (share sheet), 不是 toolbar 主快捷键, 不显示
             )
         case .delete:
-            // V6.73 (#18): 改用 makeSimpleItemWithBadge — 加 selection badge
-            item = makeSimpleItemWithBadge(
+            item = makeSimpleItem(
                 id: id,
                 image: "trash",
                 label: Copy.delete,
@@ -307,8 +284,7 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
             // SF Symbol: folder.badge.plus 表达"放到某个文件夹"的语义
             //   Photos.app 的 "Add to Album" 用 similar 模式 (rectangle.stack.badge.plus)
             //   action 走 handleMoveButton → 弹 NSMenu (与 layoutMode/density/sort 同样的下拉模式)
-            // V6.73 (#18): 改用 makeSimpleItemWithBadge — 加 selection badge
-            item = makeSimpleItemWithBadge(
+            item = makeSimpleItem(
                 id: id,
                 image: "folder.badge.plus",
                 label: Copy.moveToFolder,  // V6.71: 改用通用 moveToFolder (替代 ContextualSelectionBar 文案)
@@ -380,99 +356,6 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
     private func updateItemEnabled(_ id: Identifier, enabled: Bool) {
         guard let item = itemCache[id.nsIdentifier] else { return }
         item.isEnabled = enabled
-        // V6.73 (#18): delete/move/export 已升级为 NSView container (button + badge)
-        //   存 container ref 而不是 NSButton — updateSelectionBadges 通过 container 找 badge
-        //   之前 V6.72 改 button.title 引发 hit-test 冲突 — 用 badge overlay 是历史 V6.29.2 filter badge 模式
-    }
-
-    /// V6.73 (#18): 通用 selection badge helper — 给 NSView container 加 badge
-    ///   模式跟 V6.29.2 filter badge 一致: NSView + NSButton + NSTextField overlay
-    ///   调用: 给 delete/move/export button 加 wrapper, 然后 updateSelectionBadges 控制 badge text
-    private func makeSimpleItemWithBadge(
-        id: Identifier, image: String, label: String, action: Selector, shortcut: String? = nil
-    ) -> NSToolbarItem {
-        let item = NSToolbarItem(itemIdentifier: id.nsIdentifier)
-        item.label = ""
-        item.paletteLabel = label
-        item.toolTip = shortcut.map { "\(label)\n(\($0))" } ?? label
-        item.image = NSImage(systemSymbolName: image, accessibilityDescription: label)
-        item.target = self
-        item.action = action
-        item.isBordered = true
-
-        let button = NSButton()
-        button.bezelStyle = .circular
-        button.toolTip = label
-        button.target = self
-        button.action = action
-        button.isBordered = true
-        button.image = NSImage(systemSymbolName: image, accessibilityDescription: label)
-        button.imagePosition = .imageOnly
-        button.imageScaling = .scaleProportionallyDown
-        button.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        button.setAccessibilityLabel(label)
-        button.setAccessibilityHelp(label)
-
-        // V6.73 (#18): wrap button in container + 加 badge overlay
-        //   容器 32x24, button 占满, badge 右上角叠加 (跟 V6.29.2 filter badge 模式一致)
-        let container = NSView(frame: NSRect(x: 0, y: 0, width: 32, height: 24))
-        button.frame = container.bounds
-        button.autoresizingMask = [.width, .height]
-        container.addSubview(button)
-
-        let badge = NSTextField(labelWithString: "")
-        badge.font = NSFont.systemFont(ofSize: 9, weight: .bold)
-        badge.textColor = .white
-        badge.backgroundColor = .systemRed
-        badge.drawsBackground = true
-        badge.isBezeled = false
-        badge.isEditable = false
-        badge.isSelectable = false
-        badge.alignment = .center
-        badge.wantsLayer = true
-        badge.layer?.cornerRadius = 7
-        badge.layer?.masksToBounds = true
-        badge.isHidden = true
-        // 右上角, badge 在 (20, 14) 起点
-        badge.frame = NSRect(x: 18, y: 14, width: 14, height: 14)
-        badge.autoresizingMask = [.minXMargin, [.minYMargin]]
-        container.addSubview(badge)
-
-        item.view = container
-
-        // 存 ref — updateSelectionBadges 用
-        switch id {
-        case .delete:
-            deleteButton = button
-            deleteBadgeLabel = badge
-        case .move:
-            moveButton = button
-            moveBadgeLabel = badge
-        case .export:
-            exportButton = button
-            exportBadgeLabel = badge
-        default: break
-        }
-
-        return item
-    }
-
-    /// V6.73 (#18): selection badge 更新 — delete/move/export badge text
-    ///   selectionCount >= 2 时显示 count, 否则隐藏
-    ///   类似 macOS Mail 删除按钮显示 N, Photos 真版 toolbar 选中时也加 count hint
-    private func updateSelectionBadges(selectionCount: Int) {
-        let badges: [(button: NSButton?, label: NSTextField?)] = [
-            (deleteButton, deleteBadgeLabel),
-            (moveButton, moveBadgeLabel),
-            (exportButton, exportBadgeLabel)
-        ]
-        let shouldShow = selectionCount >= 2
-        let text = shouldShow ? "\(selectionCount)" : ""
-        for (_, badge) in badges {
-            guard let badge = badge else { continue }
-            badge.stringValue = text
-            badge.isHidden = !shouldShow
-        }
     }
 
     /// 全部状态更新（ContentView 在 .onChange 调用）
@@ -484,7 +367,6 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
     func updateAllStates(
         hasSelection: Bool,
         hasMultipleSelection: Bool,
-        selectionCount: Int = 0,
         density: CGFloat? = nil,
         layoutMode: ThumbnailLayoutMode? = nil,
         sortOption: SortOption? = nil
@@ -495,8 +377,6 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
         moveEnabled = hasSelection
         // V4.37.1: Quick Look 仅在单张选中时可用（多张 / 0 张 都灰显）
         quickLookEnabled = hasSelection && !hasMultipleSelection
-        // V6.73 (#18): selection badge — 用 NSButton.subtitle 不冲突 title
-        updateSelectionBadges(selectionCount: selectionCount)
 
         // V5.39.3: density 改 NSMenu 按钮——存 state 给 buildDensityMenu 勾选用
         // V5.43.1: 同步 currentDensity——按钮 image 跟选中的档位变
@@ -740,9 +620,6 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
         item.label = ""
         item.paletteLabel = label
         item.toolTip = label
-        // V6.72.1 hotfix: 移除 V6.72 #15 item.minSize/maxSize (跟 makeSimpleItem 同步)
-        item.minSize = NSSize(width: 32, height: 24)
-        item.maxSize = NSSize(width: 32, height: 24)
 
         let button = NSButton()
         button.bezelStyle = .circular
@@ -1102,7 +979,6 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
 
     // MARK: - Action Handlers
 
-    @objc private func handleToggleSidebar() { onToggleSidebar?() }
     // V5.7: 砍 handleToggleFavorite——工具栏 ❤ 收藏按钮移除
     @objc private func handleBatchExport() { onBatchExport?() }
     @objc private func handleDelete() { onDelete?() }

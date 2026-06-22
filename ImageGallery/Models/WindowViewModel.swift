@@ -69,11 +69,13 @@ final class WindowViewModel {
     ///   也避免 closure body 内 4 层 optional chain 难读
     func configureToolbar(window: NSWindow) {
         // 只在第一次设置
-        guard window.toolbar == nil else { return }
 
         let toolbar = NSToolbar(identifier: NSToolbar.Identifier("MainToolbar"))
         toolbar.delegate = ToolbarController.shared
-        toolbar.displayMode = .iconOnly
+        // V6.73.1 hotfix: 删 toolbar.displayMode = .iconOnly — 触发 SwiftUI BarAppearanceBridge
+        //   KVO observer crash (macOS 26 restoreState 阶段): "Cannot remove an observer for key path
+        //   displayMode because it is not registered as an observer". NSToolbar 默认 displayMode
+        //   就是 .iconOnly, 手动设多余且引发 SwiftUI/AppKit KVO 冲突。
         // V4.8.3: centeredItemIdentifiers = [.search] 让搜索框居中
         toolbar.centeredItemIdentifiers = [ToolbarController.Identifier.search.nsIdentifier]
         toolbar.allowsUserCustomization = true   // 用户可自定义 toolbar items
@@ -85,12 +87,6 @@ final class WindowViewModel {
 
         // 绑 action closures
         let controller = ToolbarController.shared
-        // 统一 helper:把 ToolbarController closure body 写成单层 [weak core] + 早期 return
-        //   替代之前每个 closure 单独写 [weak self] + self?.core?.X 模板
-        controller.onToggleSidebar = { [weak core] in
-            guard let model = core else { return }
-            withAnimation(Animations.medium) { model.settings.showSidebar.toggle() }
-        }
         // V5.7: 砍 onToggleFavorite——工具栏 ❤ 收藏按钮已移除
         controller.onBatchExport = { [weak core] in
             core?.grid.batchExport()
@@ -175,6 +171,7 @@ final class WindowViewModel {
         controller.filterActiveCount = core?.filterState.activeCount ?? 0
         // V4.8.1: search field 改用 NSSearchField
         controller.onSearchTextChanged = { [weak core] newText in
+            guard let model = core else { return }
             guard let model = core else { return }
             if model.grid.searchText != newText {
                 model.grid.searchText = newText

@@ -64,6 +64,14 @@ private final class WindowAccessorView: NSView {
                 height: max(current.height, Self.fallbackMinSize.height)
             )
         }
-        callback?(window)
+        // V6.73.1 hotfix: 延迟 1 个 runloop tick — 同步调 callback 设 NSToolbar 会触发
+        //   SwiftUI BarAppearanceBridge 在 hosting view 没完成 constraint pass 时 KVO displayMode
+        //   EXC_BREAKPOINT crash "Cannot remove an observer for keyPath displayMode because
+        //   it is not registered as an observer". 延迟让 SwiftUI NSHostingView 完成 initial constraint
+        //   setup 后再 attach NSToolbar, observer 注册就稳定了。
+        DispatchQueue.main.async { [weak window] in
+            guard let window = window else { return }
+            self.callback?(window)
+        }
     }
 }

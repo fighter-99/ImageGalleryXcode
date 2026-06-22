@@ -27,11 +27,9 @@ extension View {
     ) -> some View {
         onChange(of: selection.hasSelection) { _, hasSelection in
             // V5.33: 删 layoutMode: 参数——3 模式 toolbar 控件已删
-            // V6.73 (#18): 加 selectionCount — delete/move/export button.subtitle 显示
             ToolbarController.shared.updateAllStates(
                 hasSelection: hasSelection,
                 hasMultipleSelection: selection.isMultiSelect,
-                selectionCount: selection.selectedIDs.count,
                 density: density
             )
         }

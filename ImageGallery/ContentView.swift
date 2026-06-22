@@ -341,27 +341,6 @@ struct ContentView: View {
     // V5.52-4: state vars 都走 model, 这里用 constants from model
     // V5.60-5: 尝试抽到 ContentView+ColumnLayout.swift extension 失败——`private var model` 跨文件不可见
     //   撤回, 保留在 ContentView 内——20 行不值得做跨文件重构
-    private var columnLayout: ColumnLayoutState {
-        ColumnLayoutState(
-            sidebarColumnWidth: Binding(get: { model.sidebarColumnWidth }, set: { model.sidebarColumnWidth = $0 }),
-            detailColumnWidth: Binding(get: { model.detailColumnWidth }, set: { model.detailColumnWidth = $0 }),
-            sidebarDragStartWidth: Binding(get: { model.sidebarDragStartWidth }, set: { model.sidebarDragStartWidth = $0 }),
-            detailDragStartWidth: Binding(get: { model.detailDragStartWidth }, set: { model.detailDragStartWidth = $0 }),
-            sidebarMinWidth: model.sidebarMinWidth,
-            sidebarMaxWidth: model.sidebarMaxWidth,
-            detailMinWidth: model.detailMinWidth,
-            detailMaxWidth: model.detailMaxWidth,
-            onSidebarDragEnd: { model.settings.sidebarColumnWidth = Double(model.sidebarColumnWidth) },
-            onDetailDragEnd: { model.settings.detailColumnWidth = Double(model.detailColumnWidth) },
-            restoreFromStorage: {
-                model.sidebarColumnWidth = CGFloat(model.settings.sidebarColumnWidth)
-                // V4.35.x 修复: 旧值 < 340pt 时升到 340pt
-                let restored = CGFloat(model.settings.detailColumnWidth)
-                model.detailColumnWidth = max(restored, 340)
-            }
-        )
-    }
-
     var body: some View {
         mainLayout
             // V6.33.1: Dynamic Type 注入 — 用户选的 fontScale 走 .dynamicTypeSize 环境
@@ -556,9 +535,6 @@ struct ContentView: View {
     //   跟 photoGrid 内部 rect 略差; V1 接受, 后续 V2 polish 把 overlay 也搬进去)
     private var mainSplitPane: some View {
         MainSplitView(
-            layout: columnLayout,
-            // V5.59-2: showSidebar/showDetail 改为 computed proxy, 需显式 Binding(get:set:) 替代 $
-            showSidebar: Binding(get: { showSidebar }, set: { showSidebar = $0 }),
             showDetail: Binding(get: { showDetail }, set: { showDetail = $0 }),
             isDropTargeted: $isDropTargeted,
             isBoxSelecting: $isBoxSelecting,
