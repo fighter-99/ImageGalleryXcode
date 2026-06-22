@@ -30,18 +30,8 @@ struct QualityPolishQ1Q5Tests {
         #expect(rendered == "1")
     }
 
-    // MARK: - V6.70: hasShownMarqueeHint round-trip (替代已删的 hasSeenOnboarding test)
-
-    @Test func hasShownMarqueeHintTogglesCorrectly() {
-        // V6.70 (Onboarding removal): hasSeenOnboarding 字段删, 改测同样 bool flag round-trip
-        //   hasShownMarqueeHint 控制 MarqueeHintView 首次显示 (V6.21.0 加), 同 UserDefaults flag pattern
-        let settings = UserSettings(defaults: Self.isolatedDefaults)
-        #expect(settings.hasShownMarqueeHint == false)
-        settings.hasShownMarqueeHint = true
-        #expect(settings.hasShownMarqueeHint == true)
-        settings.hasShownMarqueeHint = false
-        #expect(settings.hasShownMarqueeHint == false)
-    }
+    // V6.74.6: 删 hasShownMarqueeHintTogglesCorrectly — UserSettings.hasShownMarqueeHint 字段已删
+    //   MarqueeHintView 浮层整体撤掉 (用户报"有时候会弹出来拖动框选多张照片提示"), 字段 + test 一起清
 
     // V6.19.6 + V6.14.7: isolatedDefaults pattern 防 parallel test 共享状态
     //   改 static let isolatedDefaults = FakeUserDefaults() (跟 UserSettingsTests 同源)

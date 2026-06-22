@@ -681,9 +681,7 @@ enum Copy {
     static func hintTrashAutoPurge(days: Int) -> String {
         String.localizedStringWithFormat(String(localized: "hintTrashAutoPurge", defaultValue: "删除的图片会出现在这里，%lld 天后自动永久清除"), days)
     }
-    // MarqueeHintView — 圈选提示 popover (复用 Copy.onboardingMarqueeTitle 跟 onboarding 统一)
-    static let marqueeHintSubtitle = String(localized: "marqueeHintSubtitle", defaultValue: "在空白处按下左键拖动, 选择一片区域内的所有照片")
-    static let marqueeHintDismiss = String(localized: "marqueeHintDismiss", defaultValue: "知道了")
+    // V6.74.6: 删 marqueeHintSubtitle / marqueeHintDismiss — MarqueeHintView 浮层撤掉
     // BatchRenameSheet — 模板 / 预览 section title + 重名 warning (%lld)
     static let batchRenameTemplateTitle = String(localized: "batchRenameTemplateTitle", defaultValue: "模板")
     static let batchRenamePreviewTitle = String(localized: "batchRenamePreviewTitle", defaultValue: "预览")

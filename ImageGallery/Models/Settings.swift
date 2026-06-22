@@ -134,13 +134,6 @@ final class UserSettings {
 
     // MARK: - V6.21.0 (Phase 1.1 UX polish): 用户偏好 — 是否显示过 marquee hint
 
-    /// V6.21.0: 是否已显示过 marquee selection hint
-    ///   true = 已显示 (用户看过或 dismiss 过), 永久隐藏
-    ///   false = 第一次启动 + 库有内容 + selection 空 → 显示 floating hint
-    var hasShownMarqueeHint: Bool = false {
-        didSet { defaults.set(hasShownMarqueeHint, forKey: "hasShownMarqueeHint") }
-    }
-
     // MARK: - V6.22.3 (P2 #10): 是否显示过 onboarding 3-card sheet
     ///   V6.70: 删 — 新手引导取消, 字段不再使用
     ///   老 UserDefaults key "hasSeenOnboarding" 变 orphan (无害, 不读不写)
@@ -328,9 +321,7 @@ final class UserSettings {
         // V6.12.16: language 也 reset 到默认 (.zhHans)
         language = Language.zhHans.rawValue
         defaultExportQuality = 0.9
-        // V6.21.4 (audit fix #3): hasShownMarqueeHint 也 reset — "恢复全部为默认" 应该包括 UX hint flag
-        //   之前 reset 漏掉, 用户清空库后无法重新触发 MarqueeHintView (audit #5 related)
-        hasShownMarqueeHint = false
+        // V6.74.6: 删 hasShownMarqueeHint reset — hint 浮层整体撤掉, 字段已删
         // V6.22.3 (P2 #10): hasSeenOnboarding 也 reset — V6.70 删字段, 这行删
         // V6.39.0: 新增 2 字段也 reset
         defaultImportLocation = nil

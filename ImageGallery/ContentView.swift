@@ -476,14 +476,7 @@ struct ContentView: View {
             //   调 model.scheduleDismissToast() 移除队首 + 触发 next toast 显示
             onToastDismiss: { model.scheduleDismissToast() }
         )
-        // V6.21.0 (Phase 1.1 UX polish): 圈选启动 → dismiss marquee hint
-        //   isBoxSelecting 由 ContentView @State 持有, mainSplitPane 传 $isBoxSelecting 给 MainSplitView
-        //   BoxSelectionGesture 启动时 set true → 这里 onChange 触发 → dismiss hint
-        .onChange(of: isBoxSelecting) { _, new in
-            if new && !model.settings.hasShownMarqueeHint {
-                model.settings.hasShownMarqueeHint = true
-            }
-        }
+        // V6.74.6: 删 .onChange(of: isBoxSelecting) marquee hint dismiss 逻辑 — hint 整撤掉
     }
 
     // V3.5.17：PathBar 已禁用（用户偏好）
@@ -556,25 +549,9 @@ struct ContentView: View {
         // V6.38.2 (Phase 2): SelectionMiniToolbar .overlay(alignment: .top) 移除
         //   之前: 浮在 mainSplitPane 顶层 — 不占 layout, 跟 grid 内容重叠
         //   现在: 嵌到 gridPane 顶部 VStack (line 637 附近), layout shift 自动让 grid 下移
-        // V6.21.0 (Phase 1.1 UX polish): 圈选功能发现性提示 — first-run floating tip
-        //   显示条件: 库有内容 + selection 空 + 用户没看过提示
-        //   dismiss 路径: 1) 点 "知道了" → settings.hasShownMarqueeHint = true
-        //                 2) 首次拖动 (BoxSelectionGesture onChanged) → 同上
-        //   V6.17.1 plain left-drag 圈选是核心交互, 但用户不知道有 — 这是发现性缺口
-        .overlay(alignment: .center) {
-            if !model.settings.hasShownMarqueeHint
-                && model.grid.selection.selectedIDs.isEmpty
-                && !model.grid.allPhotos.isEmpty {
-                MarqueeHintView(onDismiss: {
-                    model.settings.hasShownMarqueeHint = true
-                })
-                .transition(.scale(scale: 0.85).combined(with: .opacity))
-            }
-        }
-        .animation(Animations.standard, value: model.settings.hasShownMarqueeHint)
-        .animation(Animations.standard, value: model.grid.allPhotos.isEmpty)
-        .animation(Animations.quick, value: model.grid.isMultiSelect)
-        .animation(Animations.quick, value: model.grid.selection.selectedIDs.isEmpty)
+        // V6.74.6: 删 .overlay marquee hint block + 4 个 .animation
+        //   圈选 (marquee select) 用户已知, hint 浮层反而干扰 grid 浏览 — 撤掉
+        //   .animation value 三处 (allPhotos.isEmpty / isMultiSelect / selection.isEmpty) hint 用过, 删
     }
 
     private var sidebarPane: some View {
