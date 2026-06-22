@@ -134,7 +134,9 @@ final class GridViewModel {
             cachedFolderSelection = sel
             return nil
         }
-        let folder = (try? modelContext.fetch(FetchDescriptor<Folder>(predicate: #Predicate { $0.id == id })))?.first
+        // V6.68 (Q9 错误处理统一): 改用 modelContext.fetchFirst — 失败时 Logger.swiftData.error 留诊断线索
+        //   之前 try? ... .first 完全静默, fetch 错误没法诊断
+        let folder = modelContext.fetchFirst(Folder.self, predicate: #Predicate { $0.id == id })
         cachedCurrentFolder = folder
         cachedFolderSelection = sel
         return folder
@@ -152,7 +154,8 @@ final class GridViewModel {
             cachedTagSelection = sel
             return nil
         }
-        let tag = (try? modelContext.fetch(FetchDescriptor<Tag>(predicate: #Predicate { $0.id == id })))?.first
+        // V6.68 (Q9): fetchFirst 收口 (跟 currentFolder 同模式)
+        let tag = modelContext.fetchFirst(Tag.self, predicate: #Predicate { $0.id == id })
         cachedCurrentTag = tag
         cachedTagSelection = sel
         return tag
@@ -170,7 +173,8 @@ final class GridViewModel {
             cachedSmartFolderSelection = sel
             return nil
         }
-        let sf = (try? modelContext.fetch(FetchDescriptor<SmartFolder>(predicate: #Predicate { $0.id == id })))?.first
+        // V6.68 (Q9): fetchFirst 收口
+        let sf = modelContext.fetchFirst(SmartFolder.self, predicate: #Predicate { $0.id == id })
         cachedCurrentSmartFolder = sf
         cachedSmartFolderSelection = sel
         return sf

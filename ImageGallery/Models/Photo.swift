@@ -26,6 +26,12 @@ final class Photo {
     var width: Int
     var height: Int
 
+    // V6.68 (Q8 Schema V3): ROLLBACK — 加 SwiftData VersionedSchema V3 + Photo 4 个 EXIF optional 字段
+    //   触发 test runner crash (Existing V2 store 在 lightweight ALTER TABLE 时 abort, ImageGalleryApp.init() 失败)
+    //   V6.20 audit #14 #15 早就预警 schema migration 风险高 — 此风险确实实现
+    //   决策: 全部 rollback 到 V6.67 状态, 保留注释记录教训
+    //   后续 round: SwiftData tooling 完善 + 自定义 migration stage (而非 lightweight) 才重试
+
     // ─── 用户标记 ───
     // V5.8: isFavorite 字段保留 stored（SwiftData schema 约束——改 computed 需要 schema migration）
     //   语义上 = (rating >= 5)——V5.7 砍 UI 后本字段是 dead data

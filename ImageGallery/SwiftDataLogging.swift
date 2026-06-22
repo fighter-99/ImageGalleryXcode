@@ -84,4 +84,29 @@ extension ModelContext {
             return false
         }
     }
+
+    /// V6.68 (Q9 错误处理统一): fetch first match with logging
+    /// - 成功找到: 返回第一个 match
+    /// - 成功但空: 返回 nil
+    /// - 失败 (DB corruption / schema mismatch): Logger.swiftData.error + 返回 nil
+    ///   替代 try? modelContext.fetch(...).first 的静默模式 — 失败时留诊断线索
+    ///
+    /// 用法:
+    /// ```swift
+    /// // 之前: let folder = (try? modelContext.fetch(FetchDescriptor<Folder>(predicate: ...)))?.first
+    /// // 现在: let folder = modelContext.fetchFirst(Folder.self, predicate: #Predicate { $0.id == id })
+    /// ```
+    func fetchFirst<T: PersistentModel>(
+        _ type: T.Type,
+        predicate: Predicate<T>? = nil
+    ) -> T? {
+        do {
+            var descriptor = FetchDescriptor<T>()
+            if let predicate { descriptor.predicate = predicate }
+            return try fetch(descriptor).first
+        } catch {
+            Logger.swiftData.error("SwiftData fetchFirst failed (\(String(describing: T.self), privacy: .public)): \(error.localizedDescription, privacy: .public)")
+            return nil
+        }
+    }
 }
