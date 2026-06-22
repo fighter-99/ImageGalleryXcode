@@ -60,7 +60,8 @@ struct PhotoGridEmptyState: View {
                     systemImage: $0.systemImage,
                     onTap: $0.onTap
                 )
-            }
+            },
+            useNativeStyle: true
         )
     }
 

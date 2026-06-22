@@ -471,11 +471,7 @@ private struct PhotoCellContent: View {
             payload: makeDragPayload(),
             preview: { dragPreview }
         ))
-        // V5.39.7: 拖入重排 — dropDestination 常驻, 仅 customOrder 模式接受 drop
-        //   V6.22.7: 抽 handleReorderDropDecision helper — guard chain 触发 type-check timeout
-        .dropDestination(for: PhotoDragItem.self) { items, _ in
-            handleReorderDropDecision(items: items)
-        }
+
         // V3.6.37: 抽 contextMenu 到独立 view (类型检查)
         // V6.38.1 (Phase 1): showingDeleteConfirm + onDelete 移除 — 删除从右键菜单搬到 ⌘⌫
         .modifier(CellContextMenuModifier(

@@ -142,7 +142,7 @@ extension View {
                     // V6.17.0: 真 marquee — rect 包含 cell 中心点 → 选中
                     //   跟 Finder / Photos 一致: 拖框跟 cell 中心相交即选中
                     if let rect = marqueeRect.wrappedValue {
-                        let selectedIDs: Set<UUID> = Set(
+                        let newIDs: Set<UUID> = Set(
                             cellFrames
                                 .filter { cell in
                                     let centerX = cell.frame.midX
@@ -151,13 +151,19 @@ extension View {
                                 }
                                 .map { $0.id }
                         )
-                        // 替换 selection (V1 简化, 跟 Photos 一致: marquee 替换, 不 toggle)
+                        let shiftHeld = NSEvent.modifierFlags.contains(.shift)
                         var newState = SelectionState()
-                        newState.selectedIDs = selectedIDs
-                        if selectedIDs.count == 1 {
-                            newState.selectedPhotoID = selectedIDs.first
-                            newState.lastSelectedID = selectedIDs.first
-                        } else if let last = cellFrames.last(where: { selectedIDs.contains($0.id) })?.id {
+                        if shiftHeld {
+                            // Shift + 框选: 扩展选区 (union, 跟 Finder/Photos 一致)
+                            newState.selectedIDs = selection.wrappedValue.selectedIDs.union(newIDs)
+                        } else {
+                            // 替换 selection (V1 简化, 跟 Photos 一致: marquee 替换, 不 toggle)
+                            newState.selectedIDs = newIDs
+                        }
+                        if newState.selectedIDs.count == 1 {
+                            newState.selectedPhotoID = newState.selectedIDs.first
+                            newState.lastSelectedID = newState.selectedIDs.first
+                        } else if let last = cellFrames.last(where: { newState.selectedIDs.contains($0.id) })?.id {
                             newState.lastSelectedID = last
                         }
                         selection.wrappedValue = newState

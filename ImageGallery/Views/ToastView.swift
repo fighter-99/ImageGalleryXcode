@@ -58,89 +58,46 @@ struct ToastView: View {
     @Environment(\.colorScheme) private var colorScheme
     // V6.21.4 (audit fix #1): @State progress — duration 内 1.0 → 0.0 真动画
     //   之前 V6.21.1 ProgressView(value: 1) hardcode static, bar 永远 100% 不动
-    @State private var progress: Double = 1
 
     var body: some View {
-        VStack(spacing: 6) {
-            HStack(spacing: 10) {
-                Image(systemName: type.icon)
-                    .font(.callout)
-                    .foregroundStyle(type.tint)
-                Text(message)
-                    .font(.callout)
-                    .foregroundStyle(.primary)
-                    .lineLimit(2)
-                // V6.29.1: [撤销] 按钮 — Photos.app 范式
-                //   只在 undoAction 非 nil 时显示
-                //   触发: 调 undo + auto dismiss (避免用户连点导致双重 undo)
-                //   不加 keyboardShortcut("z"): Edit > Undo (⌘Z) 全局命令已绑定,
-                //   这里靠 undoManager 联动 — toast 上的 [撤销] 是 UI 入口
-                if let undoAction {
-                    Button {
-                        undoAction()
-                        onDismiss()
-                    } label: {
-                        Text(Copy.undo)
-                            .font(.callout.weight(.semibold))
-                            .foregroundStyle(Color.accentColor)
-                            .padding(.horizontal, 6)
-                    }
-                    .buttonStyle(.plain)
-                    .help(Copy.toastUndoHelp)
-                }
-                // V6.21.1: close button — 用户主动 dismiss (不等 auto)
-                //   .buttonStyle(.plain) 避免 macOS 自动应用 bordered 样式
-                Button(action: onDismiss) {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
+        HStack(spacing: 8) {
+            Image(systemName: type.icon)
+                .font(.callout)
+                .foregroundStyle(type.tint)
+            Text(message)
+                .font(.callout)
+                .foregroundStyle(.primary)
+                .lineLimit(2)
+            if let undoAction {
+                Button {
+                    undoAction()
+                    onDismiss()
+                } label: {
+                    Text(Copy.undo)
+                        .font(.callout.weight(.semibold))
                 }
                 .buttonStyle(.plain)
-                .help(Copy.toastCloseHelp)
+                .foregroundStyle(Color.accentColor)
+                .help(Copy.toastUndoHelp)
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 10)
-            .padding(.bottom, 4)
-            // V6.21.4 (audit fix #1): 真正 progress 动画 — duration 内从 1.0 → 0.0
-            //   @State progress + .task(id: duration) — view 出现时启动 task, 50ms 间隔更新
-            //   toast 主动 dismiss (close button / undo button) → task 自动 cancel (isCancelled)
-            ProgressView(value: progress)
-                .progressViewStyle(.linear)
-                .tint(type.tint)
-                .scaleEffect(x: 1, y: 0.5, anchor: .leading)
-                .opacity(0.6)
-                .frame(height: 2)
-                .padding(.horizontal, 4)
-                .animation(.linear(duration: 0.05), value: progress)
         }
         .padding(.horizontal, 16)
-        .padding(.bottom, 8)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10))
+        .padding(.vertical, 10)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
         .overlay(
-            RoundedRectangle(cornerRadius: 10)
-                .strokeBorder(type.tint.opacity(0.3), lineWidth: 0.5)
+            RoundedRectangle(cornerRadius: 8)
+                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 0.5)
         )
-        // V6.16.1: 暗色模式阴影加强
-        // V6.66 (Wave 2 调用点迁移): 改用 Elevation.elevated (0.20/12pt/4)
-        //   之前 light/dark 分别硬编码 0.15/10 vs 0.55/14 — token 化统一
-        //   Photos 真版 toast 阴影匹配 elevated 档位
-        //   dark mode 视觉锤更强 (colorScheme 派生 shadow color)
-        //   Elevation.elevated.color 已 opacity(0.20), light mode 直接用
-        //   dark mode 强 opacity 0.55 — Photos 真版 dark shadow 范式
         .shadow(
-            color: colorScheme == .dark ? Color.black.opacity(0.55) : Elevation.elevated.color,
-            radius: colorScheme == .dark ? 14 : Elevation.elevated.radius,
-            y: Elevation.elevated.y
+            color: Color.black.opacity(colorScheme == .dark ? 0.55 : 0.15),
+            radius: colorScheme == .dark ? 14 : 8,
+            y: colorScheme == .dark ? 4 : 3
         )
-        // V6.64.1 (A11y): toast 整行作为单一 a11y 元素 + announce 触发时通知 VoiceOver
-        //   undoAction 存在时 hint 告诉用户 "按 ⌘Z 或点撤销按钮恢复"
+        .fixedSize()
         .accessibilityElement(children: .contain)
         .accessibilityLabel(message)
         .accessibilityAddTraits(undoAction != nil ? .updatesFrequently : [])
-        // V6.64.1 (A11y): 触发 NSAccessibility announcement — VoiceOver 立即朗读 toast 内容
-        //   替代方式: NSAccessibility.post(element: NSApp.mainWindow, notification: .announcementRequested, ...)
         .onAppear {
-            // macOS 自动 VoiceOver 朗读 focus 元素, toast 是临时浮层不 focus — 主动 announce
             NSAccessibility.post(
                 element: NSApp.mainWindow as Any,
                 notification: .announcementRequested,
@@ -150,21 +107,13 @@ struct ToastView: View {
                 ]
             )
         }
-        // V6.21.4 (audit fix #1): progress countdown task — duration 秒内 progress 1 → 0
-        //   task(id: duration) view 出现时启动, 消失时自动 cancel (toast 主动 dismiss / 队列下一 toast)
-        //   50ms tick 平衡精度 + CPU (避免 16ms 触发过度)
         .task(id: duration) {
-            let start = Date()
-            while !Task.isCancelled {
-                let elapsed = Date().timeIntervalSince(start)
-                progress = max(0, 1 - elapsed / duration)
-                if progress <= 0 { break }
-                try? await Task.sleep(nanoseconds: 50_000_000)
-            }
+            guard duration > 0 else { return }
+            try? await Task.sleep(nanoseconds: UInt64(duration * 1_000_000_000))
         }
-    }
-}
+    }  // closes var body
 
+}
 #Preview {
     VStack(spacing: 12) {
         ToastView(message: "已导入 12 张图片", type: .success, duration: 2.5, onDismiss: {}, undoAction: nil)

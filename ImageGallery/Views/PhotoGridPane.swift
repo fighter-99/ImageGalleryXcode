@@ -53,7 +53,6 @@ struct PhotoGridPane: View {
     let onExportComplete: (Int) -> Void
     // V5.39.6: 透传到 PhotoGridView, 让 Finder 拖入文件触发 ImageImporter
     //   必须放在 exportComplete 之后——SwiftUI call site 顺序约束
-    let onDropImport: ([URL]) -> Void
     // V5.39.7: 透传重排回调 (customOrder 拖拽重排后触发, 调 ContentView recomputePhotos)
     let onReorder: () -> Void
     // V5.61-1: 滚动位置变化回调——透传 PhotoGridView.scrollAnchorID 变化到 ContentView 写回 model
@@ -83,7 +82,7 @@ struct PhotoGridPane: View {
             selectedShapes: selectedShapes,
             filterMinRating: filterMinRating,
             retentionDays: retentionDays,
-            thumbnailSize: thumbnailSize,
+            thumbnailSize: .constant(thumbnailSize),
             // V5.17: 透传 layoutMode → PhotoGridView.masonryRowsView dispatch
             layoutMode: layoutMode,
             sortOption: sortOption,
@@ -96,7 +95,6 @@ struct PhotoGridPane: View {
             onDoubleTap: onDoubleTap,
             onClearFilters: onClearFilters,  // V4.9.0
             onExportComplete: onExportComplete,
-            onDropImport: onDropImport,      // V5.39.6 透传
             onReorder: onReorder,             // V5.39.7 透传
             // V6.22.1 (P2 #2): 旋转回调 — caller (ContentView) 传 model.rotateSelected 闭包
             onRotate: onRotate

@@ -66,7 +66,7 @@ struct PhotoGridView: View {
     }
     // V3.6.6: 保留时长 (用于缩略图剩余天数 badge)
     let retentionDays: Int
-    let thumbnailSize: CGFloat
+    @Binding var thumbnailSize: CGFloat
     // V5.17: 缩略图布局模式 (3 选项)—— 由 ContentView.layoutMode 透传
     //   决定 MasonryMath 的 uniformWidth / stretchLastRow 二元组
     let layoutMode: ThumbnailLayoutMode
@@ -93,11 +93,6 @@ struct PhotoGridView: View {
     let isImporting: Bool = false
     // 必须在最末尾 (Swift init 顺序要求)
     let onExportComplete: (Int) -> Void
-    // V5.39.6 NEW: 拖入导入回调——从 Finder 拖文件 / 文件夹到 grid 直接导入
-    //   macOS 用户习惯从 Finder 拖文件到 app (跟 Photos.app 行为一致)
-    //   onImport 走 NSOpenPanel; onDropImport 走 NSItemProvider (拖拽), 互不冲突
-    //   必须放在 exportComplete 之后, onReorder 之前——SwiftUI call site 顺序约束
-    let onDropImport: ([URL]) -> Void
     // V5.39.7 NEW: 重排回调 (customOrder 拖拽重排后调, 触发 recomputePhotos 重算 grid)
     let onReorder: () -> Void
     // V6.22.1 (P2 #2): 旋转回调 — caller (ContentView) 传 model.rotateSelected closure
@@ -238,16 +233,10 @@ struct PhotoGridView: View {
             recomputePhotos()
             onVisiblePhotosChange(photos)
         }
-        // V5.39.6: 拖入导入——从 Finder 拖文件 / 文件夹到 grid 任何位置直接导入
-        //   .dropDestination 是 SwiftUI 14+ 新 API, 替代 .onDrop(of:)
-        //   - URL.self: 只接收 file URL (图片文件 / 包含图片的文件夹)
-        //   - action: 闭包收到 [URL] (Finder 拖的多选 / 文件夹递归) + 落点坐标
-        //   - 返回 true 表示接受 drop (false = 拒绝, 系统会显示禁止图标)
-        //   - onDropImport 是 ContentView 注入的回调, 走 ImageImporter.importURLs
-        //   - 整个 body VStack 都接受 drop (空态时也能拖入导入)——符合 Photos.app UX
-        .dropDestination(for: URL.self) { urls, _ in
-            onDropImport(urls)
-            return true
+        // 监听 GridViewModel 数据变更 (删除/移动/评分等) → 立即刷新 visible photos
+        .onReceive(NotificationCenter.default.publisher(for: .gridModelDidChange)) { _ in
+            recomputePhotos()
+            onVisiblePhotosChange(photos)
         }
     }
 
@@ -277,7 +266,7 @@ struct PhotoGridView: View {
             photoGrid
                 // V5.25: 平滑密度切换动画——spring animation 在 thumbnailSize 变化时
                 //   spring response 0.3 + damping 0.8: 快速但不"弹"
-                .animation(.spring(response: 0.3, dampingFraction: 0.8), value: thumbnailSize)
+                .animation(Animations.interactive, value: thumbnailSize)
                 .transition(.opacity)
         case .list:
             PhotoListView(
@@ -780,75 +769,4 @@ struct PhotoGridView: View {
     //   现在删除走 ⌘⌫ → ContentView.onDelete → model.grid.handleDelete() → batchDeleteConfirm / deleteSinglePhoto
     //   cell 不再需要 per-photo delete 入口
 
-    // MARK: - 拖拽重排数学 (V3.5.D P3: 纯函数, 便于单测)
-
-    /// 计算拖拽重排的最终 source 集合和校正后的 destination。
-    static func computeDragReorder(
-        photoCount: Int,
-        source: IndexSet,
-        destination: Int,
-        isPhotoSelectedAt: (Int) -> Bool
-    ) -> (allSources: IndexSet, adjustedDest: Int) {
-        // Step 1: 决定实际要拖的 source 集合
-        let allSources: IndexSet
-        if source.count == 1, let draggedIndex = source.first, isPhotoSelectedAt(draggedIndex) {
-            // 拖动的是某个被选中的项——检查是否还有其他选中项
-            let allSelectedIndices = (0..<photoCount).filter { isPhotoSelectedAt($0) }
-            if allSelectedIndices.count > 1 {
-                allSources = IndexSet(allSelectedIndices)
-            } else {
-                allSources = source
-            }
-        } else {
-            allSources = source
-        }
-
-        // Step 2: 校正 destination (左移 sources 中 < dest 的项数)
-        let sourcesBeforeDest = allSources.filter { $0 < destination }.count
-        var adjustedDest = destination - sourcesBeforeDest
-
-        // Step 3: Clamp 到合法范围 [0, photoCount - allSources.count]
-        let maxDest = max(0, photoCount - allSources.count)
-        adjustedDest = min(max(0, adjustedDest), maxDest)
-
-        return (allSources, adjustedDest)
-    }
-}
-
-#Preview {
-    PhotoGridView(
-        selection: .constant(SelectionState()),
-        isMarqueeActive: .constant(false),
-        marqueeRect: .constant(nil),
-        folder: nil,
-        tag: nil,
-        searchText: "",
-        filterUnfiled: false,
-        filterDuplicates: false,
-        filterRecent7Days: false,
-        filterLargeFiles: false,
-        filterInTrash: false,
-        selectedFolderIDs: [],
-        selectedTagIDs: [],
-        selectedShapes: [],
-        filterMinRating: 0,
-        retentionDays: 30,
-        thumbnailSize: 170,
-        layoutMode: .squareFit,  // V6.12.12: .square 砍了, Preview 默认 .squareFit
-        sortOption: .importedAtDesc,
-        scrollAnchorPhotoID: nil,  // V5.60-6: Preview 不需要 anchor
-        onScrollAnchorChange: { _ in },  // V5.61-1: Preview no-op
-        onVisiblePhotosChange: { _ in },
-        onImport: {},
-        onBatchDelete: {},
-        onClearMultiSelect: {},
-        onDoubleTap: { _ in },
-        onClearFilters: {},
-        onExportComplete: { _ in },
-        onDropImport: { _ in },
-        onReorder: {},
-        // V6.22.1: Preview no-op 旋转
-        onRotate: { _, _ in }
-    )
-    .frame(width: SheetMetrics.standardWidth, height: SheetMetrics.standardHeight)
 }

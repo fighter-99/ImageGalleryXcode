@@ -253,7 +253,7 @@ struct DetailView: View {
         //   旧实现：photo 切换瞬间图替换（无 transition 感觉"跳"）
         .id(photo.id)
         .transition(.opacity.combined(with: .scale(scale: 0.95)))
-        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: photo.id)
+        .animation(Animations.bouncy, value: photo.id)
         // macOS Quick Look 风格：大图无边框、无卡片背景
         // 导航覆盖层：← / 索引 / →
         .overlay(alignment: .bottom) {

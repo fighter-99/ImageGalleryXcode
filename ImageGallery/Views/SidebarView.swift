@@ -138,7 +138,7 @@ struct SidebarView: View {
             //   4. 最近删除（单独 section，底部独立入口）
             //   5. 存储信息（在 List 外，固定在侧栏底部）
 
-            // ─── 我的图馆（DisclosureGroup 原生展开/折叠）───
+            // ─── 我的图馆 ───
             DisclosureGroup(isExpanded: $isLibraryExpanded) {
                 sidebarRow(icon: "photo.on.rectangle.angled", label: Copy.sidebarAll, count: libraryStats.inLibraryCount, target: .all)
                 sidebarRow(icon: "tray", label: Copy.sidebarUnfiled, count: libraryStats.unfiledCount, target: .unfiled)
@@ -148,7 +148,7 @@ struct SidebarView: View {
                 sidebarRow(icon: "clock.arrow.circlepath", label: Copy.sidebarRecent7Days, count: libraryStats.recent7DaysCount, target: .recent7Days, iconColor: SidebarStyle.iconColorRecent)
                 sidebarRow(icon: "externaldrive", label: Copy.sidebarLargeFiles, count: libraryStats.largeFilesCount, target: .largeFiles, iconColor: SidebarStyle.iconColorLarge)
             } label: {
-                Label(Copy.sidebarSectionLibrary, systemImage: "sparkles")
+                Text(Copy.sidebarSectionLibrary).font(.system(size: 13, weight: .semibold))
             }
 
             // ─── 智能文件夹（DisclosureGroup + 底部新建入口）───
@@ -161,13 +161,13 @@ struct SidebarView: View {
                         Label(Copy.sidebarNewSmartFolder, systemImage: "sparkles")
                     }
                     .buttonStyle(.plain)
-                    .font(.callout)
+                    .font(.system(size: 13))
                 } label: {
-                    Label(Copy.sidebarSectionSmartFolders, systemImage: IconNames.folder)
+                    Text(Copy.sidebarSectionSmartFolders).font(.system(size: 13, weight: .semibold))
                 }
             }
 
-            // ─── 我的文件夹（DisclosureGroup 原生展开/折叠）───
+            // ─── 我的文件夹 ───
             DisclosureGroup(isExpanded: $isFoldersExpanded) {
                 ForEach(folders) { folder in
                     folderSidebarRow(folder)
@@ -179,12 +179,12 @@ struct SidebarView: View {
                     Label(Copy.newFolder, systemImage: "plus.circle")
                 }
                 .buttonStyle(.plain)
-                .font(.callout)
+                .font(.system(size: 13))
             } label: {
-                Label(Copy.sidebarSectionFolders, systemImage: IconNames.folder)
+                Text(Copy.sidebarSectionFolders).font(.system(size: 13, weight: .semibold))
             }
 
-            // ─── 标签（DisclosureGroup 原生展开/折叠）───
+            // ─── 标签 ───
             DisclosureGroup(isExpanded: $isTagsExpanded) {
                 ForEach(tags) { tag in
                     sidebarRow(
@@ -210,9 +210,9 @@ struct SidebarView: View {
                     Label(Copy.newTag, systemImage: "plus.circle")
                 }
                 .buttonStyle(.plain)
-                .font(.callout)
+                .font(.system(size: 13))
             } label: {
-                Label(Copy.sidebarSectionTags, systemImage: IconNames.tag)
+                Text(Copy.sidebarSectionTags).font(.system(size: 13, weight: .semibold))
             }
 
             // ─── Section 4: 最近删除（单独 section，底部入口）───
@@ -574,7 +574,9 @@ struct SidebarView: View {
         if selection == .smartFolder(sf.id) {
             selection = .all
         }
-        try? modelContext.save()
+        // V6.74.3: saveWithLog 替代 try? modelContext.save() — 同文件 L298/305/318/325 pattern
+        //   失败时 Logger.swiftData.error 留诊断 (SidebarView 没 enqueueToastHandler, 只 log)
+        modelContext.saveWithLog()
     }
 
     /// P4.1.1: 触发智能文件夹创建 sheet — 拿当前 model.filterState 作初值快照

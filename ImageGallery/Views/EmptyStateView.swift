@@ -33,6 +33,7 @@
 import SwiftUI
 
 struct EmptyStateView: View {
+    @State private var appeared = false
     /// V6.61 NEW: 视觉样式——派生 backdrop 圆形填充色 + icon tint
     ///   取代之前的 iconColor 单独参数,让"视觉意图"统一管控
     enum Style {
@@ -62,8 +63,37 @@ struct EmptyStateView: View {
     var primaryAction: Action? = nil
     /// 次要操作（bordered + 中尺寸）
     var secondaryAction: Action? = nil
+    /// 是否使用原生 ContentUnavailableView 风格（macOS 15+）
+    var useNativeStyle: Bool = false
 
+    @ViewBuilder
     var body: some View {
+        if useNativeStyle {
+            nativeBody
+        } else {
+            customBody
+        }
+    }
+
+    // MARK: - macOS 原生风格 (ContentUnavailableView)
+    
+    private var nativeBody: some View {
+        ContentUnavailableView {
+            Label(title, systemImage: icon)
+                .foregroundStyle(Surface.textPrimary)
+        } description: {
+            if let subtitle {
+                Text(subtitle)
+                    .font(.body)
+                    .foregroundStyle(Surface.textSecondary)
+            }
+        } actions: {
+            actionButtons
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var customBody: some View {
         VStack(spacing: Spacing.xxl) {
             backdropIcon
 
@@ -103,7 +133,10 @@ struct EmptyStateView: View {
             }
         }
         .padding(Spacing.xxl)
+        .scaleEffect(appeared ? 1 : 0.92)
+        .opacity(appeared ? 1 : 0)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onAppear { withAnimation(Animations.medium) { appeared = true } }
     }
 
     // MARK: - 视觉子组件
@@ -130,6 +163,28 @@ struct EmptyStateView: View {
             Label(action.label, systemImage: systemImage)
         } else {
             Text(action.label)
+        }
+    }
+
+    @ViewBuilder
+    private var actionButtons: some View {
+        if primaryAction != nil || secondaryAction != nil {
+            HStack(spacing: Spacing.sm) {
+                if let secondaryAction {
+                    Button(action: secondaryAction.onTap) {
+                        actionLabel(secondaryAction)
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.regular)
+                }
+                if let primaryAction {
+                    Button(action: primaryAction.onTap) {
+                        actionLabel(primaryAction)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
+                }
+            }
         }
     }
 

@@ -167,9 +167,9 @@ struct BatchRenameSheet: View {
                    fileSize: 100, width: 10, height: 10)
     let p3 = Photo(filename: "IMG_003.jpg", fileURL: URL(fileURLWithPath: "/tmp/preview3.jpg"),
                    fileSize: 100, width: 10, height: 10)
-    container.mainContext.insert(p1)
-    container.mainContext.insert(p2)
-    container.mainContext.insert(p3)
+    let _ = container.mainContext.insert(p1)
+    let _ = container.mainContext.insert(p2)
+    let _ = container.mainContext.insert(p3)
 
-    return BatchRenameSheet(photos: [p1, p2, p3]) { _ in }
+    BatchRenameSheet(photos: [p1, p2, p3]) { _ in }
 }

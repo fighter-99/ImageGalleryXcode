@@ -73,8 +73,8 @@ enum SortOption: String, CaseIterable, Identifiable {
         switch self {
         case .importedAtDesc:  return "clock.fill"
         case .importedAtAsc:   return "clock"
-        case .filenameDesc:    return "textformat.size.larger"  // V5.60-2: 大写先 Z→A
-        case .filenameAsc:     return "textformat.size.smaller"  // V5.60-2: 小写先 A→Z
+        case .filenameDesc:    return "doc"  // 字母排序
+        case .filenameAsc:     return "doc"  // 字母排序
         case .fileSizeDesc:    return "externaldrive.fill"
         case .fileSizeAsc:     return "externaldrive"
         case .customOrder:     return "arrow.up.arrow.down"  // V5.87: 视觉重量跟其他 icon 一致

@@ -228,7 +228,7 @@ struct DetailPane: View {
         // V4.20.0: 撤回 .glassEffectID 回归单 view glassEffect（玻璃 effect 限定在 detail panel 边界内）
         // V3.6.46: 用户反馈详情面板"向右翻页"感太重，去掉 .move，只保留 .opacity
         // V6.64.4: .standard (0.2s) → .easeInOut(0.25) — Photos 真版匹配
-        .animation(.easeInOut(duration: 0.25), value: viewKind)
+        .animation(Animations.standard, value: viewKind)
     }
 }
 

@@ -2,7 +2,7 @@
 //  MainLayoutView.swift
 //  ImageGallery
 //
-//  最外层主布局：VStack 纵向堆叠 Split / StatusBar，
+//  最外层主布局：VStack 纵向堆叠 Split，
 //  + undoManager 环境注入
 //  + Toast 浮层
 //  + 沉浸式全屏看图
@@ -18,11 +18,10 @@
 
 import SwiftUI
 
-struct MainLayoutView<PathBar: View, Split: View, StatusBarView: View>: View {
-    // 3 个子视图（generic 存储）—— toolbar 在 V4.0.0 已迁出到 native .toolbar API
+struct MainLayoutView<PathBar: View, Split: View>: View {
+    // 2 个子视图（generic 存储）—— toolbar 在 V4.0.0 已迁出到 native .toolbar API
     let pathBar: PathBar
     let split: Split
-    let statusBar: StatusBarView
 
     // 修饰需要的 binding
     @Binding var showSidebar: Bool
@@ -47,7 +46,6 @@ struct MainLayoutView<PathBar: View, Split: View, StatusBarView: View>: View {
     init(
         @ViewBuilder pathBar: () -> PathBar,
         @ViewBuilder split: () -> Split,
-        @ViewBuilder statusBar: () -> StatusBarView,
         showSidebar: Binding<Bool>,
         undoManager: ImageGalleryUndoManager,
         toastQueue: [ToastInfo],
@@ -62,7 +60,6 @@ struct MainLayoutView<PathBar: View, Split: View, StatusBarView: View>: View {
     ) {
         self.pathBar = pathBar()
         self.split = split()
-        self.statusBar = statusBar()
         self._showSidebar = showSidebar
         self.undoManager = undoManager
         self.toastQueue = toastQueue
@@ -77,7 +74,6 @@ struct MainLayoutView<PathBar: View, Split: View, StatusBarView: View>: View {
         VStack(spacing: 0) {
             pathBar
             split
-            statusBar
         }
         // V3.5 Phase 2：把 undoManager 注入环境，让 DetailView 的撤销逻辑（添加/移除标签、重命名）能用
         .environment(\.undoManager, undoManager)
@@ -86,7 +82,6 @@ struct MainLayoutView<PathBar: View, Split: View, StatusBarView: View>: View {
         //   onToastDismiss 闭包: 用户点 X 主动 dismiss, 不等 duration auto-dismiss
         .overlay(alignment: .top) {
             if let toast = toastQueue.first {
-                // V6.29.1: 透传 toast.undoAction → ToastView 显示 [撤销] 按钮 (Photos.app 范式)
                 ToastView(
                     message: toast.message,
                     type: toast.type,
@@ -94,7 +89,7 @@ struct MainLayoutView<PathBar: View, Split: View, StatusBarView: View>: View {
                     onDismiss: onToastDismiss,
                     undoAction: toast.undoAction
                 )
-                .padding(.top, 8)
+                .padding(.top, 12)
                 .transition(.move(edge: .top).combined(with: .opacity))
             }
         }
