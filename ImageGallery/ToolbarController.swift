@@ -134,6 +134,10 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
     @ObservationIgnored private var filterBadgeLabel: NSTextField?
     // V6.38.1 (Phase 1): Import 按钮 NSButton 引用 — 导入进度变化时调 updateImportButtonAppearance
     @ObservationIgnored private var importButton: NSButton?
+    // V6.72 (#18): delete/move/export 按钮引用 — selection badge 更新
+    @ObservationIgnored private var deleteButton: NSButton?
+    @ObservationIgnored private var moveButton: NSButton?
+    @ObservationIgnored private var exportButton: NSButton?
 
     // MARK: - 状态桥接
 
@@ -209,17 +213,22 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
     /// V4.37.1: 在 favorite 之后插入 quickLook（"看"的语义紧邻 favorite/"标记"语义）
     /// V5.7: 砍 favorite 项——侧栏/工具栏都不再放收藏入口（走右键菜单评分 / 筛选 popover）
     /// V5.39.3: filter 之后插入 3 个 NSMenu 下拉按钮 (布局模式/缩略图大小/排序)——viewOptions 砍
+    /// V6.72 (#2): 3 个 space 视觉分组——主操作组 / 视图组 / 搜索组
+    ///   macOS Photos 真版 toolbar 用 .space 多次增加间距形成视觉分组
+    ///   之前每个分组 1 个 space (太稀疏看不出), 现在主操作组前后各 1 个, 视觉分组更明显
     func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
         [
-            // 主操作组 (left side)
+            // 主操作组 (left side) — sidebar + 5 actions
             Identifier.sidebarToggle.nsIdentifier,
-            NSToolbarItem.Identifier.space,  // V6.13.2: 跟视图组视觉分隔
+            NSToolbarItem.Identifier.space,
             Identifier.importItem.nsIdentifier,
             // V_move_toolbar_poc: Move 在 import 后——导入→移动→导出→删除, 都是"操作"语义连贯
             Identifier.move.nsIdentifier,
             Identifier.export.nsIdentifier,
             Identifier.delete.nsIdentifier,
             Identifier.quickLook.nsIdentifier,  // V4.37.1 NEW
+            // V6.72 (#2): 主操作组结束, 加第 2 个 space 拉宽分组间隔
+            NSToolbarItem.Identifier.space,
             // 弹性 space 推视图组到右
             Identifier.flexibleSpace.nsIdentifier,
             // 视图组 (right side, 主操作右侧)
@@ -228,8 +237,9 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
             Identifier.sortMenu.nsIdentifier,         // V5.39.3: 从 viewOptions 提到 toolbar
             Identifier.layoutModeMenu.nsIdentifier,  // V5.39.3: 从 viewOptions 提到 toolbar
             Identifier.densityMenu.nsIdentifier,     // V5.39.3: NSSegmentedControl → NSMenu
-            // 搜索 (centered, V4.8.3 设计保留)
+            // V6.72 (#2): 视图组结束, 第 3 个 space 拉宽到搜索组
             NSToolbarItem.Identifier.space,
+            // 搜索 (centered, V4.8.3 设计保留)
             Identifier.search.nsIdentifier
         ]
     }
@@ -365,6 +375,35 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
     private func updateItemEnabled(_ id: Identifier, enabled: Bool) {
         guard let item = itemCache[id.nsIdentifier] else { return }
         item.isEnabled = enabled
+        // V6.72 (#18): enabled 变化时也存 button ref — selection badge 更新用
+        //   NSButton.title 改 badge 数字前要先确认 button 在 cache, 这里存 ref
+        //   简化逻辑: enable 切换是 selection 0→N 的副作用, 一并存 ref
+        if let button = item.view as? NSButton {
+            switch id {
+            case .delete: deleteButton = button
+            case .move:   moveButton = button
+            case .export: exportButton = button
+            default: break
+            }
+        }
+    }
+
+    /// V6.72 (#18): Badge 数字更新 — delete/move/export button 在 selectionCount >= 2 时显示 "12"
+    ///   1 张不显示 (单选状态栏已经显示), >= 2 张显示 count 让用户知道批量大小
+    ///   类似 macOS Mail 删除按钮显示 N, Photos 真版 toolbar 选中时也加 count hint
+    private func updateSelectionBadges(selectionCount: Int) {
+        let badgeText: String? = selectionCount >= 2 ? "\(selectionCount)" : nil
+        // NSButton.title 不支持 subtitle, 模拟 macOS Mail 删除按钮的 "icon + 数字"
+        //   把数字放到 title 后 (button 显示 "[12]"), 视觉锤"我会影响 N 张"
+        for button in [deleteButton, moveButton, exportButton].compactMap({ $0 }) {
+            // V6.72: 仅当 selectionCount >= 2 时改 title, 否则清空
+            //   1 张时 title = "" — V6.38.1 已简化 (无 selection 视觉提示)
+            if let text = badgeText {
+                button.title = " \(text)"
+            } else {
+                button.title = ""
+            }
+        }
     }
 
     /// 全部状态更新（ContentView 在 .onChange 调用）
@@ -376,6 +415,7 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
     func updateAllStates(
         hasSelection: Bool,
         hasMultipleSelection: Bool,
+        selectionCount: Int = 0,
         density: CGFloat? = nil,
         layoutMode: ThumbnailLayoutMode? = nil,
         sortOption: SortOption? = nil
@@ -386,6 +426,10 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
         moveEnabled = hasSelection
         // V4.37.1: Quick Look 仅在单张选中时可用（多张 / 0 张 都灰显）
         quickLookEnabled = hasSelection && !hasMultipleSelection
+        // V6.72 (#18): Badge 数字 — delete/move button 在 selection > 1 时显示数字
+        //   类似 macOS Mail 删除按钮显示 N, Photos 真版 toolbar 选中时也加 count hint
+        //   1 张不显示 (单选状态栏已经显示), >= 2 张显示 "12" 让用户知道批量大小
+        updateSelectionBadges(selectionCount: selectionCount)
 
         // V5.39.3: density 改 NSMenu 按钮——存 state 给 buildDensityMenu 勾选用
         // V5.43.1: 同步 currentDensity——按钮 image 跟选中的档位变
@@ -423,6 +467,11 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
         item.target = self
         item.action = action
         item.isBordered = true
+        // V6.72 (#15): 按钮大小统一 — 锁死 min/max size 防 NSToolbar 自动 resize 抖动
+        //   macOS Photos 真版 toolbar 按钮高度 24pt, 宽度 32pt — 跟我们一致
+        //   不锁死时, NSToolbar 重新 layout 时 button 跟 image intrinsic 变化
+        item.minSize = NSSize(width: 32, height: 24)
+        item.maxSize = NSSize(width: 32, height: 24)
 
         // V4.9.2: 显式创建 NSButton 作为 item.view
         //   原因: 简单 NSToolbarItem（只有 image + target/action）的 item.view = nil
@@ -624,6 +673,9 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
         item.label = ""
         item.paletteLabel = label
         item.toolTip = label
+        // V6.72 (#15): 按钮大小统一 — 同 makeSimpleItem 锁 32x24
+        item.minSize = NSSize(width: 32, height: 24)
+        item.maxSize = NSSize(width: 32, height: 24)
 
         let button = NSButton()
         button.bezelStyle = .circular
@@ -633,6 +685,15 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
         button.isBordered = true
         button.image = NSImage(systemSymbolName: defaultImage, accessibilityDescription: label)
         button.imagePosition = .imageOnly
+        // V6.72 (#9): 排序 button 显示短 label — 类似 Finder "[视图.√]"
+        //   之前只显示 icon, 用户看不到当前排序
+        //   现在显示 "导入时间" / "文件名" / "文件大小" — 加 button.title 即可
+        //   density / layoutMode 保持 imageOnly (NSSegmentedControl 已显示)
+        if id == .sortMenu {
+            button.title = sortOption.shortLabel
+            button.imagePosition = .imageLeading
+            button.font = NSFont.systemFont(ofSize: 11, weight: .medium)
+        }
         // V5.79: 显式 imageScaling——4 档 density SF Symbol (square.grid.4x3.fill / .3x3 / .2x2 / square)
         //   intrinsic size 微差, 不设 scaling 时 bezel 跟着 image 变 → 按钮大小切换时变化
         button.imageScaling = .scaleProportionallyDown
@@ -640,8 +701,8 @@ final class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate {
         // V5.79: 显式 28x28 constraints 锁死 frame——防 toolbar 重新 layout 时 button 跟 image intrinsic 变
         button.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            button.widthAnchor.constraint(equalToConstant: 28),
-            button.heightAnchor.constraint(equalToConstant: 28)
+            button.widthAnchor.constraint(equalToConstant: 32),
+            button.heightAnchor.constraint(equalToConstant: 24)
         ])
         // V6.64.1 (A11y): menu button label — layoutMode/density/sort 等菜单按钮
         button.setAccessibilityLabel(label)

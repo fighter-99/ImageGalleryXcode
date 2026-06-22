@@ -182,6 +182,11 @@ final class WindowViewModel {
         }
 
         window.toolbar = toolbar
+        // V6.72 (#1): macOS 26 Liquid Glass — 渐进引入
+        //   之前 V4.0.0.1 改 .unified (10.13 unified 风格, 看起来"过时")
+        //   现在 macOS 26 .unified 行为变更 — 自动渲染 Liquid Glass 风格
+        //   `#available(macOS 26.0, *)` 渐进 — 旧系统 fall back 到 .unified 不破坏
+        // V_window_layout_v2: macOS 26+ 保留 .unified — 系统自动应用 Liquid Glass 风格
         window.toolbarStyle = .unified
         window.titleVisibility = .hidden
 

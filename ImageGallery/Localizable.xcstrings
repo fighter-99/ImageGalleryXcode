@@ -17,16 +17,6 @@
         }
       }
     },
-    "%@, %@" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@, %2$@"
-          }
-        }
-      }
-    },
     "%lld." : {
 
     },
@@ -3881,17 +3871,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "≥ %lld 星"
-          }
-        }
-      }
-    },
-    "more" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "更多"
           }
         }
       }
