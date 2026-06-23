@@ -44,20 +44,14 @@ struct ContentView: View {
         Binding(get: { boxSelectionRect }, set: { boxSelectionRect = $0 })
     }
 
-    // 侧边栏的选中项 (Core — 决定"显示什么 scope")
-    private var sidebarSelection: SidebarSelection? {
-        get { model.sidebarSelection }
-        nonmutating set { model.sidebarSelection = newValue }
-    }
-
-    // V4.36.x: 工具栏筛选按钮状态（session-only，不写 UserDefaults / SwiftData）
-    //   4 维：folders / tags / shapes / minRating
-    //   与侧边栏并存补充——侧边栏选主上下文，筛选按钮叠加多选精细控制
-    //   (Core — 跟 sidebarSelection 配合决定 visiblePhotos 过滤维度)
-    private var filterState: FilterState {
-        get { model.filterState }
-        nonmutating set { model.filterState = newValue }
-    }
+    // V6.77.0: 删 5 个 read-only proxy — caller 全部直读 model.X
+    //   - sidebarSelection (Core)
+    //   - filterState (Core)
+    //   - sortOption (Grid)
+    //   - retentionDays (Core, settings.trashRetentionDays)
+    //   - storageErrorMessage (Core)
+    //   这 5 个 proxy 在 caller 处全 read (0 inline setter), 跟 V6.76 同 pattern
+    //   保留 14 个 get/set proxy (selection/searchText/thumbnailSize/viewMode/dialog flags/etc) — V6.77.1/2 处理
 
     // 搜索文本 (Grid — 跟 selection/sortOption/thumbnailSize 一起组成 grid 业务)
     private var searchText: String {
@@ -75,12 +69,6 @@ struct ContentView: View {
     private var viewMode: ViewMode {
         get { model.viewMode }
         nonmutating set { model.viewMode = newValue }
-    }
-
-    // 排序方式（Eagle 化工具栏新增）— Grid 业务 (V6.28)
-    private var sortOption: SortOption {
-        get { model.grid.sortOption }
-        nonmutating set { model.grid.sortOption = newValue }
     }
 
     // V4.36.6: visiblePhotos 从 @State 改为 computed property
@@ -168,12 +156,7 @@ struct ContentView: View {
     //   独立 Preferences 窗口（macOS 标准），不再需要 ContentView sheet 状态
     // V5.59-2: 删 @AppStorage accentColorID, 内部仅由 model.accentColor (computed) 消费
 
-    // V3.6 NEW: 回收站保留时长（默认 30 天）
-    // V5.59-2: 删 @AppStorage retentionDays, 改用 computed proxy 走 model.settings.trashRetentionDays
-    private var retentionDays: Int {
-        get { model.settings.trashRetentionDays }
-        nonmutating set { model.settings.trashRetentionDays = newValue }
-    }
+    // V6.77.0: 删 retentionDays proxy — caller 直读 model.settings.trashRetentionDays
 
     // V3.6.22: 应用外观（默认跟随系统）
     // V5.59-2: 删 @AppStorage appearanceModeRaw, model.appearanceMode computed 走 model.appearanceMode
@@ -189,12 +172,7 @@ struct ContentView: View {
 
     // V4.11.0: 存储不可写错误（nil = 正常）
     //   onAppear 调 PhotoStorage.verifyStorage()——失败时填错误消息，detail panel 显示错误态
-    // V4.11.0: 存储不可写错误（nil = 正常）
-    //   onAppear 调 PhotoStorage.verifyStorage()——失败时填错误消息，detail panel 显示错误态
-    private var storageErrorMessage: String? {
-        get { model.storageErrorMessage }
-        nonmutating set { model.storageErrorMessage = newValue }
-    }
+    // V6.77.0: 删 storageErrorMessage proxy — caller 直读 model.storageErrorMessage
 
     // V4.12.0 删: QuickLookPreviewController (@State) 整段——V5.42 走 ImmersivePhotoView, 不再需要
     // V5.42 替代: showQuickLook() 调 enterImmersiveFromSelection() 走系统 ImmersivePhotoView
@@ -321,10 +299,10 @@ struct ContentView: View {
                 // P4.1.1: smartFolders 推 model.grid.smartFoldersCache
                 smartFolders: smartFolders,
                 selection: selection,
-                sidebarSelection: sidebarSelection,
+                sidebarSelection: model.sidebarSelection,
                 showSidebar: showSidebar,
                 showDetail: showDetail,
-                filterState: filterState,
+                filterState: model.filterState,
                 visiblePhotos: model.grid.visiblePhotos,
                 batchDeleteTitle: model.grid.batchDeleteTitle,
                 duplicateDialogTitle: model.grid.duplicateDialogTitle,
@@ -487,7 +465,7 @@ struct ContentView: View {
                 // V6.74.5: 删 onToggleDetail 注入 — ⓘ 按钮从 toolbar 撤掉, 详情面板走 ⌘I/⌘⌃D 菜单 Toggle
             ),
             searchText: Binding(get: { searchText }, set: { searchText = $0 }),
-            sortOption: Binding(get: { sortOption }, set: { sortOption = $0 }),
+            sortOption: bindableGrid.sortOption,
             viewMode: Binding(get: { viewMode }, set: { viewMode = $0 }),
             thumbnailSize: Binding(get: { CGFloat(model.settings.thumbnailSize) }, set: { model.settings.thumbnailSize = Double($0) }),
             filterState: Binding(get: { model.filterState }, set: { model.filterState = $0 }),
@@ -564,16 +542,16 @@ struct ContentView: View {
                     filterLargeFiles: model.grid.filterLargeFiles,
                     filterInTrash: model.grid.filterInTrash,
                 // V4.36.x: 工具栏筛选 4 维
-                selectedFolderIDs: filterState.folders,
-                selectedTagIDs: filterState.tags,
-                selectedShapes: filterState.shapes,
-                filterMinRating: filterState.minRating,
-                retentionDays: retentionDays,
+                selectedFolderIDs: model.filterState.folders,
+                selectedTagIDs: model.filterState.tags,
+                selectedShapes: model.filterState.shapes,
+                filterMinRating: model.filterState.minRating,
+                retentionDays: model.settings.trashRetentionDays,
                 thumbnailSize: thumbnailSize,
                 // V5.17: 缩略图布局模式 3 选项（方格 / 按比例 / 按比例满行）
                 //   透传到 PhotoGridView.masonryRowsView 决定 uniformWidth/stretchLastRow
                 layoutMode: model.layoutMode,
-                sortOption: sortOption,
+                sortOption: model.grid.sortOption,
                 // V5.60-6 启动恢复 + V5.61-1 auto-save——PhotoGridView 双向读写 model
                 scrollAnchorPhotoID: model.grid.scrollAnchorPhotoID,
                 // V4.36.6: visiblePhotos 改 computed property, 此 callback 不再需要
@@ -621,11 +599,11 @@ struct ContentView: View {
                 filterLargeFiles: model.grid.filterLargeFiles,
                 filterInTrash: model.grid.filterInTrash,
                 // V4.36.x: 工具栏筛选 4 维（签名一致；本视图不实际用）
-                selectedFolderIDs: filterState.folders,
-                selectedTagIDs: filterState.tags,
-                selectedShapes: filterState.shapes,
-                filterMinRating: filterState.minRating,
-                sortOption: sortOption,
+                selectedFolderIDs: model.filterState.folders,
+                selectedTagIDs: model.filterState.tags,
+                selectedShapes: model.filterState.shapes,
+                filterMinRating: model.filterState.minRating,
+                sortOption: model.grid.sortOption,
                 photos: model.grid.visiblePhotos,
                 kind: .list,
                 onTap: { model.grid.handleTap($0) },
@@ -644,11 +622,11 @@ struct ContentView: View {
                 filterLargeFiles: model.grid.filterLargeFiles,
                 filterInTrash: model.grid.filterInTrash,
                 // V4.36.x: 工具栏筛选 4 维（签名一致；本视图不实际用）
-                selectedFolderIDs: filterState.folders,
-                selectedTagIDs: filterState.tags,
-                selectedShapes: filterState.shapes,
-                filterMinRating: filterState.minRating,
-                sortOption: sortOption,
+                selectedFolderIDs: model.filterState.folders,
+                selectedTagIDs: model.filterState.tags,
+                selectedShapes: model.filterState.shapes,
+                filterMinRating: model.filterState.minRating,
+                sortOption: model.grid.sortOption,
                 photos: model.grid.visiblePhotos,
                 kind: .timeline,
                 onTap: { model.grid.handleTap($0) },
@@ -694,18 +672,18 @@ struct ContentView: View {
             // V3.6.52: 单字段 assignment 替 2 字段 pair
             onClearSelection: { selection = .empty },
             // V3.6 NEW: 回收站模式
-            sidebarSelection: sidebarSelection,
-            retentionDays: retentionDays,
+            sidebarSelection: model.sidebarSelection,
+            retentionDays: model.settings.trashRetentionDays,
             onTrashRestore: { model.grid.restoreSelectedFromTrash() },
             onTrashPermanentDelete: { model.grid.permanentDeleteSelected() },
             // V3.6.6: 改弹二次确认（不再直接调 emptyTrash）
             onEmptyTrash: { showingEmptyTrashConfirm = true },
             // V4.9.0: 回收站空时切回"全部"视图
-            onExitTrash: { sidebarSelection = .all },
+            onExitTrash: { model.sidebarSelection = .all },
             // V3.6.15: 重复图清理（一键保留每组最新）
             onKeepNewestPerDuplicateGroup: { model.grid.keepNewestPerDuplicateGroup() },
             // V4.11.0: 存储不可写错误（nil = OK）
-            storageError: storageErrorMessage,
+            storageError: model.storageErrorMessage,
             onRetryStorage: { model.checkStorage() },
             // V6.08: 详情面板错误回调 (rename 失败等) — show toast
             onError: { model.showToast($0, type: .error) }
