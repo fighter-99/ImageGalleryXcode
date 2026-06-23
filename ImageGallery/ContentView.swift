@@ -366,7 +366,13 @@ struct ContentView: View {
             searchText: Bindable(model.grid).searchText,
             sortOption: bindableGrid.sortOption,
             viewMode: Bindable(model).viewMode,
-            thumbnailSize: Binding(get: { CGFloat(model.settings.thumbnailSize) }, set: { model.settings.thumbnailSize = Double($0) }),
+            // V6.79: toolbar slider 绑 settings.thumbnailSize (持久化)
+            //   let settings: UserSettings 不是 @Bindable, 不能 $settings.thumbnailSize, 手动 Binding
+            //   SettingsView slider 已删 (V6.79.2), toolbar 唯一入口
+            thumbnailSize: Binding(
+                get: { settings.thumbnailSize },
+                set: { settings.thumbnailSize = $0 }
+            ),
             filterState: Binding(get: { model.filterState }, set: { model.filterState = $0 }),
             selectionEmpty: Binding(get: { model.grid.selection.selectedIDs.isEmpty }, set: { _ in }),
             selectionSingle: Binding(get: { model.grid.selection.selectedIDs.count == 1 }, set: { _ in }),

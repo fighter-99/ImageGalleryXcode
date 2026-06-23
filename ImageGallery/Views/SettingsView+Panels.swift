@@ -57,37 +57,10 @@ struct GeneralSettingsView: View {
             .accessibilityLabel(Copy.settingsDefaultSortTitle)
         }
 
-        // V6.48: 默认缩略图大小 — PhotosSettingRow 紧凑化 (SettingsSection 3 HStack → PhotosSettingRow + 1 preview 行)
-        //   之前 SettingsSection 有 title + slider row + min/max row + preview = 4 HStack 视觉割裂
-        //   现在 PhotosSettingRow 统一 title/subdescription + slider (1 row), 下方 preview + min/max (1 row)
-        //   跟 macOS Sonoma+ System Settings 紧凑布局对齐
-        PhotosSettingRow(
-            title: Copy.settingsThumbnailSizeTitle,
-            description: Copy.settingsThumbnailSizeSubtitle
-        ) {
-            HStack(spacing: Spacing.sm) {
-                Slider(value: $settings.thumbnailSize, in: 100...250, step: 10)
-                    .frame(width: 160)
-                    .accessibilityLabel(Copy.settingsThumbnailSizeTitle)
-                    .accessibilityValue("\(Int(settings.thumbnailSize)) px")
-                Text(Copy.thumbnailSizeLabel(Int(settings.thumbnailSize)))
-                    .font(Typography.captionMono)
-                    .foregroundStyle(Surface.textSecondary)
-                    .frame(width: 40, alignment: .trailing)
-            }
-        }
-        // V6.48: min/max + preview — 独立 1 行 (紧跟 PhotosSettingRow 之后, 视觉紧凑)
-        HStack(spacing: Spacing.md) {
-            Text(Copy.settingsThumbnailSizeSmall)
-                .font(Typography.caption)
-                .foregroundStyle(Surface.textSecondary)
-            Spacer()
-            ThumbnailSizePreview(size: $settings.thumbnailSize)
-            Spacer()
-            Text(Copy.settingsThumbnailSizeLarge)
-                .font(Typography.caption)
-                .foregroundStyle(Surface.textSecondary)
-        }
+        // V6.79: 默认缩略图大小 slider 删 — toolbar 集成 slider (Photos 真版 view options 模式)
+        //   toolbar 直接改 settings.thumbnailSize (持久化), SettingsView slider 单一入口消除
+        //   ThumbnailSizePreview 也删 (slider 已无, preview 跟着无意义)
+        //   Copy.settingsThumbnailSizeTitle/Subtitle 等文案保留 (reset 提示仍引用)
 
         // V6.43: 双击行为 — PhotosSettingRadios 替代 Picker (2 选项, vertical stack 更 Photos)
         PhotosSettingRadios(
@@ -485,28 +458,6 @@ struct AccentSwatch: View {
     }
 }
 
-// MARK: - 缩略图大小 slider 实时预览 (沿用)
-struct ThumbnailSizePreview: View {
-    @Binding var size: Double
-
-    var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: Radius.sm, style: .continuous)
-                .fill(Surface.cardBackground)
-                .overlay {
-                    RoundedRectangle(cornerRadius: Radius.sm, style: .continuous)
-                        .stroke(Surface.cardBorder, lineWidth: 1)
-                }
-            Image(systemName: "photo")
-                .font(Typography.thumbnailPreview)
-                .scaleEffect(displayScale)
-                .foregroundStyle(.primary)
-        }
-        .frame(width: 100, height: 100)
-        .help(Copy.settingsThumbnailSizeHelpTooltip)
-    }
-
-    private var displayScale: Double {
-        0.3 + (size - 100) / 150 * 0.7
-    }
-}
+// V6.79: 删 ThumbnailSizePreview struct — SettingsView slider 已删, preview 跟着无意义
+//   之前 toolbar +- 按钮临时改 live, slider 改 stored, 2 处入口; V6.79 单一 toolbar slider 入口
+//   toolbar 本身有 thumbnailSize label 显示当前值 (即时反馈), 不需要 preview icon

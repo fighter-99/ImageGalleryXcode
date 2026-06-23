@@ -37,7 +37,7 @@ struct MainSplitView<Sidebar: View, Center: View, Detail: View>: View {
     @Binding var searchText: String
     @Binding var sortOption: SortOption
     @Binding var viewMode: ViewMode
-    @Binding var thumbnailSize: CGFloat
+    @Binding var thumbnailSize: Double
     @Binding var filterState: FilterState
     @Binding var selectionEmpty: Bool
     @Binding var selectionSingle: Bool
@@ -67,7 +67,7 @@ struct MainSplitView<Sidebar: View, Center: View, Detail: View>: View {
         searchText: Binding<String> = .constant(""),
         sortOption: Binding<SortOption> = .constant(.importedAtDesc),
         viewMode: Binding<ViewMode> = .constant(.grid),
-        thumbnailSize: Binding<CGFloat> = .constant(200),
+        thumbnailSize: Binding<Double> = .constant(200),
         filterState: Binding<FilterState> = .constant(.empty),
         selectionEmpty: Binding<Bool> = .constant(true),
         selectionSingle: Binding<Bool> = .constant(false),
@@ -201,14 +201,20 @@ struct MainSplitView<Sidebar: View, Center: View, Detail: View>: View {
                     }.padding(6).frame(width: 140)
                 }
             }
+            // V6.79: toolbar 缩略图大小控件 — 1 个 Slider 替代 +- 两个 button
+            //   绑 settings.thumbnailSize (持久化), 100...250 step 10 (跟 Settings 一致)
+            //   SettingsView slider 已删 (V6.79.2), toolbar 唯一入口
+            //   Photos 真版 view options 模式: toolbar 内嵌 slider
             ToolbarItem {
-                HStack(spacing: 0) {
-                    Button { thumbnailSize = max(100, thumbnailSize - 10) } label: {
-                        Label("缩小", systemImage: "minus").labelStyle(.iconOnly)
-                    }.help("缩小缩略图")
-                    Button { thumbnailSize = min(300, thumbnailSize + 10) } label: {
-                        Label("放大", systemImage: "plus").labelStyle(.iconOnly)
-                    }.help("放大缩略图")
+                HStack(spacing: 6) {
+                    Slider(value: $thumbnailSize, in: 100...250, step: 10)
+                        .frame(width: 120)
+                        .accessibilityLabel("缩略图大小")
+                        .accessibilityValue("\(Int(thumbnailSize)) px")
+                    Text("\(Int(thumbnailSize))")
+                        .font(Typography.captionMono)
+                        .foregroundStyle(Surface.textSecondary)
+                        .frame(width: 32, alignment: .trailing)
                 }
             }
             ToolbarItem {

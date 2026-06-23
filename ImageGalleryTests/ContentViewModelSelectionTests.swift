@@ -199,27 +199,24 @@ struct ContentViewModelSelectionTests {
     }
 
     @Test func resetThumbnailSize_restoresStoredDefault() {
-        // V6.14.8: 恢复这个 test — production 拆 liveThumbnailSize + settings.thumbnailSize
-        //   1) 改 stored default (Settings 入口)
-        //   2) 改 live size (zoom in/out 入口) — 不污染 stored
-        //   3) reset ⌘0 清 live → 回到 stored
+        // V6.79: 简化 thumbnailSize — 删 liveThumbnailSize 中间层 (V6.14.8 设计)
+        //   ⌘0 resetThumbnailSize() 现在直接设回 ThumbnailDensity.medium.size (200)
+        //   不再需要 stored/live 分离 — toolbar slider 改 stored (持久化), Settings 入口已删
         let model = Self.isolatedModel()
-        // 改 stored default
-        model.settings.thumbnailSize = 240
-        // 改 live size 到别的 (通过 thumbnailSize setter, 走 liveThumbnailSize)
-        model.grid.thumbnailSize = 110
-        model.grid.resetThumbnailSize()
-        #expect(model.grid.thumbnailSize == 240, "⌘0 应清 live, 回到 stored default")
+        model.grid.thumbnailSize = 110  // 改 stored (V6.79 行为)
+        model.grid.resetThumbnailSize()  // ⌘0 设回默认 200
+        #expect(model.grid.thumbnailSize == 200, "⌘0 应设回 ThumbnailDensity.medium.size (200)")
     }
 
     @Test func zoomIn_doesNotPolluteStoredDefault() {
-        // V6.14.8: 验 zoom in 写 live, 不动 stored
+        // V6.79: 简化后 zoomIn 直接改 settings.thumbnailSize (无 live 中间层)
+        //   zoomIn 写入 stored 是设计意图 — toolbar slider 跟 ⌘+ 行为一致
         let model = Self.isolatedModel()
         let storedBefore = model.settings.thumbnailSize
         model.grid.zoomIn()
-        #expect(model.grid.thumbnailSize != CGFloat(storedBefore),
-                "zoomIn 后 live 改了, 应跟 stored 不同")
-        #expect(model.settings.thumbnailSize == storedBefore,
-                "zoomIn 不应污染 stored (跟 ⌘0 行为一致)")
+        #expect(model.settings.thumbnailSize == Double(model.grid.thumbnailSize),
+                "zoomIn 现在写 stored (跟 toolbar slider 行为一致)")
+        #expect(storedBefore != Double(model.grid.thumbnailSize) || storedBefore == 250,
+                "zoomIn 应改 stored (除非已在最大 250)")
     }
 }

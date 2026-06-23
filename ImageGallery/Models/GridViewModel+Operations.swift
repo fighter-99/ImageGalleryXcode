@@ -227,10 +227,10 @@ extension GridViewModel {
         }
     }
 
-    /// V6.14.8: ⌘0 reset zoom — 清 liveThumbnailSize, 回到 stored default
-    ///   之前是 `thumbnailSize = settings.thumbnailSize` no-op (V6.14.7 修 stale test 时发现)
+    /// V6.79: ⌘0 reset zoom — 设回默认 200 (Photos 真版 PhotosSettingRow 默认值)
+    ///   V6.14.8 历史: 清 liveThumbnailSize, 回到 stored default. V6.79 删 live 中间层, 直接设默认
     func resetThumbnailSize() {
-        liveThumbnailSize = nil
+        thumbnailSize = ThumbnailDensity.medium.size
     }
 
     /// V4.37.1: Quick Look——V5.42 改走 enterImmersiveFromSelection

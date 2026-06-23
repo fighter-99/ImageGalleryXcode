@@ -64,17 +64,15 @@ final class GridViewModel {
 
     var selection = SelectionState()
     var searchText = ""
-    /// V6.14.8: 拆 "stored default" (settings.thumbnailSize) + "live zoom" (liveThumbnailSize)
-    ///   - settings.thumbnailSize = 用户偏好 (UserDefaults 持久化), SettingsView 改这里
-    ///   - liveThumbnailSize = 当前显示 (内存, 不持久化), zoom in/out 改这里
-    ///   - thumbnailSize getter: live 优先, fallback stored
-    ///   - thumbnailSize setter: 只改 live, 不动 stored (zoom 临时态)
-    ///   - resetThumbnailSize() (⌘0): 清 live → 回到 stored
-    /// Photos.app 范式: 用户设的 default 不被临时 zoom 污染, ⌘0 一定回得到
-    @ObservationIgnored var liveThumbnailSize: CGFloat? = nil
+    /// V6.79: 简化 thumbnailSize — 直接读 settings.thumbnailSize (无 live 中间层)
+    ///   - toolbar slider 改 settings.thumbnailSize (持久化)
+    ///   - Settings slider 删 (toolbar 接管)
+    ///   - ⌘0 resetThumbnailSize() 设回默认 200 (跟 resetThumbnailSize 函数实现对应)
+    /// V6.14.8 历史: 拆 stored + live 双层. V6.79 删 live 中间层 — toolbar slider 改 stored
+    ///   (跟 Settings 一致), 双层冗余消除
     var thumbnailSize: CGFloat {
-        get { liveThumbnailSize ?? CGFloat(settings.thumbnailSize) }
-        set { liveThumbnailSize = newValue }
+        get { CGFloat(settings.thumbnailSize) }
+        set { settings.thumbnailSize = Double(newValue) }
     }
     /// V5.59-2: sortOption 改为 computed 绑 settings.sortOption
     var sortOption: SortOption {
