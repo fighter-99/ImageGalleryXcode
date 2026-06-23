@@ -21,14 +21,22 @@ import AppKit
 import UniformTypeIdentifiers
 
 struct ContentView: View {
-    // V3.6.52: 3 @State (selectedPhoto/selectedIDs/lastSelectedID) 合并为 1 @State<SelectionState>
-    //   这是图片选中的唯一真相源；`selectedPhoto: Photo?` 改为下面的 computed property
-    // V5.52-3: 22 个 @State business state 搬到 ContentViewModel; computed proxy 保留 reads/writes 语法
-    // V6.28: Grid 业务 (selection/searchText/...) 迁 model.grid — Core 业务 (sidebarSelection/filterState/...) 仍 model
-    private var selection: SelectionState {
-        get { model.grid.selection }
-        nonmutating set { model.grid.selection = newValue }
-    }
+    // V6.77.2: 删 9 个 read+set 业务 state proxy — caller 直读 model.X / \$model.X
+    //   - selection (Grid, V3.6.52)
+    //   - searchText (Grid, V4.36.x)
+    //   - thumbnailSize (Grid, V3.5.x)
+    //   - viewMode (Core, V3.6.13)
+    //   - newFolderName (Grid, V6.28)
+    //   - immersivePhoto / immersiveIndex (Grid, V6.28)
+    //   - showSidebar / showDetail (Settings, V5.59-2)
+    //   inline setter 路径 (10+ 处):
+    //     `selection = .empty` → `model.grid.selection = .empty`
+    //     `searchText = X` → `model.grid.searchText = X`
+    //     `showSidebar.toggle()` → `model.settings.showSidebar.toggle()`
+    //   Binding caller 用 Bindable(model.grid).X / Bindable(model.settings).X
+    //
+    // V3.6.52 注释保留 — 图片选中唯一真相源仍是 model.grid.selection
+    // V5.52-3 注释保留 — 22 @State 搬到 ContentViewModel (V6.77 删完最后一个 get/set proxy)
 
     @State private var isBoxSelecting = false
     // V3.7.1: 框选进行中的 rect (caller 持有, BoxSelectionGesture 写)
@@ -44,91 +52,12 @@ struct ContentView: View {
         Binding(get: { boxSelectionRect }, set: { boxSelectionRect = $0 })
     }
 
-    // V6.77.0: 删 5 个 read-only proxy — caller 全部直读 model.X
-    //   - sidebarSelection (Core)
-    //   - filterState (Core)
-    //   - sortOption (Grid)
-    //   - retentionDays (Core, settings.trashRetentionDays)
-    //   - storageErrorMessage (Core)
-    //   这 5 个 proxy 在 caller 处全 read (0 inline setter), 跟 V6.76 同 pattern
-    //   保留 14 个 get/set proxy (selection/searchText/thumbnailSize/viewMode/dialog flags/etc) — V6.77.1/2 处理
-
-    // 搜索文本 (Grid — 跟 selection/sortOption/thumbnailSize 一起组成 grid 业务)
-    private var searchText: String {
-        get { model.grid.searchText }
-        nonmutating set { model.grid.searchText = newValue }
-    }
-
-    // 缩略图大小 (Grid — zoom in/out 改 live, ⌘0 reset 清 live)
-    private var thumbnailSize: CGFloat {
-        get { model.grid.thumbnailSize }
-        nonmutating set { model.grid.thumbnailSize = newValue }
-    }
-    // V3.6.13: viewMode 改用 @AppStorage 持久化（SettingsView 可设默认）
-    // V5.59-2: 删 @AppStorage viewModeRaw, viewMode computed 走 model.settings.viewModeRaw
-    private var viewMode: ViewMode {
-        get { model.viewMode }
-        nonmutating set { model.viewMode = newValue }
-    }
-
-    // V4.36.6: visiblePhotos 从 @State 改为 computed property
-    //   旧 @State + onVisiblePhotosChange 模式只服务于 grid view——切到 list/timeline 不更新
-    //   改 computed property 用 PhotoStats.filtered 共享 helper, 3 视图同步
-    // 注: 侧栏 section 折叠状态 (@AppStorage) 属于 SidebarView 持有, 不在此
-
-    // V5.60-4: 30 个 D 类 get-only proxy 全删——caller 直接用 model.X
-    //   之前 V5.52-3 保留的 "reads/writes 语法糖", 删后改用 model.X 单一访问
-    //   例外: model.X 是 @Observable 字段, 在 View body 读取自动追踪
-    //   保留: bindableModel/columnLayout/showingDuplicateCheck/hasPurgedExpiredTrash (4 个 helper)
-    //   保留: 28 个 get/set 业务 state proxy (selection/sidebarSelection/filterState/...)
-    //     → 这些写源需要 proxy 包装 (setter 路径不能直接 model.X = Y 走 computed)
-
     // 拖拽状态
     @State private var isDropTargeted = false
-
-    // V6.77.1: 删 6 个 dialog flag proxy — caller 全部直读 model.X / \$model.X
-    //   - showingBatchDeleteConfirm (Grid)
-    //   - showingBatchRenameSheet (Grid)
-    //   - showingEmptyTrashConfirm (Grid)
-    //   - importDuplicateCheck (ImportVM)
-    //   - pendingImportURLs (ImportVM)
-    //   - showingNewFolderAlert (Grid)
-    //   inline setter 路径: `proxy = true` → `model.X = true` (8 处)
-    //   contentBodyModifiers 接 raw value (不是 Binding), caller 改 model.X
-    //   batchActionDialogs 接 Binding, caller 改 \$bindableGrid.X / \$bindableModel.X
 
     // 批量移动
     // （showingBatchMoveSheet 已移除：批量移动流程当前在 PhotoGridView 内联实现，
     //   该状态从未被读。如未来要重新走 sheet 流程再加回。）
-
-    private var newFolderName: String {
-        get { model.grid.newFolderName }
-        nonmutating set { model.grid.newFolderName = newValue }
-    }
-
-    // 沉浸式查看 (Grid — V6.28)
-    private var immersivePhoto: Photo? {
-        get { model.grid.immersivePhoto }
-        nonmutating set { model.grid.immersivePhoto = newValue }
-    }
-    private var immersiveIndex: Int {
-        get { model.grid.immersiveIndex }
-        nonmutating set { model.grid.immersiveIndex = newValue }
-    }
-
-    // 栏显隐状态（ContentView 唯一持有，ImageGalleryApp 通过 UserDefaults 同步）
-    // V5.59-2: 删 @AppStorage showSidebar, 改用 computed proxy 走 model.settings.showSidebar
-    private var showSidebar: Bool {
-        get { model.settings.showSidebar }
-        nonmutating set { model.settings.showSidebar = newValue }
-    }
-    // V5.22: 默认 showDetail = false——grid 窗口右侧 30% 留给图片而不是空 detail panel
-    //   选照片时仍可在 onChange 触发自动 show（V5.22 后续 sprint 加）——目前只改默认
-    // V5.59-2: 删 @AppStorage showDetail, 改用 computed proxy 走 model.settings.showDetail
-    private var showDetail: Bool {
-        get { model.settings.showDetail }
-        nonmutating set { model.settings.showDetail = newValue }
-    }
 
     // V4.13.0: 撤回 V3.5.18 旧 @State showSettings——⌘, 现在走 Settings scene
     //   独立 Preferences 窗口（macOS 标准），不再需要 ContentView sheet 状态
@@ -168,16 +97,8 @@ struct ContentView: View {
 
     // 当前选中的强调色（从 accentColorID 解析）
 
-    // Toast 提示（队列——V5.13 升级）
-    // Toast 提示（队列——V5.13 升级）
-    private var toastQueue: [ToastInfo] {
-        get { model.toastQueue }
-        nonmutating set { model.toastQueue = newValue }
-    }
-    private var toastTask: Task<Void, Never>? {
-        get { model.toastTask }
-        nonmutating set { model.toastTask = newValue }
-    }
+    // V6.77.2: 删 toastQueue / toastTask proxy — caller 直读 model.X
+    //   后续 V6.78+ 可考虑把 toastTask 也搬到 model (UI 状态管理)
 
     // SwiftData：获取所有图片（用于状态栏显示总数）
     @Query private var allPhotos: [Photo]
@@ -276,10 +197,10 @@ struct ContentView: View {
                 allTags: allTags,
                 // P4.1.1: smartFolders 推 model.grid.smartFoldersCache
                 smartFolders: smartFolders,
-                selection: selection,
+                selection: model.grid.selection,
                 sidebarSelection: model.sidebarSelection,
-                showSidebar: showSidebar,
-                showDetail: showDetail,
+                showSidebar: model.settings.showSidebar,
+                showDetail: model.settings.showDetail,
                 filterState: model.filterState,
                 visiblePhotos: model.grid.visiblePhotos,
                 batchDeleteTitle: model.grid.batchDeleteTitle,
@@ -298,12 +219,12 @@ struct ContentView: View {
                 // V6.13.3: 工具栏 sidebar toggle 触发 withAnimation 包裹
                 //   配合 MainSplitView 的 .transition(.move + .opacity) 实现 0.3s 滑动
                 //   之前硬切——MainSplitView line 75 transition 仍触发但 toggle 本身没 anim 驱动
-                onToggleSidebar: { withAnimation(Animations.medium) { showSidebar.toggle() } },
+                onToggleSidebar: { withAnimation(Animations.medium) { model.settings.showSidebar.toggle() } },
                 onSetRating: { model.grid.batchSetRating($0) },
                 onDelete: { model.grid.handleDelete() },
                 onPrev: { model.grid.goPrev() },
                 onNext: { model.grid.goNext() },
-                onSelectAll: { selection = selection.settingAll(in: model.grid.visiblePhotos) },
+                onSelectAll: { model.grid.selection = model.grid.selection.settingAll(in: model.grid.visiblePhotos) },
                 onZoomIn: { model.grid.zoomIn() },
                 onZoomOut: { model.grid.zoomOut() },
                 onResetZoom: { model.grid.resetThumbnailSize() },
@@ -316,7 +237,7 @@ struct ContentView: View {
                 onConfirmSkipDuplicates: { model.importVM.confirmSkipDuplicates() },
                 onConfirmImportAllDuplicates: { model.importVM.confirmImportAllDuplicates() },
                 onCancelDuplicateImport: { model.importVM.cancelDuplicateImport() },
-                onSelectionEscape: { selection = .empty },
+                onSelectionEscape: { model.grid.selection = .empty },
                 onRestoreSelection: { model.restoreSelection(model.settings.sidebarSelection) },
                 onSerializeSidebarSelection: { model.serializeSelection($0) },
                 onClearSelectionOnFilterChange: { model.grid.clearSelectionOnFilterChange() },
@@ -383,13 +304,13 @@ struct ContentView: View {
         MainLayoutView(
             pathBar: { pathBarPane },
             split: { mainSplitPane },
-            showSidebar: Binding(get: { showSidebar }, set: { showSidebar = $0 }),
+            showSidebar: Bindable(model.settings).showSidebar,
             undoManager: model.undoManager,
-            toastQueue: toastQueue,
-            immersivePhoto: Binding(get: { model.grid.immersivePhoto }, set: { model.grid.immersivePhoto = $0 }),
-            immersiveIndex: Binding(get: { model.grid.immersiveIndex }, set: { model.grid.immersiveIndex = $0 }),
+            toastQueue: model.toastQueue,
+            immersivePhoto: Bindable(model.grid).immersivePhoto,
+            immersiveIndex: Bindable(model.grid).immersiveIndex,
             visiblePhotos: model.grid.visiblePhotos,
-            onImmersiveDismiss: { immersivePhoto = nil },
+            onImmersiveDismiss: { model.grid.immersivePhoto = nil },
             // V6.21.1 (Phase 1.2): toast close button → 用户主动 dismiss
             //   调 model.scheduleDismissToast() 移除队首 + 触发 next toast 显示
             onToastDismiss: { model.scheduleDismissToast() }
@@ -429,7 +350,7 @@ struct ContentView: View {
     //   跟 photoGrid 内部 rect 略差; V1 接受, 后续 V2 polish 把 overlay 也搬进去)
     private var mainSplitPane: some View {
         MainSplitView(
-            showDetail: Binding(get: { showDetail }, set: { showDetail = $0 }),
+            showDetail: Bindable(model.settings).showDetail,
             isDropTargeted: $isDropTargeted,
             isBoxSelecting: $isBoxSelecting,
             onDrop: { providers in model.importVM.handleDrop(providers: providers) },
@@ -442,13 +363,13 @@ struct ContentView: View {
                 onToggleSortDirection: { model.toggleSortDirection() }
                 // V6.74.5: 删 onToggleDetail 注入 — ⓘ 按钮从 toolbar 撤掉, 详情面板走 ⌘I/⌘⌃D 菜单 Toggle
             ),
-            searchText: Binding(get: { searchText }, set: { searchText = $0 }),
+            searchText: Bindable(model.grid).searchText,
             sortOption: bindableGrid.sortOption,
-            viewMode: Binding(get: { viewMode }, set: { viewMode = $0 }),
+            viewMode: Bindable(model).viewMode,
             thumbnailSize: Binding(get: { CGFloat(model.settings.thumbnailSize) }, set: { model.settings.thumbnailSize = Double($0) }),
             filterState: Binding(get: { model.filterState }, set: { model.filterState = $0 }),
-            selectionEmpty: Binding(get: { selection.selectedIDs.isEmpty }, set: { _ in }),
-            selectionSingle: Binding(get: { selection.selectedIDs.count == 1 }, set: { _ in }),
+            selectionEmpty: Binding(get: { model.grid.selection.selectedIDs.isEmpty }, set: { _ in }),
+            selectionSingle: Binding(get: { model.grid.selection.selectedIDs.count == 1 }, set: { _ in }),
             importProgress: Binding(get: {
                 guard let p = model.importVM.importProgress else { return 0.0 }
                 return Double(p.current) / Double(max(p.total, 1))
@@ -504,7 +425,7 @@ struct ContentView: View {
         //         StatusBar 强化显示 "已选 N 张" (V6.71) — Photos 真版底栏对齐
         //   视觉: 选中 0→1 无 layout shift (grid 不下移), 内容区变大 ~7%
         Group {
-            switch viewMode {
+            switch model.viewMode {
             case .grid:
                 PhotoGridPane(
                     // V6.28: selection 在 grid
@@ -512,7 +433,7 @@ struct ContentView: View {
                     selection: bindableGrid.selection,
                     folder: model.grid.currentFolder,
                     tag: model.grid.currentTag,
-                    searchText: searchText,
+                    searchText: model.grid.searchText,
                     // V5.8: 砍 filterFavorites
                     filterUnfiled: model.grid.filterUnfiled,
                     filterDuplicates: model.grid.filterDuplicates,
@@ -525,7 +446,7 @@ struct ContentView: View {
                 selectedShapes: model.filterState.shapes,
                 filterMinRating: model.filterState.minRating,
                 retentionDays: model.settings.trashRetentionDays,
-                thumbnailSize: thumbnailSize,
+                thumbnailSize: model.grid.thumbnailSize,
                 // V5.17: 缩略图布局模式 3 选项（方格 / 按比例 / 按比例满行）
                 //   透传到 PhotoGridView.masonryRowsView 决定 uniformWidth/stretchLastRow
                 layoutMode: model.layoutMode,
@@ -537,11 +458,11 @@ struct ContentView: View {
                 onVisiblePhotosChange: { _ in },
                 onImport: { model.importVM.startImport() },
                 onBatchDelete: { model.grid.showingBatchDeleteConfirm = true },
-                onClearMultiSelect: { selection = .empty },
+                onClearMultiSelect: { model.grid.selection = .empty },
                 // V6.22.1 (P2 #2): 旋转回调 — cell → pane → grid view 透传, 最终调 model.grid.rotateSelected
                 //   单 cell 右键 rotate (cell menu) — ContentView 先把 selection 设成单选这张图, 再 rotate
                 onRotate: { photo, clockwise in
-                    selection = selection.selectingSingle(photo.id)
+                    model.grid.selection = model.grid.selection.selectingSingle(photo.id)
                     model.grid.rotateSelected(clockwise: clockwise)
                 },
                 onDoubleTap: { handlePhotoDoubleTap($0) },
@@ -569,7 +490,7 @@ struct ContentView: View {
                 selection: bindableGrid.selection,
                 folder: model.grid.currentFolder,
                 tag: model.grid.currentTag,
-                searchText: searchText,
+                searchText: model.grid.searchText,
                 // V5.8: 砍 filterFavorites
                 filterUnfiled: model.grid.filterUnfiled,
                 filterDuplicates: model.grid.filterDuplicates,
@@ -592,7 +513,7 @@ struct ContentView: View {
                 selection: bindableGrid.selection,
                 folder: model.grid.currentFolder,
                 tag: model.grid.currentTag,
-                searchText: searchText,
+                searchText: model.grid.searchText,
                 // V5.8: 砍 filterFavorites
                 filterUnfiled: model.grid.filterUnfiled,
                 filterDuplicates: model.grid.filterDuplicates,
@@ -615,7 +536,7 @@ struct ContentView: View {
         // V6.31.1: view mode 切换过渡 — crossfade + scale 0.95→1 (Photos.app 范式)
         //   .transition 只在 view 出现/消失时触发, 配合 .animation(value: viewMode) 让 SwiftUI 跑 transition
         .transition(.opacity.combined(with: .scale(scale: 0.96)))
-        .animation(Animations.standard, value: viewMode)
+        .animation(Animations.standard, value: model.viewMode)
     }
 
     private var detailPane: some View {
@@ -623,8 +544,8 @@ struct ContentView: View {
             // V6.28: grid 业务走 model.grid
             singleSelectedPhoto: model.grid.singleSelectedPhoto,
             isMultiSelect: model.grid.isMultiSelect,
-            // V3.6.52: 用 selection.selectedIDs.count 替直接字段
-            count: model.grid.filterInTrash ? model.grid.trashedCount : (model.grid.filterInDuplicates ? model.grid.duplicatePurgeableCount : selection.selectedIDs.count),
+            // V3.6.52: 用 model.grid.selection.selectedIDs.count 替直接字段
+            count: model.grid.filterInTrash ? model.grid.trashedCount : (model.grid.filterInDuplicates ? model.grid.duplicatePurgeableCount : model.grid.selection.selectedIDs.count),
             totalSize: model.grid.filterInTrash ? model.grid.trashedTotalSize : (model.grid.filterInDuplicates ? model.grid.duplicatePurgeableSize : model.grid.selectedTotalSize),
             // V6.12: 重复图模式传 duplicateGroupCount 跟 count (purgeable) 区分
             //   duplicateGroupCount 跟 .duplicatePurgeableCount 是不同语义
@@ -648,7 +569,7 @@ struct ContentView: View {
             onBatchExport: { model.grid.batchExport() },
             onBatchDelete: { model.grid.showingBatchDeleteConfirm = true },
             // V3.6.52: 单字段 assignment 替 2 字段 pair
-            onClearSelection: { selection = .empty },
+            onClearSelection: { model.grid.selection = .empty },
             // V3.6 NEW: 回收站模式
             sidebarSelection: model.sidebarSelection,
             retentionDays: model.settings.trashRetentionDays,
