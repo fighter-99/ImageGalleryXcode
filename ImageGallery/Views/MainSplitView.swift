@@ -115,7 +115,14 @@ struct MainSplitView<Sidebar: View, Center: View, Detail: View>: View {
             }
         }
         .toolbar {
-            // V6.81: 4 段分组 (Photos 真版结构) — ToolbarItemGroup + 4 种 placement
+            // V6.82: 4 段分组 — 4 段都用不同 placement 让 SwiftUI 系统物理分段
+            //   V6.81 用 .automatic 段 2 跟 .secondaryAction 段 3 同 leading 区视觉成一组
+            //   V6.82 改 .automatic → .principal 让段 2 (选择操作) 物理分段
+            //   - 段 1 .navigation (leading): 库管理 (导入 + 导出)
+            //   - 段 2 .secondaryAction (中): 视图控制 (筛选 + 排序 + 视图)
+            //   - 段 3 .principal (中, 视觉锤): 选择操作 (快速查看 + 删除)
+            //   - 段 4 .primaryAction (trailing, "全部" 文本后): slider
+            //   Photos 真版 4 段结构对齐, 4 段物理分组
             //   段 1 .navigation (库管理, 最左): 导入 + 导出
             ToolbarItemGroup(placement: .navigation) {
                 Button { toolbarActions.onExport() } label: {
@@ -134,7 +141,7 @@ struct MainSplitView<Sidebar: View, Center: View, Detail: View>: View {
                 .help(importProgress > 0 ? "导入中..." : "导入 (⌘O)")
             }
             //   段 2 .automatic (选择操作, 中): 快速查看 + 删除
-            ToolbarItemGroup(placement: .automatic) {
+            ToolbarItemGroup(placement: .principal) {
                 Button { toolbarActions.onQuickLook() } label: {
                     Label("预览", systemImage: "eye").labelStyle(.iconOnly)
                 }.disabled(selectionEmpty || !selectionSingle).help("快速查看 (空格)")
@@ -251,13 +258,13 @@ struct MainSplitView<Sidebar: View, Center: View, Detail: View>: View {
         //   V6.80 保守路径: toolbar 走 .regularMaterial (Photos 真版 toolbar 同款材质), 安全
         //   视觉上接近 macOS 26 Liquid Glass, 但 macOS 14-25 也工作 (渐进降级免费)
         //   macOS 26+ 真版 Liquid Glass (.glass) 待 V6.81+ 实施 + 截图验收无 outline 副作用
-        // V6.81: toolbar 4 段分组 (Photos 真版结构) — ToolbarItemGroup + 4 种 placement
-        //   - 段 1 .navigation (库管理, 最左): 导入 + 导出
-        //   - 段 2 .automatic (选择操作, 中): 快速查看 + 删除
-        //   - 段 3 .secondaryAction (视图控制, 中右): 筛选 + 排序 + 视图
-        //   - 段 4 .primaryAction (缩略图, 最右): slider
-        //   物理 4 段视觉分组, Photos 真版结构对齐, 系统自动加 segment separator
-        //   搜索按钮 (.searchable) 暂不纳入 (后续 V6.82+ 加 Photos 真版 toggle 搜索)
+        // V6.82: 重新调 4 段 placement — V6.81 用 .automatic 段 2 跟 .secondaryAction 段 3 同 leading
+        //   区视觉成一组. V6.82 4 段都用不同 placement 让 SwiftUI 系统物理分段:
+        //   - 段 1 .navigation (leading): 库管理 (导入 + 导出)
+        //   - 段 2 .secondaryAction (中): 视图控制 (筛选 + 排序 + 视图)
+        //   - 段 3 .principal (中, 视觉锤): 选择操作 (快速查看 + 删除)
+        //   - 段 4 .primaryAction (trailing, "全部" 文本后): slider
+        //   Photos 真版 4 段结构对齐, 4 段物理分组
         .background(.regularMaterial)
         .onDrop(of: [.fileURL], isTargeted: $isDropTargeted, perform: onDrop)
         .overlay {
