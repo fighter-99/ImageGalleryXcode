@@ -87,9 +87,11 @@ struct ContentView: View {
     // V6.74.2: 删 titlebarAccessory proxy + syncTitlebarAccessory helper — TitlebarAccessoryController 整文件删
     //   ⓘ 按钮已迁 MainSplitView SwiftUI .toolbar .primaryAction (V6.74.1), 不再需要 AppKit 桥接
 
-    // V4.20.0: 撤回 V4.19.0 glassNamespace + glassEffectUnion
-    //   macOS 26 glassEffectUnion 在 sidebar 边界外产生 outline 痕迹（用户截图反馈）
-    //   回滚到 V4.18.0 单 view glassEffect 状态（仅 SidebarView/DetailView 4 处 .glassEffect）
+    // V6.80: 删 V4.20.0/V4.21.0 rollback 注释块 — 全 codebase 0 处 .glassEffect, 死注释清理
+    //   V4.18 试过 .glassEffect(.regular) 在 SidebarView/DetailView 4 处, V4.21 因 macOS 26 单 view
+    //   视觉副作用未消除全 rollback. V6.80 保守路径: toolbar 走 .regularMaterial (Apple standard,
+    //   macOS 14-25 stable), macOS 26 Liquid Glass .glass 待 V6.81+ 实施 + 截图验收
+    //   SidebarView/DetailView 维持 V4.21 rollback 状态 (避免 outline 风险)
 
     /// V4.12.0 删: currentVisibleURLs (URL 列表)——V5.42 不再走 QLPreviewPanel
     ///   showQuickLook 直接调 enterImmersiveFromSelection, 不需要 URL 列表

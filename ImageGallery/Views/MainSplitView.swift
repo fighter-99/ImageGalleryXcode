@@ -250,6 +250,12 @@ struct MainSplitView<Sidebar: View, Center: View, Detail: View>: View {
         }
         .onSubmit(of: .search) { onSearchSubmit(searchText) }
         .scrollDisabled(isBoxSelecting)
+        // V6.80: toolbar 玻璃质感 — Apple SwiftUI 14+ 标准 `.regularMaterial`
+        //   V4.18/19/20/21 试过 macOS 26 .glassEffect, 因 sidebar/detail 边界 outline 副作用全 rollback
+        //   V6.80 保守路径: toolbar 走 .regularMaterial (Photos 真版 toolbar 同款材质), 安全
+        //   视觉上接近 macOS 26 Liquid Glass, 但 macOS 14-25 也工作 (渐进降级免费)
+        //   macOS 26+ 真版 Liquid Glass (.glass) 待 V6.81+ 实施 + 截图验收无 outline 副作用
+        .background(.regularMaterial)
         .onDrop(of: [.fileURL], isTargeted: $isDropTargeted, perform: onDrop)
         .overlay {
             if isDropTargeted {
@@ -259,6 +265,7 @@ struct MainSplitView<Sidebar: View, Center: View, Detail: View>: View {
         }
     }
 
+    // V6.80: 暂不引入 toolbarBackground API — SDK 签名未实测验证, 后续 V6.81+ 实施
     private func sortFieldRow(icon: String, name: String, isActive: Bool, direction: String?) -> some View {
         HStack {
             Label(name, systemImage: icon).font(.body).foregroundStyle(isActive ? .primary : .secondary)
