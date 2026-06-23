@@ -253,10 +253,12 @@ enum Typography {
     ///   - 44pt 是 Photos.app QuickLook 风格的大数字
     static let immersiveCount = Font.system(size: 44).monospacedDigit()
 
-    /// V5.45 NEW: 年份大标题 (ViewMode 时间线年份分隔)
-    ///   - Photos.app "Years" 视图风格——年份是最大视觉锤
-    ///   - largeTitle 是 macOS 标准大标题字体（自动响应 Dynamic Type）
-    static let yearTitle = Font.system(size: 34, weight: .bold, design: .rounded)
+    /// V6.78: 年份大标题 — semantic font
+    ///   Photos.app "Years" 视图风格 — 年份是最大视觉锤
+    ///   V6.45 之前 .system(size: 34) 硬编码不响应 Dynamic Type
+    ///   改 .largeTitle.weight(.bold).monospacedDigit() — .largeTitle 是 macOS 大标题 (28pt)
+    ///   + bold + 等宽数字 (翻页时不抖), 自动响应 Dynamic Type
+    static let yearTitle = Font.largeTitle.weight(.bold).monospacedDigit()
 
     /// V5.45 NEW: 详情面板小标签 (DetailView "标签"/"删除" 等字段标题)
     ///   - 比 caption (11pt) 大 1pt + bold——视觉层级清晰
@@ -298,9 +300,33 @@ enum Typography {
     ///   跟 captionMono 区别: captionMono 是 11pt 等宽数字, bodyMono 是 13pt 等宽文字
     static let bodyMono = Font.system(.body, design: .monospaced)
 
-    /// V6.63 (P5.1): Settings row 副标题 (description 行) — 介于 body (13) 和 title2 (22) 之间
-    ///   16pt + regular weight — 比 body 略大但比 title 弱, 视觉层级"主标题→副说明"
-    static let subheadline = Font.system(size: 16)
+    /// V6.78: Settings row 副标题 (description 行) — semantic font
+    ///   V6.63 (P5.1) 之前 .system(size: 16) 硬编码不响应 Dynamic Type
+    ///   改 .callout — macOS callout (16pt) 默认 regular, 自动响应 Dynamic Type
+    ///   视觉层级保持: 介于 body (13pt) 和 title2 (22pt) 之间
+    static let subheadline = Font.callout
+
+    /// V6.78: 侧边栏 section header (SidebarView "LIBRARY" / "SMART FOLDERS" 等分类标题)
+    ///   V6.40 之前 .system(size: 13, weight: .semibold) 硬编码不响应 Dynamic Type
+    ///   改 .footnote.weight(.semibold) — macOS footnote (13pt) + semibold, 自动响应 Dynamic Type
+    ///   跟 Photos 真版 sidebar section header 风格对齐
+    static let sidebarSectionHeader = Font.footnote.weight(.semibold)
+
+    /// V6.78: 侧边栏 count 数字 (SidebarView "5 张" / "12 个" 等分类计数)
+    ///   V6.40 之前 .system(size: 13) 硬编码不响应 Dynamic Type
+    ///   改 .footnote — macOS footnote (13pt) 默认 regular, 自动响应 Dynamic Type
+    static let sidebarCount = Font.footnote
+
+    /// V6.78: Toolbar badge 数字 (V6.73 ⓘ 红点 / filter active badge 等)
+    ///   V6.73 之前 .system(size: 10) 硬编码不响应 Dynamic Type
+    ///   改 .caption2 — macOS caption2 (11pt) 默认 regular, 自动响应 Dynamic Type
+    ///   跟 Photos 真版 toolbar badge 风格对齐
+    static let badge = Font.caption2
+
+    /// V6.78: Sidebar row icon (SidebarRow SF Symbol icon)
+    ///   V5.45 之前 .system(size: SidebarStyle.iconSize) 硬编码不响应 Dynamic Type
+    ///   改 .body — macOS body (13pt) 默认 regular, 自动响应 Dynamic Type
+    static let sidebarIcon = Font.body
 
     /// V6.63 (P5.1): EmptyStateView 圆形 backdrop 内 icon (V6.61 polish 加)
     ///   56pt + light weight — 在 120pt 圆形内居中, Photos.app Sonoma+ 风格空状态视觉锤

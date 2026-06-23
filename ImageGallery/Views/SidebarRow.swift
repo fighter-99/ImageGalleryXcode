@@ -40,7 +40,7 @@ struct SidebarRow: View {
             HStack(spacing: SidebarStyle.rowIconTextSpacing) {
                 // 图标——V4.6.0 用 token 化字号/字重/框架宽度
                 Image(systemName: icon)
-                    .font(.system(size: SidebarStyle.iconSize, weight: SidebarStyle.iconWeight))
+                    .font(Typography.sidebarIcon)
                     .foregroundStyle(currentIconColor)
                     .frame(width: SidebarStyle.iconFrameWidth)
 

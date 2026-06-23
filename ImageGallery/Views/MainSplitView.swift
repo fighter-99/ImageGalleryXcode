@@ -137,7 +137,7 @@ struct MainSplitView<Sidebar: View, Center: View, Detail: View>: View {
                 .overlay(alignment: .topTrailing) {
                     if filterState.isActive {
                         Text("\(filterState.activeCount)")
-                            .font(.system(size: 10)).foregroundStyle(.white)
+                            .font(Typography.badge).foregroundStyle(.white)
                             .padding(4).background(Color.red).clipShape(Circle())
                             .offset(x: 8, y: -8)
                     }

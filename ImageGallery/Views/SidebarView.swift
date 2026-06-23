@@ -148,7 +148,7 @@ struct SidebarView: View {
                 sidebarRow(icon: "clock.arrow.circlepath", label: Copy.sidebarRecent7Days, count: libraryStats.recent7DaysCount, target: .recent7Days, iconColor: SidebarStyle.iconColorRecent)
                 sidebarRow(icon: "externaldrive", label: Copy.sidebarLargeFiles, count: libraryStats.largeFilesCount, target: .largeFiles, iconColor: SidebarStyle.iconColorLarge)
             } label: {
-                Text(Copy.sidebarSectionLibrary).font(.system(size: 13, weight: .semibold))
+                Text(Copy.sidebarSectionLibrary).font(Typography.sidebarSectionHeader)
             }
 
             // ─── 智能文件夹（DisclosureGroup + 底部新建入口）───
@@ -161,9 +161,9 @@ struct SidebarView: View {
                         Label(Copy.sidebarNewSmartFolder, systemImage: "sparkles")
                     }
                     .buttonStyle(.plain)
-                    .font(.system(size: 13))
+                    .font(Typography.sidebarCount)
                 } label: {
-                    Text(Copy.sidebarSectionSmartFolders).font(.system(size: 13, weight: .semibold))
+                    Text(Copy.sidebarSectionSmartFolders).font(Typography.sidebarSectionHeader)
                 }
             }
 
@@ -179,9 +179,9 @@ struct SidebarView: View {
                     Label(Copy.newFolder, systemImage: "plus.circle")
                 }
                 .buttonStyle(.plain)
-                .font(.system(size: 13))
+                .font(Typography.sidebarCount)
             } label: {
-                Text(Copy.sidebarSectionFolders).font(.system(size: 13, weight: .semibold))
+                Text(Copy.sidebarSectionFolders).font(Typography.sidebarSectionHeader)
             }
 
             // ─── 标签 ───
@@ -210,9 +210,9 @@ struct SidebarView: View {
                     Label(Copy.newTag, systemImage: "plus.circle")
                 }
                 .buttonStyle(.plain)
-                .font(.system(size: 13))
+                .font(Typography.sidebarCount)
             } label: {
-                Text(Copy.sidebarSectionTags).font(.system(size: 13, weight: .semibold))
+                Text(Copy.sidebarSectionTags).font(Typography.sidebarSectionHeader)
             }
 
             // ─── Section 4: 最近删除（单独 section，底部入口）───
