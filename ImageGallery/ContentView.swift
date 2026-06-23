@@ -86,43 +86,21 @@ struct ContentView: View {
     // 拖拽状态
     @State private var isDropTargeted = false
 
-    // 批量删除确认 (Grid — V6.28)
-    private var showingBatchDeleteConfirm: Bool {
-        get { model.grid.showingBatchDeleteConfirm }
-        nonmutating set { model.grid.showingBatchDeleteConfirm = newValue }
-    }
-    // P4.2: 批量重命名 sheet — mini toolbar Rename 按钮 / File menu ⌘⇧R 触发 (Grid — V6.28)
-    private var showingBatchRenameSheet: Bool {
-        get { model.grid.showingBatchRenameSheet }
-        nonmutating set { model.grid.showingBatchRenameSheet = newValue }
-    }
-
-    // V3.6.6: 清空回收站二次确认（防误操作：永久删除所有 trashed 项）— Grid (V6.28)
-    private var showingEmptyTrashConfirm: Bool {
-        get { model.grid.showingEmptyTrashConfirm }
-        nonmutating set { model.grid.showingEmptyTrashConfirm = newValue }
-    }
-
-    // V3.6.24: 导入时重复检测 dialog（防止 fileHash 重复的图片被再次导入）
-    // V3.6.24: 导入时重复检测 dialog（防止 fileHash 重复的图片被再次导入）
-    private var importDuplicateCheck: ImageImporter.DuplicateCheckResult? {
-        get { model.importVM.importDuplicateCheck }
-        nonmutating set { model.importVM.importDuplicateCheck = newValue }
-    }
-    private var pendingImportURLs: [URL] {
-        get { model.importVM.pendingImportURLs }
-        nonmutating set { model.importVM.pendingImportURLs = newValue }
-    }
+    // V6.77.1: 删 6 个 dialog flag proxy — caller 全部直读 model.X / \$model.X
+    //   - showingBatchDeleteConfirm (Grid)
+    //   - showingBatchRenameSheet (Grid)
+    //   - showingEmptyTrashConfirm (Grid)
+    //   - importDuplicateCheck (ImportVM)
+    //   - pendingImportURLs (ImportVM)
+    //   - showingNewFolderAlert (Grid)
+    //   inline setter 路径: `proxy = true` → `model.X = true` (8 处)
+    //   contentBodyModifiers 接 raw value (不是 Binding), caller 改 model.X
+    //   batchActionDialogs 接 Binding, caller 改 \$bindableGrid.X / \$bindableModel.X
 
     // 批量移动
     // （showingBatchMoveSheet 已移除：批量移动流程当前在 PhotoGridView 内联实现，
     //   该状态从未被读。如未来要重新走 sheet 流程再加回。）
 
-    // 新建文件夹弹窗 (Grid — V6.28)
-    private var showingNewFolderAlert: Bool {
-        get { model.grid.showingNewFolderAlert }
-        nonmutating set { model.grid.showingNewFolderAlert = newValue }
-    }
     private var newFolderName: String {
         get { model.grid.newFolderName }
         nonmutating set { model.grid.newFolderName = newValue }
@@ -309,11 +287,11 @@ struct ContentView: View {
                 undoManager: model.undoManager,
                 accentColor: model.accentColor,
                 hasPurgedExpiredTrash: $hasPurgedExpiredTrash,
-                showingNewFolderAlert: Binding(get: { showingNewFolderAlert }, set: { showingNewFolderAlert = $0 }),
+                showingNewFolderAlert: Bindable(model.grid).showingNewFolderAlert,
                 onImport: { model.importVM.startImport() },
                 // V6.20.0 (code audit fix #1 + #9): 3 个入口 (⌘N hidden button / ⌘⇧N 菜单 / SidebarView "+") 都清空 newFolderName
                 //   避免上次 name 残留; 之前 ContentView 路径不清, SidebarView 清, 两路不一致
-                onNewFolder: { model.grid.newFolderName = ""; showingNewFolderAlert = true },
+                onNewFolder: { model.grid.newFolderName = ""; model.grid.showingNewFolderAlert = true },
                 onResetFilters: { model.grid.resetFilters() },
                 onCopy: { model.grid.copyToPasteboard() },
                 onToggleSortDirection: { model.toggleSortDirection() },
@@ -558,7 +536,7 @@ struct ContentView: View {
                 //   保留参数避免破坏 PhotoGridPane 签名——传 noop
                 onVisiblePhotosChange: { _ in },
                 onImport: { model.importVM.startImport() },
-                onBatchDelete: { showingBatchDeleteConfirm = true },
+                onBatchDelete: { model.grid.showingBatchDeleteConfirm = true },
                 onClearMultiSelect: { selection = .empty },
                 // V6.22.1 (P2 #2): 旋转回调 — cell → pane → grid view 透传, 最终调 model.grid.rotateSelected
                 //   单 cell 右键 rotate (cell menu) — ContentView 先把 selection 设成单选这张图, 再 rotate
@@ -668,7 +646,7 @@ struct ContentView: View {
             // V5.12: 加 onBatchSetRating——多选批量评分
             onBatchSetRating: { model.grid.batchSetRating($0) },
             onBatchExport: { model.grid.batchExport() },
-            onBatchDelete: { showingBatchDeleteConfirm = true },
+            onBatchDelete: { model.grid.showingBatchDeleteConfirm = true },
             // V3.6.52: 单字段 assignment 替 2 字段 pair
             onClearSelection: { selection = .empty },
             // V3.6 NEW: 回收站模式
@@ -677,7 +655,7 @@ struct ContentView: View {
             onTrashRestore: { model.grid.restoreSelectedFromTrash() },
             onTrashPermanentDelete: { model.grid.permanentDeleteSelected() },
             // V3.6.6: 改弹二次确认（不再直接调 emptyTrash）
-            onEmptyTrash: { showingEmptyTrashConfirm = true },
+            onEmptyTrash: { model.grid.showingEmptyTrashConfirm = true },
             // V4.9.0: 回收站空时切回"全部"视图
             onExitTrash: { model.sidebarSelection = .all },
             // V3.6.15: 重复图清理（一键保留每组最新）
