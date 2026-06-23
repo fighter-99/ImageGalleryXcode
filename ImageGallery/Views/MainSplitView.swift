@@ -102,6 +102,131 @@ struct MainSplitView<Sidebar: View, Center: View, Detail: View>: View {
         self.detail = detail()
     }
 
+    // V6.84: toolbar items 抽成 @ToolbarContentBuilder computed — 减少 body 链 type-check 压力
+    //   .toolbarBackground(.bar) + .toolbarRole(.editor) 触发 SwiftUI 推断递归, 拆开避免 60s 超时
+    //   (memory V6.28 ContentView type-check timeout 同源教训 — 拆 modifier 链)
+    @ToolbarContentBuilder
+    private var toolbarContent: some ToolbarContent {
+        ToolbarItem {
+            Button { toolbarActions.onExport() } label: {
+                Label("导出", systemImage: "square.and.arrow.up").labelStyle(.iconOnly)
+            }.help("导出")
+        }
+        ToolbarItem {
+            Button { toolbarActions.onDelete() } label: {
+                Label("删除", systemImage: "trash").labelStyle(.iconOnly)
+            }.disabled(selectionEmpty).help("删除")
+        }
+        ToolbarItem {
+            Button { toolbarActions.onQuickLook() } label: {
+                Label("预览", systemImage: "eye").labelStyle(.iconOnly)
+            }.disabled(selectionEmpty || !selectionSingle).help("快速查看 (空格)")
+        }
+        ToolbarItem {
+            Button { showingFilter.toggle() } label: {
+                Label("筛选", systemImage: "line.3.horizontal.decrease.circle").labelStyle(.iconOnly)
+            }.help("筛选")
+            .overlay(alignment: .topTrailing) {
+                if filterState.isActive {
+                    Text("\(filterState.activeCount)")
+                        .font(Typography.badge).foregroundStyle(.white)
+                        .padding(4).background(Color.red).clipShape(Circle())
+                        .offset(x: 8, y: -8)
+                }
+            }
+            .popover(isPresented: $showingFilter) {
+                FilterPanelView(filterState: $filterState, folders: allFolders, tags: allTags, onClose: { showingFilter = false })
+            }
+        }
+        ToolbarItem {
+            Button { showingSortPopover.toggle() } label: {
+                Label("排序", systemImage: sortOption.toolbarIcon).labelStyle(.iconOnly)
+            }.help("排序")
+            .popover(isPresented: $showingSortPopover) {
+                VStack(alignment: .leading, spacing: 0) {
+                    sortFieldRow(icon: "calendar", name: "导入时间",
+                                  isActive: sortOption == .importedAtDesc || sortOption == .importedAtAsc,
+                                  direction: sortOption == .importedAtDesc ? "↓ 最新" : sortOption == .importedAtAsc ? "↑ 最早" : nil)
+                        .onTapGesture {
+                            if sortOption == .importedAtDesc { sortOption = .importedAtAsc }
+                            else { sortOption = .importedAtDesc }
+                            showingSortPopover = false
+                        }
+                    sortFieldRow(icon: "doc", name: "文件名",
+                                  isActive: sortOption == .filenameDesc || sortOption == .filenameAsc,
+                                  direction: sortOption == .filenameDesc ? "↓ Z→A" : sortOption == .filenameAsc ? "↑ A→Z" : nil)
+                        .onTapGesture {
+                            if sortOption == .filenameDesc { sortOption = .filenameAsc }
+                            else { sortOption = .filenameDesc }
+                            showingSortPopover = false
+                        }
+                    sortFieldRow(icon: "externaldrive.fill", name: "文件大小",
+                                  isActive: sortOption == .fileSizeDesc || sortOption == .fileSizeAsc,
+                                  direction: sortOption == .fileSizeDesc ? "↓ 最大" : sortOption == .fileSizeAsc ? "↑ 最小" : nil)
+                        .onTapGesture {
+                            if sortOption == .fileSizeDesc { sortOption = .fileSizeAsc }
+                            else { sortOption = .fileSizeDesc }
+                            showingSortPopover = false
+                        }
+                    Divider().padding(.vertical, 2)
+                    sortFieldRow(icon: "arrow.up.arrow.down", name: "自定义排序",
+                                  isActive: sortOption == .customOrder, direction: nil)
+                        .onTapGesture { sortOption = .customOrder; showingSortPopover = false }
+                }.padding(8).frame(width: 200)
+            }
+        }
+        ToolbarItem {
+            Button { showingViewPopover.toggle() } label: {
+                Label("视图", systemImage: viewMode.icon).labelStyle(.iconOnly)
+            }.help("视图模式")
+            .popover(isPresented: $showingViewPopover) {
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(ViewMode.allCases) { mode in
+                        Button { viewMode = mode; showingViewPopover = false } label: {
+                            Label(mode.label, systemImage: mode.icon).font(.body)
+                                .frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
+                        }.buttonStyle(.plain)
+                        .padding(.horizontal, 12).padding(.vertical, 5)
+                        .background(mode == viewMode ? Color.accentColor.opacity(0.12) : Color.clear)
+                        .cornerRadius(4)
+                    }
+                }.padding(6).frame(width: 140)
+            }
+        }
+        // V6.79: toolbar 缩略图大小控件 — 1 个 Slider 替代 +- 两个 button
+        //   绑 settings.thumbnailSize (持久化), 100...250 step 10 (跟 Settings 一致)
+        //   SettingsView slider 已删 (V6.79.2), toolbar 唯一入口
+        //   Photos 真版 view options 模式: toolbar 内嵌 slider (SwiftUI Slider 在 macOS 是 NSSlider)
+        ToolbarItem {
+            HStack(spacing: 6) {
+                Slider(value: $thumbnailSize, in: 100...250, step: 10)
+                    .frame(width: 120)
+                    .accessibilityLabel("缩略图大小")
+                    .accessibilityValue("\(Int(thumbnailSize)) px")
+                Text("\(Int(thumbnailSize))")
+                    .font(Typography.captionMono)
+                    .foregroundStyle(Surface.textSecondary)
+                    .frame(width: 32, alignment: .trailing)
+            }
+        }
+        ToolbarItem {
+            Button { toolbarActions.onImport() } label: {
+                if importProgress > 0 {
+                    HStack(spacing: 4) {
+                        ProgressView(value: importProgress).progressViewStyle(.linear).frame(width: 36)
+                        Text("\(Int(importProgress * 100))%").font(.caption2.monospacedDigit())
+                    }
+                } else {
+                    Label("导入", systemImage: "square.and.arrow.down").labelStyle(.iconOnly)
+                }
+            }
+            .help(importProgress > 0 ? "导入中..." : "导入 (⌘O)")
+        }
+        // V6.74.5: 删 .primaryAction ⓘ 按钮 — 用户不要 toolbar 上 toggle 详情面板的入口
+        //   详情面板仍可通过 ⌘I / ⌘⌃D (ImageGalleryApp View menu Toggle) 控制
+        //   隐藏详情面板 + showDetail toggle 路径: ImageGalleryApp.swift:323/329 Toggle menu
+    }
+
     var body: some View {
         NavigationSplitView {
             sidebar
@@ -114,126 +239,13 @@ struct MainSplitView<Sidebar: View, Center: View, Detail: View>: View {
                     .navigationSplitViewColumnWidth(min: 200, ideal: 280, max: 500)
             }
         }
-        .toolbar {
+        .toolbar { toolbarContent;
             ToolbarItem {
                 Button { toolbarActions.onExport() } label: {
                     Label("导出", systemImage: "square.and.arrow.up").labelStyle(.iconOnly)
                 }.help("导出")
             }
-            ToolbarItem {
-                Button { toolbarActions.onDelete() } label: {
-                    Label("删除", systemImage: "trash").labelStyle(.iconOnly)
-                }.disabled(selectionEmpty).help("删除")
-            }
-            ToolbarItem {
-                Button { toolbarActions.onQuickLook() } label: {
-                    Label("预览", systemImage: "eye").labelStyle(.iconOnly)
-                }.disabled(selectionEmpty || !selectionSingle).help("快速查看 (空格)")
-            }
-            ToolbarItem {
-                Button { showingFilter.toggle() } label: {
-                    Label("筛选", systemImage: "line.3.horizontal.decrease.circle").labelStyle(.iconOnly)
-                }.help("筛选")
-                .overlay(alignment: .topTrailing) {
-                    if filterState.isActive {
-                        Text("\(filterState.activeCount)")
-                            .font(Typography.badge).foregroundStyle(.white)
-                            .padding(4).background(Color.red).clipShape(Circle())
-                            .offset(x: 8, y: -8)
-                    }
-                }
-                .popover(isPresented: $showingFilter) {
-                    FilterPanelView(filterState: $filterState, folders: allFolders, tags: allTags, onClose: { showingFilter = false })
-                }
-            }
-            ToolbarItem {
-                Button { showingSortPopover.toggle() } label: {
-                    Label("排序", systemImage: sortOption.toolbarIcon).labelStyle(.iconOnly)
-                }.help("排序")
-                .popover(isPresented: $showingSortPopover) {
-                    VStack(alignment: .leading, spacing: 0) {
-                        sortFieldRow(icon: "calendar", name: "导入时间", 
-                                      isActive: sortOption == .importedAtDesc || sortOption == .importedAtAsc,
-                                      direction: sortOption == .importedAtDesc ? "↓ 最新" : sortOption == .importedAtAsc ? "↑ 最早" : nil)
-                            .onTapGesture {
-                                if sortOption == .importedAtDesc { sortOption = .importedAtAsc }
-                                else { sortOption = .importedAtDesc }
-                                showingSortPopover = false
-                            }
-                        sortFieldRow(icon: "doc", name: "文件名",
-                                      isActive: sortOption == .filenameDesc || sortOption == .filenameAsc,
-                                      direction: sortOption == .filenameDesc ? "↓ Z→A" : sortOption == .filenameAsc ? "↑ A→Z" : nil)
-                            .onTapGesture {
-                                if sortOption == .filenameDesc { sortOption = .filenameAsc }
-                                else { sortOption = .filenameDesc }
-                                showingSortPopover = false
-                            }
-                        sortFieldRow(icon: "externaldrive.fill", name: "文件大小",
-                                      isActive: sortOption == .fileSizeDesc || sortOption == .fileSizeAsc,
-                                      direction: sortOption == .fileSizeDesc ? "↓ 最大" : sortOption == .fileSizeAsc ? "↑ 最小" : nil)
-                            .onTapGesture {
-                                if sortOption == .fileSizeDesc { sortOption = .fileSizeAsc }
-                                else { sortOption = .fileSizeDesc }
-                                showingSortPopover = false
-                            }
-                        Divider().padding(.vertical, 2)
-                        sortFieldRow(icon: "arrow.up.arrow.down", name: "自定义排序",
-                                      isActive: sortOption == .customOrder, direction: nil)
-                            .onTapGesture { sortOption = .customOrder; showingSortPopover = false }
-                    }.padding(8).frame(width: 200)
-                }
-            }
-            ToolbarItem {
-                Button { showingViewPopover.toggle() } label: {
-                    Label("视图", systemImage: viewMode.icon).labelStyle(.iconOnly)
-                }.help("视图模式")
-                .popover(isPresented: $showingViewPopover) {
-                    VStack(alignment: .leading, spacing: 0) {
-                        ForEach(ViewMode.allCases) { mode in
-                            Button { viewMode = mode; showingViewPopover = false } label: {
-                                Label(mode.label, systemImage: mode.icon).font(.body)
-                                    .frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
-                            }.buttonStyle(.plain)
-                            .padding(.horizontal, 12).padding(.vertical, 5)
-                            .background(mode == viewMode ? Color.accentColor.opacity(0.12) : Color.clear)
-                            .cornerRadius(4)
-                        }
-                    }.padding(6).frame(width: 140)
-                }
-            }
-            // V6.79: toolbar 缩略图大小控件 — 1 个 Slider 替代 +- 两个 button
-            //   绑 settings.thumbnailSize (持久化), 100...250 step 10 (跟 Settings 一致)
-            //   SettingsView slider 已删 (V6.79.2), toolbar 唯一入口
-            //   Photos 真版 view options 模式: toolbar 内嵌 slider
-            ToolbarItem {
-                HStack(spacing: 6) {
-                    Slider(value: $thumbnailSize, in: 100...250, step: 10)
-                        .frame(width: 120)
-                        .accessibilityLabel("缩略图大小")
-                        .accessibilityValue("\(Int(thumbnailSize)) px")
-                    Text("\(Int(thumbnailSize))")
-                        .font(Typography.captionMono)
-                        .foregroundStyle(Surface.textSecondary)
-                        .frame(width: 32, alignment: .trailing)
-                }
-            }
-            ToolbarItem {
-                Button { toolbarActions.onImport() } label: {
-                    if importProgress > 0 {
-                        HStack(spacing: 4) {
-                            ProgressView(value: importProgress).progressViewStyle(.linear).frame(width: 36)
-                            Text("\(Int(importProgress * 100))%").font(.caption2.monospacedDigit())
-                        }
-                    } else {
-                        Label("导入", systemImage: "square.and.arrow.down").labelStyle(.iconOnly)
-                    }
-                }
-                .help(importProgress > 0 ? "导入中..." : "导入 (⌘O)")
-            }
-            // V6.74.5: 删 .primaryAction ⓘ 按钮 — 用户不要 toolbar 上 toggle 详情面板的入口
-            //   详情面板仍可通过 ⌘I / ⌘⌃D (ImageGalleryApp View menu Toggle) 控制
-            //   隐藏详情面板 + showDetail toggle 路径: ImageGalleryApp.swift:323/329 Toggle menu
-        }        .searchable(text: $searchText, placement: .toolbar, prompt: Copy.searchPlaceholder) {
+            }.searchable(text: $searchText, placement: .toolbar, prompt: Copy.searchPlaceholder) {
             // V6.74.4: 搜索自动建议 — 显示最近 20 个搜索词 (Photos / Finder 范式)
             //   点 suggestion → searchCompletion 自动填入 searchText → 走 binding setter
             ForEach(recentSearches, id: \.self) { recent in
@@ -250,12 +262,14 @@ struct MainSplitView<Sidebar: View, Center: View, Detail: View>: View {
         }
         .onSubmit(of: .search) { onSearchSubmit(searchText) }
         .scrollDisabled(isBoxSelecting)
-        // V6.80: toolbar 玻璃质感 — Apple SwiftUI 14+ 标准 `.regularMaterial`
-        //   V4.18/19/20/21 试过 macOS 26 .glassEffect, 因 sidebar/detail 边界 outline 副作用全 rollback
-        //   V6.80 保守路径: toolbar 走 .regularMaterial (Photos 真版 toolbar 同款材质), 安全
-        //   视觉上接近 macOS 26 Liquid Glass, 但 macOS 14-25 也工作 (渐进降级免费)
-        //   macOS 26+ 真版 Liquid Glass (.glass) 待 V6.81+ 实施 + 截图验收无 outline 副作用
-        .background(.regularMaterial)
+        // V6.84: toolbar 升级 — `.toolbarBackground(.bar, for: .toolbar)` + `.toolbarRole(.editor)`
+        //   V6.80 用 .background(.regularMaterial) 是 generic background, V6.84 改 Photos 真版 toolbar API:
+        //   - .toolbarBackground(.bar): macOS 14+ Apple standard toolbar background (跟 Photos 一致)
+        //   - .toolbarRole(.editor): macOS 14+ 让 toolbar 渲染走 editor 角色 (Photos/Finder editor toolbar pattern)
+        //   - Slider 保留: SwiftUI Slider 在 macOS 是 NSSlider 包 NSHostingView, 已经是原生 AppKit 控件
+        //   - 删 .background(.regularMaterial) 避免跟 .toolbarBackground 双背景叠加
+        .toolbarBackground(.bar)  // macOS 14+ — Apple standard toolbar background (Photos 真版)
+        .toolbarRole(.editor)  // macOS 14+ — editor toolbar role (Photos 真版)
         .onDrop(of: [.fileURL], isTargeted: $isDropTargeted, perform: onDrop)
         .overlay {
             if isDropTargeted {
