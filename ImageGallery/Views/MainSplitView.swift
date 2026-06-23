@@ -115,22 +115,35 @@ struct MainSplitView<Sidebar: View, Center: View, Detail: View>: View {
             }
         }
         .toolbar {
-            ToolbarItem {
+            // V6.81: 4 段分组 (Photos 真版结构) — ToolbarItemGroup + 4 种 placement
+            //   段 1 .navigation (库管理, 最左): 导入 + 导出
+            ToolbarItemGroup(placement: .navigation) {
                 Button { toolbarActions.onExport() } label: {
                     Label("导出", systemImage: "square.and.arrow.up").labelStyle(.iconOnly)
                 }.help("导出")
+                Button { toolbarActions.onImport() } label: {
+                    if importProgress > 0 {
+                        HStack(spacing: 4) {
+                            ProgressView(value: importProgress).progressViewStyle(.linear).frame(width: 36)
+                            Text("\(Int(importProgress * 100))%").font(.caption2.monospacedDigit())
+                        }
+                    } else {
+                        Label("导入", systemImage: "square.and.arrow.down").labelStyle(.iconOnly)
+                    }
+                }
+                .help(importProgress > 0 ? "导入中..." : "导入 (⌘O)")
             }
-            ToolbarItem {
+            //   段 2 .automatic (选择操作, 中): 快速查看 + 删除
+            ToolbarItemGroup(placement: .automatic) {
+                Button { toolbarActions.onQuickLook() } label: {
+                    Label("预览", systemImage: "eye").labelStyle(.iconOnly)
+                }.disabled(selectionEmpty || !selectionSingle).help("快速查看 (空格)")
                 Button { toolbarActions.onDelete() } label: {
                     Label("删除", systemImage: "trash").labelStyle(.iconOnly)
                 }.disabled(selectionEmpty).help("删除")
             }
-            ToolbarItem {
-                Button { toolbarActions.onQuickLook() } label: {
-                    Label("预览", systemImage: "eye").labelStyle(.iconOnly)
-                }.disabled(selectionEmpty || !selectionSingle).help("快速查看 (空格)")
-            }
-            ToolbarItem {
+            //   段 3 .secondaryAction (视图控制, 中右): 筛选 + 排序 + 视图
+            ToolbarItemGroup(placement: .secondaryAction) {
                 Button { showingFilter.toggle() } label: {
                     Label("筛选", systemImage: "line.3.horizontal.decrease.circle").labelStyle(.iconOnly)
                 }.help("筛选")
@@ -145,14 +158,12 @@ struct MainSplitView<Sidebar: View, Center: View, Detail: View>: View {
                 .popover(isPresented: $showingFilter) {
                     FilterPanelView(filterState: $filterState, folders: allFolders, tags: allTags, onClose: { showingFilter = false })
                 }
-            }
-            ToolbarItem {
                 Button { showingSortPopover.toggle() } label: {
                     Label("排序", systemImage: sortOption.toolbarIcon).labelStyle(.iconOnly)
                 }.help("排序")
                 .popover(isPresented: $showingSortPopover) {
                     VStack(alignment: .leading, spacing: 0) {
-                        sortFieldRow(icon: "calendar", name: "导入时间", 
+                        sortFieldRow(icon: "calendar", name: "导入时间",
                                       isActive: sortOption == .importedAtDesc || sortOption == .importedAtAsc,
                                       direction: sortOption == .importedAtDesc ? "↓ 最新" : sortOption == .importedAtAsc ? "↑ 最早" : nil)
                             .onTapGesture {
@@ -182,8 +193,6 @@ struct MainSplitView<Sidebar: View, Center: View, Detail: View>: View {
                             .onTapGesture { sortOption = .customOrder; showingSortPopover = false }
                     }.padding(8).frame(width: 200)
                 }
-            }
-            ToolbarItem {
                 Button { showingViewPopover.toggle() } label: {
                     Label("视图", systemImage: viewMode.icon).labelStyle(.iconOnly)
                 }.help("视图模式")
@@ -201,11 +210,12 @@ struct MainSplitView<Sidebar: View, Center: View, Detail: View>: View {
                     }.padding(6).frame(width: 140)
                 }
             }
-            // V6.79: toolbar 缩略图大小控件 — 1 个 Slider 替代 +- 两个 button
-            //   绑 settings.thumbnailSize (持久化), 100...250 step 10 (跟 Settings 一致)
-            //   SettingsView slider 已删 (V6.79.2), toolbar 唯一入口
-            //   Photos 真版 view options 模式: toolbar 内嵌 slider
-            ToolbarItem {
+            //   段 4 .primaryAction (缩略图, 最右): slider (Photos 真版 slider 单独段)
+            ToolbarItemGroup(placement: .primaryAction) {
+                // V6.79: toolbar 缩略图大小控件 — 1 个 Slider 替代 +- 两个 button
+                //   绑 settings.thumbnailSize (持久化), 100...250 step 10 (跟 Settings 一致)
+                //   SettingsView slider 已删 (V6.79.2), toolbar 唯一入口
+                //   Photos 真版 view options 模式: toolbar 内嵌 slider
                 HStack(spacing: 6) {
                     Slider(value: $thumbnailSize, in: 100...250, step: 10)
                         .frame(width: 120)
@@ -217,22 +227,8 @@ struct MainSplitView<Sidebar: View, Center: View, Detail: View>: View {
                         .frame(width: 32, alignment: .trailing)
                 }
             }
-            ToolbarItem {
-                Button { toolbarActions.onImport() } label: {
-                    if importProgress > 0 {
-                        HStack(spacing: 4) {
-                            ProgressView(value: importProgress).progressViewStyle(.linear).frame(width: 36)
-                            Text("\(Int(importProgress * 100))%").font(.caption2.monospacedDigit())
-                        }
-                    } else {
-                        Label("导入", systemImage: "square.and.arrow.down").labelStyle(.iconOnly)
-                    }
-                }
-                .help(importProgress > 0 ? "导入中..." : "导入 (⌘O)")
-            }
             // V6.74.5: 删 .primaryAction ⓘ 按钮 — 用户不要 toolbar 上 toggle 详情面板的入口
-            //   详情面板仍可通过 ⌘I / ⌘⌃D (ImageGalleryApp View menu Toggle) 控制
-            //   隐藏详情面板 + showDetail toggle 路径: ImageGalleryApp.swift:323/329 Toggle menu
+            // V6.81: 搜索按钮 (.searchable) 暂不纳入 (用户决定, 后续 V6.82+ 加 Photos 真版 toggle)
         }        .searchable(text: $searchText, placement: .toolbar, prompt: Copy.searchPlaceholder) {
             // V6.74.4: 搜索自动建议 — 显示最近 20 个搜索词 (Photos / Finder 范式)
             //   点 suggestion → searchCompletion 自动填入 searchText → 走 binding setter
@@ -255,6 +251,13 @@ struct MainSplitView<Sidebar: View, Center: View, Detail: View>: View {
         //   V6.80 保守路径: toolbar 走 .regularMaterial (Photos 真版 toolbar 同款材质), 安全
         //   视觉上接近 macOS 26 Liquid Glass, 但 macOS 14-25 也工作 (渐进降级免费)
         //   macOS 26+ 真版 Liquid Glass (.glass) 待 V6.81+ 实施 + 截图验收无 outline 副作用
+        // V6.81: toolbar 4 段分组 (Photos 真版结构) — ToolbarItemGroup + 4 种 placement
+        //   - 段 1 .navigation (库管理, 最左): 导入 + 导出
+        //   - 段 2 .automatic (选择操作, 中): 快速查看 + 删除
+        //   - 段 3 .secondaryAction (视图控制, 中右): 筛选 + 排序 + 视图
+        //   - 段 4 .primaryAction (缩略图, 最右): slider
+        //   物理 4 段视觉分组, Photos 真版结构对齐, 系统自动加 segment separator
+        //   搜索按钮 (.searchable) 暂不纳入 (后续 V6.82+ 加 Photos 真版 toggle 搜索)
         .background(.regularMaterial)
         .onDrop(of: [.fileURL], isTargeted: $isDropTargeted, perform: onDrop)
         .overlay {
