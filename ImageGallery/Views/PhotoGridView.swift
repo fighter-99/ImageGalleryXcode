@@ -382,6 +382,9 @@ struct PhotoGridView: View {
     //     (16pt), cell 在 VStack space 里的 x 实际从 16 开始
     //   跟 masonryRowsView 用同一 GridLayout, 保证位置完全一致
     //   支持 date grouped (带 section header) + flat 两种 layout
+    // V6.102: 抽到 GridLayoutEngine (Views/Grid/GridLayoutEngine.swift)
+    //   - cache check 在这里, 算逻辑在 engine — PhotoGridView 保留 @State cache 字段
+    //   - V6.38.2 + V6.59 cache 行为完全保留
     private func computeCellFrames(
         availableWidth: CGFloat,
         rowHeight: CGFloat,
@@ -389,120 +392,30 @@ struct PhotoGridView: View {
         cellSpacing: CGFloat,
         gridPadding: CGFloat
     ) -> [CellFrame] {
-        // V6.38.2: cache check — 5 layout 参 + photos.count + cachedDateGroups.count + layoutMode + sortOption
-        let key = cellFramesCacheKey(
+        let input = GridLayoutEngine.Input(
             availableWidth: availableWidth,
             rowHeight: rowHeight,
             rowSpacing: rowSpacing,
             cellSpacing: cellSpacing,
-            gridPadding: gridPadding
+            gridPadding: gridPadding,
+            photos: photos,
+            cachedDateGroups: cachedDateGroups,
+            layoutMode: layoutMode,
+            sortOption: sortOption
         )
+        // V6.102: cache check — Input.cacheKey hash 跟 V6.38.2 cellFramesCacheKey 等价
+        let key = input.cacheKey
         if cellFramesCacheValid && key == cachedCellFramesKey {
             return cachedCellFrames
         }
 
-        let cellSize = SquareLayout.cellSize(
-            availableWidth: availableWidth,
-            rowHeight: rowHeight,
-            cellSpacing: cellSpacing
-        )
-        var result: [CellFrame] = []
-        // date header 高度 (DateSectionHeader 32pt key photo + label + Spacing.xl gap)
-        // V5.56: DateSectionHeader 32pt; LazyVStack spacing 是 Spacing.xl
-        // V6.17.0: 32 + 4 (header padding) + Spacing.xl (section gap) = 估算
-        //   简化估算: 实际渲染可能有 padding 微差, V1 接受 ±5pt 误差
-        let dateHeaderHeight: CGFloat = 32 + 4 + Spacing.xl
+        let result = GridLayoutEngine.compute(input)
 
-        if sortOption.isDateBased {
-            // V5.32: 缓存, 不再每 render 重算
-            let groups = cachedDateGroups
-            // V6.17.0.1: y 从 0 开始 (photoGrid space 顶部)
-            var y: CGFloat = 0
-            for group in groups {
-                y += dateHeaderHeight
-                let rows = GridLayout(
-                    availableWidth: availableWidth,
-                    rowHeight: cellSize,
-                    cellSpacing: cellSpacing,
-                    layoutMode: layoutMode
-                ).computeRows(from: group.photos)
-                for row in rows {
-                    // V6.17.0.1: x 从 gridPadding 开始 (VStack 有 horizontal padding 16pt)
-                    var x: CGFloat = gridPadding
-                    for item in row.items {
-                        result.append(CellFrame(
-                            id: item.id,
-                            frame: CGRect(x: x, y: y, width: item.width, height: row.rowHeight)
-                        ))
-                        x += item.width + cellSpacing
-                    }
-                    y += row.rowHeight + rowSpacing
-                }
-            }
-        } else {
-            let items = photos.map { photo in
-                PhotoGridItem(
-                    id: photo.id,
-                    aspectRatio: GridLayout.aspectRatio(of: photo),
-                    width: 0
-                )
-            }
-            let rows = GridLayout(
-                availableWidth: availableWidth,
-                rowHeight: cellSize,
-                cellSpacing: cellSpacing,
-                layoutMode: layoutMode
-            ).computeRows(from: items)
-            // V6.17.0.1: y 从 0 开始
-            var y: CGFloat = 0
-            for row in rows {
-                // V6.17.0.1: x 从 gridPadding 开始
-                var x: CGFloat = gridPadding
-                for item in row.items {
-                    result.append(CellFrame(
-                        id: item.id,
-                        frame: CGRect(x: x, y: y, width: item.width, height: row.rowHeight)
-                    ))
-                    x += item.width + cellSpacing
-                }
-                y += row.rowHeight + rowSpacing
-            }
-        }
-        // V6.38.2: 写 cache
+        // V6.38.2: 写 cache — cache state 仍在 PhotoGridView @State (cache 行为不变)
         cachedCellFrames = result
         cachedCellFramesKey = key
         cellFramesCacheValid = true
         return result
-    }
-
-    /// V6.38.2: cellFrames cache key — 5 layout 参 + photos.count + cachedDateGroups.count + layoutMode + sortOption
-    ///   任一变化 → cache miss → 重算
-    private func cellFramesCacheKey(
-        availableWidth: CGFloat,
-        rowHeight: CGFloat,
-        rowSpacing: CGFloat,
-        cellSpacing: CGFloat,
-        gridPadding: CGFloat
-    ) -> Int {
-        var hasher = Hasher()
-        hasher.combine(availableWidth)
-        hasher.combine(rowHeight)
-        hasher.combine(rowSpacing)
-        hasher.combine(cellSpacing)
-        hasher.combine(gridPadding)
-        hasher.combine(photos.count)
-        // V6.59 (audit P2.5): 加 photos.map(\.id) hash — 之前只 count, EXIF rotate 后
-        //   aspectRatio 翻转但 cache hit, stale cell frames
-        for id in photos.map(\.id) { hasher.combine(id) }
-        hasher.combine(cachedDateGroups.count)
-        // V6.59: date group 内容 fingerprint — group split/merge 但 count 不变时 stale
-        for group in cachedDateGroups {
-            hasher.combine(group.id)
-            hasher.combine(group.photos.count)
-        }
-        hasher.combine(layoutMode)
-        hasher.combine(sortOption)
-        return hasher.finalize()
     }
 
     // V5.16: masonry 日期分组布局
