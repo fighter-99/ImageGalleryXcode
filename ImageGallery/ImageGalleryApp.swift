@@ -225,6 +225,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     // MARK: - V3.7.1: NSWindowDelegate — 监听 window 变化 + 写 UserDefaults
     // V6.97.0: saveFrame 改 per-window — 用 windowID 查 map, 写到主 key 下当前 window UUID
+    // V6.97.3: 加 windowDidClose (删 stale UUID) + 全屏/最小化 guard (C5/C6 audit 修)
 
     func windowDidResize(_ notification: Notification) {
         saveFrame(from: notification.object as? NSWindow)
@@ -234,8 +235,54 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         saveFrame(from: notification.object as? NSWindow)
     }
 
+    // V6.97.3 (Bug fix C5 audit): window 关闭时删主 key 下 UUID entry
+    //   之前: 只实现 windowDidResize/Move, 关 window 后 stale UUID 累积
+    //   现在: windowDidClose 立即从 frames dict removeValue + saveAllFrames
+    //   用 NSWindowDelegate + notification.object 拿 NSWindow 实例
+    //   windowID(for:) 在 weak key 还没被 ARC 回收前查得到 UUID
+    func windowDidClose(_ notification: Notification) {
+        guard let window = notification.object as? NSWindow else { return }
+        let id = windowID(for: window)
+        let defaults = UserDefaults.standard
+        var frames = Self.loadAllFrames(defaults: defaults)
+        // removeValue 删 UUID entry, 避免 UserDefaults 长期使用膨胀
+        //   100 个 window × 80 bytes = 8KB 看起来小, 但 JSON 损坏风险随 size 上升
+        frames.removeValue(forKey: id)
+        Self.saveAllFrames(frames, defaults: defaults)
+    }
+
+    // V6.97.3 (Bug fix C6 audit): 进入全屏前存一份"非全屏 frame"
+    //   退出全屏时还原 (避免 saveFrame 在全屏状态下写入全屏尺寸)
+    //   Photos.app / macOS 标准做法 — frame autosave 不能跟 fullscreen state 混
+    private var framesBeforeFullscreen: [String: CGRect] = [:]
+
+    func windowWillEnterFullScreen(_ notification: Notification) {
+        guard let window = notification.object as? NSWindow else { return }
+        let id = windowID(for: window)
+        // 保存进入全屏前的 frame, 退出全屏时还原
+        framesBeforeFullscreen[id] = window.frame
+    }
+
+    func windowDidExitFullScreen(_ notification: Notification) {
+        guard let window = notification.object as? NSWindow else { return }
+        let id = windowID(for: window)
+        // 退出全屏: 还原到进入前的 frame, 重新持久化
+        if let savedFrame = framesBeforeFullscreen.removeValue(forKey: id) {
+            window.setFrame(savedFrame, display: true)
+            // 触发一次 saveFrame (写回非全屏 frame)
+            saveFrame(from: window)
+        }
+    }
+
     private func saveFrame(from window: NSWindow?) {
         guard let window else { return }
+        // V6.97.3 (Bug fix C6 audit): 全屏 / 最小化状态不持久化
+        //   之前: 无脑写 window.frame, 进入全屏后 frame 变全屏尺寸 → 重启后强制全屏
+        //   现在: guard styleMask 含 .fullScreen 或 isMiniaturized → 跳过
+        //   全屏 frame 由 windowWillEnterFullScreen / windowDidExitFullScreen 处理 (上面 L259-273)
+        guard !window.styleMask.contains(.fullScreen), !window.isMiniaturized else {
+            return
+        }
         let id = windowID(for: window)
         let frame = window.frame
         let defaults = UserDefaults.standard

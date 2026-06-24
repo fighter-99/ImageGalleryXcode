@@ -291,10 +291,24 @@ struct PhotoCellContent: View {
     func loadedImageView(_ nsImage: NSImage) -> some View {
         // V6.97.1: 缩略图同步显示裁剪 (P0 跟 immersive 视觉一致)
         //   markup 标注不在缩略图渲染 (太小看不清) — 只 crop
-        //   PhotoCropService.compose 对 nil data / fullImage 都是 no-op, 无 cost
-        //   跟 ImmersivePhotoView 链 markup+crop 不同 (那里 markup+crop 都可见, 缩略图只看 crop)
-        //   ThumbnailCache invalidation 已在 PhotoCropService.applyCrop 处理 (V6.97.1)
-        let displayImage = PhotoCropService.compose(baseImage: nsImage, cropData: photo.cropRect)
+        // V6.97.3 (H1 perf): 用 CroppedThumbnailCache 缓存 compose 结果
+        //   之前: 每次 body 重渲都调 PhotoCropService.compose 同步裁剪
+        //         5000-photo 库 + 滚动 = 大量冗余合成 (NSImage.lockFocus + draw)
+        //   现在: cache hit 走 cached image, miss 才 compose + cache
+        //   photo.cropRect 变 → Data 变 → key 变 → cache miss → 重 compose (跟 PhotoCropService.applyCrop 同步)
+        //   CroppedThumbnailCache.invalidate 在 applyCrop 后调 (V6.97.3), 旧 entry LRU 自动 evict
+        let displayImage: NSImage = {
+            if let cropData = photo.cropRect,
+               let cached = CroppedThumbnailCache.shared.get(url: photo.fileURL, maxPixelSize: nsImage.size.width, cropData: cropData) {
+                return cached
+            }
+            // cache miss → compose + cache
+            let composed = PhotoCropService.compose(baseImage: nsImage, cropData: photo.cropRect)
+            if let cropData = photo.cropRect {
+                CroppedThumbnailCache.shared.set(composed, url: photo.fileURL, maxPixelSize: nsImage.size.width, cropData: cropData)
+            }
+            return composed
+        }()
         Image(nsImage: displayImage)
             .resizable()
             .aspectRatio(aspectRatio, contentMode: .fit)
