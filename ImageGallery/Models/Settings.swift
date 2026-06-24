@@ -32,6 +32,12 @@ final class UserSettings {
     // V6.12 收尾 ②: UserDefaults 实例注入——测试传 isolated suite 防污染
     //   默认 .standard (生产), 测试 `UserSettings(defaults: isolatedSuite)` 自隔离
     //   didSet 通过 self.defaults 写回, 不再硬编码 UserDefaults.standard
+    // V6.12 收尾 ②: UserDefaults 实例注入——测试传 isolated suite 防污染
+    //   默认 .standard (生产), 测试 `UserSettings(defaults: isolatedSuite)` 自隔离
+    //   didSet 通过 self.defaults 写回, 不再硬编码 UserDefaults.standard
+    // V6.97.2 (revised): 不改 suite — ad-hoc signing 不支持 App Group
+    //   保持 UserDefaults.standard (跟 V6.12 收尾 ② 兼容)
+    //   Intent 跨进程走 URL scheme, 不需要 UserDefaults 共享
     private let defaults: UserDefaults
 
     // MARK: - 12 个 @AppStorage 镜像 (key 跟 ContentView 对齐, 防止脱节)
@@ -212,6 +218,8 @@ final class UserSettings {
     //
     // scrollAnchorPhotoID 是 String? —— 空字符串当 nil 处理避免脏数据
     //
+    // V6.12 收尾 ② 兼容: 保持 init(defaults: UserDefaults = .standard) pattern
+    // V6.97.2 (revised): ad-hoc signing 不支持 App Group, 回到 .standard
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
 

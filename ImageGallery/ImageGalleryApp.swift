@@ -40,7 +40,27 @@ extension Notification.Name {
     static let zoomInRequested = Notification.Name("com.iridescent.ImageGallery.zoomInRequested")
     static let zoomOutRequested = Notification.Name("com.iridescent.ImageGallery.zoomOutRequested")
     static let actualSizeRequested = Notification.Name("com.iridescent.ImageGallery.actualSizeRequested")
+
+    // V6.97.2: Shortcuts Siri / Spotlight / 快捷指令 app URL scheme 触发
+    //   Intent perform() 调 NSWorkspace.openURL("imagegallery://..."), 主 app onOpenURL 接收
+    //   这里分发到对应 Notification, ContentView+Lifecycle .onReceive 转给 GridViewModel 现有 operation
+    //   跟 .cropRequested / .markupRequested 同 pattern (Photos.app Sonoma+ Siri 范式)
+    static let shortcutsShowLastPhotoRequested = Notification.Name("com.iridescent.ImageGallery.shortcutsShowLastPhotoRequested")
+    static let shortcutsSearchRequested = Notification.Name("com.iridescent.ImageGallery.shortcutsSearchRequested")
+    static let shortcutsCropRequested = Notification.Name("com.iridescent.ImageGallery.shortcutsCropRequested")
+    static let shortcutsFavoriteRequested = Notification.Name("com.iridescent.ImageGallery.shortcutsFavoriteRequested")
 }
+
+// V6.97.2: handleShortcutsURL — 主 app onOpenURL 接收 Siri / Spotlight / 快捷指令 app URL
+//   URL scheme: imagegallery://<action>?<params>
+//   4 个 action:
+//     - show-last              打开最后一张 (immersive view)
+//     - search?q=<query>       搜索 photos, query 是 URL-encoded 字符串
+//     - crop?aspect=<aspect>   裁剪当前单选 photo, aspect 是 CropAspect rawValue (freeform/ratio_1_1/...)
+//     - favorite               toggle 收藏当前单选 photo
+//   不解析 URL → 直接发 Notification, 让 ContentView+Lifecycle 的 .onReceive handler 调 GridViewModel 现有 operation
+//   跟 Photos.app Sonoma+ Siri 范式对齐: Siri 触发 → URL → 主 app 处理 (不用 App Group)
+private func _unused_marker() {}  // V6.97.2: 占位避免 extension 后面直接接 struct 编译错误
 
 // AppDelegate：处理应用层 macOS 事件
 // V3.7.1 重写: 自实现窗口 frame 持久化 (替换 V6.12.6 的 setFrameAutosaveName, 不 work)
@@ -304,7 +324,11 @@ struct ImageGalleryApp: App {
         // V6.94.1: 改用 ImageGallerySchemaV3 (最新) — target schema 必须是最高版本
         //   migrationPlan 自动检测 V1/V2 store → lightweight V1→V2→V3 顺序应用
         let schema = Schema(versionedSchema: ImageGallerySchemaV3.self)
-        // ModelConfiguration() 默认值：sqlite store 在 Application Support/ 目录
+        // V6.97.2 (revised): 不用 App Group groupContainer — App 是 ad-hoc signing (Team ID not set)
+        //   macOS 沙盒要求 App Group container 必须 Team-prefixed, ad-hoc app 创建失败 → ModelContainer bootstrap crash
+        //   改回 ModelConfiguration() 默认路径 (~/Library/Application Support/default.store)
+        //   Intent 全部走 URL scheme → 主 app onOpenURL 处理 (跟 Photos.app 范式)
+        //   主 app 收到 URL 后调现有 @MainActor GridViewModel operations (cropSelected / batchSetRating 等)
         let config = ModelConfiguration()
         // V6.08: try! → do/catch + 自动重置 store——SwiftData 损坏 / schema 不兼容自愈
         //   之前: try! 启动崩溃, 用户被迫用 terminal 删 store 文件
@@ -349,6 +373,46 @@ struct ImageGalleryApp: App {
 
     private static let logger = Logger(subsystem: "com.imagegallery.app", category: "App")
 
+    // V6.97.2: handleShortcutsURL — URL scheme 路由 → NotificationCenter
+    //   4 个 action 跟 4 个 Notification 一一对应 (L37-41)
+    //   search/crop 带 URL 参数, 通过 userInfo 透传到 .onReceive handler
+    static func handleShortcutsURL(_ url: URL) {
+        // 防御性: 只处理 imagegallery scheme
+        guard url.scheme == "imagegallery" else {
+            Self.logger.warning("handleShortcutsURL 收到非 imagegallery URL: \(url.absoluteString, privacy: .public)")
+            return
+        }
+        let action = url.host ?? ""
+        // 解析 query parameter (e.g. ?q=cat&aspect=ratio_16_9)
+        let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        let queryItems = components?.queryItems ?? []
+        let queryValue = queryItems.first(where: { $0.name == "q" })?.value ?? ""
+        let aspectValue = queryItems.first(where: { $0.name == "aspect" })?.value ?? "freeform"
+
+        Self.logger.info("handleShortcutsURL action=\(action, privacy: .public) q=\(queryValue, privacy: .public) aspect=\(aspectValue, privacy: .public)")
+
+        switch action {
+        case "show-last":
+            NotificationCenter.default.post(name: .shortcutsShowLastPhotoRequested, object: nil)
+        case "search":
+            NotificationCenter.default.post(
+                name: .shortcutsSearchRequested,
+                object: nil,
+                userInfo: ["query": queryValue]
+            )
+        case "crop":
+            NotificationCenter.default.post(
+                name: .shortcutsCropRequested,
+                object: nil,
+                userInfo: ["aspect": aspectValue]
+            )
+        case "favorite":
+            NotificationCenter.default.post(name: .shortcutsFavoriteRequested, object: nil)
+        default:
+            Self.logger.warning("handleShortcutsURL 未知 action: \(action, privacy: .public)")
+        }
+    }
+
     // V5.59-3: 删 3 个 userDefaults-based bindings (showSidebarBinding/showDetailBinding/viewModeBinding)
     //   menu items 现在改用 $sharedSettings.X (V5.59-3 下面命令)——
     //   @Observable sharedSettings 自动广播, menu 改 → ContentView/SettingsView 即时同步
@@ -367,6 +431,14 @@ struct ImageGalleryApp: App {
                 //   所有 SwiftUI Text / Formatter / String(localized:) 自动跟随
                 //   V6.12.17 Copy 迁 NSLocalizedString 后, 整个 UI 文案会按选的语言显示
                 .environment(\.locale, Locale(identifier: sharedSettings.appLanguage.localeId))
+                // V6.97.2: onOpenURL 处理 Siri / Spotlight / 快捷指令 app URL scheme
+                //   Intent 在 perform() 里 NSWorkspace.openURL("imagegallery://action?param=...")
+                //   主 app 收到 URL → 分发到 ContentView+Lifecycle 的 .onReceive handler
+                //   走现有 @MainActor GridViewModel operations (cropSelected / batchSetRating / enterImmersive 等)
+                //   跟 Photos.app Sonoma+ Siri 范式对齐: Siri 触发 → 主 app 处理 (不用 App Group)
+                .onOpenURL { url in
+                    Self.handleShortcutsURL(url)
+                }
         }
         // V4.1.0 m: 默认 1280×800；contentMinSize 由 layout 决定
         //   侧栏 160pt + 工具栏 200pt + grid 400pt + 详情 320pt = 1080pt 横向最小

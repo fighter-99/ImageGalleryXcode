@@ -235,6 +235,13 @@ extension View {
             .onReceive(NotificationCenter.default.publisher(for: .cropRequested)) { _ in
                 model.grid.showingCropSheet = true
             }
+            // V6.97.2: Shortcuts Siri / Spotlight / 快捷指令 app URL scheme 桥接
+            //   Intent perform() 调 NSWorkspace.openURL("imagegallery://...")
+            //   主 app onOpenURL → handleShortcutsURL → NotificationCenter → 这里 .onReceive
+            //   跟 .cropRequested / .markupRequested 完全同 pattern (V6.94.1 / V6.97.1)
+            //   4 个 action 走现有 GridViewModel operations (走 @MainActor, 自动 undo + toast)
+            //   抽到 shortcutsHandler modifier (避免 .onReceive 嵌套太多触发 type-check timeout)
+            .shortcutsHandler(model: model)
             // V6.74.2: 删 .onChange(of: filterState.activeCount) → ToolbarController.shared.filterActiveCount = count
             //   ToolbarController 整文件删, SwiftUI .toolbar 红圈 badge 直接读 filterState.activeCount (MainSplitView.swift:133)
             // V5.62-2: 外部 filterState 变化推送 (如 chip × 删除, ActiveFiltersBar 弹 Menu 删)
