@@ -150,8 +150,14 @@ struct ImageImporter {
 
     /// 导入一组 URL，自动处理文件和文件夹
     /// V5.13: 返回 ImportResult——inserted 数 + failures [(URL, Error)]，调用方接 toast
+    /// V6.97.5 (H2 audit fix): 改 async + Task.detached 跑后台 thread, 避免 1.3GB import 阻塞主线程
+    ///   之前: 同步 importURLs 在主线程跑 2666 张: collectFiles 递归 + importSingleImage 串行 (复制 + SHA256 + CGImageSource)
+    ///         100 张大图实测 25-90s 主线程冻结 (V6.26 audit 报), 2666 张 13min+ 完全卡死
+    ///   现在: 整段 importURLs 跑 Task.detached, onProgress closure 内部 dispatch 回 MainActor
+    ///         调用方 await, 进度回调自动到 main thread, UI 不冻结
+    ///   跟 V6.26 audit 修法一致: actor / Task 后台化, progress dispatch 回 main
     @discardableResult
-    func importURLs(_ urls: [URL]) -> ImportResult {
+    func importURLs(_ urls: [URL]) async -> ImportResult {
         // V6.22.5: 替 print → Logger.importer (8 个 print 全替换)
         //   .debug 级 (默认不显示, 只有 Console.app 启用 Info 才出)
         Logger.importer.debug("importURLs 收到 \(urls.count, privacy: .public) 个 URL")
@@ -159,39 +165,46 @@ struct ImageImporter {
             Logger.importer.debug("  - \(url.path, privacy: .public)")
         }
 
-        // 1. 先收集所有要导入的文件（递归文件夹）
-        var allFiles: [URL] = []
-        for url in urls {
-            collectFiles(at: url, into: &allFiles)
-        }
-
-        Logger.importer.debug("展开后共 \(allFiles.count, privacy: .public) 个文件")
-        for (i, file) in allFiles.enumerated() {
-            Logger.importer.debug("  [\(i+1)/\(allFiles.count)] \(file.lastPathComponent, privacy: .public)")
-        }
-
-        let total = allFiles.count
-        onProgress?(0, total, 0, 0)
-
-        // 2. 逐个导入——V5.13: 收集 failures 给调用方
-        var inserted = 0
-        var failures: [(url: URL, error: Error)] = []
-        for (index, url) in allFiles.enumerated() {
-            if let error = importSingleImage(at: url) {
-                failures.append((url, error))
-            } else {
-                inserted += 1
+        // V6.97.5: 整段逻辑放 Task.detached (后台 thread), 避免阻塞主线程
+        return await Task.detached(priority: .userInitiated) { [self] in
+            // 1. 先收集所有要导入的文件（递归文件夹）
+            var allFiles: [URL] = []
+            for url in urls {
+                collectFiles(at: url, into: &allFiles)
             }
-            // V5.15: 传 4 参数 (current, total, inserted, failureCount)
-            onProgress?(index + 1, total, inserted, failures.count)
-        }
 
-        // V4.36.x: 记录到最近导入——File > Open Recent 菜单显示
-        Task { @MainActor in
-            RecentPhotosStore.shared.recordImports(allFiles)
-        }
+            Logger.importer.debug("展开后共 \(allFiles.count, privacy: .public) 个文件")
 
-        return ImportResult(inserted: inserted, failures: failures)
+            let total = allFiles.count
+            // onProgress 是调用方传的 closure, 可能更新 UI, 必须 MainActor dispatch
+            await MainActor.run { onProgress?(0, total, 0, 0) }
+
+            // 2. 逐个导入——V5.13: 收集 failures 给调用方
+            var inserted = 0
+            var failures: [(url: URL, error: Error)] = []
+            for (index, url) in allFiles.enumerated() {
+                if let error = importSingleImage(at: url) {
+                    failures.append((url, error))
+                } else {
+                    inserted += 1
+                }
+                // V5.15: 传 4 参数 (current, total, inserted, failureCount)
+                // 同样 MainActor dispatch (2666 张 × 60Hz 进度 = 大量 UI 更新)
+                let currentProgress = index + 1
+                let currentInserted = inserted
+                let currentFailures = failures.count
+                await MainActor.run {
+                    onProgress?(currentProgress, total, currentInserted, currentFailures)
+                }
+            }
+
+            // V4.36.x: 记录到最近导入——File > Open Recent 菜单显示
+            await MainActor.run {
+                RecentPhotosStore.shared.recordImports(allFiles)
+            }
+
+            return ImportResult(inserted: inserted, failures: failures)
+        }.value
     }
 
     // MARK: - 私有方法

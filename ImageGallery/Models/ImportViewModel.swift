@@ -71,6 +71,13 @@ final class ImportViewModel {
     ///   如果有值且目录仍存在 → 直接 collect + 导入 (跳过 NSOpenPanel)
     ///   如果目录已被移动/删除 → fallback NSOpenPanel + toast 提示用户重新选
     func startImport() {
+        // V6.97.5 (C7 audit fix): 重入 guard — lifecycle auto-trigger + toolbar 手动 trigger 不会双 import
+        //   之前: ContentView .task 解析 -uitest-import-dir 自动 import, 同时 toolbar 按钮也调 startImport
+        //         没有 isImporting 守门, 双 trigger 跑两次 importPhotos (进度混乱, 文件重复)
+        //   现在: 如果 importProgress.isImporting == true → 第二次 trigger 早返, 不发第二次 NSOpenPanel
+        //   跟 Photos.app 行为一致: 已经在 import 时按 import 按钮 no-op
+        guard importProgress?.isImporting != true else { return }
+
         // V6.22.10 (XCUITest): launch arg bypass NSOpenPanel
         if let dir = uitestImportDirectory {
             let urls = collectImageURLs(in: dir)
@@ -111,6 +118,20 @@ final class ImportViewModel {
         panel.allowedContentTypes = [.image]
 
         guard panel.runModal() == .OK else { return }
+
+        // V6.97.5 (C8 audit fix): 用户 OK 但 panel.urls 空 (0 张图) — 早返 + toast 提示
+        //   之前: 0 张图走 runImportWithDuplicateCheck → importProgress 设了又清, 用户 0 反馈
+        //   现在: 直接 toast "未选择任何图片", 不进 import flow
+        //   跟 Photos.app 行为一致: 0 选择 = 0 反馈
+        guard !panel.urls.isEmpty else {
+            enqueueToastHandler(
+                Copy.importNoFilesSelected,
+                .info,
+                .normal,
+                nil
+            )
+            return
+        }
 
         importProgress = ImportProgress(current: 0, total: 0, isImporting: true)
         runImportWithDuplicateCheck(urls: panel.urls)
@@ -159,7 +180,7 @@ final class ImportViewModel {
                 pendingImportURLs = urls
                 importDuplicateCheck = check
             } else {
-                importPhotos(urls: urls)
+                await importPhotos(urls: urls)
             }
         }
     }
@@ -169,14 +190,23 @@ final class ImportViewModel {
         let newURLs = pendingImportURLs.filter { !existing.contains($0) }
         importDuplicateCheck = nil
         pendingImportURLs = []
-        if !newURLs.isEmpty { importPhotos(urls: newURLs) }
+        if !newURLs.isEmpty {
+            // V6.97.5: importPhotos 是 async, 父函数 confirmSkipDuplicates 调在 SwiftUI button action (sync 上下文)
+            //   用 Task { @MainActor } 包装 await, 跟 runImportWithDuplicateCheck 同 pattern
+            Task { @MainActor in
+                await importPhotos(urls: newURLs)
+            }
+        }
     }
 
     func confirmImportAllDuplicates() {
         let allURLs = pendingImportURLs
         importDuplicateCheck = nil
         pendingImportURLs = []
-        importPhotos(urls: allURLs)
+        // V6.97.5: importPhotos 是 async, 同样 Task 包装
+        Task { @MainActor in
+            await importPhotos(urls: allURLs)
+        }
     }
 
     func cancelDuplicateImport() {
@@ -188,7 +218,7 @@ final class ImportViewModel {
     /// V5.15: 接 4 参数 onProgress + 合并 summary toast
     /// V6.10: [self] → [weak self]
     /// V6.28.1: currentFolder 走 core?.grid.currentFolder (Core 不再持该字段)
-    func importPhotos(urls: [URL]) {
+    func importPhotos(urls: [URL]) async {
         importProgress = ImportProgress(current: 0, total: 0, isImporting: true)
         guard let modelContext = core?.modelContext else { return }
         let importer = ImageImporter(
@@ -210,7 +240,7 @@ final class ImportViewModel {
                 }
             }
         }
-        let result = importer.importURLs(urls)
+        let result = await importer.importURLs(urls)
         if result.inserted > 0 && result.hasFailures {
             enqueueToastHandler(Copy.importedPartial(inserted: result.inserted, failed: result.failureCount), .info, .normal, nil)
         } else if result.inserted > 0 {

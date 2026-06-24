@@ -289,8 +289,9 @@ extension View {
                 guard !urls.isEmpty else { return }
                 // V6.22.11: 直接调 importPhotos 跳过 duplicate check dialog (测试不要 dialog)
                 //   runImportWithDuplicateCheck 走 async checkDuplicatesAsync 会弹 dialog 阻塞测试
+                // V6.97.5: importPhotos 改 async, 这里 .task 已经是 async 上下文, 加 await
                 model.importVM.importProgress = ImportProgress(current: 0, total: 0, isImporting: true)
-                model.importVM.importPhotos(urls: urls)
+                await model.importVM.importPhotos(urls: urls)
             }
             // V6.28: .onChange 推 model.grid
             .onChange(of: allPhotos) { _, new in model.grid.allPhotos = new }

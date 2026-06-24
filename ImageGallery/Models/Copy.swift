@@ -972,4 +972,6 @@ enum Copy {
     // defaultImportLocation 用过 / 未设置 时 NSOpenPanel 的 fallback title (跟原 importPanelTitle 一致)
     static let importLocationMissingTitle = String(localized: "importLocationMissingTitle", defaultValue: "默认导入位置不存在")
     static let importLocationMissingMessage = String(localized: "importLocationMissingMessage", defaultValue: "之前选择的文件夹已被移动或删除, 请重新选择。")
+    // V6.97.5 (C8 audit fix): 用户 OK 但 panel.urls 空 (0 张图) — toast 提示
+    static let importNoFilesSelected = String(localized: "importNoFilesSelected", defaultValue: "未选择任何图片")
 }
