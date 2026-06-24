@@ -216,11 +216,20 @@ struct MainSplitView<Sidebar: View, Center: View, Detail: View>: View {
                         ProgressView(value: importProgress).progressViewStyle(.linear).frame(width: 36)
                         Text("\(Int(importProgress * 100))%").font(.caption2.monospacedDigit())
                     }
+                    // V6.97.6 (M1 audit fix): progress bar 切换加 transition
+                    //   之前: importProgress 0↔>0 直接硬切, 2666 张导入完成时 100%→0% 闪
+                    //   现在: .opacity transition 150ms 平滑切, Photos.app 真版行为
+                    .transition(.opacity)
                 } else {
                     Label("导入", systemImage: "square.and.arrow.down").labelStyle(.iconOnly)
+                        .transition(.opacity)
                 }
             }
             .help(importProgress > 0 ? "导入中..." : "导入 (⌘O)")
+            // V6.97.6 (M1 audit fix): 整 button 加 animation, progress bar / icon 切换平滑
+            //   之前没 animation → 完成时 importProgress 0→1→0, button label 硬切 (visible flicker)
+            //   现在: value-driven animation, progress / icon 切换平滑 fade
+            .animation(.easeOut(duration: 0.15), value: importProgress)
         }
         // V6.74.5: 删 .primaryAction ⓘ 按钮 — 用户不要 toolbar 上 toggle 详情面板的入口
         //   详情面板仍可通过 ⌘I / ⌘⌃D (ImageGalleryApp View menu Toggle) 控制

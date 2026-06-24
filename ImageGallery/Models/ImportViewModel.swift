@@ -59,10 +59,49 @@ final class ImportViewModel {
     var importDuplicateCheck: ImageImporter.DuplicateCheckResult? = nil
     var pendingImportURLs: [URL] = []
 
+    /// V6.97.6 (M2 audit fix): 导入开始时间 — 用于 stuck 检测 fallback
+    ///   场景: SwiftData save fail × N 隐式失败但 importProgress 没清, 用户看到进度条卡住
+    ///   修法: 超过 30min 自动清 importProgress + warning toast 提示
+    ///   Photos.app 真版行为: import 中途出错会停在错误处, 不自动 reset (用户能手动 cancel)
+    ///   ImageGallery 简化方案: 30min 超时自动 reset (避免进度条永久 stuck)
+    @ObservationIgnored private var importStartedAt: Date? = nil
+
     // MARK: - Init
 
     /// V6.28.1: ImportViewModel init — Core (ContentViewModel) 反向注入 weak ref
-    init() {}
+    init() {
+        startStuckCheckTimer()
+    }
+
+    /// V6.97.6 (M2 audit fix): stuck 检测 timer — 每 60s 扫一次 importProgress
+    ///   如果 importProgress.isImporting == true && Date().timeIntervalSince(importStartedAt) > 30min
+    ///   → 自动 reset importProgress + warning toast 提示
+    ///   30min 是经验值: 2666 张 4.6GB 实测 13min, 30min 给 2.3× buffer
+    ///   Photos.app 真版用 manual cancel, 我们用 auto timeout (简化 UX, 适合 macOS background app)
+    private func startStuckCheckTimer() {
+        Task { @MainActor [weak self] in
+            while true {
+                try? await Task.sleep(nanoseconds: 60 * 1_000_000_000)  // 60s
+                guard let self else { return }
+                guard let startedAt = self.importStartedAt,
+                      let progress = self.importProgress,
+                      progress.isImporting else {
+                    continue
+                }
+                let elapsed = Date().timeIntervalSince(startedAt)
+                if elapsed > 30 * 60 {  // 30 min
+                    self.importProgress = nil
+                    self.importStartedAt = nil
+                    self.enqueueToastHandler(
+                        Copy.importStuckTimeoutMessage,
+                        .warning,
+                        .long,
+                        nil
+                    )
+                }
+            }
+        }
+    }
 
     // MARK: - 启动导入
 
@@ -83,6 +122,7 @@ final class ImportViewModel {
             let urls = collectImageURLs(in: dir)
             if !urls.isEmpty {
                 importProgress = ImportProgress(current: 0, total: 0, isImporting: true)
+                importStartedAt = Date()  // V6.97.6: stuck 检测时间戳
                 runImportWithDuplicateCheck(urls: urls)
             }
             return
@@ -95,12 +135,16 @@ final class ImportViewModel {
             let urls = collectImageURLs(in: url.path)
             if !urls.isEmpty {
                 importProgress = ImportProgress(current: 0, total: 0, isImporting: true)
+                importStartedAt = Date()  // V6.97.6: stuck 检测时间戳
                 runImportWithDuplicateCheck(urls: urls)
                 return
             }
             // 目录存在但无图片 — 也走 NSOpenPanel 让用户选别的
         } else if settings?.defaultImportLocation != nil {
-            // V6.39.1: 默认位置存在过但现在不存在 — 清掉 stale + toast 提示 + 走 NSOpenPanel
+            // V6.97.6 (H1 audit fix): 默认位置 stale — 清掉 + toast 提示 + 延迟 0.5s 弹 NSOpenPanel
+            //   之前 (V6.39.1): toast + NSOpenPanel 同时弹 — 视觉竞争, 用户不知道 toast 在说什么
+            //   现在: 延迟 0.5s 弹 NSOpenPanel, 让 toast 先消化再弹 (用户先看到原因再选目录)
+            //   跟 macOS Finder 行为一致: stale path → 静默 fallback (用 toast 替代静默)
             settings?.defaultImportLocation = nil
             enqueueToastHandler(
                 Copy.importLocationMissingMessage,
@@ -108,7 +152,18 @@ final class ImportViewModel {
                 .normal,
                 nil
             )
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+                self?.showImportPanel()
+            }
+            return
         }
+
+        showImportPanel()
+    }
+
+    /// V6.97.6 (H1 refactor): 抽 showImportPanel — 默认位置 stale 路径 + 普通路径共用
+    ///   避免重复 24 行 NSOpenPanel 配置
+    private func showImportPanel() {
 
         let panel = NSOpenPanel()
         panel.title = Copy.importPanelTitle
@@ -118,6 +173,7 @@ final class ImportViewModel {
         panel.allowedContentTypes = [.image]
 
         guard panel.runModal() == .OK else { return }
+        importStartedAt = Date()  // V6.97.6: 启动时间戳用于 stuck 检测
 
         // V6.97.5 (C8 audit fix): 用户 OK 但 panel.urls 空 (0 张图) — 早返 + toast 提示
         //   之前: 0 张图走 runImportWithDuplicateCheck → importProgress 设了又清, 用户 0 反馈
@@ -241,6 +297,7 @@ final class ImportViewModel {
             }
         }
         let result = await importer.importURLs(urls)
+        importStartedAt = nil  // V6.97.6: 导入完成清 stuck 检测时间戳 (timer 不再 reset importProgress)
         if result.inserted > 0 && result.hasFailures {
             enqueueToastHandler(Copy.importedPartial(inserted: result.inserted, failed: result.failureCount), .info, .normal, nil)
         } else if result.inserted > 0 {

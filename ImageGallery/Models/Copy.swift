@@ -350,6 +350,10 @@ enum Copy {
     static let emptyRecent7Days = String(localized: "emptyRecent7Days", defaultValue: "最近 7 天没有新图")
     static let emptyLargeFiles = String(localized: "emptyLargeFiles", defaultValue: "没有大于 5 MB 的图")
     static let emptyNoPhotosYet = String(localized: "emptyNoPhotosYet", defaultValue: "还没有图片")
+    /// V6.97.6 (H3 audit fix): folder 空状态主 CTA 文案 — 之前无主 CTA, 用户得切走
+    static let importToFolderAction = String(localized: "importToFolderAction", defaultValue: "导入到此文件夹")
+    /// V6.97.6 (M2 audit fix): 导入超时 stuck 提示文案 — 30min 后自动 reset
+    static let importStuckTimeoutMessage = String(localized: "importStuckTimeoutMessage", defaultValue: "导入超过 30 分钟未完成, 已自动取消。请重试或检查文件。")
     /// 空状态副提示
     static let hintFilterAdjust = String(localized: "hintFilterAdjust", defaultValue: "尝试减少筛选条件或调整侧边栏")
     static let hintSearchOther = String(localized: "hintSearchOther", defaultValue: "试试其他关键词")

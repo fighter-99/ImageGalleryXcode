@@ -76,6 +76,17 @@ struct PhotoGridEmptyState: View {
                 onTap: { onClearFilters() }
             )
         }
+        // folder selected 但空 → "导入到此文件夹" (Photos.app 真版行为, 之前无主 CTA 用户得切走)
+        //   V6.97.6 (H3 audit fix): 给 folder selected 空状态明确入口 — 之前只给次 CTA "查看全部"
+        //   importPhotos 已经用 core?.grid.currentFolder 自动归类, 不需要新建 import API
+        if folder != nil {
+            return PhotoGridEmptyCTA(
+                label: "\(Copy.importToFolderAction) (⌘O)",
+                systemImage: IconNames.squareAndArrowDown,
+                onTap: onImport
+            )
+        }
+        // tag selected → "导入图片" (tag 不影响 import 目的地, 跟 import 无关)
         // 首次启动 (无任何 filter) → "导入图片"
         // V6.21.4 (audit fix #7): label 拼接而非 hardcoded "(⌘O)"
         //   之前 Copy.importActionWithShortcut = "导入图片 (⌘O)" 在 xcstrings 里 hardcode
