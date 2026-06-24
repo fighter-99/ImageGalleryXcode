@@ -33,6 +33,8 @@ enum Copy {
     // MARK: - 错误 (3 段式)
     static let storageError = String(localized: "storageError", defaultValue: "无法保存图片到图库。请检查磁盘空间，或在「系统设置 → 隐私与安全 → 完整磁盘访问权限」中授权 ImageGallery，然后重试。")
     static func importFailed(_ filename: String) -> String { String.localizedStringWithFormat(String(localized: "importFailed", defaultValue: "导入失败：%@"), filename) }
+    /// V6.98 (L3 audit fix): 文件过大, 已跳过 (Photo 库不期望 500MB+ 视频伪装图片)
+    static func importFileTooLarge(_ filename: String) -> String { String.localizedStringWithFormat(String(localized: "importFileTooLarge", defaultValue: "文件过大已跳过：%@ (单文件上限 500MB)"), filename) }
     static func exportFailed(_ filename: String) -> String { String.localizedStringWithFormat(String(localized: "exportFailed", defaultValue: "导出失败：%@"), filename) }
     static func moveToRecycleBinFailed(_ error: String) -> String { String.localizedStringWithFormat(String(localized: "moveToRecycleBinFailed", defaultValue: "移到回收站失败：%@"), error) }
     static func emptyRecycleBinFailed(_ error: String) -> String { String.localizedStringWithFormat(String(localized: "emptyRecycleBinFailed", defaultValue: "清空回收站失败：%@"), error) }

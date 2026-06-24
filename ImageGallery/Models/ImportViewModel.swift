@@ -170,7 +170,10 @@ final class ImportViewModel {
         panel.allowsMultipleSelection = true
         panel.canChooseDirectories = true
         panel.canChooseFiles = true
-        panel.allowedContentTypes = [.image]
+        // V6.98 (L2 audit fix): 加 .rawImage — 之前 [.image] 是 umbrella UTI 不含 RAW
+        //   现在 [.image, .rawImage] 让 NSOpenPanel 显示 RAW 文件可选
+        //   摄影师常用 CR2/CR3/NEF/ARW/DNG/RW2 直入图库, 之前必须先转 JPG
+        panel.allowedContentTypes = [.image, .rawImage]
 
         guard panel.runModal() == .OK else { return }
         importStartedAt = Date()  // V6.97.6: 启动时间戳用于 stuck 检测
@@ -303,14 +306,24 @@ final class ImportViewModel {
         } else if result.inserted > 0 {
             enqueueToastHandler(Copy.imported(result.inserted), .success, .normal, nil)
         }
-        for (url, _) in result.failures where result.inserted == 0 {
-            enqueueToastHandler(Copy.importFailed(url.lastPathComponent), .error, .long, nil)
+        // V6.98 (L3 audit fix): 区分 fileTooLarge 跟 importFailed, 不同 toast 文案
+        //   之前: 所有失败都是 importFailed (用户感到 import 出错)
+        //   现在: tooLarge 是用户拖了视频伪装图片, 文案 "文件过大已跳过" 比 "导入失败" 更准确
+        for (url, error) in result.failures where result.inserted == 0 {
+            if case ImportError.tooLarge(let filename, _) = error {
+                enqueueToastHandler(Copy.importFileTooLarge(filename), .warning, .long, nil)
+            } else {
+                enqueueToastHandler(Copy.importFailed(url.lastPathComponent), .error, .long, nil)
+            }
         }
     }
 
     /// V4.49.0: 拖入时支持的图像扩展名
+    /// V6.98 (L2 audit fix): 加 RAW 格式 — 跟 ImageImporter.supportedExtensions 一致 (避免 V6.20.0 拆 Import 业务时漏)
+    ///   6 RAW: cr2/cr3 (Canon), nef (Nikon), arw (Sony), dng (Adobe/iPhone Pro), rw2 (Panasonic)
     static let supportedImageExtensions: Set<String> = [
-        "jpg", "jpeg", "png", "heic", "heif", "tiff", "tif", "gif", "bmp", "webp"
+        "jpg", "jpeg", "png", "heic", "heif", "tiff", "tif", "gif", "bmp", "webp",
+        "cr2", "cr3", "nef", "arw", "dng", "rw2"
     ]
 
     /// Finder 拖拽导入

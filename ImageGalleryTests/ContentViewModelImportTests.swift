@@ -153,14 +153,22 @@ struct ContentViewModelImportTests {
 
     @Test func supportedImageExtensions_includesCommonFormats() {
         let exts = ImportViewModel.supportedImageExtensions
+        // V6.98 (L2 audit fix): 加 6 RAW 格式后, 总数 10 → 16
         #expect(exts.contains("jpg"))
         #expect(exts.contains("jpeg"))
         #expect(exts.contains("png"))
         #expect(exts.contains("heic"))
         #expect(exts.contains("webp"))
         #expect(exts.contains("gif"))
-        // 共 10 个（V4.49.0 列表）
-        #expect(exts.count == 10)
+        // V6.98: RAW 格式覆盖 (6 种主流)
+        #expect(exts.contains("cr2"))  // Canon
+        #expect(exts.contains("cr3"))  // Canon
+        #expect(exts.contains("nef"))  // Nikon
+        #expect(exts.contains("arw"))  // Sony
+        #expect(exts.contains("dng"))  // Adobe / iPhone Pro RAW
+        #expect(exts.contains("rw2"))  // Panasonic
+        // 共 16 个 (V4.49.0 10 + V6.98 RAW 6)
+        #expect(exts.count == 16)
     }
 
     @Test func expandFolders_emptyInput_returnsEmpty() {

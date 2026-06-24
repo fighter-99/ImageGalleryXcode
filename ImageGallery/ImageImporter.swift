@@ -51,8 +51,20 @@ struct ImageImporter {
     ///   inserted/failureCount 跟踪结果数——UI 显示更准
     var onProgress: ((Int, Int, Int, Int) -> Void)? = nil
 
+    // V6.98 (L2 audit fix): 加 RAW 格式支持 — 之前 10 种只覆盖普通图像, RAW (专业摄影常用) NSOpenPanel 直接禁用
+    //   6 种主流 RAW: Canon CR2/CR3, Nikon NEF, Sony ARW, Adobe DNG, Panasonic RW2
+    //   之前: 摄影师拖入 RAW → NSOpenPanel 不允许选 → 必须先转 JPG 才能入库, 体验差
+    //   现在: NSOpenPanel [.image, .rawImage] + supportedExtensions 包含 6 RAW → 拖入直入
+    //   副作用: importSingleImage 读 CGImageSource 属性 (width/height), RAW 也能解 (Mac OS 内置 RAW codec)
     private let supportedExtensions: Set<String> = [
-        "jpg", "jpeg", "png", "heic", "heif", "tiff", "tif", "gif", "bmp", "webp"
+        // 普通图像 (V3.6 起)
+        "jpg", "jpeg", "png", "heic", "heif", "tiff", "tif", "gif", "bmp", "webp",
+        // V6.98: RAW 格式 (6 种主流)
+        "cr2", "cr3",  // Canon
+        "nef",         // Nikon
+        "arw",         // Sony
+        "dng",         // Adobe (iPhone Pro RAW 也存 DNG)
+        "rw2"          // Panasonic
     ]
 
     // MARK: - V3.6.24 NEW: 重复检测
@@ -233,7 +245,14 @@ struct ImageImporter {
                 options: [.skipsHiddenFiles]
             ) {
                 for case let fileURL as URL in enumerator {
-                    collectFiles(at: fileURL, into: &collection, visited: &visited)
+                    // V6.98 (L1 audit fix): file+dir 混选 — folder 递归时按扩展名过滤
+                    //   之前: 把所有文件 push, 包含 .DS_Store / .txt / Thumb.db 等无关文件
+                    //         然后 importSingleImage 一个个看 supportedExtensions 跳过, 3666 次 IO read attribute
+                    //   现在: 递归时直接 filter 扩展名, 无关文件不 push, 收集阶段就过滤
+                    //   跟 collectImageURLs (V6.22.10 launch arg) 行为一致
+                    if supportedExtensions.contains(fileURL.pathExtension.lowercased()) {
+                        collectFiles(at: fileURL, into: &collection, visited: &visited)
+                    }
                 }
             }
         } else if supportedExtensions.contains(url.pathExtension.lowercased()) {
@@ -250,9 +269,15 @@ struct ImageImporter {
 
         // V3.6: 用 PhotoStorage 服务复制文件（替代原硬编码路径）
         // V5.13: 用注入的 storage（默认 .shared）便于测试
+        // V6.98 (L3 audit fix): 区分 fileTooLarge 跟 copyFailed, 不同错误不同处理
+        //   之前: 所有 storage 错误都是 error, ImportViewModel 显示 importFailed
+        //   现在: fileTooLarge 是用户拖了视频伪装图片, 单独标 .tooLarge 让 caller 用 importFileTooLarge 文案
         let destURL: URL
         do {
             destURL = try storage.importFile(from: url)
+        } catch let PhotoStorageError.fileTooLarge(_, size) {
+            Logger.importer.warning("文件过大已跳过: \(url.lastPathComponent, privacy: .public) (\(size) bytes)")
+            return ImportError.tooLarge(url.lastPathComponent, size)
         } catch {
             Logger.importer.error("复制失败: \(url.lastPathComponent, privacy: .public) - \(error.localizedDescription, privacy: .public)")
             return error
@@ -322,4 +347,10 @@ struct ImportResult {
 
     var hasFailures: Bool { !failures.isEmpty }
     var failureCount: Int { failures.count }
+}
+
+/// V6.98 (L3 audit fix): 特定导入错误 — 让 caller (ImportViewModel) 区分错误类型给不同 toast 文案
+enum ImportError: Error {
+    /// 文件 > 500MB — Photo 库不期望这么大 (典型是用户拖了视频伪装图片)
+    case tooLarge(String, Int64)  // (filename, bytes)
 }
