@@ -34,6 +34,11 @@ struct MainSplitView<Sidebar: View, Center: View, Detail: View>: View {
     let toolbarActions: ToolbarActions
     
     @Binding var showDetail: Bool
+    // V6.103.2: showSidebar binding — ContentView 传 model.settings.showSidebar
+    //   之前没传 — NavigationSplitView 默认 3 列全显示, toolbar ⌘\ toggle 设 showSidebar=false
+    //   但 NavigationSplitView 不知道 → sidebar 不真隐藏, layout 没切换
+    //   跟 V6.103.1 columnWidth 修复配合: columnVisibility 真切换后, center ideal:800 才会生效
+    @Binding var showSidebar: Bool
     @Binding var searchText: String
     @Binding var sortOption: SortOption
     @Binding var viewMode: ViewMode
@@ -76,12 +81,15 @@ struct MainSplitView<Sidebar: View, Center: View, Detail: View>: View {
         onSearchSubmit: @escaping (String) -> Void = { _ in },
         allFolders: [Folder] = [],
         allTags: [Tag] = [],
+        // V6.103.2: showSidebar binding — ContentView 传 model.settings.showSidebar
+        showSidebar: Binding<Bool> = .constant(true),
         @ViewBuilder sidebar: () -> Sidebar,
         @ViewBuilder center: () -> Center,
         @ViewBuilder detail: () -> Detail
     ) {
         self.toolbarActions = toolbarActions
         self._showDetail = showDetail
+        self._showSidebar = showSidebar
         self._searchText = searchText
         self._sortOption = sortOption
         self._viewMode = viewMode
@@ -100,6 +108,28 @@ struct MainSplitView<Sidebar: View, Center: View, Detail: View>: View {
         self.sidebar = sidebar()
         self.center = center()
         self.detail = detail()
+    }
+
+    /// V6.103.2: showSidebar ↔ NavigationSplitView columnVisibility 双向 binding
+    ///   showSidebar = true → .all (3 列全显示)
+    ///   showSidebar = false → .detailOnly (只显示 detail, sidebar 自动隐藏)
+    ///   NavigationSplitView 自动收起 sidebar → center ideal:800 生效 (V6.103.1 修复)
+    ///   toolbar ⌘\ toggle 改 showSidebar → 自动同步 columnVisibility
+    private var columnVisibilityBinding: Binding<NavigationSplitViewVisibility> {
+        Binding(
+            get: {
+                showSidebar ? .all : .detailOnly
+            },
+            set: { newValue in
+                // NavigationSplitView 自动 toggle 时同步回 showSidebar (支持 toolbar 拖动 sidebar 边缘按钮)
+                //   .all → showSidebar = true
+                //   .detailOnly / .automatic → showSidebar = false
+                let newShowSidebar = (newValue == .all)
+                if newShowSidebar != showSidebar {
+                    showSidebar = newShowSidebar
+                }
+            }
+        )
     }
 
     // V6.84: toolbar items 抽成 @ToolbarContentBuilder computed — 减少 body 链 type-check 压力
@@ -237,7 +267,7 @@ struct MainSplitView<Sidebar: View, Center: View, Detail: View>: View {
     }
 
     var body: some View {
-        NavigationSplitView {
+        NavigationSplitView(columnVisibility: columnVisibilityBinding) {
             sidebar
                 .navigationSplitViewColumnWidth(min: 160, ideal: 220, max: 320)
         } content: {
