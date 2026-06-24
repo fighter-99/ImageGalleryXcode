@@ -242,6 +242,13 @@ struct MainSplitView<Sidebar: View, Center: View, Detail: View>: View {
                 .navigationSplitViewColumnWidth(min: 160, ideal: 220, max: 320)
         } content: {
             center
+                // V6.103.1 fix: sidebar 隐藏时缩略图区域宽度扩展, 详情面板维持不变
+                //   之前 center 没设 width — SwiftUI 给 center 默认宽度, sidebar 隐藏时
+                //   释放的宽度全给 detail (因 detail 有 ideal:280)
+                //   现在 center 给 min:400 ideal:800 无 max (吸满剩余), detail 维持 ideal:280
+                //   NavigationSplitView 三列都设 ideal 时 SwiftUI 按 ideal 比例分配总宽度
+                //   sidebar 隐藏 → 释放 220 ideal 给 center → 缩略图扩展, detail 维持
+                .navigationSplitViewColumnWidth(min: 400, ideal: 800)
         } detail: {
             if showDetail {
                 detail
