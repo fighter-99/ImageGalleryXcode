@@ -209,69 +209,84 @@ struct ContentView: View {
                 // 退出沉浸
                 model.grid.immersivePhoto = nil
             }
-            // V5.59-2: 抽离 4 dialog + 4 onChange + 1 task 到 contentBodyModifiers 解决 type-check 超时
-            // V6.28: grid 业务 closure 走 model.grid.X() — Core (startImport/restoreSelection/etc) 仍 model
-            .contentBodyModifiers(
-                model: model,
-                bindableModel: bindableModel,
-                bindableGrid: bindableGrid,
-                settings: settings,
-                modelContext: modelContext,
-                allPhotos: allPhotos,
-                folders: folders,
-                allTags: allTags,
-                // P4.1.1: smartFolders 推 model.grid.smartFoldersCache
-                smartFolders: smartFolders,
-                selection: model.grid.selection,
-                sidebarSelection: model.sidebarSelection,
-                showSidebar: model.settings.showSidebar,
-                showDetail: model.settings.showDetail,
-                filterState: model.filterState,
-                visiblePhotos: model.grid.visiblePhotos,
-                batchDeleteTitle: model.grid.batchDeleteTitle,
-                duplicateDialogTitle: model.grid.duplicateDialogTitle,
-                undoManager: model.undoManager,
-                accentColor: model.accentColor,
-                hasPurgedExpiredTrash: $hasPurgedExpiredTrash,
-                showingNewFolderAlert: Bindable(model.grid).showingNewFolderAlert,
-                onImport: { model.importVM.startImport() },
-                // V6.20.0 (code audit fix #1 + #9): 3 个入口 (⌘N hidden button / ⌘⇧N 菜单 / SidebarView "+") 都清空 newFolderName
-                //   避免上次 name 残留; 之前 ContentView 路径不清, SidebarView 清, 两路不一致
-                onNewFolder: { model.grid.newFolderName = ""; model.grid.showingNewFolderAlert = true },
-                onResetFilters: { model.grid.resetFilters() },
-                onCopy: { model.grid.copyToPasteboard() },
-                onToggleSortDirection: { model.toggleSortDirection() },
-                // V6.13.3: 工具栏 sidebar toggle 触发 withAnimation 包裹
-                //   配合 MainSplitView 的 .transition(.move + .opacity) 实现 0.3s 滑动
-                //   之前硬切——MainSplitView line 75 transition 仍触发但 toggle 本身没 anim 驱动
-                onToggleSidebar: { withAnimation(Animations.standard) { model.settings.showSidebar.toggle() } },
-                onSetRating: { model.grid.batchSetRating($0) },
-                onDelete: { model.grid.handleDelete() },
-                onPrev: { model.grid.goPrev() },
-                onNext: { model.grid.goNext() },
-                onSelectAll: { model.grid.selection = model.grid.selection.settingAll(in: model.grid.visiblePhotos) },
-                onZoomIn: { model.grid.zoomIn() },
-                onZoomOut: { model.grid.zoomOut() },
-                onResetZoom: { model.grid.resetThumbnailSize() },
-                onExport: { model.grid.batchExport() },
-                onReturn: { model.grid.enterImmersiveFromSelection() },
-                onSpace: { model.grid.showQuickLook() },
-                onBatchDelete: { model.grid.batchDelete() },
-                onCreateFolder: { model.createFolderFromAlert() },
-                onEmptyTrash: { model.grid.emptyTrash() },
-                onConfirmSkipDuplicates: { model.importVM.confirmSkipDuplicates() },
-                onConfirmImportAllDuplicates: { model.importVM.confirmImportAllDuplicates() },
-                onCancelDuplicateImport: { model.importVM.cancelDuplicateImport() },
-                onSelectionEscape: { model.grid.selection = .empty },
-                onRestoreSelection: { model.restoreSelection(model.settings.sidebarSelection) },
-                onSerializeSidebarSelection: { model.serializeSelection($0) },
-                onClearSelectionOnFilterChange: { model.grid.clearSelectionOnFilterChange() },
-                // V6.74.2: 删 onSyncTitlebarAccessory / onToggleShowDetail — ⓘ 按钮走 SwiftUI .toolbar .primaryAction
-                //   showDetail 现在只受 MainSplitView .primaryAction 按钮 / ⌘I / ⌘⌃D toggle (ImageGalleryApp Toggle menu)
-                onPurgeExpiredTrashOnStartup: { model.purgeExpiredTrashOnStartup() },
-                onCheckStorage: { model.checkStorage() },
-                onMigrateFavoriteToRating: { Photo.migrateFavoriteToRating(in: allPhotos, context: modelContext) }
-            )
+            // V6.100: 拆 contentBodyModifiers 250 行 / 53 参数 → 5 sub-modifier (Views/Lifecycle/)
+//   - lifecycleModifiers: appLifecycleHooks + .task + 4 .onChange
+//   - keyboardModifiers: gridInputHandling + contentKeyboardShortcuts (12 keyboard shortcut)
+//   - dialogModifiers: batchActionDialogs (3 alert + duplicate check) + applySettingsChrome + exposeUndoManager
+//   - sheetModifiers: batchRenameSheet + shareSheet + markupSheet + cropSheet + smartFolderSheets
+//   - notificationModifiers: 12 .onReceive + shortcutsHandler
+//
+// 拆出后 ContentView body chain 13 modifier → 8 modifier, 编译推断秒过
+// V5.59-2 拆 modifier 解决 type-check timeout precedent (跟本方案同源)
+.lifecycleModifiers(
+    model: model,
+    modelContext: modelContext,
+    allPhotos: allPhotos,
+    folders: folders,
+    allTags: allTags,
+    smartFolders: smartFolders,
+    sidebarSelection: model.sidebarSelection,
+    sortOption: model.grid.sortOption,
+    viewModeRaw: settings.viewModeRaw,
+    hasPurgedExpiredTrash: $hasPurgedExpiredTrash,
+    onRestoreSelection: { model.restoreSelection(model.settings.sidebarSelection) },
+    onPurgeExpiredTrashOnStartup: { model.purgeExpiredTrashOnStartup() },
+    onCheckStorage: { model.checkStorage() },
+    onMigrateFavoriteToRating: { Photo.migrateFavoriteToRating(in: allPhotos, context: modelContext) },
+    onSerializeSidebarSelection: { model.serializeSelection($0) },
+    onClearSelectionOnFilterChange: { model.grid.clearSelectionOnFilterChange() },
+    onSelectionEscape: { model.grid.selection = .empty },
+    filterState: model.filterState,
+    selection: model.grid.selection
+)
+.keyboardModifiers(
+    canPrev: model.grid.canPrev,
+    canNext: model.grid.canNext,
+    hasSelection: !model.grid.selection.isEmpty,
+    hasSelectedPhoto: model.grid.singleSelectedPhoto != nil,
+    onDelete: { model.grid.handleDelete() },
+    onPrev: { model.grid.goPrev() },
+    onNext: { model.grid.goNext() },
+    onEscape: { model.grid.selection = .empty },
+    onSelectAll: { model.grid.selection = model.grid.selection.settingAll(in: model.grid.visiblePhotos) },
+    onZoomIn: { model.grid.zoomIn() },
+    onZoomOut: { model.grid.zoomOut() },
+    onSpace: { model.grid.showQuickLook() },
+    onResetZoom: { model.grid.resetThumbnailSize() },
+    onExport: { model.grid.batchExport() },
+    onReturn: { model.grid.enterImmersiveFromSelection() },
+    onImport: { model.importVM.startImport() },
+    onNewFolder: { model.grid.newFolderName = ""; model.grid.showingNewFolderAlert = true },
+    onResetFilters: { model.grid.resetFilters() },
+    onCopy: { model.grid.copyToPasteboard() },
+    onToggleSortDirection: { model.toggleSortDirection() },
+    onToggleSidebar: { withAnimation(Animations.standard) { model.settings.showSidebar.toggle() } },
+    onSetRating: { model.grid.batchSetRating($0) }
+)
+.dialogModifiers(
+    bindableGrid: bindableGrid,
+    importVM: model.importVM,
+    model: model,
+    batchDeleteTitle: model.grid.batchDeleteTitle,
+    duplicateDialogTitle: model.grid.duplicateDialogTitle,
+    retentionDays: model.settings.trashRetentionDays,
+    undoManager: model.undoManager,
+    accentColor: model.accentColor,
+    onBatchDelete: { model.grid.batchDelete() },
+    onCreateFolder: { model.createFolderFromAlert() },
+    onEmptyTrash: { model.grid.emptyTrash() },
+    onConfirmSkipDuplicates: { model.importVM.confirmSkipDuplicates() },
+    onConfirmImportAllDuplicates: { model.importVM.confirmImportAllDuplicates() },
+    onCancelDuplicateImport: { model.importVM.cancelDuplicateImport() }
+)
+.sheetModifiers(
+    model: model,
+    bindableGrid: bindableGrid,
+    selection: model.grid.selection,
+    visiblePhotos: model.grid.visiblePhotos,
+    showingBatchRename: bindableGrid.showingBatchRenameSheet
+)
+.notificationModifiers(model: model)
         }
     // V6.96 P1 #2: 拖放 API 统一——.onDrop 升级为 .dropDestination (URL.self)
     //   之前 providers: [NSItemProvider] 要在 handleDrop 里手动 loadDataRepresentation 反序列化

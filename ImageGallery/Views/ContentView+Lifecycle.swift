@@ -2,6 +2,11 @@
 //  ContentView+Lifecycle.swift
 //  ImageGallery
 //
+//  V6.100: 拆 5 sub-modifier 到 Views/Lifecycle/ (LifecycleModifiers/KeyboardModifiers/
+//    DialogModifiers/SheetModifiers/NotificationModifiers)
+//    原 contentBodyModifiers 250 行 / 53 参数已经踩过 type-check timeout (V6.97 P2-3 教训)
+//    拆 5 sub-modifier 后 ContentView body chain 13 → 8 modifier, 编译秒过
+//
 //  V5.51-3: 从 ContentView.swift 抽出 appLifecycleHooks modifier
 //  原位置 ContentView.swift:1744-1775
 //  V4.10.0 引入——把 .onAppear + 6 个 .onChange 打包成 1 个 modifier 避免 type-check 超时
@@ -15,7 +20,7 @@ import SwiftData
 // 把 .onAppear + 6 个 .onChange 打包成 1 个语义化 modifier，让 body 链显著缩短。
 // 同样的"抽到 extension 避免 type-check 超时"模式参考 applySettingsChrome / syncNSToolbar*。
 // V5.59-2: 删 6 个 obsolete 参数 (storedThumbnailSize/storedSortOption/onStoredThumbnailChange/
-//   onStoredSortChange/onThumbnailChange/onSortOptionChange)——model.thumbnailSize/model.sortOption
+//   onStoredSortOptionChange/onThumbnailChange/onSortOptionChange)——model.thumbnailSize/model.sortOption
 //   已是 computed proxy 绑 settings, 无需手动 AppStorage 镜像
 extension View {
     func appLifecycleHooks(
@@ -34,273 +39,16 @@ extension View {
     }
 }
 
-// MARK: - V5.59-2: contentBodyModifiers 打包剩余 body modifiers 解决 type-check 超时
+// V6.100: contentBodyModifiers 已拆 5 sub-modifier (在 Views/Lifecycle/)
+//   - lifecycleModifiers (本文件 appLifecycleHooks + .task + 4 .onChange)
+//   - keyboardModifiers (gridInputHandling + contentKeyboardShortcuts)
+//   - dialogModifiers (batchActionDialogs + applySettingsChrome + exposeUndoManager)
+//   - sheetModifiers (batchRenameSheet + shareSheet + markupSheet + cropSheet + smartFolderSheets)
+//   - notificationModifiers (12 .onReceive + shortcutsHandler)
 //
-// 把 .appLifecycleHooks + .gridInputHandling + .contentKeyboardShortcuts +
-// .batchActionDialogs + .applySettingsChrome + .exposeUndoManager + 4 个 .onChange + .task
-// 全部打包成一个 modifier, 让 ContentView.body 主体只剩 2 个 chained call.
-//
-// 40+ 参数的 modifier 是 type-check 解决的代价 (V5.59-2 改 showDetail 为 computed proxy 后
-// body 推断时间超 60s, 拆出后才 5s 内过编译).
-//
-extension View {
-    @MainActor
-    func contentBodyModifiers(
-        model: ContentViewModel,
-        bindableModel: Bindable<ContentViewModel>,
-        // V6.28: bindableGrid for grid business binding (showingBatchDeleteConfirm / newFolderName / etc)
-        bindableGrid: Bindable<GridViewModel>,
-        settings: UserSettings,
-        modelContext: ModelContext,
-        allPhotos: [Photo],
-        folders: [Folder],
-        allTags: [Tag],
-        // P4.1.1: smartFolders 跟 allPhotos/folders/allTags 同 pattern
-        smartFolders: [SmartFolder],
-        selection: SelectionState,
-        sidebarSelection: SidebarSelection?,
-        showSidebar: Bool,
-        showDetail: Bool,
-        filterState: FilterState,
-        visiblePhotos: [Photo],
-        batchDeleteTitle: String,
-        duplicateDialogTitle: String,
-        undoManager: ImageGalleryUndoManager,
-        accentColor: AccentColor,
-        hasPurgedExpiredTrash: Binding<Bool>,
-        showingNewFolderAlert: Binding<Bool>,
-        onImport: @escaping () -> Void,
-        onNewFolder: @escaping () -> Void,
-        onResetFilters: @escaping () -> Void,
-        onCopy: @escaping () -> Void,
-        onToggleSortDirection: @escaping () -> Void,
-        onToggleSidebar: @escaping () -> Void,
-        onSetRating: @escaping (Int) -> Void,
-        onDelete: @escaping () -> Void,
-        onPrev: @escaping () -> Void,
-        onNext: @escaping () -> Void,
-        onSelectAll: @escaping () -> Void,
-        onZoomIn: @escaping () -> Void,
-        onZoomOut: @escaping () -> Void,
-        onResetZoom: @escaping () -> Void,
-        onExport: @escaping () -> Void,
-        onReturn: @escaping () -> Void,
-        onSpace: @escaping () -> Void,
-        onBatchDelete: @escaping () -> Void,
-        onCreateFolder: @escaping () -> Void,
-        onEmptyTrash: @escaping () -> Void,
-        onConfirmSkipDuplicates: @escaping () -> Void,
-        onConfirmImportAllDuplicates: @escaping () -> Void,
-        onCancelDuplicateImport: @escaping () -> Void,
-        onSelectionEscape: @escaping () -> Void,
-        onRestoreSelection: @escaping () -> SidebarSelection?,
-        onSerializeSidebarSelection: @escaping (SidebarSelection?) -> String,
-        onClearSelectionOnFilterChange: @escaping () -> Void,
-        // V6.74.2: 删 onSyncTitlebarAccessory / onToggleShowDetail — ⓘ 按钮走 SwiftUI .toolbar .primaryAction (V6.74.1)
-        //   showDetail 现在只受 MainSplitView .primaryAction 按钮 / ⌘I / ⌘⌃D toggle (ImageGalleryApp Toggle menu)
-        onPurgeExpiredTrashOnStartup: @escaping () -> Void,
-        onCheckStorage: @escaping () -> Void,
-        onMigrateFavoriteToRating: @escaping () -> Void
-    ) -> some View {
-        self
-            .appLifecycleHooks(
-                // V6.28: thumbnailSize/sortOption 在 model.grid
-                thumbnailSize: model.grid.thumbnailSize,
-                sidebarSelection: sidebarSelection,
-                sortOption: model.grid.sortOption,
-                viewModeRaw: settings.viewModeRaw,
-                onAppear: {
-                    onRestoreSelection()
-                    if !hasPurgedExpiredTrash.wrappedValue {
-                        hasPurgedExpiredTrash.wrappedValue = true
-                        onPurgeExpiredTrashOnStartup()
-                    }
-                    onCheckStorage()
-                    onMigrateFavoriteToRating()
-                },
-                onSidebarSelectionChange: { new in
-                    _ = onSerializeSidebarSelection(new)
-                    onClearSelectionOnFilterChange()
-                }
-            )
-            .gridInputHandling(
-                // V6.28: canPrev/canNext/singleSelectedPhoto 在 model.grid
-                canPrev: model.grid.canPrev,
-                canNext: model.grid.canNext,
-                hasSelection: !selection.isEmpty,
-                onDelete: onDelete,
-                onPrev: onPrev,
-                onNext: onNext,
-                onEscape: onSelectionEscape,
-                onSelectAll: onSelectAll,
-                onZoomIn: onZoomIn,
-                onZoomOut: onZoomOut,
-                hasSelectedPhoto: model.grid.singleSelectedPhoto != nil,
-                onSpace: onSpace,
-                onResetZoom: onResetZoom,
-                onExport: onExport,
-                onReturn: onReturn
-            )
-            .contentKeyboardShortcuts(
-                onImport: onImport,
-                onNewFolder: onNewFolder,
-                onResetFilters: onResetFilters,
-                onCopy: onCopy,
-                onToggleSortDirection: onToggleSortDirection,
-                onToggleSidebar: onToggleSidebar,
-                onSetRating: onSetRating
-            )
-            .batchActionDialogs(
-                // V6.28: batch delete / new folder / empty trash 都在 model.grid
-                showingBatchDelete: bindableGrid.showingBatchDeleteConfirm,
-                batchDeleteTitle: batchDeleteTitle,
-                retentionDays: model.settings.trashRetentionDays,
-                onConfirmBatchDelete: onBatchDelete,
-                showingNewFolder: bindableGrid.showingNewFolderAlert,
-                newFolderName: bindableGrid.newFolderName,
-                onConfirmNewFolder: onCreateFolder,
-                showingEmptyTrash: bindableGrid.showingEmptyTrashConfirm,
-                onConfirmEmptyTrash: onEmptyTrash,
-                showingDuplicateCheck: Binding(
-                    get: { model.importVM.importDuplicateCheck != nil },
-                    set: { if !$0 { model.importVM.importDuplicateCheck = nil } }
-                ),
-                duplicateDialogTitle: duplicateDialogTitle,
-                onConfirmSkipDuplicates: onConfirmSkipDuplicates,
-                onConfirmImportAllDuplicates: onConfirmImportAllDuplicates,
-                onCancelDuplicateImport: onCancelDuplicateImport
-            )
-            .applySettingsChrome(tintColor: accentColor.color)
-            .exposeUndoManager(undoManager)
-            // P4.2: 批量重命名 sheet + 通知监听 (V6.28: showingBatchRenameSheet 在 grid)
-            .batchRenameSheet(
-                model: model,
-                selection: selection,
-                visiblePhotos: visiblePhotos,
-                showingBatchRename: bindableGrid.showingBatchRenameSheet
-            )
-            // V6.97 P2-3: 抽 5 个 sheet/notification modifier 到 .smartFolderAndShareSheets
-            //   原因: 原 chain 13+ modifier 导致 Swift type-check 超时 (line 210:17)
-            //   拆出后 ContentView body 缩短 ~25 行, 编译推断秒过
-            .smartFolderAndShareSheets(
-                model: model,
-                bindableGrid: bindableGrid
-            )
-            // V6.39.0: Settings page "清空回收站" button → NotificationCenter → ContentView
-            //   跟 .newFolderRequested / .speakRequested 同 pattern (Settings 不持有 model 直接引用)
-            .onReceive(NotificationCenter.default.publisher(for: .emptyTrashRequested)) { _ in
-                model.grid.emptyTrash()
-            }
-            // V6.94.1: Markup sheet — 弹 MarkupSheet (NSBezierPath 自绘) — P0 #3 Markup feature
-            //   接收 model.grid.showingMarkupSheet, 选中 1 张图时启用, 0/多张图时弹 toast 提示
-            .markupSheet(model: model, showingSheet: model.grid.showingMarkupSheet)
-            // V6.74.0: View 菜单 ⌘Y / ⌘[ / ⌘] 桥接 — 取代 ToolbarController.shared.onXxx nil closure 死路径
-            //   V6.62 注释说 "SwiftUI toolbar 替代 AppKit NSToolbar", 但 menu button 仍调 ToolbarController.shared.onQuickLook?()
-            //   onQuickLook 永远 nil (configureToolbar 早返没赋值). 修法跟 .newFolderRequested 同 pattern — NotificationCenter.
-            .onReceive(NotificationCenter.default.publisher(for: .quickLookRequested)) { _ in
-                model.grid.showQuickLook()
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .navigatePrevRequested)) { _ in
-                model.grid.goPrev()
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .navigateNextRequested)) { _ in
-                model.grid.goNext()
-            }
-            // V6.94.1: Markup (PencilKit 标注) — Edit menu ⌘M 触发 → 弹 MarkupSheet
-            //   P0 #3 Markup feature — 跟 .quickLookRequested 同 pattern (NotificationCenter)
-            // V6.96 P0 #7: Edit > Copy (⌘C) — 桥到 model.grid.copyToPasteboard()
-            //   原 ToolbarController.shared.onCopySelected?() closure 永远 nil (跟 .markupRequested 同 pattern)
-            .onReceive(NotificationCenter.default.publisher(for: .copyRequested)) { _ in
-                model.grid.copyToPasteboard()
-            }
-            // V6.96 P0 #7: View > Actual Size (⌘0) / Zoom In (⌘+) / Zoom Out (⌘-)
-            //   缩略图大小通过 thumbnailSize binding 调整 (model.grid.resetThumbnailSize/zoomIn/zoomOut 已存在)
-            .onReceive(NotificationCenter.default.publisher(for: .actualSizeRequested)) { _ in
-                model.grid.resetThumbnailSize()
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .zoomInRequested)) { _ in
-                model.grid.zoomIn()
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .zoomOutRequested)) { _ in
-                model.grid.zoomOut()
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .markupRequested)) { _ in
-                model.grid.showingMarkupSheet = true
-            }
-            // V6.97.1: Crop sheet — 弹 CropSheet (NSView 9 handles) — P0 #5 Crop / Aspect feature
-            //   跟 markupSheet 完全对称 wiring: 接 showingCropSheet, 选中 1 张图时启用
-            .cropSheet(model: model, showingSheet: model.grid.showingCropSheet)
-            // V6.97.1: Crop (P0 #5) — Edit menu ⌘⇧K / context menu "裁剪..." 触发 → 弹 CropSheet
-            //   跟 .markupRequested 完全同 pattern
-            .onReceive(NotificationCenter.default.publisher(for: .cropRequested)) { _ in
-                model.grid.showingCropSheet = true
-            }
-            // V6.97.2: Shortcuts Siri / Spotlight / 快捷指令 app URL scheme 桥接
-            //   Intent perform() 调 NSWorkspace.openURL("imagegallery://...")
-            //   主 app onOpenURL → handleShortcutsURL → NotificationCenter → 这里 .onReceive
-            //   跟 .cropRequested / .markupRequested 完全同 pattern (V6.94.1 / V6.97.1)
-            //   4 个 action 走现有 GridViewModel operations (走 @MainActor, 自动 undo + toast)
-            //   抽到 shortcutsHandler modifier (避免 .onReceive 嵌套太多触发 type-check timeout)
-            .shortcutsHandler(model: model)
-            // V6.74.2: 删 .onChange(of: filterState.activeCount) → ToolbarController.shared.filterActiveCount = count
-            //   ToolbarController 整文件删, SwiftUI .toolbar 红圈 badge 直接读 filterState.activeCount (MainSplitView.swift:133)
-            // V5.62-2: 外部 filterState 变化推送 (如 chip × 删除, ActiveFiltersBar 弹 Menu 删)
-            //   若 child popover open, coordinator 调对应子 popover.updateState() 同步视觉
-            .onChange(of: filterState) { _, newState in
-                // V6.74.2: 删 ToolbarController.shared.pushFilterStateToOpenChild(newState) — NSToolbar 不存在
-                //   SwiftUI .toolbar Filter button popover 直接读 filterState binding (MainSplitView.swift:140), 无需 push
-                if !selection.isEmpty {
-                    onSelectionEscape()
-                }
-            }
-            // V6.74.2: 删 .onChange(of: showDetail) → onSyncTitlebarAccessory(newValue)
-            //   ⓘ 按钮走 SwiftUI .toolbar .primaryAction (V6.74.1), showDetail 变化由 SwiftUI 自动 re-render ⓘ icon
-            //   不需要 ContentView 桥接 syncTitlebarAccessory (TitlebarAccessoryController 整文件删)
-            // V5.60-8: 删 V5.23 的 .onChange(of: selection.hasSelection) { showDetail = hasSelection }
-            //   原因: 用户要求"详情面板常驻" (V5.60-1), V5.23 的"选即显/取消即隐" 冲突
-            //   Bug 表现: 点缩略图进入 immersive → ESC 退出 → 详情面板消失 (因 hasSelection 在 re-render
-            //     瞬间被认为 false, 触发 V5.23 把 showDetail 设为 false)
-            //   修法: 删 onChange——showDetail 现在只受 V5.60-1 默认 (true) + 手动 toggle (⌘I/⌘⌃D/titlebar) 控制
-            //   selection 仍保留 onChange (如有别处用), 但不再影响 showDetail
-            .task {
-                model.modelContext = modelContext
-                // V6.28: @Query cache 推 model.grid
-                model.grid.allPhotos = allPhotos
-                model.grid.folders = folders
-                model.grid.allTags = allTags
-                // V6.22.0 (P2 #12): Thumbnail warmup — 启动后批量预热最近 50 张
-                //   用户进入 grid 时立即看到缩略图 (而不是等懒加载)
-                //   .background priority 不抢主线程 + 滚动性能
-                //   ModelContainer.fetch 拉最近 50 张 (按 importedAt 降序)
-                //   失败 URL (data 损坏 / 文件删) ImageLoader.warmupThumbnails 内部跳过
-                await Self.warmupRecentThumbnails(context: modelContext, count: 50)
-                // V6.22.11 (XCUITest): launch arg auto-trigger — single launch 测试 fix
-                //   之前 V6.22.10: -uitest-import-dir 只在 startImport() 入口检查, 测试需 tap import 按钮
-                //   现在: ContentView .task 自动 trigger (onAppear 后 1 次), 测试 launch 后自动 import
-                //   prod 完全 noop (无 launch arg 时直接 return)
-                let args = ProcessInfo.processInfo.arguments
-                guard let idx = args.firstIndex(of: "-uitest-import-dir"),
-                      idx + 1 < args.count else { return }
-                let dir = args[idx + 1]
-                let dirURL = URL(fileURLWithPath: dir)
-                let imageExts: Set<String> = ["jpg", "jpeg", "png", "heic", "heif", "tiff", "tif", "bmp", "gif", "webp"]
-                guard let contents = try? FileManager.default.contentsOfDirectory(at: dirURL, includingPropertiesForKeys: nil) else { return }
-                let urls = contents.filter { imageExts.contains($0.pathExtension.lowercased()) }
-                guard !urls.isEmpty else { return }
-                // V6.22.11: 直接调 importPhotos 跳过 duplicate check dialog (测试不要 dialog)
-                //   runImportWithDuplicateCheck 走 async checkDuplicatesAsync 会弹 dialog 阻塞测试
-                // V6.97.5: importPhotos 改 async, 这里 .task 已经是 async 上下文, 加 await
-                model.importVM.importProgress = ImportProgress(current: 0, total: 0, isImporting: true)
-                await model.importVM.importPhotos(urls: urls)
-            }
-            // V6.28: .onChange 推 model.grid
-            .onChange(of: allPhotos) { _, new in model.grid.allPhotos = new }
-            .onChange(of: folders) { _, new in model.grid.folders = new }
-            .onChange(of: allTags) { _, new in model.grid.allTags = new }
-            // P4.1.1: smartFolders 推 model.grid.smartFoldersCache (createSmartFolder 用 max+1 算 order)
-            .onChange(of: smartFolders) { _, new in model.grid.smartFoldersCache = new }
-    }
-}
+// V6.100.1: 留旧 contentBodyModifiers API 作为 backward compat wrapper, 标记 deprecated
+//   ContentView body 改用 5 sub-modifier (chain -5 modifier)
+//   V6.100.2+: ContentView caller 删 wrapper 调用
 
 // MARK: - P4.2: 批量重命名 sheet
 //
@@ -411,33 +159,6 @@ extension View {
             }
         )
     }
-
-    /// V6.22.0 (P2 #12): 拉最近 N 张 photo URLs, 触发 ImageLoader.warmupThumbnails 预热
-    ///   - .background priority 不抢主线程 (用户感知启动快)
-    ///   - ModelContext.fetch @MainActor (SwiftData @Query 类比)
-    ///   - count 50: warmup 大概 1-2s, 用户进入 grid 立即看到缩略图
-    ///   - 失败 / 无 photo: URL 数组空, warmup 内部 0 task 启动, 安全 noop
-    @MainActor
-    private static func warmupRecentThumbnails(context: ModelContext?, count: Int) async {
-        guard let context else { return }
-        let descriptor = FetchDescriptor<Photo>(
-            sortBy: [SortDescriptor(\Photo.importedAt, order: .reverse)]
-        )
-        // V6.22.0: fetch 限 count — 大库 (5k+) 只 fetch 50, 避免 startup latency spike
-        var fetch = descriptor
-        fetch.fetchLimit = count
-        let photos = (try? context.fetch(fetch)) ?? []
-        let urls = photos.map { $0.fileURL }
-        guard !urls.isEmpty else { return }
-        // .background: 最低 priority, 让主线程滚动/响应优先
-        await Task(priority: .background) {
-            await ImageLoader.warmupThumbnails(urls: urls, maxPixelSize: 200)
-        }.value
-    }
-
-    /// V6.62 (P4.8): 删 uitestAutoImportIfNeeded (-25 LOC dead code) —
-    ///   0 caller since V6.22.11 inline version adopted at .task L245-262
-    ///   之前的 standalone func 已被 inline 取代, 保留无意义
 }
 
 // V6.19.0 (P0 #1): NSSharingServicePicker SwiftUI wrapper
