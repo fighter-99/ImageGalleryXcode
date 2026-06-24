@@ -34,10 +34,10 @@ struct MainSplitView<Sidebar: View, Center: View, Detail: View>: View {
     let toolbarActions: ToolbarActions
     
     @Binding var showDetail: Bool
-    // V6.103.2: showSidebar binding — ContentView 传 model.settings.showSidebar
-    //   之前没传 — NavigationSplitView 默认 3 列全显示, toolbar ⌘\ toggle 设 showSidebar=false
-    //   但 NavigationSplitView 不知道 → sidebar 不真隐藏, layout 没切换
-    //   跟 V6.103.1 columnWidth 修复配合: columnVisibility 真切换后, center ideal:800 才会生效
+    // V6.103.3: 重新加 @Binding showSidebar (单向, 不 set 反向)
+    //   V6.103.2 双向 binding → set 闭包干扰 sidebar 交互 (点 sidebar 没反应)
+    //   V6.103.3 单向 binding: showSidebar 改 → columnVisibility 跟着改 (toolbar ⌘\ 生效)
+    //                       但 columnVisibility 改 → 不反向写 showSidebar (保护 sidebar 交互)
     @Binding var showSidebar: Bool
     @Binding var searchText: String
     @Binding var sortOption: SortOption
@@ -81,7 +81,7 @@ struct MainSplitView<Sidebar: View, Center: View, Detail: View>: View {
         onSearchSubmit: @escaping (String) -> Void = { _ in },
         allFolders: [Folder] = [],
         allTags: [Tag] = [],
-        // V6.103.2: showSidebar binding — ContentView 传 model.settings.showSidebar
+        // V6.103.3: 重新加 showSidebar binding (单向, ContentView 传 model.settings.showSidebar)
         showSidebar: Binding<Bool> = .constant(true),
         @ViewBuilder sidebar: () -> Sidebar,
         @ViewBuilder center: () -> Center,
@@ -110,24 +110,22 @@ struct MainSplitView<Sidebar: View, Center: View, Detail: View>: View {
         self.detail = detail()
     }
 
-    /// V6.103.2: showSidebar ↔ NavigationSplitView columnVisibility 双向 binding
-    ///   showSidebar = true → .all (3 列全显示)
-    ///   showSidebar = false → .detailOnly (只显示 detail, sidebar 自动隐藏)
-    ///   NavigationSplitView 自动收起 sidebar → center ideal:800 生效 (V6.103.1 修复)
-    ///   toolbar ⌘\ toggle 改 showSidebar → 自动同步 columnVisibility
+    /// V6.103.3: 单向 columnVisibilityBinding — 只让 showSidebar 流向 NavigationSplitView
+    ///   get: showSidebar 派生 .all / .detailOnly
+    ///   set: 空 (no-op) — 不让 NavigationSplitView 反向写 showSidebar
+    ///   V6.103.2 双向 binding → set 闭包设 showSidebar → 干扰 NavigationSplitView 自身 sidebar 交互
+    ///   V6.103.3 单向: toolbar ⌘\ 改 showSidebar → columnVisibility 跟随 → NS 收 sidebar
+    ///                但 NS 自己 manage 内部交互 (不依赖 set 写回)
+    ///   Photos 真版 sidebar 行为: NS 自动管理 (默认显示, 用户拖边缘按钮收)
     private var columnVisibilityBinding: Binding<NavigationSplitViewVisibility> {
         Binding(
             get: {
                 showSidebar ? .all : .detailOnly
             },
-            set: { newValue in
-                // NavigationSplitView 自动 toggle 时同步回 showSidebar (支持 toolbar 拖动 sidebar 边缘按钮)
-                //   .all → showSidebar = true
-                //   .detailOnly / .automatic → showSidebar = false
-                let newShowSidebar = (newValue == .all)
-                if newShowSidebar != showSidebar {
-                    showSidebar = newShowSidebar
-                }
+            set: { _ in
+                // no-op: 单向 binding, 不反向写 showSidebar
+                //   让 NavigationSplitView 自己管 sidebar 交互 (点 row, 拖边缘按钮等)
+                //   toolbar ⌘\ 改 showSidebar → 自动同步 columnVisibility (单向)
             }
         )
     }
@@ -267,6 +265,9 @@ struct MainSplitView<Sidebar: View, Center: View, Detail: View>: View {
     }
 
     var body: some View {
+        // V6.103.3: 单向 columnVisibilityBinding — toolbar ⌘\ 改 showSidebar → NS 跟着收 sidebar
+        //   set 闭包 no-op → 不干扰 NavigationSplitView 自身 sidebar 交互 (点 row, 拖边缘)
+        //   center ideal:800 仍生效 (V6.103.1 修复, columnWidth 跟 visibility 独立)
         NavigationSplitView(columnVisibility: columnVisibilityBinding) {
             sidebar
                 .navigationSplitViewColumnWidth(min: 160, ideal: 220, max: 320)

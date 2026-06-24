@@ -435,9 +435,9 @@ struct ContentView: View {
             onSearchSubmit: { model.grid.recordRecentSearch($0) },
             allFolders: folders,
             allTags: allTags,
-            // V6.103.2: 传 showSidebar binding — NavigationSplitView 才知道 sidebar 真隐藏
-            //   之前没传 → toolbar ⌘\ 改 model.settings.showSidebar 但 NS 不知道, sidebar 不真收起
-            //   现在 columnVisibilityBinding 双向同步: showSidebar ⇄ NavigationSplitViewVisibility
+            // V6.103.3: 传 showSidebar binding (单向 → MainSplitView columnVisibility)
+            //   toolbar ⌘\ 改 model.settings.showSidebar → NavigationSplitView 跟着收 sidebar
+            //   MainSplitView 不反向写 showSidebar → sidebar 交互不受干扰
             showSidebar: Bindable(model.settings).showSidebar,
             sidebar: { sidebarPane },
             center: { gridPane },
