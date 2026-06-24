@@ -82,6 +82,15 @@ final class GridViewModel {
     var showingBatchDeleteConfirm = false
     /// P4.2: 批量重命名 sheet — mini toolbar "重命名" 按钮 / File 菜单 ⌘⇧R 触发
     var showingBatchRenameSheet = false
+    /// V6.94.1: Markup (PencilKit 标注) sheet — Edit menu ⌘M / context menu "标注..." 触发
+    ///   弹 MarkupSheet (PKCanvasView + 工具栏), 保存时 → MarkupService.applyMarkup
+    ///   P0 #3 Markup feature
+    var showingMarkupSheet = false
+    /// V6.97.1: Crop / Aspect sheet — Edit menu ⌘⇧K / context menu "裁剪..." 触发
+    ///   弹 CropSheet (NSView 9 handles + 4-段 toolbar), 保存时 → PhotoCropService.applyCrop
+    ///   复用 V6.94.1 Markup 完整 infrastructure (5-layer closure / Undo coalesce / display compose)
+    ///   P0 #5 Crop / Aspect feature
+    var showingCropSheet = false
     /// V6.19.0 (P0 #1): 分享 picker — File 菜单 ⌘⇧S / NSSharingServicePicker host
     ///   nil = picker hidden, 非空 = sheet 显示并弹 NSSharingServicePicker (AirDrop/Messages/Mail)
     var sharingURLs: [URL]?
@@ -103,6 +112,11 @@ final class GridViewModel {
     var showingNewSmartFolderSheet = false
     /// P4.1.1: sheet 打开时快照当前 filter — 避免 sheet 打开后用户改 toolbar filter 干扰预览
     var pendingSmartFolderFilter: FilterState? = nil
+    /// V6.97 P2-3: 智能文件夹编辑 sheet — 上下文 (SmartFolder + 当前 filter + 改后名字 + 改后 icon)
+    ///   nil = 关闭 sheet; 非 nil = 编辑模式 (复用 SmartFolderCreateSheet UI, onSave 分支 save vs update)
+    var editingSmartFolder: SmartFolder? = nil
+    /// V6.97 P2-3: 编辑 sheet 打开时快照当前 filter — 跟创建 sheet 同 pattern
+    var pendingSmartFolderEditFilter: FilterState? = nil
     var showingEmptyTrashConfirm = false
     var showingNewFolderAlert = false
     var newFolderName = ""

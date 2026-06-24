@@ -22,19 +22,15 @@ final class SelectionAndDeleteTest: BaseUITestCase {
     }
 
     func test_selectAndDeletePhoto() throws {
-        // V6.22.11 follow-up: revert skip
-        //   V6.22.10 测试假设环境干净 (grid.cells.count == 1)
-        //   实际用户 PhotoStorage 累积 600+ 照片, SwiftData @Model 持久化残留
-        //   wipePhotoStorage 只删文件, 不删 SwiftData entries → grid 始终非空
-        //   重新启用前需要: (1) 全 reset SwiftData store (2) 或换测试断言策略
-        //   暂时恢复 skip, 等 V6.22.12 设计 fix
-        throw XCTSkip("V6.22.11 follow-up: 用户累积 SwiftData 数据污染 grid 验证, 待 V6.22.12 全 store reset")
-
+        // V6.94.0: 删 V6.22.11 throw XCTSkip — -uitest-reset-store launch arg 已 reset SwiftData store
+        //   600+ 累积残留问题解决, test_selectAndDeletePhoto 重新启用
+        // V6.94.0: 加 timeout 3s → 10s — import + thumbnail generation 实际需 5-8s
+        //   之前 3s 太短, test 在 cell 还没渲染时就 fail
         // V6.22.10: dismiss onboarding
 
         // V6.22.10: 点 cell 选中
         let cell = app.collectionViews.cells.element(boundBy: 0)
-        XCTAssertTrue(cell.waitForExistence(timeout: 3), "Cell should appear")
+        XCTAssertTrue(cell.waitForExistence(timeout: 10), "Cell should appear")
         cell.tap()
 
         // V6.22.10: 按 ⌫ 触发 delete (forward delete = XCUIKeyboardKey.delete)

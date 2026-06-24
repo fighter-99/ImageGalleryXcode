@@ -12,11 +12,12 @@ struct FilterPanelView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: Spacing.lg) {
             titleBar
             Divider()
             ScrollView(.vertical) {
-                VStack(alignment: .leading, spacing: 14) {
+                // spacing 14 = Spacing.md+2 (filter section 间距, 介于 md 和 lg 之间)
+                VStack(alignment: .leading, spacing: Spacing.md + 2) {
                     foldersSection
                     tagsSection
                     shapesSection
@@ -89,7 +90,7 @@ struct FilterPanelView: View {
     private var ratingSection: some View {
         Group {
             sectionHeader("最低评分")
-            HStack(spacing: 4) {
+            HStack(spacing: Spacing.xs) {
                 ForEach(0..<6, id: \.self) { rating in
                     Button {
                         filterState.minRating = filterState.minRating == rating ? 0 : rating
@@ -119,7 +120,7 @@ struct FilterPanelView: View {
         Button {
             onToggle(!isSelected)
         } label: {
-            HStack(spacing: 8) {
+            HStack(spacing: Spacing.sm) {
                 Image(systemName: isSelected ? "checkmark.square.fill" : "square")
                     .foregroundStyle(isSelected ? Color.accentColor : .secondary)
                 Text(title).font(.body)

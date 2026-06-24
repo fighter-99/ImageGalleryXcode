@@ -35,6 +35,12 @@ struct CellContextMenuModifier: ViewModifier {
     // V6.22.1 (P2 #2): rotate closures — ContentView 传 { model.rotateSelected(clockwise: ...) }
     let onRotateLeft: () -> Void
     let onRotateRight: () -> Void
+    // V6.94.1 (P0 #3): onMarkup closure — context menu "标注..." 走 NotificationCenter.markupRequested
+    //   ContentView 传 { NotificationCenter.default.post(name: .markupRequested, object: nil) }
+    let onMarkup: () -> Void
+    // V6.97.1 (P0 #5): onCrop closure — context menu "裁剪..." 走 NotificationCenter.cropRequested
+    //   跟 onMarkup 完全对称 wiring
+    let onCrop: () -> Void
 
     func body(content: Content) -> some View {
         content.contextMenu {
@@ -84,6 +90,19 @@ struct CellContextMenuModifier: ViewModifier {
                     }
                 } label: {
                     Label(Copy.ratingCategory, systemImage: photo.rating > 0 ? "star.fill" : "star")
+                }
+                // V6.94.1 (P0 #3): 标注... — 走 NotificationCenter.markupRequested (跟 Edit menu ⌘M 同源)
+                Divider()
+                Button {
+                    onMarkup()
+                } label: {
+                    Label(Copy.markupMenu, systemImage: "pencil.tip.crop.circle")
+                }
+                // V6.97.1 (P0 #5): 裁剪... — 走 NotificationCenter.cropRequested (跟 Edit menu ⌘⇧K 同源)
+                Button {
+                    onCrop()
+                } label: {
+                    Label(Copy.cropMenu, systemImage: "crop")
                 }
             } label: {
                 Label(Copy.contextMenuViewSubmenu, systemImage: "eye")

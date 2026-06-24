@@ -62,15 +62,15 @@ struct DateSectionHeader: View {
                             .resizable()
                             .aspectRatio(contentMode: .fill)
                             .frame(width: 32, height: 32)
-                            .clipShape(RoundedRectangle(cornerRadius: 6))
+                            .clipShape(RoundedRectangle(cornerRadius: Radius.sm))
                     } else if loadFailed {
                         // 加载失败: 灰底占位
-                        RoundedRectangle(cornerRadius: 6)
+                        RoundedRectangle(cornerRadius: Radius.sm)
                             .fill(.quaternary)
                             .frame(width: 32, height: 32)
                     } else {
                         // 加载中: 简单灰底占位 (V5.56)
-                        RoundedRectangle(cornerRadius: 6)
+                        RoundedRectangle(cornerRadius: Radius.sm)
                             .fill(.quaternary)
                             .frame(width: 32, height: 32)
                     }

@@ -4,21 +4,23 @@
 //
 //  V4.8.0 NEW: NSViewRepresentable 桥接 NSWindow
 //
-//  用途：SwiftUI WindowGroup 创建的 NSWindow 需要 AppKit 桥接,做 fallback minSize
-//  + setFrameAutosaveName 持久化窗口位置/尺寸
+//  用途：SwiftUI WindowGroup 创建的 NSWindow 需要 AppKit 桥接,做 fallback minSize 兜底
 //
 //  V6.74.2: callback 改 no-op — 原 NSToolbar 配置入口 (WindowViewModel.configureToolbar) 整方法删
 //    ToolbarController / TitlebarAccessoryController 整文件删, 不再需要 AppKit NSToolbar 桥接
-//    保留 fallback minSize + setFrameAutosaveName 作为 window chrome 兜底
-//  （跟 AppDelegate frame 持久化 V3.7.1 不冲突 — setFrameAutosaveName 走 NSWindowFrame 主键,
-//    AppDelegate 写 4-key (size.w/h, position.x/y); 启动 AppDelegate 先跑, setFrameAutosaveName 跳过）
+//    保留 fallback minSize 作为 window chrome 兜底
+//
+//  V6.97.0 P3-2 fix: 删 setFrameAutosaveName("ImageGallery") — 多窗口打开时所有 window 共用
+//    同一 autosave name, AppKit 把 frame 写到同一 UserDefaults 主键, 互相覆盖。
+//    改由 AppDelegate 走 per-window key (V3.7.1 自实现已扩展为支持 multi-window)。
+//    删 setFrameAutosaveName 让两个 frame 持久化机制只留一份, 避免重叠打架。
 //
 //  机制：
 //  - 在 view body 嵌入一个零尺寸 NSView
-//  - viewDidMoveToWindow 触发时执行 window minSize 兜底 + setFrameAutosaveName
+//  - viewDidMoveToWindow 触发时执行 window minSize 兜底
 //  - callback 留作 future hook (默认 no-op)
 //
-//  单 window 安全——WindowGroup 当前项目只有 1 个 main window
+//  V6.97.0: 多 window 安全 — WindowGroup 可创建多个 main window, 每个走 AppDelegate 独立 frame key
 //
 
 import SwiftUI
@@ -64,7 +66,7 @@ private final class WindowAccessorView: NSView {
         super.viewDidMoveToWindow()
         guard !hasConfigured, let window = self.window else { return }
         hasConfigured = true
-        // 保留 fallback minSize — 极端布局下兜底 (跟 AppDelegate 4-key frame 持久化不冲突)
+        // 保留 fallback minSize — 极端布局下兜底
         let current = window.minSize
         if current.width < Self.fallbackMinSize.width || current.height < Self.fallbackMinSize.height {
             window.minSize = NSSize(
@@ -74,14 +76,13 @@ private final class WindowAccessorView: NSView {
         }
         // V6.73.1 hotfix: 延迟 1 个 runloop tick — 同步调 callback 会触发 SwiftUI BarAppearanceBridge
         //   在 hosting view 没完成 constraint pass 时 KVO observer race.
-        //   延迟让 SwiftUI NSHostingView 完成 initial constraint setup 后再调 callback / setFrameAutosaveName
+        //   延迟让 SwiftUI NSHostingView 完成 initial constraint setup 后再调 callback
+        // V6.97.0: 删 setFrameAutosaveName("ImageGallery") — 跟 AppDelegate 4-key (现在 per-window)
+        //   frame 持久化重叠, 多窗口时全局名互相覆盖. 统一由 AppDelegate 负责.
         DispatchQueue.main.async { [weak window] in
             guard let window = window else { return }
             // V6.74.2: callback 调 — 现在默认 no-op, 保留作 future hook (NSToolbar 删后无 caller)
             self.callback?(window)
-            // 窗口位置/大小持久化 — macOS 原生 NSWindow frame autosave
-            //   setFrameAutosaveName 自动保存/恢复窗口位置和大小到 UserDefaults
-            window.setFrameAutosaveName("ImageGallery")
         }
     }
 }

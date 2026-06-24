@@ -4,6 +4,8 @@
 //
 //  V5.58-2: SettingsCategory enum 单元测试
 //  V6.39.0: 更新 — 5 → 7 cases (新增 trash/language/shortcuts, accent 移除搬到 appearance 内)
+//  V6.90.0: 更新 — 7 → 5 cases (合并 .trash 到 .library, .shortcuts 到 .general)
+//    跟 macOS Sonoma+ System Settings 真版 5-6 categories 接近, segmented 视觉密度减 30%
 //
 
 import Testing
@@ -13,19 +15,18 @@ import Foundation
 @MainActor
 struct SettingsCategoryTests {
 
-    @Test func allCases_containsSevenCases() {
-        // V6.39.0: 5 → 7 cases (新增 .trash / .language / .shortcuts)
-        #expect(SettingsCategory.allCases.count == 7)
+    @Test func allCases_containsFiveCases() {
+        // V6.90.0: 7 → 5 cases (合并 .trash 到 .library, .shortcuts 到 .general)
+        //   跟 macOS Sonoma+ System Settings 真版 5-6 categories 接近
+        #expect(SettingsCategory.allCases.count == 5)
     }
 
     @Test func allCases_includesAllExpectedCategories() {
-        // V6.39.0: 7 类都得在 (.accent 已合并到 .appearance 内)
+        // V6.90.0: 5 类 (V6.39.0 7 类合并: 回收站并入图库, 快捷键并入通用)
         #expect(SettingsCategory.allCases.contains(.general))
         #expect(SettingsCategory.allCases.contains(.appearance))
         #expect(SettingsCategory.allCases.contains(.library))
-        #expect(SettingsCategory.allCases.contains(.trash))
         #expect(SettingsCategory.allCases.contains(.language))
-        #expect(SettingsCategory.allCases.contains(.shortcuts))
         #expect(SettingsCategory.allCases.contains(.about))
     }
 
@@ -35,13 +36,11 @@ struct SettingsCategoryTests {
     }
 
     @Test func title_returnsChineseLabel() {
-        // V6.39.0: 每个 case title 是中文字符串
+        // V6.90.0: 5 类每个 title 是中文字符串 (V6.39.0 7 类合并后)
         #expect(SettingsCategory.general.title == "通用")
         #expect(SettingsCategory.appearance.title == "外观")
         #expect(SettingsCategory.library.title == "图库")
-        #expect(SettingsCategory.trash.title == "回收站")
         #expect(SettingsCategory.language.title == "语言")
-        #expect(SettingsCategory.shortcuts.title == "快捷键")
         #expect(SettingsCategory.about.title == "关于")
     }
 

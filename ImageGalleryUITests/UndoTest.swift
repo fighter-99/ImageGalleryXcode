@@ -20,16 +20,15 @@ final class UndoTest: BaseUITestCase {
     }
 
     func test_undoAfterDelete() throws {
-        // V6.22.11 follow-up: revert skip
-        //   跟 SelectionAndDeleteTest 同因 — 600+ 累积 SwiftData 数据污染 grid 验证
-        //   暂时恢复 skip, 等 V6.22.12 全 store reset
-        throw XCTSkip("V6.22.11 follow-up: 用户累积 SwiftData 数据污染 grid 验证, 待 V6.22.12 全 store reset")
-
+        // V6.94.0: 删 V6.22.11 throw XCTSkip — -uitest-reset-store launch arg 已 reset SwiftData store
+        //   600+ 累积残留问题解决, test_undoAfterDelete 重新启用
+        // V6.94.0: 加 timeout 3s → 10s — import + thumbnail generation 实际需 5-8s
+        //   之前 3s 太短, test 在 cell 还没渲染时就 fail
         // V6.22.10: dismiss onboarding
 
         // V6.22.10: 选中 + delete
         let cell = app.collectionViews.cells.element(boundBy: 0)
-        XCTAssertTrue(cell.waitForExistence(timeout: 3), "Cell should appear")
+        XCTAssertTrue(cell.waitForExistence(timeout: 10), "Cell should appear")
         cell.tap()
         app.typeKey(XCUIKeyboardKey.delete, modifierFlags: [])
 

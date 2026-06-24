@@ -186,6 +186,29 @@ struct ContentView: View {
             .navigationTitle(model.grid.currentViewTitle)
             .navigationSubtitle(model.grid.currentViewSubtitle)
             .preferredColorScheme(model.appearanceMode.colorScheme)
+            // V6.97 P3-1: trackpad 触控板手势 — Pinch 调缩略图大小, Swipe 切 sidebar/沉浸
+            //   装在 contentBodyModifiers 之前 — 让 .gesture 在最外层, 整 window 都响应
+            //   thumbnailSize 用 Bindable(model.grid) 双向绑定, 滑动后立即反映
+            .trackpadGestures(thumbnailSize: Bindable(model.grid).thumbnailSize)
+            // V6.97 P3-1: trackpad 4 向滑动 → NotificationCenter 桥接 → model 行为
+            //   swipe left/right 切 sidebar, swipe up 进入沉浸, swipe down 退出
+            //   跟 .markupRequested / .newFolderRequested 同模式 (AppKit menu 走 NotificationCenter)
+            .onReceive(NotificationCenter.default.publisher(for: .trackpadSwipeLeft)) { _ in
+                withAnimation(Animations.standard) { model.settings.showSidebar = true }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .trackpadSwipeRight)) { _ in
+                withAnimation(Animations.standard) { model.settings.showSidebar = false }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .trackpadSwipeUp)) { _ in
+                // 沉浸模式: 用当前 grid selection 第一张 (跟 ⌘↩ / 双击 Enter 范式一致)
+                if let firstPhoto = model.grid.visiblePhotos.first {
+                    model.grid.immersivePhoto = firstPhoto
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .trackpadSwipeDown)) { _ in
+                // 退出沉浸
+                model.grid.immersivePhoto = nil
+            }
             // V5.59-2: 抽离 4 dialog + 4 onChange + 1 task 到 contentBodyModifiers 解决 type-check 超时
             // V6.28: grid 业务 closure 走 model.grid.X() — Core (startImport/restoreSelection/etc) 仍 model
             .contentBodyModifiers(
@@ -221,7 +244,7 @@ struct ContentView: View {
                 // V6.13.3: 工具栏 sidebar toggle 触发 withAnimation 包裹
                 //   配合 MainSplitView 的 .transition(.move + .opacity) 实现 0.3s 滑动
                 //   之前硬切——MainSplitView line 75 transition 仍触发但 toggle 本身没 anim 驱动
-                onToggleSidebar: { withAnimation(Animations.medium) { model.settings.showSidebar.toggle() } },
+                onToggleSidebar: { withAnimation(Animations.standard) { model.settings.showSidebar.toggle() } },
                 onSetRating: { model.grid.batchSetRating($0) },
                 onDelete: { model.grid.handleDelete() },
                 onPrev: { model.grid.goPrev() },
@@ -250,8 +273,18 @@ struct ContentView: View {
                 onMigrateFavoriteToRating: { Photo.migrateFavoriteToRating(in: allPhotos, context: modelContext) }
             )
         }
-    .onDrop(of: [.fileURL], isTargeted: $isDropTargeted) { providers in
-        model.importVM.handleDrop(providers: providers)
+    // V6.96 P1 #2: 拖放 API 统一——.onDrop 升级为 .dropDestination (URL.self)
+    //   之前 providers: [NSItemProvider] 要在 handleDrop 里手动 loadDataRepresentation 反序列化
+    //   现在 urls: [URL] SwiftUI 直接给已解析的 URL, 跟 SidebarView 的 .dropDestination 同 API
+    //   主窗格 isTargeted 状态绑 P1 #3 DropTargetHighlight modifier (folder/trash/window 三种 style)
+    .dropDestination(for: URL.self) { urls, _ in
+        // V6.97 P2-3: .dropDestination 闭包必须返 Bool — handleDropImport 返 Void 包一层
+        //   true = drop 被消费 (SwiftUI 显示 valid drop 光标), false = 不消费 (invalid 光标)
+        //   跟 SidebarView folder row 的 .dropDestination 模式一致
+        model.importVM.handleDropImport(urls)
+        return true
+    } isTargeted: { isTargeted in
+        isDropTargeted = isTargeted
     }
     }
 
@@ -472,6 +505,19 @@ struct ContentView: View {
                 onRotate: { photo, clockwise in
                     model.grid.selection = model.grid.selection.selectingSingle(photo.id)
                     model.grid.rotateSelected(clockwise: clockwise)
+                },
+                // V6.94.1 (P0 #3): 标注回调 — 走 NotificationCenter.markupRequested (跟 Edit menu ⌘M 同源)
+                //   ContentView 在 .onReceive 监听 → model.grid.showingMarkupSheet = true
+                //   MarkupSheet 弹 → 选中 1 张图时启用 (resolvedSingle), 0/多张图走 toast 提示
+                onMarkup: {
+                    NotificationCenter.default.post(name: .markupRequested, object: nil)
+                },
+                // V6.97.1 (P0 #5): 裁剪回调 — 走 NotificationCenter.cropRequested (跟 Edit menu ⌘⇧K 同源)
+                //   ContentView 在 .onReceive 监听 → model.grid.showingCropSheet = true
+                //   CropSheet 弹 → 选中 1 张图时启用 (resolvedSingle), 0/多张图走 toast 提示
+                //   跟 markup 完全对称 wiring pattern
+                onCrop: {
+                    NotificationCenter.default.post(name: .cropRequested, object: nil)
                 },
                 onDoubleTap: { handlePhotoDoubleTap($0) },
                 onClearFilters: { model.grid.resetFilters() },

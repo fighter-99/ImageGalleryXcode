@@ -69,12 +69,13 @@ struct SidebarStyleTests {
 
     // MARK: - 状态色
 
-    @Test func activeBackgroundUsesSystemSelectedContent() {
-        // V6.61: 选中态改用 NSColor.selectedContentBackgroundColor 系统实色
-        //   替代 V6.32.1 的 Surface.selectedLight (0.12 opacity accent)
-        //   理由: macOS Photos / Finder 选中态都用系统实色, light/dark 自动适配
-        let systemColor = Color(nsColor: .selectedContentBackgroundColor)
-        #expect(SidebarStyle.activeBackground == systemColor)
+    @Test func activeBackgroundUsesAccentTint() {
+        // V6.96: 选中态改 Color.accentColor.opacity(0.15) — 跟 macOS Sonoma+ Photos 真版一致
+        //   之前 V6.61 NSColor.selectedContentBackgroundColor 系统灰色 (跟 accent 脱钩)
+        //   现在 accent tint (0.15 opacity) — 选中态跟 accent color 主题联动
+        //   Photos 真版选中态用 accent color tint (半透明), 跟 macOS 真版一致
+        let expected = Color.accentColor.opacity(0.15)
+        #expect(SidebarStyle.activeBackground == expected)
     }
 
     @Test func hoverBackgroundMatchesSurfaceHover() {
@@ -82,11 +83,11 @@ struct SidebarStyleTests {
         #expect(SidebarStyle.hoverBackground == Surface.hover)
     }
 
-    @Test func labelActiveIsWhiteAndDifferFromDefault() {
-        // V6.61: labelActive 改 .white (跟 macOS 系统选中行白字一致)
-        //   labelDefault + labelHover 都是 .primary (hover 不变色, 只 active 变白)
-        //   只 active 一档跟 default/hover 不同, 通过背景 activeBackground 反衬
-        #expect(SidebarStyle.labelActive == Color.white)
+    @Test func labelActiveIsAccentAndDifferFromDefault() {
+        // V6.96: labelActive 改 .accentColor (跟 macOS Sonoma+ 真版一致)
+        //   之前 V6.61 .white 适配旧灰色 activeBackground, 现在 activeBackground 改 accent tint
+        //   labelDefault + labelHover 都是 .primary (hover 不变色, 只 active 变 accent)
+        #expect(SidebarStyle.labelActive == Color.accentColor)
         #expect(SidebarStyle.labelDefault == Color.primary)
         #expect(SidebarStyle.labelActive != SidebarStyle.labelDefault)
     }
@@ -96,11 +97,10 @@ struct SidebarStyleTests {
         #expect(SidebarStyle.iconDefault == Color.secondary)
     }
 
-    @Test func iconActiveIsWhite() {
-        // V6.61: 选中态 icon 改 .white (跟 macOS 系统选中白字一致)
-        //   替代 V4.6.0 的 Color.accentColor
-        //   hover 态仍走 iconActive (跟 labelActive 同步)
-        #expect(SidebarStyle.iconActive == Color.white)
+    @Test func iconActiveIsAccent() {
+        // V6.96: 选中态 icon 改 .accentColor — 跟 labelActive 同步
+        //   之前 V6.61 .white 适配旧灰色 activeBackground
+        #expect(SidebarStyle.iconActive == Color.accentColor)
     }
 
     // MARK: - section header
@@ -122,33 +122,11 @@ struct SidebarStyleTests {
     }
 
     // MARK: - 智能 folder icon 语义色
-
-    @Test func smartFolderIconColorsAreFiveDistinctColors() {
-        // 5 个语义色 slots 中有 4 个独立色相（duplicate + trash 同 orange 共用警示色族）
-        // 这是设计选择——重复图和最近删除都属于"需要用户注意"的语义类别
-        // 用同一色族保持视觉一致：橘色 = "警示/需要处理"
-        let colors: [Color] = [
-            SidebarStyle.iconColorDuplicate,   // .orange
-            SidebarStyle.iconColorRecent,      // .blue
-            SidebarStyle.iconColorLarge,       // .purple
-            // V5.8: 砍 iconColorFavorite——收藏 = 评分 ≥ 5 走筛选 popover
-            SidebarStyle.iconColorTrash        // .orange (与 duplicate 同色)
-        ]
-        let uniqueColors = Set(colors.map { String(describing: $0) })
-        #expect(uniqueColors.count == 3, "4 个 slots 共享 3 个独立色相：橙/蓝/紫")
-    }
-
-    @Test func smartFolderIconColorsMatchSystemColors() {
-        // 锁定具体色值——避免未来某次"统一化"改动破坏视觉锚点
-        // 重复图 + 最近删除 都用 orange（同色族警示）
-        // V5.8: 砍 iconColorFavorite 测试——V5.7 砍 .favorites 侧边栏时遗漏
-        #expect(SidebarStyle.iconColorDuplicate == .orange)
-        #expect(SidebarStyle.iconColorTrash == .orange)
-        #expect(SidebarStyle.iconColorRecent == .blue)
-        #expect(SidebarStyle.iconColorLarge == .purple)
-    }
-
-    // MARK: - Font token 引用一致性
+//
+// V6.97 P3-6: 删 2 个 dead test — P1-10 删了 iconColorDuplicate/Recent/Large token
+//   SidebarStyle 只剩 iconColorTrash, 不再需要 "4 个 slot 色相" 测试
+//
+// MARK: - Font token 引用一致性
     //
     // SwiftUI Font 没有公共 Equatable——这些测试是"引用一致性"守护：
     // SidebarRow 引用了这些 token 常量 (V6.62 P4.1: SidebarSectionHeader 已删, 仅 SidebarRow 引用)

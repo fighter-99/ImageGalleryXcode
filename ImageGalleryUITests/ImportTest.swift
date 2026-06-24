@@ -26,11 +26,16 @@ final class ImportTest: BaseUITestCase {
     }
 
     func test_importPhotoViaLaunchArg() throws {
-        // V6.22.11 follow-up: revert skip
-        //   跟 SelectionAndDeleteTest 同因 — 600+ 累积 SwiftData 数据污染 grid 验证
-        //   暂时恢复 skip, 等 V6.22.12 全 store reset
-        throw XCTSkip("V6.22.11 follow-up: 用户累积 SwiftData 数据污染 grid 验证, 待 V6.22.12 全 store reset")
-
+        // V6.94.0: 删 V6.22.11 throw XCTSkip — -uitest-reset-store launch arg 已 reset SwiftData store
+        //   600+ 累积残留问题解决, test_importPhotoViaLaunchArg 重新启用
+        // V6.94.0: 加 timeout 3s → 10s — import + thumbnail generation 实际需 5-8s
+        //   (ImageImporter.importPhotos 同步 + ThumbnailCache warmup)
+        //   之前 3s 太短, test 在 cell 还没渲染时就 fail
         // V6.22.10: dismiss onboarding + import 1 photo
+        let cell = app.collectionViews.cells.element(boundBy: 0)
+        XCTAssertTrue(cell.waitForExistence(timeout: 10),
+                      "Cell should appear after import + thumbnail warmup")
+        XCTAssertEqual(app.collectionViews.firstMatch.cells.count, 1,
+                       "Grid should have exactly 1 cell after import")
     }
 }

@@ -25,6 +25,21 @@ extension Notification.Name {
     static let quickLookRequested = Notification.Name("com.iridescent.ImageGallery.quickLookRequested")
     static let navigatePrevRequested = Notification.Name("com.iridescent.ImageGallery.navigatePrevRequested")
     static let navigateNextRequested = Notification.Name("com.iridescent.ImageGallery.navigateNextRequested")
+    // V6.94.1: Markup (PencilKit 标注) P0 #3 — Edit menu ⌘M 触发
+    //   ContentView .onReceive 监听 → showingMarkup = true → 弹 MarkupSheet
+    static let markupRequested = Notification.Name("com.iridescent.ImageGallery.markupRequested")
+    // V6.97.1: Crop / Aspect P0 #5 — Edit menu ⌘⇧K 触发
+    //   ContentView .onReceive 监听 → showingCropSheet = true → 弹 CropSheet
+    //   复用 V6.94.1 markup 完全 wiring pattern (Notification + ContentView sheet)
+    static let cropRequested = Notification.Name("com.iridescent.ImageGallery.cropRequested")
+    // V6.96 P0 #7: Edit > Copy 菜单 — 走 NotificationCenter 模式 (跟 .markupRequested 同 pattern)
+    //   ContentView .onReceive 监听 → model.grid.copyToPasteboard() (GridViewModel+Operations 已存在)
+    static let copyRequested = Notification.Name("com.iridescent.ImageGallery.copyRequested")
+    // V6.96 P0 #7: View > Zoom In / Zoom Out / Actual Size (⌘+ / ⌘- / ⌘0)
+    //   走 NotificationCenter 模式, ContentView .onReceive 转给 model.grid.zoomIn/zoomOut/resetThumbnailSize
+    static let zoomInRequested = Notification.Name("com.iridescent.ImageGallery.zoomInRequested")
+    static let zoomOutRequested = Notification.Name("com.iridescent.ImageGallery.zoomOutRequested")
+    static let actualSizeRequested = Notification.Name("com.iridescent.ImageGallery.actualSizeRequested")
 }
 
 // AppDelegate：处理应用层 macOS 事件
@@ -35,12 +50,47 @@ extension Notification.Name {
 //     + applicationDidFinishLaunching 读 UserDefaults setFrame 恢复
 //   - 4 个 key (size.w/h, position.x/y) — 简单, 不污染其他 key
 //   - Photos.app / Finder / Safari 标准行为: 关在哪开回来还在哪
+// V6.97.0 P3-2 fix: 4 个全局 key 改为 1 个主 key 存 per-window JSON — 解决 multi-window bug
+//   - 之前: 所有 window 共用 4 个全局 key, 多窗口时互相覆盖
+//     (主窗口 frame → attach 时 4 个 window 都用主窗口 frame 恢复
+//      副窗口 resize → 写覆盖 4 个 key → 主窗口下次启动也变成副窗口 frame)
+//   - 现在: 1 个主 key `imageGalleryWindowFrames` 存 [UUID: Frame] JSON
+//     + NSMapTable<NSWindow, NSString> 持 weak ref 跟踪 window → UUID 映射
+//     + 每个 window 独立 frame, 关掉再开新的不影响
+//   - Backward compat: 检测 4 个老 key 存在 → 迁到主 key (写到第一个 attach 的 window UUID) → 删老 key
 final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
-    // V3.7.1: frame 持久化 4 个 key
-    private static let sizeWKey = "imageGalleryWindowSizeW"
-    private static let sizeHKey = "imageGalleryWindowSizeH"
-    private static let posXKey = "imageGalleryWindowPosX"
-    private static let posYKey = "imageGalleryWindowPosY"
+    // V6.97.0: frame 持久化 1 个主 key — 存 [UUID: Frame] JSON 字典
+    //   UUID 字符串 = 每个 NSWindow 分配时的稳定 ID (NSMapTable weak ref 跟踪)
+    private static let framesKey = "imageGalleryWindowFrames"
+
+    // V6.97.0: 跟踪 NSWindow → UUID 映射 — NSMapTable 持 weak ref, window 关闭自动清
+    //   strongToWeakObjects: value (UUID string) 强引用, key (NSWindow) 弱引用
+    //   同一 window 重复 attach 拿到同一 UUID; 新 window 自动分配新 UUID
+    private let windowIDs = NSMapTable<NSWindow, NSString>.strongToWeakObjects()
+
+    // V6.97.0: 4 个老 key 常量保留 (迁移逻辑用) — V6.98+ 可删
+    private static let legacySizeWKey = "imageGalleryWindowSizeW"
+    private static let legacySizeHKey = "imageGalleryWindowSizeH"
+    private static let legacyPosXKey = "imageGalleryWindowPosX"
+    private static let legacyPosYKey = "imageGalleryWindowPosY"
+
+    // V6.94.0: -uitest-reset-store 在 applicationWillFinishLaunching 处理 (早于 init)
+    //   必须在 ImageGalleryApp.init() 之前删 SwiftData store + WAL files,
+    //   否则 ModelContainer 第一次 try 命中旧文件句柄, 删文件会被拒
+    func applicationWillFinishLaunching(_ notification: Notification) {
+        // V6.94.0: 不调 super.perform — NSObject 没有默认 applicationWillFinishLaunching 实现
+        //   (NSApplicationDelegate 是 protocol, 协议方法默认实现就是空)
+        let args = ProcessInfo.processInfo.arguments
+        if args.contains("-uitest-reset-store") {
+            // V6.94.0: 用 ModelConfiguration 默认 url (跟 ImageGalleryApp.init 同一路径) — 单一真相源
+            let config = ModelConfiguration()
+            try? FileManager.default.removeItem(at: config.url)
+            // V6.94.0: 删 WAL files (.store-shm + .store-wal) — SQLite lock 残留
+            try? FileManager.default.removeItem(at: config.url.appendingPathExtension("shm"))
+            try? FileManager.default.removeItem(at: config.url.appendingPathExtension("wal"))
+            NSLog("V6.94.0: reset SwiftData store at \(config.url) for XCUITest")
+        }
+    }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // V6.22.10 (XCUITest): UI test launch arg 解析 — 在 setUp/tearDown 之前清 UserDefaults
@@ -90,20 +140,32 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         // 防止重复挂同一个 delegate (避免循环)
         if window.delegate === self { return }
         window.delegate = self
+        // V6.97.0: 给 window 分配稳定 UUID (NSMapTable weak ref 跟踪)
+        //   同一 window 重复 attach 拿到同一 UUID; 新 window 自动分配
+        let id = windowID(for: window)
+        // V6.97.0: backward compat — 第一次 attach 时把 V3.7.1 老 4 key 迁到主 key
+        //   静态方法 idempotent (老 key 不存在时 no-op, 已迁时 no-op)
+        Self.migrateLegacyFrameIfNeeded(defaults: .standard, currentID: id)
         // 应用 stored frame (启动恢复)
-        applyStoredFrameIfAny(to: window)
+        applyStoredFrameIfAny(to: window, id: id)
     }
 
-    private func applyStoredFrameIfAny(to window: NSWindow) {
+    // V6.97.0: window → UUID 分配 — NSMapTable 查旧, 没命中分配新
+    private func windowID(for window: NSWindow) -> String {
+        if let existing = windowIDs.object(forKey: window) as String? {
+            return existing
+        }
+        let new = UUID().uuidString
+        windowIDs.setObject(new as NSString, forKey: window)
+        return new
+    }
+
+    private func applyStoredFrameIfAny(to window: NSWindow, id: String) {
         let defaults = UserDefaults.standard
-        // 4 个 key 都要有才认为 stored frame 有效 (避免用 defaultSize 数据意外恢复)
-        guard let w = defaults.object(forKey: Self.sizeWKey) as? Double,
-              let h = defaults.object(forKey: Self.sizeHKey) as? Double,
-              let x = defaults.object(forKey: Self.posXKey) as? Double,
-              let y = defaults.object(forKey: Self.posYKey) as? Double else {
+        let frames = Self.loadAllFrames(defaults: defaults)
+        guard let frame = frames[id] else {
             return
         }
-        let frame = NSRect(x: x, y: y, width: w, height: h)
 
         // 验证 frame 合理:遍历所有屏幕(外接屏 + 主屏),任一屏 visible ≥ 30% 才恢复
         //   之前只验 NSScreen.main —— 外接显示器拔掉后,frame 落在已消失的屏幕上
@@ -142,6 +204,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     // MARK: - V3.7.1: NSWindowDelegate — 监听 window 变化 + 写 UserDefaults
+    // V6.97.0: saveFrame 改 per-window — 用 windowID 查 map, 写到主 key 下当前 window UUID
 
     func windowDidResize(_ notification: Notification) {
         saveFrame(from: notification.object as? NSWindow)
@@ -153,18 +216,75 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     private func saveFrame(from window: NSWindow?) {
         guard let window else { return }
+        let id = windowID(for: window)
         let frame = window.frame
         let defaults = UserDefaults.standard
-        defaults.set(frame.size.width, forKey: Self.sizeWKey)
-        defaults.set(frame.size.height, forKey: Self.sizeHKey)
-        defaults.set(frame.origin.x, forKey: Self.posXKey)
-        defaults.set(frame.origin.y, forKey: Self.posYKey)
+        var frames = Self.loadAllFrames(defaults: defaults)
+        frames[id] = frame
+        Self.saveAllFrames(frames, defaults: defaults)
+    }
+
+    // V6.97.0: 主 key 读写 — JSON 字典 [UUID: Frame]
+    //   Frame 用 [String: Double] 序列化 (Codable on CGRect 在不同 OS 行为不一致)
+    //   static 让 unit test 可以直接调, 不构造 AppDelegate / NSWindow
+    static func loadAllFrames(defaults: UserDefaults) -> [String: CGRect] {
+        guard let data = defaults.data(forKey: framesKey),
+              let raw = try? JSONDecoder().decode([String: [String: Double]].self, from: data) else {
+            return [:]
+        }
+        return raw.mapValues { dict in
+            CGRect(
+                x: dict["x"] ?? 0,
+                y: dict["y"] ?? 0,
+                width: dict["w"] ?? 800,
+                height: dict["h"] ?? 600
+            )
+        }
+    }
+
+    static func saveAllFrames(_ frames: [String: CGRect], defaults: UserDefaults) {
+        let encodable = frames.mapValues { frame in
+            ["x": frame.origin.x, "y": frame.origin.y, "w": frame.width, "h": frame.height]
+        }
+        if let data = try? JSONEncoder().encode(encodable) {
+            defaults.set(data, forKey: framesKey)
+        }
+    }
+
+    // V6.97.0: backward compat — 第一次 attach 时把 V3.7.1 老 4 key 迁到主 key
+    //   写到当前 attach 的 window UUID 下 (假设第一个 attach 的是主窗口, NSApp.windows.first)
+    //   一次性迁移, 删 4 个老 key
+    //   static 让 unit test 可以直接调 (接收 id + defaults, 不依赖 NSWindow 实例)
+    static func migrateLegacyFrameIfNeeded(defaults: UserDefaults, currentID: String) {
+        guard let w = defaults.object(forKey: legacySizeWKey) as? Double,
+              let h = defaults.object(forKey: legacySizeHKey) as? Double,
+              let x = defaults.object(forKey: legacyPosXKey) as? Double,
+              let y = defaults.object(forKey: legacyPosYKey) as? Double else {
+            return  // 老 key 不存在, 不迁移
+        }
+        let frame = CGRect(x: x, y: y, width: w, height: h)
+        var frames = loadAllFrames(defaults: defaults)
+        // 主 key 没这个 UUID 的 frame 时, 写老 frame 进去 (防覆盖更晚 attach 的 window)
+        if frames[currentID] == nil {
+            frames[currentID] = frame
+            saveAllFrames(frames, defaults: defaults)
+        }
+        // 删 4 个老 key — 一次性迁移完成
+        defaults.removeObject(forKey: legacySizeWKey)
+        defaults.removeObject(forKey: legacySizeHKey)
+        defaults.removeObject(forKey: legacyPosXKey)
+        defaults.removeObject(forKey: legacyPosYKey)
+        NSLog("V6.97.0: migrated V3.7.1 legacy window frame to per-window key (UUID: \(currentID))")
     }
 }
 
 @main
 struct ImageGalleryApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    // V6.97 P3-2: openWindow 环境 — 注入到 .commands 里的 "新建窗口" 按钮
+    //   openWindow(id: "main") 创建新 WindowGroup 实例, 每窗口独立 ContentViewModel
+    //   sharedSettings / modelContainer 走 @State 共享 (新窗口拿到同一实例)
+    @Environment(\.openWindow) private var openWindow
 
     // V3.6.7: 手动建 ModelContainer（SwiftData 26.5 SDK 的 modelContainer modifier 没 VersionedSchema 重载）
     let modelContainer: ModelContainer
@@ -181,7 +301,9 @@ struct ImageGalleryApp: App {
         // V3.6.7: 显式 VersionedSchema + MigrationPlan
         // 之前用 [Photo.self, Folder.self, Tag.self] 隐式 schema，依赖 SwiftData 轻量级自动迁移
         // 显式后：schema 版本可追溯 + 未来加字段有安全迁移路径
-        let schema = Schema(versionedSchema: ImageGallerySchemaV1.self)
+        // V6.94.1: 改用 ImageGallerySchemaV3 (最新) — target schema 必须是最高版本
+        //   migrationPlan 自动检测 V1/V2 store → lightweight V1→V2→V3 顺序应用
+        let schema = Schema(versionedSchema: ImageGallerySchemaV3.self)
         // ModelConfiguration() 默认值：sqlite store 在 Application Support/ 目录
         let config = ModelConfiguration()
         // V6.08: try! → do/catch + 自动重置 store——SwiftData 损坏 / schema 不兼容自愈
@@ -279,6 +401,15 @@ struct ImageGalleryApp: App {
                 //   V6.20.0 (code audit fix #1): 之前误调 model.createFolderFromAlert() (它 trim 空 name 早返) → silent failure
                 //   现在走 NotificationCenter → ContentView+Lifecycle 设 model.showingNewFolderAlert = true (同 ⌘N)
                 //   双 trigger 不冲突: ⌘N = hidden button (走 onNewFolder closure), ⌘⇧N = menu button (走 NotificationCenter)
+                // V6.97 P3-2: File > New Window (⌘N) — macOS 标准快捷键
+                //   openWindow(id: "main") 创建新 WindowGroup 实例, 跟主窗口共享 modelContainer
+                //   每窗口独立 ContentViewModel (sidebar selection / sort / zoom 隔离)
+                //   sharedSettings 走 @State 跨窗口共享 (用户偏好全局一致)
+                Button(Copy.newWindow) {
+                    openWindow(id: "main")
+                }
+                .keyboardShortcut("n", modifiers: .command)
+                Divider()
                 Button(Copy.newFolder) {
                     NotificationCenter.default.post(name: .newFolderRequested, object: nil)
                 }
@@ -309,11 +440,36 @@ struct ImageGalleryApp: App {
             // V6.19.5 (P0 #16): Speech 朗读 — macOS 没有 .speech placement, 放 Edit 菜单用 .pasteboard 占位
             //   选 N 张 → 朗读 "已选 N 张照片, 第一张 <filename>" (zh-CN)
             //   AVSpeechSynthesizer 在 model.speakSelection() 实现
+            //
+            // V6.96 P0 #7: 加 Edit > Copy (⌘C) — macOS 原生 .pasteboard placement
+            //   替换模式: .pasteboard 接管原生 Copy/Cut/Paste 槽位
+            //   这里只注入 Copy, Cut/Paste 让系统默认 (跟 Photos.app 同 — Photos 也只覆盖 Copy)
+            //   ContentView .onReceive(.copyRequested) → model.grid.copyToPasteboard()
+            //   .disabled 状态由 model.grid.selectionEmpty 派生 (跟 toolbar 一致)
+            CommandGroup(replacing: .pasteboard) {
+                Button(Copy.copyAction) {
+                    NotificationCenter.default.post(name: .copyRequested, object: nil)
+                }
+                .keyboardShortcut("c", modifiers: .command)
+            }
             CommandGroup(after: .pasteboard) {
                 Divider()
                 Button(Copy.menuStartSpeaking) {
                     NotificationCenter.default.post(name: .speakRequested, object: nil)
                 }
+                // V6.94.1: Markup (PencilKit 标注) — P0 #3
+                //   Photos 真版 ⌘M 走 Edit menu, ContentView .onReceive 监听
+                Button(Copy.markupMenu) {
+                    NotificationCenter.default.post(name: .markupRequested, object: nil)
+                }
+                .keyboardShortcut("m", modifiers: [.command])
+                // V6.97.1: Crop / Aspect — P0 #5
+                //   跟 markup 完全对称 wiring (Notification + ContentView sheet)
+                //   ⌘⇧K — 避 Photos ⌘R (Refresh) / ⌘K (Insert link) / 系统快捷键冲突
+                Button(Copy.cropMenu) {
+                    NotificationCenter.default.post(name: .cropRequested, object: nil)
+                }
+                .keyboardShortcut("k", modifiers: [.command, .shift])
             }
             // V6.19.5 (P0 #16): Services 默认 submenu — macOS 自动接管 (系统 services, .systemServices placement)
             //   EmptyView — 留给系统 services 自动填充 (NSServices 注册的 providers)
@@ -340,6 +496,22 @@ struct ImageGalleryApp: App {
                 // V4.37.2: ⌘[ / ⌘] 上一张/下一张（macOS Quick Look / Finder Back/Forward 风格）
                 //   复用 ContentView.goPrev/goNext（与 ←→ 方向键同路径，canPrev/canNext 边界检查共用）
                 NavigateMenuItems()
+                Divider()
+                // V6.96 P0 #7: View > Actual Size (⌘0) / Zoom In (⌘+) / Zoom Out (⌘-)
+                //   缩略图大小是 Photos 主 grid 概念, 不是图片 zoom (detail panel 用)
+                //   走 NotificationCenter → model.grid.resetThumbnailSize() / zoomIn() / zoomOut()
+                Button(Copy.actualSize) {
+                    NotificationCenter.default.post(name: .actualSizeRequested, object: nil)
+                }
+                .keyboardShortcut("0", modifiers: .command)
+                Button(Copy.zoomIn) {
+                    NotificationCenter.default.post(name: .zoomInRequested, object: nil)
+                }
+                .keyboardShortcut("+", modifiers: .command)
+                Button(Copy.zoomOut) {
+                    NotificationCenter.default.post(name: .zoomOutRequested, object: nil)
+                }
+                .keyboardShortcut("-", modifiers: .command)
                 Divider()
                 // V4.37.0: 视图切换（缩略图/列表/时间线）——macOS Photos / Finder View > View As 风格
                 //   用 ⌥1/⌥2/⌥3 避开 ContentKeyboardShortcuts 占用的 ⌘1-6（侧边栏 section 切换）

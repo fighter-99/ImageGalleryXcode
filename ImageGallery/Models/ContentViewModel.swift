@@ -207,6 +207,32 @@ final class ContentViewModel {
         sidebarSelection = .smartFolder(sf.id)
     }
 
+    /// V6.97 P2-3: 更新智能文件夹 — 名字 + icon + filter (跟 create 几乎对称, 但走 modelContext.save 不 insert)
+    ///   字段未变时不写回 — 避免 SwiftData @Model 无意义 mutation 触发 UI 抖动
+    func updateSmartFolder(_ sf: SmartFolder, name: String, iconName: String, filterState: FilterState) {
+        let trimmed = name.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty, let modelContext else { return }
+        if sf.name != trimmed { sf.name = trimmed }
+        if sf.iconName != iconName { sf.iconName = iconName }
+        sf.updateFilter(filterState)
+        modelContext.saveWithLog()
+    }
+
+    /// V6.97 P2-3: 复制智能文件夹 — 创建同名 + "副本" 的新 smart folder, filter 沿用
+    ///   跟 createSmartFolder 区别: 不 auto-select (复制完留在原 smart folder 视图), order 插到末尾
+    func duplicateSmartFolder(_ sf: SmartFolder) {
+        guard let modelContext else { return }
+        let nextOrder = (grid.smartFoldersCache.map(\.order).max() ?? -1) + 1
+        let copy = SmartFolder(
+            name: sf.name + Copy.smartFolderDuplicateSuffix,
+            iconName: sf.iconName,
+            filterState: sf.decodedFilter,
+            order: nextOrder
+        )
+        modelContext.insert(copy)
+        modelContext.saveWithLog()
+    }
+
     /// 切换当前排序方向
     func toggleSortDirection() {
         grid.sortOption = grid.sortOption.toggledDirection

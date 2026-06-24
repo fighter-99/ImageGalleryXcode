@@ -130,13 +130,8 @@ struct PopoverStyleTokensTests {
     }
 
     // MARK: - SidebarStyle 智能 folder 语义色
-
-    @Test func sidebarStyleIconColorsAreFiveDistinctColors() {
-        // 色板：HLS 60°+ 间隔（橙/蓝/紫/橙重复——4 类别中 trash 复用 orange）
-        // V5.8 砍 iconColorFavorite 后剩 4 个色（duplicate/recent/large/trash）
-        // 这里只验 duplicate ≠ recent ≠ large（避免重复用 orange）
-        #expect(SidebarStyle.iconColorDuplicate != SidebarStyle.iconColorRecent)
-        #expect(SidebarStyle.iconColorRecent != SidebarStyle.iconColorLarge)
-        #expect(SidebarStyle.iconColorDuplicate != SidebarStyle.iconColorLarge)
-    }
+    //
+    // V6.97 P3-6: 删 dead test (sidebarStyleIconColorsAreFiveDistinctColors)
+    //   P1-10 删了 iconColorDuplicate/Recent/Large (设计 token 收口), SidebarStyle 只剩 iconColorTrash
+    //   不再需要 "4 个 slot 色相" 测试
 }

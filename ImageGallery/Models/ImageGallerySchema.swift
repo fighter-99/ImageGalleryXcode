@@ -40,3 +40,15 @@ enum ImageGallerySchemaV2: VersionedSchema {
         [Photo.self, Folder.self, Tag.self, SmartFolder.self]
     }
 }
+
+// V6.94.1: V3 schema 加 markupData (P0 #3 Markup PencilKit)
+//   跟 V2 区别: Photo 新增 @Attribute(.externalStorage) markupData: Data?
+//   lightweight 自动迁移: 只加 Optional 字段, SwiftData 自动迁移 (V6.68/V6.75 教训)
+//   @Attribute(.externalStorage) 让 PKDrawing data 单独文件存储 (不污染主 .sqlite bloat)
+enum ImageGallerySchemaV3: VersionedSchema {
+    static var versionIdentifier: Schema.Version { Schema.Version(3, 0, 0) }
+
+    static var models: [any PersistentModel.Type] {
+        [Photo.self, Folder.self, Tag.self, SmartFolder.self]
+    }
+}

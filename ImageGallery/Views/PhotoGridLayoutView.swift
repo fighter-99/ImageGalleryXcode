@@ -37,6 +37,10 @@ struct PhotoGridLayoutView: View {
     let onDoubleTap: (Photo) -> Void
     // V6.22.1 (P2 #2): 旋转回调 — 透传到 PhotoRowView
     let onRotate: (Photo, Bool) -> Void
+    // V6.94.1 (P0 #3): 标注回调 — 透传到 PhotoRowView
+    let onMarkup: () -> Void
+    // V6.97.1 (P0 #5): 裁剪回调 — caller 透传同 onMarkup
+    let onCrop: () -> Void
 
     var body: some View {
         // V5.39.1: 改用 LazyVStack(spacing: rowSpacing) 直接设行间距
@@ -64,7 +68,10 @@ struct PhotoGridLayoutView: View {
                     onTap: onTap,
                     onDoubleTap: onDoubleTap,
                     // V6.22.1 (P2 #2): 旋转回调透传到 PhotoRowView
-                    onRotate: onRotate
+                    onRotate: onRotate,
+                    // V6.94.1 (P0 #3): 标注回调透传
+                    onMarkup: onMarkup,
+            onCrop: onCrop
                 )
             }
         }

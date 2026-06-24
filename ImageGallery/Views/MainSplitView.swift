@@ -130,7 +130,7 @@ struct MainSplitView<Sidebar: View, Center: View, Detail: View>: View {
                 if filterState.isActive {
                     Text("\(filterState.activeCount)")
                         .font(Typography.badge).foregroundStyle(.white)
-                        .padding(4).background(Color.red).clipShape(Circle())
+                        .padding(Spacing.xs).background(Color.red).clipShape(Circle())
                         .offset(x: 8, y: -8)
                 }
             }
@@ -172,7 +172,7 @@ struct MainSplitView<Sidebar: View, Center: View, Detail: View>: View {
                     sortFieldRow(icon: "arrow.up.arrow.down", name: "自定义排序",
                                   isActive: sortOption == .customOrder, direction: nil)
                         .onTapGesture { sortOption = .customOrder; showingSortPopover = false }
-                }.padding(8).frame(width: 200)
+                }.padding(Spacing.sm).frame(width: 200)
             }
         }
         ToolbarItem {
@@ -190,7 +190,7 @@ struct MainSplitView<Sidebar: View, Center: View, Detail: View>: View {
                         .background(mode == viewMode ? Color.accentColor.opacity(0.12) : Color.clear)
                         .cornerRadius(4)
                     }
-                }.padding(6).frame(width: 140)
+                }.padding(Spacing.xs + 2).frame(width: 140)
             }
         }
         // V6.79: toolbar 缩略图大小控件 — 1 个 Slider 替代 +- 两个 button
@@ -239,12 +239,11 @@ struct MainSplitView<Sidebar: View, Center: View, Detail: View>: View {
                     .navigationSplitViewColumnWidth(min: 200, ideal: 280, max: 500)
             }
         }
-        .toolbar { toolbarContent;
-            ToolbarItem {
-                Button { toolbarActions.onExport() } label: {
-                    Label("导出", systemImage: "square.and.arrow.up").labelStyle(.iconOnly)
-                }.help("导出")
-            }
+        // V6.93: 删 L243-247 重复的导出 ToolbarItem — toolbarContent 已包含导出 button (L111-113)
+        //   V6.83 revert toolbar 分组时遗留的兜底代码, 一直未清, 导致 toolbar 有 2 个相同导出 button
+        //   toolbarContent 是私有 @ToolbarContentBuilder 包含 9 个 ToolbarItem (导出/删除/预览/筛选/排序/视图/slider/导入/回退 export 兜底)
+        //   删重复后 .toolbar { toolbarContent } 单一来源, 跟 segmented Picker(.segmented) 单一来源模式一致
+        .toolbar { toolbarContent
             }.searchable(text: $searchText, placement: .toolbar, prompt: Copy.searchPlaceholder) {
             // V6.74.4: 搜索自动建议 — 显示最近 20 个搜索词 (Photos / Finder 范式)
             //   点 suggestion → searchCompletion 自动填入 searchText → 走 binding setter
@@ -262,13 +261,11 @@ struct MainSplitView<Sidebar: View, Center: View, Detail: View>: View {
         }
         .onSubmit(of: .search) { onSearchSubmit(searchText) }
         .scrollDisabled(isBoxSelecting)
-        // V6.84: toolbar 升级 — `.toolbarBackground(.bar, for: .toolbar)` + `.toolbarRole(.editor)`
-        //   V6.80 用 .background(.regularMaterial) 是 generic background, V6.84 改 Photos 真版 toolbar API:
-        //   - .toolbarBackground(.bar): macOS 14+ Apple standard toolbar background (跟 Photos 一致)
-        //   - .toolbarRole(.editor): macOS 14+ 让 toolbar 渲染走 editor 角色 (Photos/Finder editor toolbar pattern)
-        //   - Slider 保留: SwiftUI Slider 在 macOS 是 NSSlider 包 NSHostingView, 已经是原生 AppKit 控件
-        //   - 删 .background(.regularMaterial) 避免跟 .toolbarBackground 双背景叠加
-        .toolbarBackground(.bar)  // macOS 14+ — Apple standard toolbar background (Photos 真版)
+        // V6.85: 取消 toolbar 磨砂玻璃效果
+        //   V6.84 加的 .toolbarBackground(.bar, for: .windowToolbar) 用户实测仍觉得磨砂感过重
+        //   改成走系统默认 toolbar 样式 (无额外 background) — 跟 V6.80 之前 V6.62 一样
+        //   保留 .toolbarRole(.editor) — editor role 影响 item 视觉锤/间距, 跟磨砂玻璃独立
+        //   macOS 系统默认 toolbar 已有微妙 separator/divider, 不需要 SwiftUI 手动铺材质
         .toolbarRole(.editor)  // macOS 14+ — editor toolbar role (Photos 真版)
         .onDrop(of: [.fileURL], isTargeted: $isDropTargeted, perform: onDrop)
         .overlay {
@@ -301,7 +298,7 @@ struct MainSplitView<Sidebar: View, Center: View, Detail: View>: View {
             Rectangle()
                 .fill(Material.dropOverlay)
                 .opacity(0.95)
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: Radius.lg)
                 .strokeBorder(
                     Color.accentColor,
                     style: StrokeStyle(lineWidth: 4, dash: [8, 4])

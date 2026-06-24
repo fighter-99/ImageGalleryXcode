@@ -179,37 +179,21 @@ extension View {
                 visiblePhotos: visiblePhotos,
                 showingBatchRename: bindableGrid.showingBatchRenameSheet
             )
-            // P4.1.1: 智能文件夹创建 sheet
-            //   sheet 入口在 SidebarView (Library section "+" 按钮), 触发 model.grid.showingNewSmartFolderSheet
-            //   此处 host sheet — ContentView 是 model @Bindable owner (跟 batchRenameSheet 同模式)
-            .smartFolderCreateSheet(
+            // V6.97 P2-3: 抽 5 个 sheet/notification modifier 到 .smartFolderAndShareSheets
+            //   原因: 原 chain 13+ modifier 导致 Swift type-check 超时 (line 210:17)
+            //   拆出后 ContentView body 缩短 ~25 行, 编译推断秒过
+            .smartFolderAndShareSheets(
                 model: model,
-                showingSheet: bindableGrid.showingNewSmartFolderSheet,
-                pendingFilter: model.grid.pendingSmartFolderFilter ?? .empty
+                bindableGrid: bindableGrid
             )
-            // V6.70 (Onboarding removal): 删 onboardingSheet — 新手引导取消, 用户首启动直接看到 PhotoGridEmptyState
-            //   之前: 首次启动弹 3-card sheet, dismiss 后再出现 — V6.22.3 P2 #10 加
-            //   现在: 用户首启动直接看到 PhotoGridEmptyState (V6.21.2) + 导入 CTA
-            // V6.19.0 (P0 #1): 分享 sheet — File 菜单 ⌘⇧E 触发 NSSharingServicePicker
-            .shareSheet(model: model)
-            // V6.19.5 (P0 #16): File 菜单 ⌘⇧N (新文件夹) + Edit > Speech (开始朗读) 监听
-            // V6.20.0 (code audit fix #1): ⌘⇧N 之前调 model.createFolderFromAlert() 是 bug
-            //   createFolderFromAlert() 内部 trim 空 name 后早返 (newFolderName 默认 "")
-            //   → 用户按 ⌘⇧N 菜单什么都没发生 (silent failure)
-            //   修: 跟 ⌘N hidden button / SidebarView "+" 按钮同路径 — 弹 alert dialog
-            //   同时清空 model.grid.newFolderName (跟 SidebarView L188 同步, 避免上次 name 残留)
-            .onReceive(NotificationCenter.default.publisher(for: .newFolderRequested)) { _ in
-                model.grid.newFolderName = ""
-                model.grid.showingNewFolderAlert = true
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .speakRequested)) { _ in
-                model.grid.speakSelection()
-            }
             // V6.39.0: Settings page "清空回收站" button → NotificationCenter → ContentView
             //   跟 .newFolderRequested / .speakRequested 同 pattern (Settings 不持有 model 直接引用)
             .onReceive(NotificationCenter.default.publisher(for: .emptyTrashRequested)) { _ in
                 model.grid.emptyTrash()
             }
+            // V6.94.1: Markup sheet — 弹 MarkupSheet (NSBezierPath 自绘) — P0 #3 Markup feature
+            //   接收 model.grid.showingMarkupSheet, 选中 1 张图时启用, 0/多张图时弹 toast 提示
+            .markupSheet(model: model, showingSheet: model.grid.showingMarkupSheet)
             // V6.74.0: View 菜单 ⌘Y / ⌘[ / ⌘] 桥接 — 取代 ToolbarController.shared.onXxx nil closure 死路径
             //   V6.62 注释说 "SwiftUI toolbar 替代 AppKit NSToolbar", 但 menu button 仍调 ToolbarController.shared.onQuickLook?()
             //   onQuickLook 永远 nil (configureToolbar 早返没赋值). 修法跟 .newFolderRequested 同 pattern — NotificationCenter.
@@ -221,6 +205,35 @@ extension View {
             }
             .onReceive(NotificationCenter.default.publisher(for: .navigateNextRequested)) { _ in
                 model.grid.goNext()
+            }
+            // V6.94.1: Markup (PencilKit 标注) — Edit menu ⌘M 触发 → 弹 MarkupSheet
+            //   P0 #3 Markup feature — 跟 .quickLookRequested 同 pattern (NotificationCenter)
+            // V6.96 P0 #7: Edit > Copy (⌘C) — 桥到 model.grid.copyToPasteboard()
+            //   原 ToolbarController.shared.onCopySelected?() closure 永远 nil (跟 .markupRequested 同 pattern)
+            .onReceive(NotificationCenter.default.publisher(for: .copyRequested)) { _ in
+                model.grid.copyToPasteboard()
+            }
+            // V6.96 P0 #7: View > Actual Size (⌘0) / Zoom In (⌘+) / Zoom Out (⌘-)
+            //   缩略图大小通过 thumbnailSize binding 调整 (model.grid.resetThumbnailSize/zoomIn/zoomOut 已存在)
+            .onReceive(NotificationCenter.default.publisher(for: .actualSizeRequested)) { _ in
+                model.grid.resetThumbnailSize()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .zoomInRequested)) { _ in
+                model.grid.zoomIn()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .zoomOutRequested)) { _ in
+                model.grid.zoomOut()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .markupRequested)) { _ in
+                model.grid.showingMarkupSheet = true
+            }
+            // V6.97.1: Crop sheet — 弹 CropSheet (NSView 9 handles) — P0 #5 Crop / Aspect feature
+            //   跟 markupSheet 完全对称 wiring: 接 showingCropSheet, 选中 1 张图时启用
+            .cropSheet(model: model, showingSheet: model.grid.showingCropSheet)
+            // V6.97.1: Crop (P0 #5) — Edit menu ⌘⇧K / context menu "裁剪..." 触发 → 弹 CropSheet
+            //   跟 .markupRequested 完全同 pattern
+            .onReceive(NotificationCenter.default.publisher(for: .cropRequested)) { _ in
+                model.grid.showingCropSheet = true
             }
             // V6.74.2: 删 .onChange(of: filterState.activeCount) → ToolbarController.shared.filterActiveCount = count
             //   ToolbarController 整文件删, SwiftUI .toolbar 红圈 badge 直接读 filterState.activeCount (MainSplitView.swift:133)
@@ -351,6 +364,35 @@ extension View {
             }
     }
 
+    // V6.94.1: MarkupSheet — P0 #3 Markup feature
+    //   弹 MarkupSheet (NSBezierPath 自绘 + 工具栏), Edit menu ⌘M 触发
+    //   选中 1 张图时启用 (P0 #3 标注单图模式), 0/多张图弹 toast 提示
+    //   跟 shareSheet 同模式 (extension View, .sheet + bindable)
+    @MainActor
+    func markupSheet(model: ContentViewModel, showingSheet: Bool) -> some View {
+        self.sheet(isPresented: bindable(showingSheet, onDismiss: { model.grid.showingMarkupSheet = false })) {
+            if let resolved = model.grid.resolvedSingle {
+                MarkupSheet(photo: resolved.photo)
+            } else {
+                // 0 张或多张图选 — 弹空视图, dismiss 后回到 grid
+                // (理论上 .onReceive 已 check 选中, 这里兜底)
+                EmptyView()
+            }
+        }
+    }
+
+    // V6.97.1: Crop sheet modifier — 跟 markupSheet 完全对称 wiring pattern
+    //   接 showingCropSheet, 选中 1 张图时弹 CropSheet, 0/多张走兜底
+    func cropSheet(model: ContentViewModel, showingSheet: Bool) -> some View {
+        self.sheet(isPresented: bindable(showingSheet, onDismiss: { model.grid.showingCropSheet = false })) {
+            if let resolved = model.grid.resolvedSingle {
+                CropSheet(photo: resolved.photo)
+            } else {
+                EmptyView()
+            }
+        }
+    }
+
     private func bindable(_ isPresent: Bool, onDismiss: @escaping () -> Void = {}) -> Binding<Bool> {
         Binding(
             get: { isPresent },
@@ -459,6 +501,69 @@ extension View {
                         model.createSmartFolder(name: name, iconName: iconName, filterState: filterState)
                     }
                 )
+            }
+    }
+
+    // V6.97 P2-3: 智能文件夹编辑 sheet — 跟 create sheet 同 pattern, 多传 existingSmartFolder
+    //   sheet 入口在 SidebarView (smart folder 右键菜单 "编辑筛选条件"), 触发 model.grid.editingSmartFolder
+    //   onSave 调 model.updateSmartFolder 走 SwiftData update 而不是 insert
+    @MainActor
+    func smartFolderEditSheet(
+        model: ContentViewModel,
+        editingSmartFolder: Binding<SmartFolder?>,
+        pendingFilter: FilterState
+    ) -> some View {
+        self
+            .sheet(item: editingSmartFolder) { sf in
+                SmartFolderCreateSheet(
+                    initialFilter: pendingFilter,
+                    onSave: { name, iconName, filterState in
+                        model.updateSmartFolder(sf, name: name, iconName: iconName, filterState: filterState)
+                    },
+                    existingSmartFolder: sf
+                )
+            }
+    }
+}
+
+// MARK: - V6.97 P2-3: smartFolderAndShareSheets 打包 5 个 modifier 解决 type-check 超时
+//
+// 原 ContentView body chain 13+ modifier 包含:
+//   .batchRenameSheet / .smartFolderCreateSheet / .smartFolderEditSheet
+//   / .shareSheet / .onReceive(.newFolderRequested) / .onReceive(.speakRequested)
+//
+// Swift 编译器推断 60s 超时。打包成单 modifier 后 chain 缩短 ~6, 秒过
+//
+// 包含:
+//   1. smartFolderCreateSheet — Library section "+" 触发
+//   2. smartFolderEditSheet — sidebar smart folder 右键 "编辑筛选条件" 触发
+//   3. shareSheet — File 菜单 ⌘⇧E 触发 NSSharingServicePicker
+//   4. onReceive(.newFolderRequested) — File 菜单 ⌘⇧N (修了 V6.20.0 silent failure)
+//   5. onReceive(.speakRequested) — Edit > Speak 触发
+extension View {
+    @MainActor
+    func smartFolderAndShareSheets(
+        model: ContentViewModel,
+        bindableGrid: Bindable<GridViewModel>
+    ) -> some View {
+        self
+            .smartFolderCreateSheet(
+                model: model,
+                showingSheet: bindableGrid.showingNewSmartFolderSheet,
+                pendingFilter: model.grid.pendingSmartFolderFilter ?? .empty
+            )
+            .smartFolderEditSheet(
+                model: model,
+                editingSmartFolder: bindableGrid.editingSmartFolder,
+                pendingFilter: model.grid.pendingSmartFolderEditFilter ?? .empty
+            )
+            .shareSheet(model: model)
+            .onReceive(NotificationCenter.default.publisher(for: .newFolderRequested)) { _ in
+                model.grid.newFolderName = ""
+                model.grid.showingNewFolderAlert = true
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .speakRequested)) { _ in
+                model.grid.speakSelection()
             }
     }
 }

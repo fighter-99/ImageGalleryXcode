@@ -20,15 +20,30 @@ import SwiftUI
 
 struct SmartFolderCreateSheet: View {
     let initialFilter: FilterState
-    /// closure: caller 负责 create + dismiss
+    /// closure: caller 负责 create / update + dismiss
     let onSave: (String, String, FilterState) -> Void  // name, iconName (raw SF Symbol), filterState
+    /// V6.97 P2-3: 编辑模式 — 非 nil 时预填 name/icon, title 改 "编辑智能文件夹", save 按钮改 "保存"
+    let existingSmartFolder: SmartFolder?
+
+    /// V6.97 P2-3: mode 从 existingSmartFolder 派生, 避免外部传重复状态
+    private var isEditMode: Bool { existingSmartFolder != nil }
+
+    init(
+        initialFilter: FilterState,
+        onSave: @escaping (String, String, FilterState) -> Void,
+        existingSmartFolder: SmartFolder? = nil
+    ) {
+        self.initialFilter = initialFilter
+        self.onSave = onSave
+        self.existingSmartFolder = existingSmartFolder
+    }
 
     @Environment(\.dismiss) private var dismiss
     @State private var name: String = ""
     @State private var selectedIcon: SmartFolderIcon = .star
 
     private let columns = Array(
-        repeating: GridItem(.flexible(), spacing: 12),
+        repeating: GridItem(.flexible(), spacing: Spacing.md),
         count: 5
     )
 
@@ -57,15 +72,21 @@ struct SmartFolderCreateSheet: View {
     // MARK: - Body
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: Spacing.lg) {
             // Header: icon 预览 + Name
-            HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: Spacing.xs) {
+                Text(isEditMode ? Copy.smartFolderEditTitle : Copy.smartFolderSheetTitle)
+                    .font(Typography.pageTitle)
+            }
+            .padding(.bottom, Spacing.xs)
+
+            HStack(spacing: Spacing.md) {
                 Image(systemName: selectedIcon.rawValue)
                     .font(Typography.sectionIcon)
                     .foregroundStyle(Color.accentColor)
                     .frame(width: 48, height: 48)
                     .background(
-                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        RoundedRectangle(cornerRadius: Radius.inspector, style: .continuous)
                             .fill(Color.accentColor.opacity(0.12))
                     )
                 TextField(Copy.smartFolderNamePlaceholder, text: $name)
@@ -74,11 +95,13 @@ struct SmartFolderCreateSheet: View {
             }
 
             // 图标选择
-            VStack(alignment: .leading, spacing: 6) {
+            // spacing 6 = Spacing.xs+2 (header → content 间距, 系统无 6 档)
+            VStack(alignment: .leading, spacing: Spacing.xs + 2) {
                 Text(Copy.smartFolderIconSection)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-                LazyVGrid(columns: columns, spacing: 10) {
+                // spacing 10 = Spacing.sm+2 (tag chip 网格, 视觉密度比标准略紧)
+            LazyVGrid(columns: columns, spacing: Spacing.sm + 2) {
                     ForEach(SmartFolderIcon.allCases) { icon in
                         IconCell(icon: icon, isSelected: icon == selectedIcon)
                             .contentShape(Rectangle())
@@ -92,7 +115,7 @@ struct SmartFolderCreateSheet: View {
             Divider()
 
             // 筛选条件 preview
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: Spacing.xs) {
                 Text(Copy.smartFolderFilterSection)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
@@ -113,13 +136,22 @@ struct SmartFolderCreateSheet: View {
                 Button(Copy.cancel, role: .cancel) { dismiss() }
                     .keyboardShortcut(.cancelAction)
                 Spacer()
-                Button(Copy.create) { saveIfValid() }
+                Button(isEditMode ? Copy.save : Copy.create) { saveIfValid() }
                     .keyboardShortcut(.defaultAction)
                     .disabled(!isValid)
             }
         }
         .padding(Spacing.xl)
         .frame(width: 480, height: 420)
+        // V6.97 P2-3: 编辑模式进入时预填 name/icon — .onAppear 也行但 .task 更稳 (sheet 动画期间不会闪)
+        .task {
+            if let sf = existingSmartFolder {
+                name = sf.name
+                if let icon = SmartFolderIcon(rawValue: sf.iconName) {
+                    selectedIcon = icon
+                }
+            }
+        }
     }
 
     private func saveIfValid() {
@@ -140,11 +172,11 @@ private struct IconCell: View {
             .font(Typography.formTitle)
             .frame(width: 40, height: 36)
             .background(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                RoundedRectangle(cornerRadius: Radius.md, style: .continuous)
                     .fill(isSelected ? Color.accentColor.opacity(0.25) : Color.clear)
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                RoundedRectangle(cornerRadius: Radius.md, style: .continuous)
                     .stroke(
                         isSelected ? Color.accentColor : Color.secondary.opacity(0.3),
                         lineWidth: isSelected ? 1.5 : 1

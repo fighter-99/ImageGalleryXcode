@@ -44,6 +44,10 @@ struct PhotoRowView: View {
     let onDoubleTap: (Photo) -> Void
     // V6.22.1 (P2 #2): 旋转回调 — ContentView 传 { model.rotateSelected(clockwise:) }
     let onRotate: (Photo, Bool) -> Void
+    // V6.94.1 (P0 #3): 标注回调 — ContentView 传 { NotificationCenter.default.post(name: .markupRequested) }
+    let onMarkup: () -> Void
+    // V6.97.1 (P0 #5): 裁剪回调 — caller 透传同 onMarkup
+    let onCrop: () -> Void
     // V6.38.1 (Phase 1): onDelete 移除 — 删除从 cell 入口搬走, 走 ⌘⌫ → handleDelete()
 
     /// V5.21: caption 预留高度从 16 → 20pt (callout 14pt 字号调整必同步调预留高度)
@@ -118,7 +122,10 @@ struct PhotoRowView: View {
             onDoubleTap: { onDoubleTap(photo) },
             // V6.22.1 (P2 #2): 旋转回调 — 转发给 ContentView's model
             onRotateLeft: { onRotate(photo, false) },
-            onRotateRight: { onRotate(photo, true) }
+            onRotateRight: { onRotate(photo, true) },
+            // V6.94.1 (P0 #3): 标注回调 — 单图模式 (MarkupSheet 只接受 1 张 photo)
+            onMarkup: onMarkup,
+            onCrop: onCrop
         )
         .transition(.asymmetric(
             insertion: .scale(scale: 0.8).combined(with: .opacity),

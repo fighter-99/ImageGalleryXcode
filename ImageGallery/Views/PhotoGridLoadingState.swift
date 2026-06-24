@@ -27,5 +27,9 @@ struct PhotoGridLoadingState: View {
         //   之前主 grid 删了 padding (V5.28-3), loading 还在 → 导入时 loading 切换到 photos
         //   会有 12pt 跳变 (jumping)
         //   现在 loading 和 grid 同样 edge-to-edge, 切换平滑
+        // V6.97 P3-3: a11y — 整个 shimmer 网格标 "正在加载图片", VoiceOver 跳过一次性 12 cell
+        //   children: .ignore 避免 12 个 shimmer rectangle 各自被读到 ("图像 图像 图像 ...")
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Copy.accessibilityLoading)
     }
 }

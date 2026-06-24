@@ -44,6 +44,9 @@ enum TapOutcome: Equatable {
     case singleSelect(SelectionState)
     case toggleMultiSelect(SelectionState)
     case rangeSelect(SelectionState)
+    // V6.96 P0 #6: Photos 范式——再点已单选的 cell = 取消选中
+    //   之前 plain + 已单选 = 重新单选 (看不出反馈), 现在返 .deselect 让消费者 clear
+    case deselect(SelectionState)
 }
 
 // MARK: - 纯函数
@@ -102,6 +105,19 @@ enum MultiSelectMath {
             return .rangeSelect(s)
 
         case .plain:
+            // V6.96 P0 #6: Photos 范式——再点已单选的 cell = 取消选中
+            //   判定: selectedIDs 只有一个 + 该 cell 在选中 + selectedPhotoID 也指向它
+            //   跟 Photos.app Sonoma+ 实测一致, 圈选后用单击"缩小选择"是常见手势
+            //   多选状态下 (selectedIDs.count > 1) plain 仍走单选 (用户清楚"我现在是单击")
+            let alreadySingleSelected = s.selectedIDs.count == 1
+                && s.selectedIDs.contains(photoID)
+                && s.selectedPhotoID == photoID
+            if alreadySingleSelected {
+                s.selectedIDs = []
+                s.lastSelectedID = nil
+                s.selectedPhotoID = nil
+                return .deselect(s)
+            }
             // 普通单击：单选 + 清空多选
             s.selectedIDs = [photoID]
             s.lastSelectedID = photoID

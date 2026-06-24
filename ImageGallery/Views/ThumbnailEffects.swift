@@ -76,7 +76,7 @@ struct CheckerboardBackground: View {
 //   - Reduced Motion：自动禁用（仅显示底色，不动）
 //
 // 用法：
-//   RoundedRectangle(cornerRadius: 6)
+//   RoundedRectangle(cornerRadius: Radius.sm)
 //       .fill(.quaternary)
 //       .modifier(Shimmer())
 struct Shimmer: ViewModifier {
@@ -138,13 +138,13 @@ extension View {
                     .foregroundStyle(.tint.opacity(0.5))
             }
             .frame(width: 150, height: 150)
-            .clipShape(RoundedRectangle(cornerRadius: 6))
+            .clipShape(RoundedRectangle(cornerRadius: Radius.sm))
         }
 
         // Shimmer
         VStack {
             Text("Shimmer").font(.caption)
-            RoundedRectangle(cornerRadius: 6)
+            RoundedRectangle(cornerRadius: Radius.sm)
                 .fill(.quaternary)
                 .frame(width: 150, height: 150)
                 .shimmer()

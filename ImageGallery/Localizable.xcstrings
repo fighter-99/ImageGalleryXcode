@@ -7,16 +7,6 @@
     "#%@" : {
 
     },
-    "%@ — %@" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@ — %2$@"
-          }
-        }
-      }
-    },
     "%lld" : {
 
     },
@@ -267,6 +257,39 @@
         }
       }
     },
+    "accessibilityActionHintPrimary" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "双击执行此操作"
+          }
+        }
+      }
+    },
+    "accessibilityActionHintSecondary" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "双击执行次要操作"
+          }
+        }
+      }
+    },
+    "accessibilityLoading" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "正在加载图片"
+          }
+        }
+      }
+    },
     "accessibilityRatingSuffix" : {
       "comment" : "V6.37.9: Copy.accessibilityRatingSuffix → ，%lld 星",
       "extractionState" : "manual",
@@ -309,6 +332,28 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "，已选中"
+          }
+        }
+      }
+    },
+    "accessibilitySliderValueFormat" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%lld 像素"
+          }
+        }
+      }
+    },
+    "accessibilityThumbnailSizeLabel" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "缩略图大小"
           }
         }
       }
@@ -416,6 +461,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "移除此篩選"
+          }
+        }
+      }
+    },
+    "actualSize" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "实际大小"
           }
         }
       }
@@ -894,6 +950,17 @@
         }
       }
     },
+    "changeColor" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "修改颜色"
+          }
+        }
+      }
+    },
     "clearAllFilters" : {
       "comment" : "V6.12.17: V Copy.clearAllFilters → 清除全部",
       "extractionState" : "manual",
@@ -1224,6 +1291,160 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "創建"
+          }
+        }
+      }
+    },
+    "cropFailedTitle" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "裁剪失败"
+          }
+        }
+      }
+    },
+    "cropMenu" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "裁剪..."
+          }
+        }
+      }
+    },
+    "cropPreset1_1" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "1:1"
+          }
+        }
+      }
+    },
+    "cropPreset2_3" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "2:3"
+          }
+        }
+      }
+    },
+    "cropPreset3_2" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "3:2"
+          }
+        }
+      }
+    },
+    "cropPreset4_3" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "4:3"
+          }
+        }
+      }
+    },
+    "cropPreset16_9" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "16:9"
+          }
+        }
+      }
+    },
+    "cropPresetFreeform" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "自由"
+          }
+        }
+      }
+    },
+    "cropReset" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "重置裁剪"
+          }
+        }
+      }
+    },
+    "cropRotate90" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "旋转 90°"
+          }
+        }
+      }
+    },
+    "cropSheetApply" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "应用"
+          }
+        }
+      }
+    },
+    "cropSheetCancel" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "取消"
+          }
+        }
+      }
+    },
+    "cropSheetTitle" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "裁剪"
+          }
+        }
+      }
+    },
+    "cropTooltip" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "裁剪当前照片 (⌘⇧K)"
           }
         }
       }
@@ -2018,6 +2239,17 @@
         }
       }
     },
+    "duplicateSmartFolder" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "复制为新智能文件夹"
+          }
+        }
+      }
+    },
     "duplicatesNone" : {
       "comment" : "V6.12.17: V Copy.duplicatesNone → 暂无重复图",
       "extractionState" : "manual",
@@ -2038,6 +2270,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "暂無重複圖"
+          }
+        }
+      }
+    },
+    "editSmartFolder" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "编辑筛选条件"
           }
         }
       }
@@ -3729,6 +3972,17 @@
         }
       }
     },
+    "loadFailedTitle" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "加载失败"
+          }
+        }
+      }
+    },
     "manageTags" : {
       "comment" : "V6.12.17: V Copy.manageTags → 管理标签",
       "extractionState" : "manual",
@@ -3749,6 +4003,105 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "管理標籤"
+          }
+        }
+      }
+    },
+    "markupMenu" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "标注..."
+          }
+        }
+      }
+    },
+    "markupSheetCancel" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "取消"
+          }
+        }
+      }
+    },
+    "markupSheetDone" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "完成"
+          }
+        }
+      }
+    },
+    "markupToolEraser" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "橡皮擦"
+          }
+        }
+      }
+    },
+    "markupToolLasso" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "套索"
+          }
+        }
+      }
+    },
+    "markupToolMarker" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "记号笔"
+          }
+        }
+      }
+    },
+    "markupToolPen" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "钢笔"
+          }
+        }
+      }
+    },
+    "markupTooltip" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "标注当前照片 (⌘M)"
+          }
+        }
+      }
+    },
+    "markupUndoLastStroke" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "撤销最后一笔"
           }
         }
       }
@@ -4107,6 +4460,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "新建標籤"
+          }
+        }
+      }
+    },
+    "newWindow" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "新建窗口"
           }
         }
       }
@@ -4735,6 +5099,17 @@
         }
       }
     },
+    "renameFolder" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "重命名文件夹"
+          }
+        }
+      }
+    },
     "renameHint" : {
       "comment" : "V6.12.17: V Copy.renameHint → 给图片一个新名字（不包含扩展名）",
       "extractionState" : "manual",
@@ -4783,6 +5158,28 @@
         }
       }
     },
+    "renameSmartFolder" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "重命名智能文件夹"
+          }
+        }
+      }
+    },
+    "renameTag" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "重命名标签"
+          }
+        }
+      }
+    },
     "restoreSelected" : {
       "comment" : "V6.12.17: V Copy.restoreSelected → 恢复选中",
       "extractionState" : "manual",
@@ -4807,6 +5204,17 @@
         }
       }
     },
+    "retry" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "重试"
+          }
+        }
+      }
+    },
     "revealInFinder" : {
       "comment" : "V6.12.17: V Copy.revealInFinder → 在 Finder 中显示",
       "extractionState" : "manual",
@@ -4827,6 +5235,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "在 Finder 中顯示"
+          }
+        }
+      }
+    },
+    "save" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "保存"
           }
         }
       }
@@ -7791,6 +8210,28 @@
         }
       }
     },
+    "smartFolderDuplicateSuffix" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : " 副本"
+          }
+        }
+      }
+    },
+    "smartFolderEditTitle" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "编辑智能文件夹"
+          }
+        }
+      }
+    },
     "smartFolderEmptyFilterHint" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -9350,6 +9791,17 @@
         }
       }
     },
+    "toastCropped" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "已裁剪 %lld 张图片"
+          }
+        }
+      }
+    },
     "toastMovedToRecycleBinCount" : {
       "comment" : "V6.37.9: Copy.toastMovedToRecycleBinCount → 已移到回收站 %lld 张",
       "extractionState" : "manual",
@@ -9422,6 +9874,17 @@
         }
       }
     },
+    "toastSelectCropFirst" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "请先选择要裁剪的图片"
+          }
+        }
+      }
+    },
     "toastSelectRotateFirst" : {
       "comment" : "V6.37.9: Copy.toastSelectRotateFirst → 请先选择要旋转的图片",
       "extractionState" : "manual",
@@ -9490,6 +9953,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "請先選擇要朗讀的圖片"
+          }
+        }
+      }
+    },
+    "toastUndoCrop" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "已撤销裁剪 %lld 张"
           }
         }
       }
@@ -9734,6 +10208,17 @@
         }
       }
     },
+    "undoCrop" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "裁剪 %lld 张照片"
+          }
+        }
+      }
+    },
     "undoDeleteMany" : {
       "comment" : "V6.37.9: Copy.undoDeleteMany → 删除 %lld 张照片",
       "extractionState" : "manual",
@@ -9778,6 +10263,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "刪除 1 張照片"
+          }
+        }
+      }
+    },
+    "undoMarkup" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "标注 %lld 张照片"
           }
         }
       }
@@ -10142,6 +10638,28 @@
         }
       }
     },
+    "zoomIn" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "放大"
+          }
+        }
+      }
+    },
+    "zoomOut" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "缩小"
+          }
+        }
+      }
+    },
     "删除" : {
 
     },
@@ -10166,12 +10684,6 @@
     "排序" : {
 
     },
-    "放大" : {
-
-    },
-    "放大缩略图" : {
-
-    },
     "清除" : {
 
     },
@@ -10184,10 +10696,7 @@
     "筛选" : {
 
     },
-    "缩小" : {
-
-    },
-    "缩小缩略图" : {
+    "缩略图大小" : {
 
     },
     "预览" : {

@@ -112,22 +112,11 @@ extension View {
                 onReturn()
                 return .handled
             }
-            // V4.37.2: ⌘[ / ⌘] 上下张切换（macOS Quick Look / Finder 标准）
-            //   Photos.app 用 ←→ 方向键（gridInputHandling 已有）
-            //   ⌘[/⌘] 是 macOS Quick Look 整个列表翻页的同款快捷键
-            .onKeyPress("[", phases: .down) { press in
-                if press.modifiers.contains(EventModifiers.command) {
-                    if canPrev { onPrev() }
-                    return .handled
-                }
-                return .ignored
-            }
-            .onKeyPress("]", phases: .down) { press in
-                if press.modifiers.contains(EventModifiers.command) {
-                    if canNext { onNext() }
-                    return .handled
-                }
-                return .ignored
-            }
+            // V6.96 P1 #4: 删 ⌘[/⌘] onKeyPress 双注册
+            //   原 onKeyPress 跟 ImageGalleryApp NavigateMenuItems (.keyboardShortcut("[", modifiers: .command))
+            //   同一组键被两处注册, SwiftUI "last-registered wins" 在不同 macOS 版本行为不稳
+            //   现在只留菜单: 菜单 .keyboardShortcut 走 NavigateMenuItems 发 .navigatePrev/NextRequested 通知
+            //   ContentView .onReceive 监听, 走 canPrev/canNext 边界检查
+            //   好处: 菜单项有 label + a11y + ⌘[/⌘] 跟菜单名直接关联, 跟 Photos / Finder 一致
     }
 }

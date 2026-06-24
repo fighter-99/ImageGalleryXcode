@@ -56,8 +56,10 @@ struct ToastView: View {
     let undoAction: (() -> Void)?
 
     @Environment(\.colorScheme) private var colorScheme
-    // V6.21.4 (audit fix #1): @State progress — duration 内 1.0 → 0.0 真动画
-    //   之前 V6.21.1 ProgressView(value: 1) hardcode static, bar 永远 100% 不动
+    // V6.96 P0 #4: 进度条真实现 — duration 内 1.0 → 0.0
+    //   之前 V6.21.1 注释承诺, V6.21.4 audit 改注释但 body 里没真 ProgressView
+    //   toast 进入瞬间 1.0, 持续 duration 秒后 0.0——告诉用户几时消失
+    @State private var progress: Double = 1.0
 
     var body: some View {
         HStack(spacing: 8) {
@@ -83,11 +85,26 @@ struct ToastView: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: Radius.md))
         .overlay(
-            RoundedRectangle(cornerRadius: 8)
+            RoundedRectangle(cornerRadius: Radius.md)
                 .strokeBorder(Color.primary.opacity(0.06), lineWidth: 0.5)
         )
+        // V6.96 P0 #4: 底部 2pt 进度条 — 跟整体圆角一致, 用 type.tint 颜色
+        //   配合下面 .task(id: duration) 在 duration 秒内从 1.0 动画到 0.0
+        //   duration == 0 (永久 toast) 时隐藏
+        .overlay(alignment: .bottom) {
+            if duration > 0 {
+                GeometryReader { geo in
+                    Rectangle()
+                        .fill(type.tint)
+                        .frame(width: geo.size.width * progress, height: 2)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .frame(height: 2)
+                .clipShape(RoundedRectangle(cornerRadius: Radius.md))
+            }
+        }
         .shadow(
             color: Color.black.opacity(colorScheme == .dark ? 0.55 : 0.15),
             radius: colorScheme == .dark ? 14 : 8,
@@ -109,7 +126,19 @@ struct ToastView: View {
         }
         .task(id: duration) {
             guard duration > 0 else { return }
-            try? await Task.sleep(nanoseconds: UInt64(duration * 1_000_000_000))
+            // V6.96 P0 #4: 进度条动画 — progress 从 1.0 在 duration 秒内线性到 0.0
+            //   用 Timer.publish 每 0.05s 推进一帧, 比 SwiftUI withAnimation 更可控
+            progress = 1.0
+            let totalSteps = 20
+            let stepInterval = duration / Double(totalSteps)
+            for step in 0..<totalSteps {
+                try? await Task.sleep(nanoseconds: UInt64(stepInterval * 1_000_000_000))
+                if Task.isCancelled { return }
+                let pct = 1.0 - Double(step + 1) / Double(totalSteps)
+                withAnimation(.linear(duration: stepInterval)) {
+                    progress = pct
+                }
+            }
         }
     }  // closes var body
 

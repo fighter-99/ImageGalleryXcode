@@ -113,6 +113,55 @@ extension GridViewModel {
         return PhotoOrientation(rawValue: raw)
     }
 
+    /// V6.97.1 (P0 #5): 裁剪当前单选照片
+    ///   - 复用 V6.22.1 rotateSelected 完全 pattern (snapshot + registerUndoOnly + coalesceId)
+    ///   - 1s 内连续裁剪合并 = 1 undo entry (Photos.app 范式)
+    ///   - CropRect 是 normalized 0-1 (resolution-independent), 跟原图像素无关
+    ///   - 不动原图文件 (跟 markup 一致 — 标注/裁剪都存 SwiftData, 显示时 compose)
+    ///   - 失效 ThumbnailCache (裁剪后缩略图独立 cache)
+    ///   - 单选 gate: 0 选 / 多选 → toast 提示 (跟 markup 一样的 resolvedSingle 用法)
+    func cropSelected(rect: CGRect, aspect: CropAspect) {
+        guard let photo = resolvedSingle?.photo else {
+            enqueueToastHandler(Copy.toastSelectCropFirst, .info, .normal, nil)
+            return
+        }
+        // capture 裁剪前 cropRect (用于 undo 还原)
+        struct Snapshot { let photo: Photo; let original: Data? }
+        let snapshot = Snapshot(photo: photo, original: photo.cropRect)
+
+        // 构造 CropRect + JSON 编码 (跟 V6.97.0 Frame JSON 模式一致)
+        let crop = CropRect(
+            x: Double(rect.origin.x),
+            y: Double(rect.origin.y),
+            width: Double(rect.size.width),
+            height: Double(rect.size.height),
+            aspect: aspect
+        )
+        guard let data = crop.toData() else {
+            enqueueToastHandler(Copy.cropFailedTitle, .error, .normal, nil)
+            return
+        }
+
+        // 应用裁剪 — service 走 cache invalidate + save (跟 rotateSelected 走 PhotoRotationService 一致)
+        if let context = core?.modelContext {
+            PhotoCropService.applyCrop(data, to: photo, in: context)
+        }
+        enqueueToastHandler(Copy.toastCropped(1), .success, .normal, nil)
+
+        // V6.35.3 + V6.97.1: register undo (coalesceId="crop" — 1s 内连续裁剪合并)
+        //   Photos.app 行为: 连裁 1 张调 3 次 = 1 undo entry, ⌘Z 一次还原到原始
+        //   undo 走 service 同 pattern: cropRect 还原 + ThumbnailCache invalidate + save
+        let capturedSnapshot = snapshot
+        let undo: () -> Void = { [weak self] in
+            guard let self else { return }
+            if let context = self.core?.modelContext {
+                PhotoCropService.applyCrop(capturedSnapshot.original, to: capturedSnapshot.photo, in: context)
+            }
+            self.enqueueToastHandler(Copy.toastUndoCrop(1), .info, .normal, nil)
+        }
+        undoManager.registerUndoOnly(description: Copy.undoCrop(1), undo: undo, coalesceId: "crop")
+    }
+
     /// V6.19.5 (P0 #16): 朗读选中照片 (Speech menu, macOS Edit > Speech 范式)
     ///   - selection 空 → toast 提示
     ///   - 1 张 → 读 "已选 1 张照片, 文件名 XXX"
@@ -188,7 +237,7 @@ extension GridViewModel {
             photoIDs: photoIDs
         )
         switch outcome {
-        case .singleSelect(let s), .toggleMultiSelect(let s), .rangeSelect(let s):
+        case .singleSelect(let s), .toggleMultiSelect(let s), .rangeSelect(let s), .deselect(let s):
             selection = s
         }
     }

@@ -219,4 +219,42 @@ struct PhotosSettingRadios<T: Hashable>: View {
     }
 }
 
+// MARK: - V6.89: 顶部 tab 改 Picker(.segmented) — 紧凑 + 真版对齐
+//  V6.87 + V6.88 实施自定义 button tab (80×60pt + 22pt icon + subheadline label), 用户实测反馈过大
+//  V6.89: 改 macOS 真版 Picker(.segmented) — 紧凑系统 widget, 选中态系统 tint 背景
+//  删 CategoryTabButton (整个 struct, ~70 LOC) — segmented 不需要自定义 button
+//  7 个 category 用 segmented 自动 fit, NSSegmentedControl 系统级 widget 视觉锤
+//  保留 ScrollViewReader 暂不需要 (segmented 不溢出, 自动 fit), 后续若窗口过窄再加滚动
+struct CategoryTabBar: View {
+    @Binding var selection: SettingsCategory
+
+    var body: some View {
+        // V6.89: Picker(.segmented) — macOS 系统级 NSSegmentedControl
+        //   7 个 category 自动 fit, 选中态系统 tint 背景, 无 icon, 纯 text label
+        //   紧凑 (高度 ~24pt vs 原 V6.88 60pt), 跟 macOS 真版 System Preferences 顶部 widget 一致
+        //   .labelsHidden() 隐藏默认 label (Picker API 要求提供但视觉隐藏)
+        Picker("", selection: $selection) {
+            ForEach(SettingsCategory.allCases) { category in
+                Text(category.title).tag(category)
+            }
+        }
+        .pickerStyle(.segmented)
+        .labelsHidden()
+        // V6.89: padding — segmented control 跟窗口边缘视觉缓冲
+        //   横向 Spacing.xl (20pt) 跟 detail 内容对齐 (V6.86 大标题 padding 一致)
+        //   纵向 Spacing.sm (8pt) — segmented 紧凑, 不需要 Spacing.md 12pt
+        .padding(.horizontal, Spacing.xl)
+        .padding(.vertical, Spacing.sm)
+        // V6.89: 保留 .background(.bar) — segmented 跟 macOS 真版 toolbar frosted glass 一致
+        .background(.bar)
+        // V6.90.5: chrome 整合 — Divider tint alpha 0.3 让 chrome 跟 detail 视觉融合
+        //   原 Divider() 默认 alpha 1.0 视觉上过抢, 跟 detail 强分隔
+        //   改 alpha 0.3 减弱视觉, 让 chrome 跟 detail 是一体 (跟 macOS Sonoma+ System Preferences 真版一致)
+        .overlay(alignment: .bottom) {
+            Divider()
+                .opacity(0.3)
+        }
+    }
+}
+
 // MARK: - 通用 settings section 容器 (沿用 V5.89 fluid rows 设计)

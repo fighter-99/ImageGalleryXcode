@@ -33,7 +33,11 @@ import AppKit
         onExportComplete: { _ in },
         onReorder: {},
         // V6.22.1: Preview no-op 旋转
-        onRotate: { _, _ in }
+        onRotate: { _, _ in },
+        // V6.94.1: Preview no-op 标注
+        onMarkup: { },
+        // V6.97.1: Preview no-op 裁剪
+        onCrop: { }
     )
     .frame(width: SheetMetrics.standardWidth, height: SheetMetrics.standardHeight)
 }

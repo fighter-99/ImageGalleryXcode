@@ -93,7 +93,7 @@ struct MainLayoutView<PathBar: View, Split: View>: View {
                 .transition(.move(edge: .top).combined(with: .opacity))
             }
         }
-        .animation(Animations.springGentle, value: toastQueue.first)
+        .animation(Animations.standard, value: toastQueue.first)
         // 沉浸式全屏看图
         .overlay {
             if immersivePhoto != nil {
@@ -107,7 +107,7 @@ struct MainLayoutView<PathBar: View, Split: View>: View {
                 .zIndex(1000)
             }
         }
-        .animation(Animations.medium, value: immersivePhoto)
+        .animation(Animations.standard, value: immersivePhoto)
         // V6.08: immersivePhoto 变化时 snapshot
         //   nil → non-nil: capture 当前 visiblePhotos 给 immersive 用
         //   non-nil → nil: 清空 snapshot (避免 retain)

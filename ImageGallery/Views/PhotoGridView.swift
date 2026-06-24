@@ -97,6 +97,10 @@ struct PhotoGridView: View {
     let onReorder: () -> Void
     // V6.22.1 (P2 #2): 旋转回调 — caller (ContentView) 传 model.rotateSelected closure
     let onRotate: (Photo, Bool) -> Void
+    // V6.94.1 (P0 #3): 标注回调 — caller (ContentView) 传 NotificationCenter.post(.markupRequested) closure
+    let onMarkup: () -> Void
+    // V6.97.1 (P0 #5): 裁剪回调 — caller 透传同 onMarkup
+    let onCrop: () -> Void
 
     // ─── 综合筛选 ───
     // V3.6.5: 从 computed property 改为 @State 缓存 + filterSignature 失效
@@ -210,9 +214,9 @@ struct PhotoGridView: View {
             }
         }
         // V3.6.39: 触发视图模式切换的 transition 动画
-        .animation(Animations.medium, value: viewMode)
+        .animation(Animations.standard, value: viewMode)
         // V3.6.43: 触发空状态切换的 transition 动画
-        .animation(Animations.medium, value: photos.isEmpty && !hasSelection)
+        .animation(Animations.standard, value: photos.isEmpty && !hasSelection)
         // V4.9.3: 触发 loading 状态切换的 transition 动画
         .animation(Animations.quick, value: isImporting)
         .navigationTitle(navigationTitle)
@@ -574,7 +578,7 @@ struct PhotoGridView: View {
                     BoxSelectionOverlay(rect: rect)
                 }
             }
-            .animation(Animations.medium, value: photos.count)
+            .animation(Animations.standard, value: photos.count)
         }
         // V6.17.0.4: 圈选激活时禁 ScrollView 滚动 — 避免 content 跟 mouse 错位
         .scrollDisabled(isMarqueeActive)
@@ -652,7 +656,7 @@ struct PhotoGridView: View {
                     BoxSelectionOverlay(rect: rect)
                 }
             }
-            .animation(Animations.medium, value: photos.count)
+            .animation(Animations.standard, value: photos.count)
         }
         // V6.17.0.4: 圈选激活时禁 ScrollView 滚动 — 避免 content 跟 mouse 错位
         .scrollDisabled(isMarqueeActive)
@@ -735,7 +739,10 @@ struct PhotoGridView: View {
             onTap: handleTap,
             onDoubleTap: onDoubleTap,
             // V6.22.1 (P2 #2): 旋转回调 — 透传 ContentView 传的 { model.rotateSelected(clockwise:) }
-            onRotate: onRotate
+            onRotate: onRotate,
+            // V6.94.1 (P0 #3): 标注回调 — 透传 ContentView 传的 { NotificationCenter.post(.markupRequested) }
+            onMarkup: onMarkup,
+            onCrop: onCrop
         )
     }
 
@@ -761,7 +768,7 @@ struct PhotoGridView: View {
     // ─── 应用 TapOutcome 到 @State (V3.6.52: 从 7 行收成 4 行) ───
     private func applyTapOutcome(_ outcome: TapOutcome) {
         switch outcome {
-        case .singleSelect(let s), .toggleMultiSelect(let s), .rangeSelect(let s):
+        case .singleSelect(let s), .toggleMultiSelect(let s), .rangeSelect(let s), .deselect(let s):
             selection = s
         }
     }

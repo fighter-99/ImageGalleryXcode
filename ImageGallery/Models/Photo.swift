@@ -73,6 +73,24 @@ final class Photo {
     /// SwiftData 轻量级自动迁移（新增 Optional 属性）
     var trashedAt: Date?
 
+    // ─── V6.94.1: PencilKit Markup 标注数据 (P0 #3) ───
+    /// nil = 无标注；非 nil = 序列化 plist (NSBezierPath 数组)
+    /// V6.94.1: V2 → V3 lightweight migration 自动安全 (Optional 字段)
+    ///   不用 @Attribute(.externalStorage) — V3 lightweight 跟 @externalStorage 一起用有兼容性风险 (V6.68 教训)
+    ///   NSBezierPath plist 通常几 KB, 放主 .sqlite 没问题
+    /// 显示时跟原图合成: MarkupService.compose(image:with:)
+    var markupData: Data?
+
+    // ─── V6.97.1: Crop / Aspect 裁剪数据 (P0 #5) ───
+    /// nil = 未裁剪；非 nil = JSON-encoded CropRect (normalized 0-1 + aspect preset)
+    /// V6.97.1: 跟 V6.94.1 markupData 同 pattern — runtime Photo 字段, 不开 V4 schema
+    ///   V6.68 教训: 新 schema + custom-stage migration 启动崩溃过, 只用 lightweight (或 runtime field)
+    ///   CropRect JSON 通常 < 100 bytes, 放主 .sqlite 没问题
+    ///   持久化格式跟 V6.97.0 Frame JSON pattern 对齐 (同 `imageGalleryWindowFrames` 主 key 风格)
+    /// 显示时跟原图合成: PhotoCropService.compose(image:data:)
+    ///   跟 markup compose chain 串联: markup 先 (composited overlay), crop 后 (extract region)
+    var cropRect: Data?
+
     /// V6.75: isFavoriteComputed — 单一真相源是 rating (语义合并: 收藏 = 评分 ≥ 5)
     ///   业务代码应统一用 `photo.isFavoriteComputed` 取代 `photo.isFavorite` (后者 V2 schema 兼容性保留)
     ///   命名加 "Computed" 后缀避免跟 stored 同名冲突 (SwiftData 不允许同名 stored+computed)

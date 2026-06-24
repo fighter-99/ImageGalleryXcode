@@ -47,6 +47,11 @@ struct PhotoGridPane: View {
     let onClearMultiSelect: () -> Void
     // V6.22.1 (P2 #2): 旋转回调 — ContentView 传 { model.rotateSelected(clockwise:) }
     let onRotate: (Photo, Bool) -> Void
+    // V6.94.1 (P0 #3): 标注回调 — ContentView 传 { NotificationCenter.post(.markupRequested) }
+    let onMarkup: () -> Void
+    // V6.97.1 (P0 #5): 裁剪回调 — ContentView 传 { NotificationCenter.post(.cropRequested) }
+    //   跟 onMarkup 完全对称 wiring pattern
+    let onCrop: () -> Void
     let onDoubleTap: (Photo) -> Void
     // V4.9.0: 清空所有 filter（用于"无搜索结果"等空状态次 CTA）
     let onClearFilters: () -> Void
@@ -97,7 +102,11 @@ struct PhotoGridPane: View {
             onExportComplete: onExportComplete,
             onReorder: onReorder,             // V5.39.7 透传
             // V6.22.1 (P2 #2): 旋转回调 — caller (ContentView) 传 model.rotateSelected 闭包
-            onRotate: onRotate
+            onRotate: onRotate,
+            // V6.94.1 (P0 #3): 标注回调 — caller (ContentView) 传 NotificationCenter.post(.markupRequested)
+            onMarkup: onMarkup,
+            // V6.97.1 (P0 #5): 裁剪回调 — caller (ContentView) 传 NotificationCenter.post(.cropRequested)
+            onCrop: onCrop
         )
     }
 }

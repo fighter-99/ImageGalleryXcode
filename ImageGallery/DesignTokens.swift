@@ -80,6 +80,12 @@ enum Radius {
     ///   - 与 Radius.lg/md 区别: 介于两者之间, 专用于 macOS app icon 风格 (Photos.app 偏好设置风格)
     static let appIcon: CGFloat = 10
 
+    /// V6.96 P1 #6: inspector/sheet 专用 10pt (介于 md=8 和 lg=12 中间)
+    ///   之前 SmartFolderCreateSheet.swift:68 hardcoded 10pt 跟 app icon 撞值
+    ///   现在分开: appIcon = 应用图标 (Settings 头像), inspector = sheet 内部容器
+    ///   区分后两个组件可以独立调整不互相影响
+    static let inspector: CGFloat = 10
+
     /// V6.63 (P5.2): 微圆角——最小档, 用于 chip / tag / 紧凑边框
     ///   4pt 是 macOS Photos / Finder 缩略图圆角下限 (3-4pt), 视觉上"接近直角但有柔和过渡"
     ///   替换 KeyboardShortcutsSheet / ImmersivePhotoView / OnboardingView 3 处字面量 cornerRadius: 4
@@ -308,14 +314,18 @@ enum Typography {
 
     /// V6.78: 侧边栏 section header (SidebarView "LIBRARY" / "SMART FOLDERS" 等分类标题)
     ///   V6.40 之前 .system(size: 13, weight: .semibold) 硬编码不响应 Dynamic Type
-    ///   改 .footnote.weight(.semibold) — macOS footnote (13pt) + semibold, 自动响应 Dynamic Type
-    ///   跟 Photos 真版 sidebar section header 风格对齐
-    static let sidebarSectionHeader = Font.footnote.weight(.semibold)
+    ///   V6.95: 改 .caption2.weight(.semibold) (11pt + semibold) + 调用处 .textCase(.uppercase).tracking(0.8)
+    ///   Photos 真版 sidebar section header 风格 — 11pt semibold uppercase + 字间距 0.8pt
+    ///   字号更小 + 全大写 + tracking 让 section 跟 row 视觉层级清晰拉开
+    ///   保留 .weight(.semibold) — uppercase + tracking 在 view 层修饰 (font 类型限制)
+    static let sidebarSectionHeader = Font.caption2.weight(.semibold)
 
     /// V6.78: 侧边栏 count 数字 (SidebarView "5 张" / "12 个" 等分类计数)
+    ///   V6.95: 改 .caption (12pt regular) — 跟新 section header 11pt 形成 1pt 字号差
     ///   V6.40 之前 .system(size: 13) 硬编码不响应 Dynamic Type
-    ///   改 .footnote — macOS footnote (13pt) 默认 regular, 自动响应 Dynamic Type
-    static let sidebarCount = Font.footnote
+    ///   改 .footnote → .caption (V6.95) — macOS caption (12pt) 默认 regular, 自动响应 Dynamic Type
+    ///   调用处 .formatted(.number) 千分位 (V6.95 D)
+    static let sidebarCount = Font.caption
 
     /// V6.78: Toolbar badge 数字 (V6.73 ⓘ 红点 / filter active badge 等)
     ///   V6.73 之前 .system(size: 10) 硬编码不响应 Dynamic Type
@@ -332,6 +342,22 @@ enum Typography {
     ///   56pt + light weight — 在 120pt 圆形内居中, Photos.app Sonoma+ 风格空状态视觉锤
     ///   跟 heroIcon (64) 同族但更紧凑 (跟圆形 backdrop 大小匹配)
     static let heroBackdropIcon = Font.system(size: 56, weight: .light)
+
+    // V6.96 P1 #7: Typography 补漏——3 个新 token 替换散落的裸 .font() 调用
+    //   之前 145 个 .font() 调用中 ~46 个用裸 .caption/.body/.title2/.subheadline/.callout
+    //   token 化覆盖率 75% → 90%+ (替换完 ~36 个)
+
+    /// bodyEmphasis: 13pt semibold — 之前 ~10 处用 `.body.weight(.semibold)`
+    ///   典型场景: detail panel 标题、active filter chip 文字、setting row 副标题
+    static let bodyEmphasis = Font.body.weight(.semibold)
+
+    /// sectionHeader: 15pt semibold — 之前 ~6 处用 `.subheadline.weight(.semibold)`
+    ///   典型场景: SettingsView panel 内部分组标题、DetailView 章节
+    static let sectionHeader = Font.subheadline.weight(.semibold)
+
+    /// pageTitle: 22pt semibold — 之前 2-3 处用 `.title2`
+    ///   典型场景: SettingsView 主页面顶部、empty state 主标题 (跟 EmptyStateView 配套)
+    static let pageTitle = Font.title2.weight(.semibold)
 }
 
 // MARK: - V6.63 (P5.2): Icon names — 高频 SF Symbol 字面量收口
@@ -373,6 +399,12 @@ enum IconNames {
     static let checkmarkCircleFill = "checkmark.circle.fill"
     /// SF Symbol "exclamationmark.triangle" — 3+ 处 (EmptyStateView warning)
     static let exclamationmarkTriangle = "exclamationmark.triangle"
+    /// V6.97 P2-3: SF Symbol "pencil" — 3+ 处 (SidebarView 右键菜单 rename 入口)
+    static let pencil = "pencil"
+    /// V6.97 P2-3: SF Symbol "paintpalette" — 标签修改颜色子菜单
+    static let paintpalette = "paintpalette"
+    /// V6.97 P2-3: SF Symbol "plus.square.on.square" — 智能文件夹复制入口
+    static let plusSquareOnSquare = "plus.square.on.square"
 }
 
 // MARK: - V6.63 (P5.4): Sheet metrics — sheet / window 尺寸字面量收口
@@ -408,6 +440,27 @@ enum SheetMetrics {
     ///   - SidebarView preview (1 处)
     static let sidebarPreviewWidth: CGFloat = 220
     static let sidebarPreviewHeight: CGFloat = 600
+
+    /// V6.97 P2-1: MarkupSheet 窗口尺寸 — 880 × 640
+    ///   跟 Photos Preview 范式 (800×600) 留 80×40 余量给工具栏 + 颜色盘 + macOS titlebar
+    ///   之前 hardcoded 800×600 在 Sonoma+ 14 寸 MBP 上挤, 留更多边距
+    static let markupWidth: CGFloat = 880
+    static let markupHeight: CGFloat = 640
+    /// V6.97 P2-1: MarkupSheet 工具栏按钮尺寸 (跟系统 toolbar 高度对齐)
+    ///   28pt = macOS Sonoma+ NSToolbar 视觉基准
+    static let markupToolButtonSize: CGFloat = 28
+    /// V6.97 P2-1: MarkupSheet 颜色圆点直径 (Photos Preview 范式 — 20pt 圆形)
+    static let markupColorSwatchSize: CGFloat = 20
+
+    /// V6.97.1 (P0 #5): CropSheet 窗口尺寸 — 跟 MarkupSheet 同 880×640
+    ///   Photos 真版 crop 约 600×600 (只显示裁剪区), 我们用 880×640 显示原图 + crop 叠加
+    ///   跟 markup 视觉对称 (同 sheet 系列)
+    static let cropWidth: CGFloat = 880
+    static let cropHeight: CGFloat = 640
+    /// V6.97.1: CropSheet preset pill 按钮高度 (跟 markup 工具按钮对齐 28pt)
+    static let cropPresetButtonHeight: CGFloat = 28
+    /// V6.97.1: CropSheet handle 视觉尺寸 — 8pt 方形 (Photos Preview 范式)
+    static let cropHandleSize: CGFloat = 8
 }
 
 // MARK: - 旧 Palette 兼容层（V3.1 保留，Phase 2+ 逐步替换）
@@ -468,18 +521,19 @@ extension EnvironmentValues {
 var reduceMotionOverride: Bool = false
 
 enum Animations {
-    /// 按压反馈——macOS 原生按压几乎无动画，极短 50ms 避免闪烁
-    static var press: Animation? { reduceMotionOverride ? nil : .easeInOut(duration: 0.05) }
-    /// 快：150ms，多选 toggle、焦点切换、沉浸式淡入
+    /// V6.96 P0 #1: 按压反馈——macOS 原生按钮按压实测 0.10-0.12s; 之前 0.05s 短于人类感知阈值
+    ///   PressableButtonStyle 整条按压 opacity 反馈等于无效, 现在可见
+    static var press: Animation? { reduceMotionOverride ? nil : .easeInOut(duration: 0.10) }
+    /// 快：150ms, 多选 toggle、焦点切换、沉浸式淡入
     static var quick: Animation? { reduceMotionOverride ? nil : .easeInOut(duration: 0.15) }
-    /// 标准 spring——hover、选中、Chrome 显示（macOS 系统默认弹簧曲线）
+    /// V6.96 P1 #1: 标准 spring——hover、选中、Chrome 显示、视图模式切换、sidebar 显隐
+    ///   收敛前 4 个名字 (standard / medium / springGentle / interactive) 指向 2 种实现, 现在 medium/springGentle 已删
+    ///   之前 SidebarRow 用 springGentle (350ms) 跟 PhotoThumbnailView hover (150ms) 节奏错位, 现在两者都 standard
     static var standard: Animation? { reduceMotionOverride ? nil : .interactiveSpring }
-    /// 中等 spring——视图模式切换、sidebar 显隐（同 standard，语义别名）
-    static var medium: Animation? { reduceMotionOverride ? nil : .interactiveSpring }
-    /// 弹性 spring：toast 弹出 / 选中 / sidebar 进出
+    /// V6.96 P1 #1: 弹性 spring (350ms)——明确需要更慢的场景
+    ///   不要用在普通 hover/选中, 节奏会拖沓
+    ///   现有 2 个调用: 缩略图滑块持续滑动、trash drop target 锁定
     static var interactive: Animation? { reduceMotionOverride ? nil : .spring(response: 0.35, dampingFraction: 0.85) }
-    /// V4.0.0 兼容别名——旧代码用 springGentle 的地方仍能编译
-    static var springGentle: Animation? { interactive }
     /// 弹性更"Q"的 spring（带轻微反弹，用于 toast / 重要操作确认）
     static var bouncy: Animation? { reduceMotionOverride ? nil : .spring(response: 0.4, dampingFraction: 0.7) }
 }
@@ -528,6 +582,11 @@ enum SidebarStyle {
     static let rowHeight: CGFloat = 28
     /// 行内左右 padding（视觉上不到侧栏边缘，配合背景 padding 形成 inset 效果）
     static let rowHorizontalPadding: CGFloat = 8
+    // V6.96 P1 #9: section header 上下 padding 收口——之前 SidebarView 4 处 hardcode 6/2
+    //   6pt 顶让 section header 跟上个 section 最后 row 分层
+    //   2pt 底让 section header 跟本 section 第一个 row 紧凑
+    static let sectionHeaderTopPadding: CGFloat = 6
+    static let sectionHeaderBottomPadding: CGFloat = 2
     /// 行背景外侧 padding（让背景不到侧栏边缘 4pt，macOS 标准风格）
     static let rowBackgroundInset: CGFloat = 4
     /// 行圆角——用 Radius.sm (6pt) 与其他 UI 组件统一
@@ -546,22 +605,27 @@ enum SidebarStyle {
     static let iconFrameWidth: CGFloat = 18
 
     // ─── 文字 (label + count) ───
-    /// label 字号 13pt——macOS Photos / Finder 侧栏标准
-    /// V4.6.0: 之前用 .callout (16pt) 太大，sidebar 显得拥挤
-    static let labelFont: Font = .system(size: 13, weight: .regular)
-    /// label 选中态字重——加粗视觉锤（V4.1.0B 引入，V4.6.0 token 化）
-    static let labelSelectedFont: Font = .system(size: 13, weight: .semibold)
-    /// count 字号 11pt + 等宽数字（防止数字宽度抖动）
-    static let countFont: Font = .system(size: 11).monospacedDigit()
+    /// V6.96: 改 .body semantic — 13pt + 自动响应 Dynamic Type (跟 macOS 真版 sidebar 一致)
+    /// V4.6.0 之前 .callout (16pt) 太大, V6.95 改 13pt 硬编码不响应 Dynamic Type
+    /// 现在 .body macOS 默认 13pt, 大字号设置下自动放大
+    static let labelFont: Font = .body
+    /// label 选中态字重——加粗视觉锤 (macOS 真版 sidebar 选中 = semibold + tint color)
+    static let labelSelectedFont: Font = .body.weight(.semibold)
+    /// V6.96: count 改 .caption semantic — 12pt + 自动响应 Dynamic Type
+    /// V6.95 改 12pt 硬编码不响应 Dynamic Type, 现在 .caption 12pt 默认
+    /// .monospacedDigit() 保留 — count 数字宽度不抖动 (e.g. "9" vs "1234" 等宽)
+    static let countFont: Font = .caption.monospacedDigit()
 
     // ─── 状态色 ───
     /// hover 背景色——Surface.hover 0.04
     static let hoverBackground: Color = Surface.hover
-    /// 选中背景色——NSColor.alternateSelectedControlBackgroundColor（macOS 标准 sidebar 选中实色）
-    ///   系统色自动适配暗/浅色模式，不依赖 colorScheme 参数
-    /// 选中背景色——NSColor.selectedContentBackgroundColor（macOS 标准 list/outline 选中实色）
-    static let activeBackground: Color = Color(nsColor: .selectedContentBackgroundColor)
-    /// colorScheme 感知选中背景色（保留签名兼容旧调用方，实际不再需要）
+    /// V6.96: 选中背景色改 Color.accentColor.opacity(0.15) — 跟 macOS Sonoma+ Photos 真版 sidebar 一致
+    ///   之前 NSColor.selectedContentBackgroundColor 是系统灰色, 跟 accentColor 脱钩
+    ///   Photos 真版选中态用 accent color tint (半透明), 视觉跟当前 accent 主题一致
+    ///   .opacity(0.15) 跟 macOS Sonoma+ List 选中态 tint alpha 一致
+    static let activeBackground: Color = Color.accentColor.opacity(0.15)
+    /// 兼容老调用方 — 实际不再使用 (V6.96 改 activeBackground 替代)
+    static let activeBackgroundLegacy: Color = Color(nsColor: .selectedContentBackgroundColor)
     static func activeBackground(for colorScheme: ColorScheme) -> Color {
         activeBackground
     }
@@ -570,12 +634,14 @@ enum SidebarStyle {
     static let labelDefault: Color = .primary
     /// hover label 颜色
     static let labelHover: Color = Color.primary
-    /// 选中 label 颜色——macOS 标准选中行用白字
-    static let labelActive: Color = .white
+    /// V6.96: 选中 label 颜色 — 改 .accentColor (跟 macOS Sonoma+ 真版一致)
+    ///   之前 .white 适配旧 NSColor.selectedContentBackgroundColor (灰色)
+    ///   现在 activeBackground 改 accentColor.opacity(0.15) (彩色 tint), label 跟 icon 用 .accentColor 视觉统一
+    static let labelActive: Color = .accentColor
     /// 默认 icon 颜色
     static let iconDefault: Color = Color.secondary
-    /// hover/选中 icon 颜色——与 label 一致用白字
-    static let iconActive: Color = .white
+    /// V6.96: hover/选中 icon 颜色 — 改 .accentColor (跟 labelActive 一致)
+    static let iconActive: Color = .accentColor
 
     // ─── section header ───
     /// V6.23 (文本 token 统一): section header 字号 12pt → 11pt
@@ -606,15 +672,10 @@ enum SidebarStyle {
     // 一眼区分内容类型——不依赖文案理解
     // 色板：色相分散（HLS space 60°+ 间隔），避免混淆
     //
-    /// 重复图——橙色（警示/注意）
-    static let iconColorDuplicate: Color = .orange
-    /// 最近 7 天——蓝色（新鲜/时间）
-    static let iconColorRecent: Color = .blue
-    /// 大图——紫色（文件体积/重量）
-    static let iconColorLarge: Color = .purple
-    // V5.8: 砍 iconColorFavorite——V5.7 砍 .favorites 侧边栏后无 caller
-    //   收藏 = 评分 ≥ 5，由筛选 popover 体现
-    /// 最近删除——橙色（警示，与重复图共用色族但更饱和）
+    // V6.96 P1 #10: 删 iconColorDuplicate/Recent/Large (3 个 iOS 风彩色 icon token 没人用了)
+    //   macOS Photos.app 侧栏图标 monochrome, 颜色只随 selected/hover 变
+    //   保留 iconColorTrash: 是 status indicator (有 items 时橙色, 跟 Mail 未读数同款)
+    /// 最近删除——橙色（警示）
     /// 条件：trashed > 0 时显示，空时不显示（保持简洁）
     static let iconColorTrash: Color = .orange
 }

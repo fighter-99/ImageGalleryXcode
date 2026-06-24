@@ -35,6 +35,7 @@ class BaseUITestCase: XCTestCase {
         // V6.22.11: 子类 uitestLaunchArguments 追加 (e.g. -uitest-import-dir)
         app.launchArguments += [
             "-uitest-reset-all",
+            "-uitest-reset-store",  // V6.94.0: reset SwiftData store — 解决 600+ 累积残留
             "-AppleLanguages", "(en)",
             "-AppleLocale", "en_US@currency=USD",
         ]

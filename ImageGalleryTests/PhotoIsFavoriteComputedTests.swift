@@ -201,17 +201,19 @@ struct PhotoIsFavoriteComputedTests {
     }
 
     @Test func migrationPlanSchemaOrderAscending() {
-        // V1 → V2 (不开 V3)
+        // V6.94.1: V1 → V2 → V3 (P0 #3 Markup 加 Photo.markupData 字段)
         let schemas = ImageGalleryMigrationPlan.schemas
-        #expect(schemas.count == 2)
+        #expect(schemas.count == 3)
         #expect(schemas[0] == ImageGallerySchemaV1.self)
         #expect(schemas[1] == ImageGallerySchemaV2.self)
+        #expect(schemas[2] == ImageGallerySchemaV3.self)
     }
 
     @Test func migrationPlanStagesLightweightOnly() {
-        // V1 → V2 lightweight (无 V3)
+        // V6.94.1: V1 → V2 lightweight + V2 → V3 lightweight (P0 #3 Markup)
+        //   都是 lightweight — 只加 Optional 字段, SwiftData 自动迁移 (V6.68/V6.75 教训)
         let stages = ImageGalleryMigrationPlan.stages
-        #expect(stages.count == 1)
+        #expect(stages.count == 2)
     }
 
     // MARK: - V2 schema 兼容性 (Photo.isFavorite stored 字段存在)

@@ -95,7 +95,10 @@ struct EmptyStateView: View {
 
     private var customBody: some View {
         VStack(spacing: Spacing.xxl) {
+            // V6.97 P3-3: 装饰 icon 标 hidden — VoiceOver 跳过 120pt 圆形 backdrop + SF Symbol
+            //   真实意图 (标题/subtitle/CTA) 在下面 .accessibilityElement(.combine) 整体读出
             backdropIcon
+                .accessibilityHidden(true)
 
             VStack(spacing: Spacing.xs) {
                 Text(title)
@@ -111,6 +114,11 @@ struct EmptyStateView: View {
                 }
             }
             .frame(maxWidth: 360)
+            // V6.97 P3-3: title + subtitle 合并成一组 — VoiceOver 连续读
+            //   .isHeader 标记让用户能"跳到下个标题"快捷键 (VO+Cmd+H) 定位
+            .accessibilityElement(children: .combine)
+            .accessibilityAddTraits(.isHeader)
+            .accessibilityLabel(subtitle.map { "\(title)。\($0)" } ?? title)
 
             if primaryAction != nil || secondaryAction != nil {
                 // V6.61: CTA 横向——次左 / 主右,符合 macOS 按钮次序惯例
@@ -121,6 +129,8 @@ struct EmptyStateView: View {
                         }
                         .buttonStyle(.bordered)
                         .controlSize(.regular)
+                        // V6.97 P3-3: 次要 CTA 显式 .accessibilityHint — 让 VoiceOver 用户知道结果
+                        .accessibilityHint(Copy.accessibilityActionHintSecondary)
                     }
                     if let primaryAction {
                         Button(action: primaryAction.onTap) {
@@ -128,6 +138,8 @@ struct EmptyStateView: View {
                         }
                         .buttonStyle(.borderedProminent)
                         .controlSize(.large)
+                        // V6.97 P3-3: 主要 CTA 显式 .accessibilityHint
+                        .accessibilityHint(Copy.accessibilityActionHintPrimary)
                     }
                 }
             }
@@ -136,7 +148,7 @@ struct EmptyStateView: View {
         .scaleEffect(appeared ? 1 : 0.92)
         .opacity(appeared ? 1 : 0)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .onAppear { withAnimation(Animations.medium) { appeared = true } }
+        .onAppear { withAnimation(Animations.standard) { appeared = true } }
     }
 
     // MARK: - 视觉子组件

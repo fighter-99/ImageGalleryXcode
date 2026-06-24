@@ -54,8 +54,10 @@ struct SidebarRow: View {
 
                 // 计数——V4.6.0 用 SidebarStyle.countFont token
                 // V6.32.1: 暗色下 opacity 从 0.7 → 0.85 (.secondary 在暗色下更暗, 0.7 太弱看不清)
-                if let count = count {
-                    Text(Copy.sidebarCount(count))
+                // V6.95 B: count == 0 时不显示 (避免视觉噪音, 跟 Photos 真版一致)
+                // V6.95 D: count.formatted(.number) 千分位 (1234 → "1,234", 大库易读)
+                if let count = count, count > 0 {
+                    Text(count.formatted(.number))
                         .font(SidebarStyle.countFont)
                         .foregroundStyle(currentCountColor)
                 }
@@ -77,15 +79,17 @@ struct SidebarRow: View {
             isHovered = hovering
         }
         // V3.6.41: 升级 hover/选中 动画到 spring（统一 cell 动画风格）
-        .animation(Animations.springGentle, value: isHovered)
-        .animation(Animations.springGentle, value: isSelected)
+        .animation(Animations.standard, value: isHovered)
+        .animation(Animations.standard, value: isSelected)
         // V6.69 (Wave 2 收尾): hover lift 1.02 + Elevation.subtle → standard
         //   之前 SidebarRow 只换背景, 没 scale — 跟 PhotoThumbnailView hover (V6.65) 不一致
-        //   现在 hover: 1.02 微 scale + Animations.springGentle (跟 isHovered 同一动画曲线)
+        //   现在 hover: 1.02 微 scale + Animations.standard (跟 isHovered 同一动画曲线)
         //   Photos.app Sonoma+ 实测 sidebar row hover 微 scale 视觉锤
-        //   reduce motion 时 scale 跳值无动画 (Animations.springGentle 自动检查)
+        //   reduce motion 时 scale 跳值无动画 (Animations.standard 自动检查)
         .scaleEffect(isHovered ? 1.02 : 1.0)
-        .animation(Animations.springGentle, value: isHovered)
+        // V6.96 P0 #3: 删重复 .animation——上面 L82 已经有 .animation(Animations.standard, value: isHovered),
+        //   之前 scaleEffect 后又挂一遍, SwiftUI 内部跑两遍比较, 浪费 type-checker
+        //   现在 scale 跟随 isHovered 变化由上面那个统一处理
         // V6.22.2 (P2 #8): VoiceOver 标签 — 之前 0 标签, 盲人用户不能用
         //   - label: sidebar item 名称 + count ("图库 50 张")
         //   - hint: "显示所有照片" / "筛选重复图" 等 role 描述
@@ -104,9 +108,11 @@ struct SidebarRow: View {
         return .clear
     }
 
-    /// 计数 text 颜色：选中 → white (跟 macOS 标准选中白字一致), 默认 → secondary.opacity
+    /// 计数 text 颜色：选中 → accent (跟 macOS Sonoma+ 真版一致), 默认 → secondary.opacity
+    /// V6.96: 选中色改 .accentColor — 之前 .white 适配旧灰色 activeBackground
+    ///   现在 activeBackground 改 accentColor.opacity(0.15), label/icon 都用 .accentColor, count 同步
     private var currentCountColor: Color {
-        if isSelected { return .white }
+        if isSelected { return SidebarStyle.labelActive }
         return colorScheme == .dark ? Color.secondary.opacity(0.85) : Color.secondary.opacity(0.7)
     }
 

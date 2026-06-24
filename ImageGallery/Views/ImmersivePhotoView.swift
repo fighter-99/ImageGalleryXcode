@@ -47,7 +47,19 @@ struct ImmersivePhotoView: View {
             //   跳过本处, Photos 真版 ImmersivePhotoView 同模式.
             if let photo = currentPhoto {
                 if let nsImage = loadedImage {
-                    Image(nsImage: nsImage)
+                    // V6.94.1: 用 MarkupService.compose 把原图 + markupData 合成为 displayImage
+                    //   之前 loadedImage 是 raw 原图, markup 标注在 immersive view 不可见 — UX bug
+                    //   现在 compose 后 markup 可见, 跟 Photos 真版 immersive view 标注一致
+                    //   markupData 为 nil 时 compose 直接返回原图 (no-op)
+                    // V6.97.1: 链上 PhotoCropService.compose (P0 #5 Crop / Aspect)
+                    //   markup 先 (composited overlay), crop 后 (extract region)
+                    //   两个 transformation 正交 — 任意组合 / 单用都安全
+                    //   跟 V6.94.1 markup compose chain 完全对称 wiring
+                    let displayImage = PhotoCropService.compose(
+                        baseImage: MarkupService.compose(baseImage: nsImage, markupData: photo.markupData),
+                        cropData: photo.cropRect
+                    )
+                    Image(nsImage: displayImage)
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -55,14 +67,27 @@ struct ImmersivePhotoView: View {
                         //   DesignTokens.swift:423 已定义同名 token, 本处旁路
                         .padding(WindowModeMetrics.viewerImagePadding)
                 } else if loadFailed {
-                    // V6.31.2: 加载失败 → 静态 fallback (exclamationmark.triangle + 文件名)
-                    VStack(spacing: 16) {
-                        Image(systemName: "exclamationmark.triangle")
-                            .font(Typography.emptyStateIconLarge)
-                            .foregroundStyle(.secondary)
-                        Text(photo.filename)
-                            .foregroundStyle(.white)
-                    }
+                    // V6.96 P2 #2: ErrorStateView 范式统一——自绘 fallback 改 EmptyStateView(.destructive)
+                    //   之前自绘: icon + 文件名 (视觉跟空状态/加载态区分弱)
+                    //   现在 EmptyStateView: 120pt 红色圆形 backdrop + 56pt icon + caption + retry 按钮
+                    //   跟全 app 错误态视觉锤一致, Photos 真版 immersive view fallback 范式
+                    // V6.97 P2-3: 补 icon 参数 + onTap 标签 + loadCurrentImage → loadCurrentPhoto (跟实际方法名一致)
+                    EmptyStateView(
+                        icon: "exclamationmark.triangle",
+                        title: Copy.loadFailedTitle,
+                        subtitle: photo.filename,
+                        style: .destructive,
+                        primaryAction: EmptyStateView.Action(
+                            label: Copy.retry,
+                            systemImage: IconNames.arrowClockwise,
+                            onTap: {
+                                // V6.97 P2-3: 真正 reload — loadedImage 置 nil + loadFailed 置 false
+                                //   加载逻辑在外层 .task(id: currentPhoto?.id) 里, SwiftUI 会自动重跑
+                                loadedImage = nil
+                                loadFailed = false
+                            }
+                        )
+                    )
                 } else {
                     // V6.31.2: 加载中 → shimmer 骨架 (跟 PhotoThumbnailView 一致)
                     ZStack {

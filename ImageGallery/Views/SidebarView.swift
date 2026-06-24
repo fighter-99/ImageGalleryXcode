@@ -95,6 +95,13 @@ struct SidebarView: View {
     @State private var showingNewTagAlert = false
     @State private var newFolderName = ""
     @State private var newTagName = ""
+    // V6.97 P2-3: 右键菜单 rename state — 用 UUID 而不是 @Model 引用 (避免 SwiftData ref 跨 alert 闭包泄漏)
+    @State private var renameFolderID: UUID? = nil
+    @State private var renameFolderName: String = ""
+    @State private var renameTagID: UUID? = nil
+    @State private var renameTagName: String = ""
+    @State private var renameSmartFolderID: UUID? = nil
+    @State private var renameSmartFolderName: String = ""
 
     // 拖拽目标高亮
     @State private var dropTargetFolderID: UUID?
@@ -128,6 +135,8 @@ struct SidebarView: View {
 
     /// V3.5.15: 纯导航侧栏，搜索在工具栏（V3.5.14 的侧栏顶部搜索框已移除）
     /// V4.0.0.5: 把原 body 内的 List 抽到独立 var，让 sidebarTopBar + sidebarContent 组装
+    /// V6.96: 顶部 + 底部加 padding — 跟 macOS 真版 sidebar 一致 (breathing room)
+    ///   之前 List 顶/底贴 sidebar 边缘, 视觉上挤
     @ViewBuilder
     private var sidebarContent: some View {
         List(selection: $selection) {
@@ -140,15 +149,30 @@ struct SidebarView: View {
 
             // ─── 我的图馆 ───
             DisclosureGroup(isExpanded: $isLibraryExpanded) {
-                sidebarRow(icon: "photo.on.rectangle.angled", label: Copy.sidebarAll, count: libraryStats.inLibraryCount, target: .all)
+                // V6.96 P2 #6: "全部" 不显示 count — Photos.app Library 范式
+                //   底部状态栏 "92 张" 已经告诉总数, 侧边栏再写 92 是冗余
+                //   智能筛选 (待整理/重复图/最近 7 天/大图) 保留 count, 因为是过滤结果
+                sidebarRow(icon: "photo.on.rectangle.angled", label: Copy.sidebarAll, target: .all)
                 sidebarRow(icon: "tray", label: Copy.sidebarUnfiled, count: libraryStats.unfiledCount, target: .unfiled)
                 if libraryStats.duplicatePhotoCount > 0 {
-                    sidebarRow(icon: "doc.on.doc", label: Copy.sidebarDuplicates, count: libraryStats.duplicatePhotoCount, target: .duplicates, iconColor: SidebarStyle.iconColorDuplicate)
+                    // V6.96 P1 #10: monochrome 图标——删 hardcoded iconColor
+                    //   之前 hardcoded .orange (iconColorDuplicate) 是 iOS 风 (iOS Reminders 彩色分类)
+                    //   macOS Photos.app 侧栏用单色 SF Symbol, 颜色只随 selected/hover 变
+                    sidebarRow(icon: "doc.on.doc", label: Copy.sidebarDuplicates, count: libraryStats.duplicatePhotoCount, target: .duplicates)
                 }
-                sidebarRow(icon: "clock.arrow.circlepath", label: Copy.sidebarRecent7Days, count: libraryStats.recent7DaysCount, target: .recent7Days, iconColor: SidebarStyle.iconColorRecent)
-                sidebarRow(icon: "externaldrive", label: Copy.sidebarLargeFiles, count: libraryStats.largeFilesCount, target: .largeFiles, iconColor: SidebarStyle.iconColorLarge)
+                // V6.96 P1 #10: monochrome 图标——删 hardcoded .blue (iconColorRecent)
+                sidebarRow(icon: "clock.arrow.circlepath", label: Copy.sidebarRecent7Days, count: libraryStats.recent7DaysCount, target: .recent7Days)
+                // V6.96 P1 #10: monochrome 图标——删 hardcoded .purple (iconColorLarge)
+                sidebarRow(icon: "externaldrive", label: Copy.sidebarLargeFiles, count: libraryStats.largeFilesCount, target: .largeFiles)
             } label: {
                 Text(Copy.sidebarSectionLibrary).font(Typography.sidebarSectionHeader)
+                    // V6.95 A: uppercase + tracking 0.8 — Photos 真版 sidebar section header 风格
+                    .textCase(.uppercase).tracking(0.8)
+                    // V6.96 P4: section header 上下间距 — section 视觉分组更明显
+                    //   顶部 6pt 让 section header 跟上一个 section 的最后 row 分层
+                    //   底部 2pt 让 section header 跟本 section 第一个 row 紧凑
+                    .padding(.top, SidebarStyle.sectionHeaderTopPadding)
+                    .padding(.bottom, SidebarStyle.sectionHeaderBottomPadding)
             }
 
             // ─── 智能文件夹（DisclosureGroup + 底部新建入口）───
@@ -164,6 +188,11 @@ struct SidebarView: View {
                     .font(Typography.sidebarCount)
                 } label: {
                     Text(Copy.sidebarSectionSmartFolders).font(Typography.sidebarSectionHeader)
+                    // V6.95 A: uppercase + tracking 0.8
+                    .textCase(.uppercase).tracking(0.8)
+                    // V6.96 P4: section header 上下间距
+                    .padding(.top, SidebarStyle.sectionHeaderTopPadding)
+                    .padding(.bottom, SidebarStyle.sectionHeaderBottomPadding)
                 }
             }
 
@@ -182,6 +211,11 @@ struct SidebarView: View {
                 .font(Typography.sidebarCount)
             } label: {
                 Text(Copy.sidebarSectionFolders).font(Typography.sidebarSectionHeader)
+                    // V6.95 A: uppercase + tracking 0.8
+                    .textCase(.uppercase).tracking(0.8)
+                    // V6.96 P4: section header 上下间距
+                    .padding(.top, SidebarStyle.sectionHeaderTopPadding)
+                    .padding(.bottom, SidebarStyle.sectionHeaderBottomPadding)
             }
 
             // ─── 标签 ───
@@ -213,6 +247,11 @@ struct SidebarView: View {
                 .font(Typography.sidebarCount)
             } label: {
                 Text(Copy.sidebarSectionTags).font(Typography.sidebarSectionHeader)
+                    // V6.95 A: uppercase + tracking 0.8
+                    .textCase(.uppercase).tracking(0.8)
+                    // V6.96 P4: section header 上下间距
+                    .padding(.top, SidebarStyle.sectionHeaderTopPadding)
+                    .padding(.bottom, SidebarStyle.sectionHeaderBottomPadding)
             }
 
             // ─── Section 4: 最近删除（单独 section，底部入口）───
@@ -245,6 +284,11 @@ struct SidebarView: View {
         .listStyle(.sidebar)
         .scrollContentBackground(.hidden)
         .listRowSeparator(.hidden)
+        // V6.96: 顶部 + 底部 padding — 跟 macOS 真版 sidebar 一致 (breathing room)
+        //   之前 List 顶/底贴 sidebar 边缘, 视觉上挤
+        //   12pt 上下 — macOS Sonoma+ System Settings sidebar 顶/底 padding 标准
+        .padding(.top, 12)
+        .padding(.bottom, 12)
         // V5.51: "图馆" → "图库" typo 修复 + 走 Term.library 字典
         .navigationTitle(Term.library)
 
@@ -258,6 +302,32 @@ struct SidebarView: View {
             TextField(Copy.tagNamePlaceholder, text: $newTagName)
             Button(Copy.cancel, role: .cancel) {}
             Button(Copy.create) { createTag() }
+        }
+        // V6.97 P2-3: 右键菜单重命名 3 个 alert — 跟 create 共享 pattern, 但触发源是右键
+        //   rename*ID 用 UUID 而非 @Model 引用 (避免 SwiftData 对象被 alert 闭包意外 capture)
+        .alert(Copy.renameFolder, isPresented: Binding(
+            get: { renameFolderID != nil },
+            set: { if !$0 { renameFolderID = nil } }
+        )) {
+            TextField(Copy.folderNamePlaceholder, text: $renameFolderName)
+            Button(Copy.cancel, role: .cancel) { renameFolderID = nil }
+            Button(Copy.save) { performRenameFolder() }
+        }
+        .alert(Copy.renameTag, isPresented: Binding(
+            get: { renameTagID != nil },
+            set: { if !$0 { renameTagID = nil } }
+        )) {
+            TextField(Copy.tagNamePlaceholder, text: $renameTagName)
+            Button(Copy.cancel, role: .cancel) { renameTagID = nil }
+            Button(Copy.save) { performRenameTag() }
+        }
+        .alert(Copy.renameSmartFolder, isPresented: Binding(
+            get: { renameSmartFolderID != nil },
+            set: { if !$0 { renameSmartFolderID = nil } }
+        )) {
+            TextField(Copy.smartFolderNamePlaceholder, text: $renameSmartFolderName)
+            Button(Copy.cancel, role: .cancel) { renameSmartFolderID = nil }
+            Button(Copy.save) { performRenameSmartFolder() }
         }
     }
 
@@ -318,6 +388,54 @@ struct SidebarView: View {
         modelContext.saveWithLog()
         // V6.08: 存 UUID 而非 @Model 引用
         selection = .tag(tag.id)
+    }
+
+    // V6.97 P2-3: 右键 rename 入口 — alert 用 UUID, perform 用 fetch 取回 @Model 再改
+    private func startRenameFolder(_ folder: Folder) {
+        renameFolderID = folder.id
+        renameFolderName = folder.name
+    }
+    private func startRenameTag(_ tag: Tag) {
+        renameTagID = tag.id
+        renameTagName = tag.name
+    }
+    private func startRenameSmartFolder(_ sf: SmartFolder) {
+        renameSmartFolderID = sf.id
+        renameSmartFolderName = sf.name
+    }
+
+    private func performRenameFolder() {
+        let trimmed = renameFolderName.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty, let id = renameFolderID,
+              let folder = modelContext.fetchFirst(Folder.self, predicate: #Predicate { $0.id == id }) else {
+            renameFolderID = nil
+            return
+        }
+        folder.name = trimmed
+        modelContext.saveWithLog()
+        renameFolderID = nil
+    }
+    private func performRenameTag() {
+        let trimmed = renameTagName.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty, let id = renameTagID,
+              let tag = modelContext.fetchFirst(Tag.self, predicate: #Predicate { $0.id == id }) else {
+            renameTagID = nil
+            return
+        }
+        tag.name = trimmed
+        modelContext.saveWithLog()
+        renameTagID = nil
+    }
+    private func performRenameSmartFolder() {
+        let trimmed = renameSmartFolderName.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty, let id = renameSmartFolderID,
+              let sf = modelContext.fetchFirst(SmartFolder.self, predicate: #Predicate { $0.id == id }) else {
+            renameSmartFolderID = nil
+            return
+        }
+        sf.name = trimmed
+        modelContext.saveWithLog()
+        renameSmartFolderID = nil
     }
 
     private func deleteTag(_ tag: Tag) {
@@ -481,36 +599,9 @@ struct SidebarView: View {
         return photos.count
     }
 
-    // 拖拽高亮背景（V3.5.17：fill + border，Photos.app 风格）
-    // V3.6.36: 改用 springGentle 替换 quick（0.15s 太快，视觉像突现）
-    //   + 0.20 → 0.28 透明度（更明显）+ 加 .shadow 让高亮有"抬起"感
-    private func folderDropHighlight(_ folder: Folder) -> some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: Radius.sm)
-                .fill(dropTargetFolderID == folder.id
-                      ? Color.accentColor.opacity(0.28)
-                      : Color.clear)
-                .padding(-4)
-            RoundedRectangle(cornerRadius: Radius.sm)
-                .stroke(dropTargetFolderID == folder.id
-                        ? Color.accentColor
-                        : Color.clear,
-                        lineWidth: 2)
-                .padding(-4)
-                // V6.66 (Wave 2 调用点迁移): drop target 阴影改 Elevation.standard
-                //   之前: hardcode radius 6 + opacity 0.4 (accent)
-                //   现在: standard.radius 6 + 标准 elevation opacity (但用 accent 颜色强调 drop)
-                //   token 提供 radius / y 单一真相源, color 仍走 accent (drop 强提示)
-                .shadow(
-                    color: dropTargetFolderID == folder.id
-                        ? Color.accentColor.opacity(0.4)
-                        : .clear,
-                    radius: Elevation.standard.radius,
-                    y: Elevation.standard.y
-                )
-        }
-        .animation(Animations.springGentle, value: dropTargetFolderID == folder.id)
-    }
+    // V6.96 P1 #3: folderDropHighlight 整段函数删除——逻辑已收口到 DropTargetHighlight modifier
+    //   原函数 28 行 + 2 个嵌套 RoundedRectangle, 散落在 ViewBuilder 里; 现在 folder row 用 .dropTargetHighlight(.folder, isActive:) 一行调用
+    //   修改 padding/color 只需要改 DropTargetHighlight.swift 一处
 
     // V3.5.8：把 ForEach 里的复杂修饰符链抽出（修类型检查超时）
     @ViewBuilder
@@ -524,9 +615,10 @@ struct SidebarView: View {
             // V6.08: 传 UUID 而非 @Model 引用
             target: .folder(folder.id)
         )
-        .background(folderDropHighlight(folder))
         // V3.6.33: .onDrop(of: [.text]) → .dropDestination(for: URL.self)
         // 配对 .draggable(URL) 现代 API 对
+        // V6.96 P1 #3: drop target 高亮收口到 DropTargetHighlight modifier (folder style)
+        //   之前 folderDropHighlight(folder) 整段函数 (ZStack fill+stroke+shadow) 28 行, 现在 1 行
         .dropDestination(for: URL.self) { urls, _ in
             handlePhotoDrop(urls: urls, to: folder)
         } isTargeted: { isTargeted in
@@ -536,6 +628,7 @@ struct SidebarView: View {
                 dropTargetFolderID = nil
             }
         }
+        .dropTargetHighlight(.folder, isActive: dropTargetFolderID == folder.id)
         .contextMenu {
             Button(role: .destructive) {
                 deleteFolder(folder)

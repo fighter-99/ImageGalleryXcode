@@ -76,10 +76,15 @@ enum Copy {
 
     // MARK: - 侧栏 / 按钮
     static let newFolder = String(localized: "newFolder", defaultValue: "新建文件夹")
+    /// V6.97 P3-2: File 菜单 — 新窗口 (⌘N 复用 macOS 系统标准快捷键)
+    ///   开新 gallery 窗口, sidebar/排序/缩略图大小各窗口独立
+    static let newWindow = String(localized: "newWindow", defaultValue: "新建窗口")
     static let newTag = String(localized: "newTag", defaultValue: "新建标签")
     static let folderNamePlaceholder = String(localized: "folderNamePlaceholder", defaultValue: "文件夹名称")
     static let cancel = String(localized: "cancel", defaultValue: "取消")
     static let create = String(localized: "create", defaultValue: "创建")
+    /// V6.97 P2-3: 通用 save 按钮 label (智能文件夹编辑 sheet / 后续其他编辑表单复用)
+    static let save = String(localized: "save", defaultValue: "保存")
     static let confirm = String(localized: "confirm", defaultValue: "确定")
     static let delete = String(localized: "delete", defaultValue: "删除")
 
@@ -243,9 +248,29 @@ enum Copy {
     static let addTagAction = String(localized: "addTagAction", defaultValue: "加标签")
     static let deleteTag = String(localized: "deleteTag", defaultValue: "删除标签")
     static let deleteFolder = String(localized: "deleteFolder", defaultValue: "删除文件夹")
+    /// V6.97 P2-3: 侧栏右键菜单 — 重命名 (folder / tag / smart folder 通用)
+    static let renameFolder = String(localized: "renameFolder", defaultValue: "重命名文件夹")
+    static let renameTag = String(localized: "renameTag", defaultValue: "重命名标签")
+    static let renameSmartFolder = String(localized: "renameSmartFolder", defaultValue: "重命名智能文件夹")
+    /// V6.97 P2-3: 侧栏右键菜单 — 标签 4 项菜单 (重命名 / 修改颜色 / 添加到过滤器 / 删除)
+    static let changeColor = String(localized: "changeColor", defaultValue: "修改颜色")
+    /// V6.97 P2-3: 侧栏右键菜单 — smart folder 4 项菜单 (重命名 / 编辑过滤器 / 复制 / 删除)
+    static let editSmartFolder = String(localized: "editSmartFolder", defaultValue: "编辑筛选条件")
+    static let duplicateSmartFolder = String(localized: "duplicateSmartFolder", defaultValue: "复制为新智能文件夹")
+    /// V6.97 P2-3: 智能文件夹编辑 sheet — title/placeholder/save button 复用创建 sheet strings
+    static let smartFolderEditTitle = String(localized: "smartFolderEditTitle", defaultValue: "编辑智能文件夹")
+    /// V6.97 P2-3: 智能文件夹复制 — 后缀 ("我的相册" → "我的相册 副本")
+    static let smartFolderDuplicateSuffix = String(localized: "smartFolderDuplicateSuffix", defaultValue: " 副本")
     /// 通用 action label
     static let copyAction = String(localized: "copyAction", defaultValue: "复制")
+    /// V6.96 P2 #2: 错误态 EmptyStateView title + retry 按钮
+    static let loadFailedTitle = String(localized: "loadFailedTitle", defaultValue: "加载失败")
+    static let retry = String(localized: "retry", defaultValue: "重试")
     static let revealInFinder = String(localized: "revealInFinder", defaultValue: "在 Finder 中显示")
+    // V6.96 P0 #7: View > Zoom / Actual Size 菜单 label
+    static let actualSize = String(localized: "actualSize", defaultValue: "实际大小")
+    static let zoomIn = String(localized: "zoomIn", defaultValue: "放大")
+    static let zoomOut = String(localized: "zoomOut", defaultValue: "缩小")
     /// 评分——分组标题
     static let ratingCategory = String(localized: "ratingCategory", defaultValue: "评分")
     /// 评分——"N 星" 标签
@@ -665,6 +690,14 @@ enum Copy {
         String.localizedStringWithFormat(String(localized: "thumbnailDragCount", defaultValue: "共 %lld 张"), count)
     }
     static let thumbnailAccessibilityHint = String(localized: "thumbnailAccessibilityHint", defaultValue: "单击切换选中, 双击进入沉浸式查看, 右键显示更多操作")
+    /// V6.97 P3-3: EmptyStateView CTA hint — 主按钮/次按钮的 VoiceOver 描述
+    static let accessibilityActionHintPrimary = String(localized: "accessibilityActionHintPrimary", defaultValue: "双击执行此操作")
+    static let accessibilityActionHintSecondary = String(localized: "accessibilityActionHintSecondary", defaultValue: "双击执行次要操作")
+    /// V6.97 P3-3: 加载状态 / 进度环 / shimmer — VoiceOver 友好提示
+    static let accessibilityLoading = String(localized: "accessibilityLoading", defaultValue: "正在加载图片")
+    /// V6.97 P3-3: 工具栏图标按钮 — VoiceOver 读"缩略图大小" 完整描述 (value 自动从 Int 转)
+    static let accessibilityThumbnailSizeLabel = String(localized: "accessibilityThumbnailSizeLabel", defaultValue: "缩略图大小")
+    static let accessibilitySliderValueFormat = String(localized: "accessibilitySliderValueFormat", defaultValue: "%lld 像素")
     // PhotoGridView — 6 个 grid title (3 复用 + 3 新)
     //   复用: Copy.sidebarUnfiled ("待整理"), Copy.sidebarDuplicates ("重复图"), Copy.sidebarAll ("全部")
     //   ViewMode.monthLabel 复用 Copy.dateSectionMonthLabel(_:) (V6.37.1 已加)
@@ -721,6 +754,84 @@ enum Copy {
     static func undoRotate(_ count: Int) -> String {
         String.localizedStringWithFormat(String(localized: "undoRotate", defaultValue: "旋转 %lld 张照片"), count)
     }
+
+    // V6.94.1: Markup (PencilKit 标注) i18n keys — P0 #3
+    //   跟 undoRotate 同 pattern — %lld 张照片 (虽然 markup 实际只 1 张, 但统一 pattern)
+    static func undoMarkup(_ count: Int) -> String {
+        String.localizedStringWithFormat(String(localized: "undoMarkup", defaultValue: "标注 %lld 张照片"), count)
+    }
+    static var markupMenu: String {
+        String(localized: "markupMenu", defaultValue: "标注...")
+    }
+    static var markupTooltip: String {
+        String(localized: "markupTooltip", defaultValue: "标注当前照片 (⌘M)")
+    }
+    static var markupSheetDone: String {
+        String(localized: "markupSheetDone", defaultValue: "完成")
+    }
+    static var markupSheetCancel: String {
+        String(localized: "markupSheetCancel", defaultValue: "取消")
+    }
+    /// V6.97 P2-1: MarkupSheet 工具栏 — 撤销最后一笔 tooltip
+    static let markupUndoLastStroke = String(localized: "markupUndoLastStroke", defaultValue: "撤销最后一笔")
+    // V6.94.1: MarkupTool.localized label — 4 个工具 (pen/marker/eraser/lasso)
+    static func markupTool(_ rawValue: String) -> String {
+        switch rawValue {
+        case "pen":    return String(localized: "markupToolPen", defaultValue: "钢笔")
+        case "marker": return String(localized: "markupToolMarker", defaultValue: "记号笔")
+        case "eraser": return String(localized: "markupToolEraser", defaultValue: "橡皮擦")
+        case "lasso":  return String(localized: "markupToolLasso", defaultValue: "套索")
+        default:       return rawValue
+        }
+    }
+
+    // V6.97.1: Crop / Aspect (P0 #5) i18n keys — 跟 V6.94.1 markupMenu 同 pattern
+    //   menu / sheet 标题 / 6 个 preset 名称 / undo / toast / 错误
+    static var cropMenu: String {
+        String(localized: "cropMenu", defaultValue: "裁剪...")
+    }
+    static var cropTooltip: String {
+        String(localized: "cropTooltip", defaultValue: "裁剪当前照片 (⌘⇧K)")
+    }
+    static var cropSheetTitle: String {
+        String(localized: "cropSheetTitle", defaultValue: "裁剪")
+    }
+    static var cropSheetApply: String {
+        String(localized: "cropSheetApply", defaultValue: "应用")
+    }
+    static var cropSheetCancel: String {
+        String(localized: "cropSheetCancel", defaultValue: "取消")
+    }
+    static var cropReset: String {
+        String(localized: "cropReset", defaultValue: "重置裁剪")
+    }
+    static var cropRotate90: String {
+        String(localized: "cropRotate90", defaultValue: "旋转 90°")
+    }
+    // 6 个 Photos 真版 preset label — 跟 V6.94.1 markupTool 同 enum-based pattern
+    static func cropPreset(_ aspect: CropAspect) -> String {
+        switch aspect {
+        case .freeform:   return String(localized: "cropPresetFreeform", defaultValue: "自由")
+        case .ratio_1_1:  return String(localized: "cropPreset1_1", defaultValue: "1:1")
+        case .ratio_4_3:  return String(localized: "cropPreset4_3", defaultValue: "4:3")
+        case .ratio_16_9: return String(localized: "cropPreset16_9", defaultValue: "16:9")
+        case .ratio_3_2:  return String(localized: "cropPreset3_2", defaultValue: "3:2")
+        case .ratio_2_3:  return String(localized: "cropPreset2_3", defaultValue: "2:3")
+        }
+    }
+    // crop toast + undo (跟 undoRotate / undoMarkup 同 pattern)
+    static let toastSelectCropFirst = String(localized: "toastSelectCropFirst", defaultValue: "请先选择要裁剪的图片")
+    static let cropFailedTitle = String(localized: "cropFailedTitle", defaultValue: "裁剪失败")
+    static func toastCropped(_ count: Int) -> String {
+        String.localizedStringWithFormat(String(localized: "toastCropped", defaultValue: "已裁剪 %lld 张图片"), count)
+    }
+    static func toastUndoCrop(_ count: Int) -> String {
+        String.localizedStringWithFormat(String(localized: "toastUndoCrop", defaultValue: "已撤销裁剪 %lld 张"), count)
+    }
+    static func undoCrop(_ count: Int) -> String {
+        String.localizedStringWithFormat(String(localized: "undoCrop", defaultValue: "裁剪 %lld 张照片"), count)
+    }
+
     // speak 反馈 (含 filename %@)
     static func speakOnePhoto(_ filename: String) -> String {
         String.localizedStringWithFormat(String(localized: "speakOnePhoto", defaultValue: "已选 1 张照片，文件名 %@"), filename)
