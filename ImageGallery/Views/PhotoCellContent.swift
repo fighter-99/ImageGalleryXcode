@@ -46,7 +46,9 @@ struct PhotoCellContent: View {
     //   context menu "标注..." 项触发, ContentView 在 .onReceive 监听
     let onMarkup: () -> Void
     // V6.97.1 (P0 #5): 裁剪回调 — caller 透传同 onMarkup
-    let onCrop: () -> Void
+    let onCrop: (Photo) -> Void
+    // V6.97.1.1 (Bug fix C3): isSingle — 单选 gate, 多选 disable 裁剪... button
+    let isSingle: Bool
 
     // 内部 state (跟原 PhotoThumbnailView 同)
     // V3.6.26: 异步缩略图加载
@@ -493,7 +495,8 @@ struct PhotoCellContent: View {
             // V6.94.1 (P0 #3): 标注闭包 — 转发到 CellContextMenuModifier
             //   context menu "标注..." 项触发, 走 NotificationCenter.markupRequested
             onMarkup: onMarkup,
-            onCrop: onCrop
+            onCrop: onCrop,
+            isSingle: isSingle
         ))
         // V6.38.1 (Phase 1): 删 .confirmationDialog — 删除从右键菜单搬走, 走 ⌘⌫ → model.grid.handleDelete()
         //   不再有 per-cell confirm dialog (Photos.app 范式)

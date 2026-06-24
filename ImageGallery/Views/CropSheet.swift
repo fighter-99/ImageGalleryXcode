@@ -359,6 +359,9 @@ struct CropCanvasViewRepresentable: NSViewControllerRepresentable {
 // MARK: - V6.97.1: CropSheet (跟 V6.94.1 MarkupSheet 模式 — 4-段 toolbar)
 struct CropSheet: View {
     let photo: Photo
+    // V6.97.1.1 (Bug fix C1): model 注入 — save() 走 model.grid.cropSelected (跟 rotateSelected 同样)
+    //   CropSheet 必须能拿到 ContentViewModel 才能调 cropSelected (undo + toast register)
+    @Bindable var model: ContentViewModel
     @State private var canvas = CropCanvasView(frame: .zero)
     @State private var selectedAspect: CropAspect = .freeform
     @Environment(\.dismiss) private var dismiss
@@ -488,9 +491,11 @@ struct CropSheet: View {
     }
 
     private func save() {
-        guard let data = canvas.serializeCrop() else { dismiss(); return }
-        // V6.97.1: 用 @Environment modelContext 写 cropRect (跟 markup / rotate 一致)
-        PhotoCropService.applyCrop(data, to: photo, in: modelContext)
+        // V6.97.1.1 (Bug fix C1): 改调 model.grid.cropSelected (跟 rotateSelected 同 pattern)
+        //   之前: 直接调 PhotoCropService.applyCrop — 绕过 cropSelected, ⌘Z 不能撤销 crop
+        //   现在: 走 model.grid.cropSelected(rect:aspect:), undo + toast 自动 register
+        //   CoalesceId "crop" 1s 窗内合并连续裁剪 (跟 markup/rotate 一致)
+        model.grid.cropSelected(rect: canvas.cropRect, aspect: canvas.aspect)
         dismiss()
     }
 }

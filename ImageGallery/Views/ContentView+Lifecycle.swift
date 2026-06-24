@@ -386,7 +386,9 @@ extension View {
     func cropSheet(model: ContentViewModel, showingSheet: Bool) -> some View {
         self.sheet(isPresented: bindable(showingSheet, onDismiss: { model.grid.showingCropSheet = false })) {
             if let resolved = model.grid.resolvedSingle {
-                CropSheet(photo: resolved.photo)
+                // V6.97.1.1 (Bug fix C1): 传 model 给 CropSheet, save() 走 model.grid.cropSelected
+                //   (C1 undo 死修法 — 之前直接调 PhotoCropService.applyCrop 绕过 undo register)
+                CropSheet(photo: resolved.photo, model: model)
             } else {
                 EmptyView()
             }

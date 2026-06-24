@@ -51,7 +51,9 @@ struct PhotoGridPane: View {
     let onMarkup: () -> Void
     // V6.97.1 (P0 #5): 裁剪回调 — ContentView 传 { NotificationCenter.post(.cropRequested) }
     //   跟 onMarkup 完全对称 wiring pattern
-    let onCrop: () -> Void
+    let onCrop: (Photo) -> Void
+    // V6.97.1.1 (Bug fix C3): isSingle — 单选 gate, 多选 disable 裁剪... button
+    let isSingle: Bool
     let onDoubleTap: (Photo) -> Void
     // V4.9.0: 清空所有 filter（用于"无搜索结果"等空状态次 CTA）
     let onClearFilters: () -> Void
@@ -106,7 +108,8 @@ struct PhotoGridPane: View {
             // V6.94.1 (P0 #3): 标注回调 — caller (ContentView) 传 NotificationCenter.post(.markupRequested)
             onMarkup: onMarkup,
             // V6.97.1 (P0 #5): 裁剪回调 — caller (ContentView) 传 NotificationCenter.post(.cropRequested)
-            onCrop: onCrop
+            onCrop: onCrop,
+            isSingle: isSingle
         )
     }
 }

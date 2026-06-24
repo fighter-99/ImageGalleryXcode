@@ -40,7 +40,9 @@ struct PhotoGridLayoutView: View {
     // V6.94.1 (P0 #3): 标注回调 — 透传到 PhotoRowView
     let onMarkup: () -> Void
     // V6.97.1 (P0 #5): 裁剪回调 — caller 透传同 onMarkup
-    let onCrop: () -> Void
+    let onCrop: (Photo) -> Void
+    // V6.97.1.1 (Bug fix C3): isSingle — 单选 gate, 多选 disable 裁剪... button
+    let isSingle: Bool
 
     var body: some View {
         // V5.39.1: 改用 LazyVStack(spacing: rowSpacing) 直接设行间距
@@ -71,7 +73,8 @@ struct PhotoGridLayoutView: View {
                     onRotate: onRotate,
                     // V6.94.1 (P0 #3): 标注回调透传
                     onMarkup: onMarkup,
-            onCrop: onCrop
+            onCrop: onCrop,
+            isSingle: isSingle
                 )
             }
         }

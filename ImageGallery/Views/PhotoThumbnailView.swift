@@ -104,7 +104,9 @@ struct PhotoThumbnailView: View {
     //   context menu "标注..." 项触发, 走 NotificationCenter
     let onMarkup: () -> Void
     // V6.97.1 (P0 #5): 裁剪回调 — caller 透传同 onMarkup
-    let onCrop: () -> Void
+    let onCrop: (Photo) -> Void
+    // V6.97.1.1 (Bug fix C3): isSingle — 单选 gate, 多选 disable 裁剪... button
+    let isSingle: Bool
     // V6.38.1 (Phase 1): onDelete 移除 — 删除从 cell 入口搬走, 走 ⌘⌫ → handleDelete()
 
     @Environment(\.modelContext) private var modelContext
@@ -133,7 +135,8 @@ struct PhotoThumbnailView: View {
             onRotateRight: onRotateRight,
             // V6.94.1 (P0 #3): 标注闭包 (context menu "标注..." 项)
             onMarkup: onMarkup,
-            onCrop: onCrop
+            onCrop: onCrop,
+            isSingle: isSingle
         )
     }
 }

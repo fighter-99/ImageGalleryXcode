@@ -100,7 +100,9 @@ struct PhotoGridView: View {
     // V6.94.1 (P0 #3): 标注回调 — caller (ContentView) 传 NotificationCenter.post(.markupRequested) closure
     let onMarkup: () -> Void
     // V6.97.1 (P0 #5): 裁剪回调 — caller 透传同 onMarkup
-    let onCrop: () -> Void
+    let onCrop: (Photo) -> Void
+    // V6.97.1.1 (Bug fix C3): isSingle — 单选 gate, 多选 disable 裁剪... button
+    let isSingle: Bool
 
     // ─── 综合筛选 ───
     // V3.6.5: 从 computed property 改为 @State 缓存 + filterSignature 失效
@@ -742,7 +744,8 @@ struct PhotoGridView: View {
             onRotate: onRotate,
             // V6.94.1 (P0 #3): 标注回调 — 透传 ContentView 传的 { NotificationCenter.post(.markupRequested) }
             onMarkup: onMarkup,
-            onCrop: onCrop
+            onCrop: onCrop,
+            isSingle: isSingle
         )
     }
 

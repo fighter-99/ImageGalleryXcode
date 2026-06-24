@@ -513,12 +513,18 @@ struct ContentView: View {
                     NotificationCenter.default.post(name: .markupRequested, object: nil)
                 },
                 // V6.97.1 (P0 #5): 裁剪回调 — 走 NotificationCenter.cropRequested (跟 Edit menu ⌘⇧K 同源)
-                //   ContentView 在 .onReceive 监听 → model.grid.showingCropSheet = true
-                //   CropSheet 弹 → 选中 1 张图时启用 (resolvedSingle), 0/多张图走 toast 提示
-                //   跟 markup 完全对称 wiring pattern
-                onCrop: {
+                // V6.97.1.1 (Bug fix C2): onCrop 改 (Photo) -> Void 跟 onRotate 对称
+                //   之前 () -> Void 永远弹 resolvedSingle (错的图) — 右键 B 弹 A
+                //   现在 (Photo) → ContentView 先 selectSingle(photo.id) 再 post .cropRequested
+                //   跟 onRotate 同样: model.grid.selection = selection.selectingSingle(photo.id)
+                onCrop: { photo in
+                    model.grid.selection = model.grid.selection.selectingSingle(photo.id)
                     NotificationCenter.default.post(name: .cropRequested, object: nil)
                 },
+                // V6.97.1.1 (Bug fix C3): isSingle — 单选 gate, 透传到 cell context menu
+                //   判定 model.grid.selection.selectedIDs.count == 1 → cell "裁剪..." button 启用
+                //   多选或 0 选 → cell "裁剪..." button disable (跟 onMarkup 同样 gate)
+                isSingle: model.grid.selection.selectedIDs.count == 1,
                 onDoubleTap: { handlePhotoDoubleTap($0) },
                 onClearFilters: { model.grid.resetFilters() },
                 onExportComplete: { count in

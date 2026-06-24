@@ -38,9 +38,13 @@ struct CellContextMenuModifier: ViewModifier {
     // V6.94.1 (P0 #3): onMarkup closure — context menu "标注..." 走 NotificationCenter.markupRequested
     //   ContentView 传 { NotificationCenter.default.post(name: .markupRequested, object: nil) }
     let onMarkup: () -> Void
-    // V6.97.1 (P0 #5): onCrop closure — context menu "裁剪..." 走 NotificationCenter.cropRequested
-    //   跟 onMarkup 完全对称 wiring
-    let onCrop: () -> Void
+    // V6.97.1.1 (Bug fix C2): onCrop 改 (Photo) -> Void 跟 onRotate 对称
+    //   之前 () -> Void 永远弹 resolvedSingle (错的图), 多选时弹错图
+    //   现在 (Photo) → ContentView 先 selectSingle(photo.id) 再 post .cropRequested
+    let onCrop: (Photo) -> Void
+    // V6.97.1.1 (Bug fix C3): isSingle — 控制 裁剪... button disabled 状态
+    //   多选 (selection.count > 1) 时 disable, 跟 onMarkup 同样 single-selection gate
+    let isSingle: Bool
 
     func body(content: Content) -> some View {
         content.contextMenu {
@@ -99,11 +103,15 @@ struct CellContextMenuModifier: ViewModifier {
                     Label(Copy.markupMenu, systemImage: "pencil.tip.crop.circle")
                 }
                 // V6.97.1 (P0 #5): 裁剪... — 走 NotificationCenter.cropRequested (跟 Edit menu ⌘⇧K 同源)
+                // V6.97.1.1 (Bug fix C2): onCrop(photo) — 传右键 cell 的 photo, 跟 onRotate 对称
+                // V6.97.1.1 (Bug fix C3): 多选时 disable (跟 onMarkup 同样 single-selection gate)
+                //   isSingle = !multiSelected — 调用方传进来 (model.grid.selection.isSingleSelected)
                 Button {
-                    onCrop()
+                    onCrop(photo)
                 } label: {
                     Label(Copy.cropMenu, systemImage: "crop")
                 }
+                .disabled(!isSingle)
             } label: {
                 Label(Copy.contextMenuViewSubmenu, systemImage: "eye")
             }

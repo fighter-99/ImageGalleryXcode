@@ -36,8 +36,10 @@ import AppKit
         onRotate: { _, _ in },
         // V6.94.1: Preview no-op 标注
         onMarkup: { },
-        // V6.97.1: Preview no-op 裁剪
-        onCrop: { }
+        // V6.97.1.1 (Bug fix C2): Preview no-op 裁剪, (Photo) -> Void 跟 chain 对齐
+        onCrop: { _ in },
+        // V6.97.1.1 (Bug fix C3): Preview 默认 isSingle=true (Preview 单图 cell)
+        isSingle: true
     )
     .frame(width: SheetMetrics.standardWidth, height: SheetMetrics.standardHeight)
 }
