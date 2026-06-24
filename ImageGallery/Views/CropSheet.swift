@@ -137,13 +137,19 @@ class CropCanvasView: NSView {
             height: cropRect.height * bounds.height
         )
         let halfH = SheetMetrics.cropHandleSize / 2
-        let cornerSize: CGFloat = SheetMetrics.cropHandleSize * 3
-        // 4 corners
+        // V6.97.4 (M2 audit fix): corner 区跟 edge 区都 = cropHandleSize² (8×8 = 64pt²)
+        //   之前: corner = 3× cropHandleSize (24×24 = 576pt²), 9x 大
+        //         edge 用户拖 edge 中点附近被 corner 抢 → UX bug
+        //   现在: corner 区缩小到跟 edge 同尺寸, 视觉上 4 个 corner handle 仍是 8pt 方形
+        //         (handle 视觉大小没变, 只是 hitTest 区域缩小)
+        //         edge 用户能稳定点中 (Photos.app 真版 行为)
+        let cornerSize: CGFloat = SheetMetrics.cropHandleSize
+        // 4 corners — 先检测 (优先级高, 在 edge 之前)
         if NSPointInRect(p, NSRect(x: cropInView.minX - halfH, y: cropInView.maxY - halfH, width: cornerSize, height: cornerSize)) { return .cornerNW }
         if NSPointInRect(p, NSRect(x: cropInView.maxX - halfH, y: cropInView.maxY - halfH, width: cornerSize, height: cornerSize)) { return .cornerNE }
         if NSPointInRect(p, NSRect(x: cropInView.maxX - halfH, y: cropInView.minY - halfH, width: cornerSize, height: cornerSize)) { return .cornerSE }
         if NSPointInRect(p, NSRect(x: cropInView.minX - halfH, y: cropInView.minY - halfH, width: cornerSize, height: cornerSize)) { return .cornerSW }
-        // 4 edges (narrower hit area)
+        // 4 edges — corner 不命中时检测
         if abs(p.x - cropInView.minX) < halfH && p.y >= cropInView.minY && p.y <= cropInView.maxY { return .edgeW }
         if abs(p.x - cropInView.maxX) < halfH && p.y >= cropInView.minY && p.y <= cropInView.maxY { return .edgeE }
         if abs(p.y - cropInView.minY) < halfH && p.x >= cropInView.minX && p.x <= cropInView.maxX { return .edgeS }
@@ -470,13 +476,28 @@ struct CropSheet: View {
     private func rotateCrop() {
         let centerX = canvas.cropRect.midX
         let centerY = canvas.cropRect.midY
-        // 90° 旋转: (x, y, w, h) → (1-y-h, x, h, w) (基于中心)
+        // 90° 旋转: width ↔ height swap (aspect ratio 也 swap, 因为 aspect = w/h)
         let w = canvas.cropRect.width
         let h = canvas.cropRect.height
-        let newW = h
-        let newH = w
+        var newW = h
+        var newH = w
         var newX = centerX - newW / 2
         var newY = centerY - newH / 2
+
+        // V6.97.4 (M3 audit fix): 越界 fit — 如果新 rect 超出 unit square, 按比例缩小
+        //   之前: 仅 clamp x/y, width/height 不变 → 越界 (e.g. 16:9 在 9:16 viewport)
+        //   现在: 越界时 scale down 保持当前 aspect 比例, fit 到 unit square
+        //   跟 Photos.app 真实行为一致: rotate 后保持 rect 在 image 内
+        if newW > 1 || newH > 1 {
+            let scale = min(1 / newW, 1 / newH)
+            newW *= scale
+            newH *= scale
+            // 中心不变 (旋转不破坏视觉中心)
+            newX = centerX - newW / 2
+            newY = centerY - newH / 2
+        }
+
+        // x/y 边界 clamp (可能 scale 后仍边界)
         newX = max(0, min(newX, 1 - newW))
         newY = max(0, min(newY, 1 - newH))
         canvas.cropRect = CGRect(x: newX, y: newY, width: newW, height: newH).integral
