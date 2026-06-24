@@ -147,8 +147,11 @@ struct SidebarView: View {
             //   4. 最近删除（单独 section，底部独立入口）
             //   5. 存储信息（在 List 外，固定在侧栏底部）
 
+            // V6.103: 5 section 通用化 — SidebarSection 替 5 段重复 header code (~9 行 × 5 = 45 行)
+            //   V6.95 A: uppercase + tracking 0.8 + V6.96 P4 上下间距 集中 SidebarSection body
+
             // ─── 我的图馆 ───
-            DisclosureGroup(isExpanded: $isLibraryExpanded) {
+            SidebarSection(title: Copy.sidebarSectionLibrary, isExpanded: $isLibraryExpanded) {
                 // V6.96 P2 #6: "全部" 不显示 count — Photos.app Library 范式
                 //   底部状态栏 "92 张" 已经告诉总数, 侧边栏再写 92 是冗余
                 //   智能筛选 (待整理/重复图/最近 7 天/大图) 保留 count, 因为是过滤结果
@@ -164,40 +167,22 @@ struct SidebarView: View {
                 sidebarRow(icon: "clock.arrow.circlepath", label: Copy.sidebarRecent7Days, count: libraryStats.recent7DaysCount, target: .recent7Days)
                 // V6.96 P1 #10: monochrome 图标——删 hardcoded .purple (iconColorLarge)
                 sidebarRow(icon: "externaldrive", label: Copy.sidebarLargeFiles, count: libraryStats.largeFilesCount, target: .largeFiles)
-            } label: {
-                Text(Copy.sidebarSectionLibrary).font(Typography.sidebarSectionHeader)
-                    // V6.95 A: uppercase + tracking 0.8 — Photos 真版 sidebar section header 风格
-                    .textCase(.uppercase).tracking(0.8)
-                    // V6.96 P4: section header 上下间距 — section 视觉分组更明显
-                    //   顶部 6pt 让 section header 跟上一个 section 的最后 row 分层
-                    //   底部 2pt 让 section header 跟本 section 第一个 row 紧凑
-                    .padding(.top, SidebarStyle.sectionHeaderTopPadding)
-                    .padding(.bottom, SidebarStyle.sectionHeaderBottomPadding)
             }
 
-            // ─── 智能文件夹（DisclosureGroup + 底部新建入口）───
-            Section {
-                DisclosureGroup(isExpanded: $isSmartFoldersExpanded) {
-                    ForEach(smartFolders) { sf in
-                        smartFolderRow(sf)
-                    }
-                    Button(action: onCreateSmartFolder) {
-                        Label(Copy.sidebarNewSmartFolder, systemImage: "sparkles")
-                    }
-                    .buttonStyle(.plain)
-                    .font(Typography.sidebarCount)
-                } label: {
-                    Text(Copy.sidebarSectionSmartFolders).font(Typography.sidebarSectionHeader)
-                    // V6.95 A: uppercase + tracking 0.8
-                    .textCase(.uppercase).tracking(0.8)
-                    // V6.96 P4: section header 上下间距
-                    .padding(.top, SidebarStyle.sectionHeaderTopPadding)
-                    .padding(.bottom, SidebarStyle.sectionHeaderBottomPadding)
+            // ─── 智能文件夹（SidebarPlainSection + Section wrapper, 跟 V6.97 P2-3 一致）───
+            SidebarPlainSection(title: Copy.sidebarSectionSmartFolders, isExpanded: $isSmartFoldersExpanded) {
+                ForEach(smartFolders) { sf in
+                    smartFolderRow(sf)
                 }
+                Button(action: onCreateSmartFolder) {
+                    Label(Copy.sidebarNewSmartFolder, systemImage: "sparkles")
+                }
+                .buttonStyle(.plain)
+                .font(Typography.sidebarCount)
             }
 
             // ─── 我的文件夹 ───
-            DisclosureGroup(isExpanded: $isFoldersExpanded) {
+            SidebarSection(title: Copy.sidebarSectionFolders, isExpanded: $isFoldersExpanded) {
                 ForEach(folders) { folder in
                     folderSidebarRow(folder)
                 }
@@ -209,17 +194,10 @@ struct SidebarView: View {
                 }
                 .buttonStyle(.plain)
                 .font(Typography.sidebarCount)
-            } label: {
-                Text(Copy.sidebarSectionFolders).font(Typography.sidebarSectionHeader)
-                    // V6.95 A: uppercase + tracking 0.8
-                    .textCase(.uppercase).tracking(0.8)
-                    // V6.96 P4: section header 上下间距
-                    .padding(.top, SidebarStyle.sectionHeaderTopPadding)
-                    .padding(.bottom, SidebarStyle.sectionHeaderBottomPadding)
             }
 
             // ─── 标签 ───
-            DisclosureGroup(isExpanded: $isTagsExpanded) {
+            SidebarSection(title: Copy.sidebarSectionTags, isExpanded: $isTagsExpanded) {
                 ForEach(tags) { tag in
                     sidebarRow(
                         icon: "tag",
@@ -245,13 +223,6 @@ struct SidebarView: View {
                 }
                 .buttonStyle(.plain)
                 .font(Typography.sidebarCount)
-            } label: {
-                Text(Copy.sidebarSectionTags).font(Typography.sidebarSectionHeader)
-                    // V6.95 A: uppercase + tracking 0.8
-                    .textCase(.uppercase).tracking(0.8)
-                    // V6.96 P4: section header 上下间距
-                    .padding(.top, SidebarStyle.sectionHeaderTopPadding)
-                    .padding(.bottom, SidebarStyle.sectionHeaderBottomPadding)
             }
 
             // ─── Section 4: 最近删除（单独 section，底部入口）───
