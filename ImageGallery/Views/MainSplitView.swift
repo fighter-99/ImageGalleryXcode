@@ -36,8 +36,12 @@ struct MainSplitView<Sidebar: View, Center: View>: View {
     // V6.113: 删 @Binding showDetail — 主页面详情面板完全移除
     //   想看详情: 走 immersive ⓘ drawer (V6.111 实施)
 
-    // V6.116: 改回 NavigationSplitView 2-column (V6.113 改 HStack 漏 3 个 NS 系统渲染 UI)
-    //   columnVisibility @State + showSidebar @Binding 双向 onChange 同步 (V6.103.5 pattern, verbatim reapply)
+    // V6.117: NavigationSplitView **2-col form** `init(columnVisibility:sidebar:detail:)`
+    //   之前 V6.116 走 3-col form `init(columnVisibility:sidebar:content:detail:)` + Color.clear 占位
+    //   detail — SwiftUI 仍给第 3 列分配默认宽度 (~280pt ideal) → 用户看到"空 panel" 残留
+    //   现改 2-col form, 闭包 label `content:` → `detail:` (NS 2-col 命名细节, 接收 content 区)
+    //   SwiftUI 根本不知道有第 3 列 → 彻底不分配空间 → 视觉上完全无空 panel
+    //   columnVisibility @State + showSidebar @Binding 双向 onChange 同步 (V6.103.5 pattern)
     //   V6.103.1-3 失败根因: unconditional binding.write 跟 NS 内部 diff 冲突 → 死循环
     //   V6.103.5 fix: 条件判断 newValue ≠ 当前值才写
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
@@ -263,32 +267,35 @@ struct MainSplitView<Sidebar: View, Center: View>: View {
     }
 
     var body: some View {
-        // V6.116: 改回 NavigationSplitView 2-column (V6.113 改 HStack 漏 NS 系统 UI)
-        //   NS 系统自动渲染: sidebar toggle 按钮 (toolbar .navigation 段) + sidebar status bar (toolbar .principal 段) + sidebar 右边框
+        // V6.117: 改 NavigationSplitView **2-col form** `init(columnVisibility:sidebar:detail:)`
+        //   之前 V6.116 走 3-col form `init(columnVisibility:sidebar:content:detail:)` + Color.clear 占位
+        //   detail — SwiftUI 给第 3 列分配默认宽度 (~280pt ideal) → 用户看到"空 panel" 残留
+        //   V6.117 走 2-col form — `detail` label 接收的是 content 区 (NS 2-col 命名), 不要第 3 列
+        //   SwiftUI 根本不知道有第 3 列存在 → 完全不分配空间 → 视觉上彻底没有"空 panel"
+        //   NS 系统仍渲染 sidebar toggle (toolbar .navigation 段) + status bar (toolbar .principal 段)
+        //   + sidebar 右边框 — 这些是 NavigationSplitView 系统管理的, 不依赖是否有第 3 列
+        //   关键: 闭包 label 用 `detail:` 而非 `content:` — `content:` 触发 3-col init 强制要第 3 个 detail
+        //   闭包, `detail:` 触发 2-col init (SDK symbol 验证: init(columnVisibility:sidebar:detail:) 存在)
         //   双向 onChange 同步 columnVisibility ↔ showSidebar (V6.103.5 pattern, verbatim reapply)
         //   条件判断 newValue ≠ 当前值才写, 避免 NS set → onChange → set 死循环
         NavigationSplitView(columnVisibility: $columnVisibility) {
             sidebar
                 .navigationSplitViewColumnWidth(min: 160, ideal: 220, max: 320)
-        } content: {
-            // V6.103.1 fix: sidebar 隐藏时缩略图区域宽度扩展
-            //   之前 center 没设 width — SwiftUI 给 center 默认宽度, sidebar 隐藏时
-            //   释放的宽度全给 detail (因 detail 有 ideal:280)
-            //   现在 center 给 min:400 ideal:800 无 max (吸满剩余), V6.113 删 detail 后
-            //   center 占满 sidebar 隐藏后释放的全部空间
-            //   NavigationSplitView 2-column 时 SwiftUI 按 ideal 比例分配总宽度
-            //   sidebar 隐藏 → 释放 220 ideal 给 center → 缩略图扩展
+        } detail: {
+            // V6.117: NS 2-col form 的 detail 闭包接收 content 区 (SwiftUI 命名细节)
+            //   - V6.103.1 fix: sidebar 隐藏时缩略图区域宽度扩展
+            //   center 给 min:400 ideal:800 无 max (吸满剩余)
+            //   - NavigationSplitView 2-col 时 SwiftUI 按 ideal 比例分配总宽度
+            //   - sidebar 隐藏 → 释放 220 ideal 给 center → 缩略图扩展
             center
                 .navigationSplitViewColumnWidth(min: 400, ideal: 800)
-        } detail: {
-            // V6.116: 2-column NavigationSplitView 必须有 detail 闭包 (SwiftUI 14+ 限制)
-            //   V6.113 删 detail 后, V6.116 改回 NS 2-col 也需要占位 detail
-            //   用 Color.clear 占位 — 不渲染任何内容, 不影响 layout
-            //   NS 系统仍会渲染 sidebar status bar 在 toolbar .principal 段
-            Color.clear
         }
-        // V6.116: 删 detail: { detailPane } — 主页面详情面板完全移除 (V6.113)
-        //   NS 2-col 改用 Color.clear 占位 (SwiftUI 14+ API 必须)
+        // V6.117: 走 2-col form 替代 V6.116 3-col + Color.clear 占位 (V6.117 0-width 也被用户拒)
+        //   2-col form 让 NS 根本不知道有第 3 列 — 彻底不分配空间
+        //   用户 "取消详情面板后空 panel" 报告根因: 3-col form + Color.clear 占位 NS 仍给第 3 列分配宽度
+        // V6.113: 删 detail: { detailPane } — 主页面详情面板完全移除
+        // V6.116: 改 3-col + Color.clear 占位 (错, NS 仍分配空间)
+        // V6.117: 改 2-col form (闭包 label `content:` → `detail:`)
         // V6.93: 删 L243-247 重复的导出 ToolbarItem — toolbarContent 已包含导出 button (L111-113)
         // V6.93: 删 L243-247 重复的导出 ToolbarItem — toolbarContent 已包含导出 button (L111-113)
         //   V6.83 revert toolbar 分组时遗留的兜底代码, 一直未清, 导致 toolbar 有 2 个相同导出 button
