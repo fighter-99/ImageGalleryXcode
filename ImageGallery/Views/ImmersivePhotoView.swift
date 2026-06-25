@@ -231,9 +231,26 @@ struct ImmersivePhotoView<DetailContent: View>: View {
             goNext()
             return .handled
         }
+        // V6.111.3: Esc 分级处理 — 抽屉开 → 关抽屉; 抽屉关 → 退 immersive
+        //   跟 Photos.app Sonoma+ 真版一致: 第一次 Esc 关闭浮层, 第二次退全屏
+        //   之前 V6.111.2: 无脑退 immersive, 抽屉开时按 Esc 直接退, 用户没法分步退出
+        //   现在: 抽屉开 → isDrawerOpen = false (图片仍沉浸); 抽屉关 → onDismiss()
         .onKeyPress(.escape) {
+            if isDrawerOpen {
+                withAnimation(Animations.standard) {
+                    isDrawerOpen = false
+                }
+                return .handled
+            }
             onDismiss()
             return .handled
+        }
+        // V6.111.3: 抽屉开时强制 chrome 可见 — 不然 drawer 出现但 chrome 隐藏, ⓘ 按钮不可见, 用户没法关
+        //   抽屉关时不动 chrome state, 保持用户之前的 chrome 显示/隐藏偏好
+        .onChange(of: isDrawerOpen) { _, newValue in
+            if newValue {
+                isChromeVisible = true
+            }
         }
         .onKeyPress(.space) {
             goNext()
