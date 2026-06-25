@@ -363,12 +363,23 @@ struct MarkupSheet: View {
                 .animation(Animations.press, value: isSelected)
         }
         .buttonStyle(.plain)
-        // NSColor 没 localizedName — 用 Color 转 string (R,G,B) 作为简易 fallback tooltip
-        .help(String(format: "#%02X%02X%02X",
-            Int(color.redComponent * 255),
-            Int(color.greenComponent * 255),
-            Int(color.blueComponent * 255)
-        ))
+        // V6.109 (markup sheet crash fix): NSColor 预设 (.black/.white) 是 grayscale colorspace
+        //   直接访问 redComponent/greenComponent/blueComponent → NSInvalidArgumentException
+        //   "not valid for the NSColor 普通灰度系数2.2描述文件 colorspace"
+        //   之前: 7 个预设含 .black/.white → 弹 markup sheet 时 (渲染 toolbar) 立刻 crash
+        //   现在: 强制转 .deviceRGB colorspace → R/G/B 必存在 → 安全访问 + hex 字符串
+        .help(makeColorTooltip(color))
+    }
+
+    /// V6.109: 安全拿 NSColor 的 RGB hex — 强制走 .deviceRGB colorspace
+    ///   避免 .black / .white 等 grayscale preset 直接 redComponent 抛 NSInvalidArgumentException
+    private func makeColorTooltip(_ color: NSColor) -> String {
+        let rgb = color.usingColorSpace(.deviceRGB) ?? NSColor(deviceRed: 0, green: 0, blue: 0, alpha: 1)
+        return String(format: "#%02X%02X%02X",
+            Int(rgb.redComponent * 255),
+            Int(rgb.greenComponent * 255),
+            Int(rgb.blueComponent * 255)
+        )
     }
 
     private func loadBackgroundImage() -> NSImage? {
