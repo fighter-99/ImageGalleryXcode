@@ -9285,6 +9285,9 @@
     "show" : {
 
     },
+    "Show photo details" : {
+
+    },
     "showDetailPanel" : {
       "comment" : "V6.12.17: V Copy.showDetailPanel → 显示详情面板",
       "extractionState" : "manual",

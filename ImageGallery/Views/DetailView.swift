@@ -34,6 +34,11 @@ struct DetailView: View {
    var onError: (String) -> Void = { _ in }
     // V6.XX: 搜索结果高亮——接收搜索文本，文件名匹配时用 accent 色标记
     var searchText: String = ""
+    // V6.111.4: 沉浸式 drawer 模式 — 隐藏 bigImageCard (大图跟 immersive 左侧大图 100% 重复)
+    //   Photos.app Sonoma+ 真版: immersive drawer 只显示元数据 (文件名/EXIF/评分/标签/操作)
+    //   不再显示缩略图 — 视觉锤"看图用左侧大图, info 用右侧 drawer"明确分工
+    //   默认 false 保留 grid 详情面板的现有行为 (大图 60% + 元数据 40%)
+    var hideBigImage: Bool = false
 
     // 弹窗控制
     @State var showingAddTagAlert = false
@@ -82,8 +87,12 @@ struct DetailView: View {
         //   现在: 大图 (60%) + spacing.lg + [info+tags+operations] 1 个 VStack 内部 spacing.md
         VStack(alignment: .leading, spacing: 0) {
             // 1️⃣ 大图区（layoutPriority 让图片占满可用空间，元数据区自然高度）
-            bigImageCard
-                .layoutPriority(1)
+            // V6.111.4: immersive drawer 模式跳过 bigImageCard — 跟左侧 immersive 大图 100% 重复
+            //   Photos.app Sonoma+ 真版: drawer 只显示元数据, 不重复图片
+            if !hideBigImage {
+                bigImageCard
+                    .layoutPriority(1)
+            }
 
             VStack(alignment: .leading, spacing: Spacing.lg) {
                 // 2️⃣ 信息区（文件名 + 元数据）
@@ -95,7 +104,13 @@ struct DetailView: View {
                 // 4️⃣ 操作区
                 operationsCard
             }
-            .padding(.top, Spacing.lg)
+            // V6.111.4: immersive drawer 模式无大图, 不需要 .padding(.top) 给 bigImage 留空间
+            //   之前 .padding(.top, Spacing.lg) 是因为大图下方紧贴元数据, 需要呼吸空间
+            //   现在无大图, 元数据直接顶到 drawer 顶部 — 视觉上元数据成为 drawer 主内容
+            .padding(.top, hideBigImage ? 0 : Spacing.lg)
+            // V6.111.4: immersive drawer 模式元数据需要更多水平 padding — Photos 风格 16pt
+            //   grid 主视图 detail panel 已经有 V4.x 系列 padding 处理, 不用动
+            .padding(.horizontal, hideBigImage ? Spacing.lg : 0)
         }
         // V4.1.0d: 改用 .regularMaterial——与侧栏、主工具栏统一
         //   整个控制区 = 半透明毛玻璃；主区 = opaque canvas（照片焦点）

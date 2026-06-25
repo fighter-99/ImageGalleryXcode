@@ -637,7 +637,8 @@ struct ContentView: View {
     ///   photo 传 nil 时走 .empty branch (DetailPane 内部), 跟之前 detailPane 行为一致
     ///   photo 传具体值时走 .photo-{id} branch, immersive drawer 用此保持显示当前 photo
     ///   singleSelectedPhoto / immersivePhoto 都是 SwiftData @Model, 值类型 capture 安全
-    private func makeDetailPane(for photo: Photo?) -> DetailPane {
+    ///   V6.111.4: hideBigImage 参数 — true 时 drawer 隐藏大图 (避免跟左侧 immersive 大图重复)
+    private func makeDetailPane(for photo: Photo?, hideBigImage: Bool = false) -> DetailPane {
         DetailPane(
             // V6.28: grid 业务走 model.grid
             // V6.111.1: photo 参数 — 让 caller 决定显示哪个 photo (singleSelectedPhoto / immersivePhoto)
@@ -684,16 +685,21 @@ struct ContentView: View {
             storageError: model.storageErrorMessage,
             onRetryStorage: { model.checkStorage() },
             // V6.08: 详情面板错误回调 (rename 失败等) — show toast
-            onError: { model.showToast($0, type: .error) }
+            onError: { model.showToast($0, type: .error) },
+            // V6.111.4: immersive drawer 模式隐藏 bigImageCard (避免跟左侧大图重复)
+            //   grid 主视图 detail pane 不传 (默认 false) — 保留 V4.x 大图 60% + 元数据 40% 行为
+            hideBigImage: hideBigImage
         )
     }
 
     /// V6.111.1: 沉浸式详情抽屉 closure — closure 内部读 model.grid.immersivePhoto
     ///   这样 ←/→ 翻页时 drawer 自动跟新 (因为 immersivePhoto 跟着 currentIndex 变)
     ///   返回 AnyView 因为 ImmersivePhotoView 接收 (() -> AnyView)? — 不强制 caller 知道具体类型
+    ///   V6.111.4: hideBigImage: true 隐藏 drawer 内的缩略图 — 跟左侧 immersive 大图 100% 重复
+    ///   Photos.app Sonoma+ 真版: drawer 只显示元数据 (文件名/EXIF/评分/标签/操作)
     private var immersiveDetailContent: () -> AnyView {
         { [model] in
-            AnyView(makeDetailPane(for: model.grid.immersivePhoto))
+            AnyView(makeDetailPane(for: model.grid.immersivePhoto, hideBigImage: true))
         }
     }
 

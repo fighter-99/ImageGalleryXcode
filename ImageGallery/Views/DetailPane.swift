@@ -67,6 +67,10 @@ struct DetailPane: View {
     let onRetryStorage: () -> Void
     // V6.08: 详情面板错误回调（rename 失败等）—— 父视图 show toast
     var onError: (String) -> Void = { _ in }
+    // V6.111.4: 沉浸式 drawer 模式 — 隐藏 bigImage 跟左侧大图重复
+    //   Photos.app Sonoma+ 真版: drawer 只显示元数据
+    //   默认 false 保留 grid 详情面板的现有行为
+    var hideBigImage: Bool = false
 
     // V6.12: 显式 init——synthesized init 在多种 closure properties 共存 + 部分带默认值
     //   时不接受新 let 字段 ('extra argument duplicateGroupCount in call')。
@@ -101,7 +105,9 @@ struct DetailPane: View {
         onKeepNewestPerDuplicateGroup: @escaping () -> Void,
         storageError: String?,
         onRetryStorage: @escaping () -> Void,
-        onError: @escaping (String) -> Void = { _ in }
+        onError: @escaping (String) -> Void = { _ in },
+        // V6.111.4: 沉浸式 drawer 模式 — 隐藏 bigImage 跟左侧大图重复
+        hideBigImage: Bool = false
     ) {
         self.singleSelectedPhoto = singleSelectedPhoto
         self.isMultiSelect = isMultiSelect
@@ -133,6 +139,7 @@ struct DetailPane: View {
         self.storageError = storageError
         self.onRetryStorage = onRetryStorage
         self.onError = onError
+        self.hideBigImage = hideBigImage
     }
 
     var body: some View {
@@ -194,7 +201,9 @@ struct DetailPane: View {
                     canNext: canNext,
                     currentIndex: currentIndex,
                     totalCount: totalCount,
-                    onError: onError
+                    onError: onError,
+                    // V6.111.4: 沉浸式 drawer 模式隐藏 bigImageCard — 跟左侧大图重复
+                    hideBigImage: hideBigImage
                 )
             } else if isMultiSelect {
                 MultiSelectDetailView(
