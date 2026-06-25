@@ -30,6 +30,11 @@ struct PhotoStatsSnapshot: Equatable {
     var largeFilesCount: Int = 0
     /// 重复图照片数：图库中 + 在某 fileHash 重复组（≥2 张）里
     var duplicatePhotoCount: Int = 0
+    // V6.115: toolbar .principal 段 library status bar 用 — "全部 92张 27.1MB"
+    //   totalCount = inLibraryCount + trashedCount (跟 "全部" sidebar 范围一致)
+    //   totalBytes = in-library + trash 全照片总字节 (跟 V6.113 之前 NavigationSplitView 系统渲染一致)
+    var totalCount: Int { inLibraryCount + trashedCount }
+    var totalBytes: Int64 = 0
 
     static let zero = PhotoStatsSnapshot()
 
@@ -53,8 +58,10 @@ struct PhotoStatsSnapshot: Equatable {
         // hash group 计数（仅非 trash）— 第 1 遍累加, 第 2 遍算 duplicate photo count
         var hashCounts: [String: Int] = [:]
 
-        // 第 1 遍: 累加 5 个非重复计数 + hash counts
+        // 第 1 遍: 累加 5 个非重复计数 + hash counts + totalBytes
         for photo in photos {
+            // V6.115: totalBytes 累加所有 photo (in-library + trash), 跟 "全部" sidebar 范围一致
+            snapshot.totalBytes += photo.fileSize
             if photo.isInTrash {
                 snapshot.trashedCount += 1
             } else {

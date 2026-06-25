@@ -125,8 +125,13 @@ struct SidebarView: View {
         //   - .bar: macOS 标准 sidebar 材质, 微妙 vibrancy, light 模式近透明
         //   - Photos.app sidebar 是 .bar 类似质感 (系统 thin material)
         // V4.21.0 撤回历史: 试过 .glassEffect(.regular) 有 outline 痕迹, 不再试
+        // V6.115: 加 sidebar 右边框 1pt Divider — HStack 拆 sidebar/center 后没有自动边框
+        //   跟 macOS 真版 NavigationSplitView sidebar 视觉一致 (系统 1pt 分隔线)
         sidebarContent
             .background(.bar)
+            .overlay(alignment: .trailing) {
+                Divider()
+            }
     }
 
     /// V4.1.0f 移除：sidebarTopBar 整个组件删除（hide 按钮回到主工具栏）
@@ -664,4 +669,28 @@ struct SidebarView: View {
         model: ContentViewModel(settings: UserSettings(defaults: previewDefaults))
     )
     .frame(width: SheetMetrics.sidebarPreviewWidth, height: SheetMetrics.sidebarPreviewHeight)
+}
+
+// V6.115: SidebarStatusBar — toolbar .principal 段显示 library stats "全部 92张 27.1MB"
+//   之前 NavigationSplitView 系统渲染, V6.113 改 HStack 后系统不渲染
+//   现在用 View 单独定义, MainSplitView 通过 closure 注入 (跟 V6.111 immersiveDetailContent 同 pattern)
+//   复用 PhotoStatsSnapshot (SidebarView 已有 model.grid.libraryStats 来源, MainSplitView 不直接依赖)
+struct SidebarStatusBar: View {
+    let libraryStats: PhotoStatsSnapshot
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "photo.on.rectangle.angled")
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+            Text(Copy.libraryStatusBar(totalCount: libraryStats.totalCount, totalBytes: libraryStats.totalBytes))
+                .font(Typography.sidebarCount)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        // V6.115: 渲染 toolbar .principal 段 — macOS 自动居中显示
+        //   toolbar 渲染 context 不需要 background — system 加 toolbar background
+    }
 }

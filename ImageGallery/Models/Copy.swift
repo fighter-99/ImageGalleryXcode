@@ -209,6 +209,16 @@ enum Copy {
     static let showSidebar = String(localized: "showSidebar", defaultValue: "显示侧边栏")
     // V6.113: 删 showDetailPanel + showInfoPanel — 主页面详情面板完全移除
     //   想看详情: 走 immersive ⓘ drawer (V6.111 实施)
+    // V6.115: toolbar sidebar toggle 按钮 — 替回 NavigationSplitView 自动渲染的 toggle
+    static let hideSidebar = String(localized: "hideSidebar", defaultValue: "隐藏侧边栏")
+    // V6.115: toolbar .principal 段 library status bar 文案
+    //   格式: "全部  92张  27.1MB" (中间 2 空格分隔, 跟 V6.113 之前 NavigationSplitView 系统渲染一致)
+    static func libraryStatusBar(totalCount: Int, totalBytes: Int64) -> String {
+        let countText = String(localized: "libraryStatusCount", defaultValue: "\(totalCount) 张")
+        let sizeText = ByteCountFormatter.string(fromByteCount: totalBytes, countStyle: .file)
+        return "\(Copy.sidebarAll)  \(countText)  \(sizeText)"
+    }
+    static let libraryStatusCount = String(localized: "libraryStatusCount", defaultValue: "%d 张")
     /// Edit 菜单 Undo/Redo (无 action 描述时)
     static let undo = String(localized: "undo", defaultValue: "撤销")
     static let redo = String(localized: "redo", defaultValue: "重做")
