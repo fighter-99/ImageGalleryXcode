@@ -21,6 +21,12 @@ extension View {
         canNext: Bool,
         hasSelection: Bool,
         hasSelectedPhoto: Bool,
+        // V6.110.1 (Esc double-press bug fix): 透传 immersivePhoto state 到 gridInputHandling
+        //   ImmersivePhotoView 是 .overlay (MainLayoutView.swift:98-109), 不是 .fullScreenCover
+        //   底层 ContentView 的 keyboard handler 仍持焦点, 第一次 Esc 会被它抢走
+        //   现在 immersive 显示时整个 gridInputHandling 返 .ignored, 让 sibling overlay 内
+        //   ImmersivePhotoView.onKeyPress(.escape) 一次就 dismiss
+        hasImmersivePhoto: Bool = false,
         onDelete: @escaping () -> Void,
         onPrev: @escaping () -> Void,
         onNext: @escaping () -> Void,
@@ -45,6 +51,7 @@ extension View {
                 canPrev: canPrev,
                 canNext: canNext,
                 hasSelection: hasSelection,
+                hasImmersivePhoto: hasImmersivePhoto,
                 onDelete: onDelete,
                 onPrev: onPrev,
                 onNext: onNext,

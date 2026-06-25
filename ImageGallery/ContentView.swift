@@ -244,6 +244,11 @@ struct ContentView: View {
     canNext: model.grid.canNext,
     hasSelection: !model.grid.selection.isEmpty,
     hasSelectedPhoto: model.grid.singleSelectedPhoto != nil,
+    // V6.110.1 (Esc double-press bug fix): 透传 immersivePhoto state — 让底层 gridInputHandling
+    //   在 immersive 显示时不抢 Esc / ← / → / Space 事件, 全部 bubble 给 ImmersivePhotoView
+    //   之前 bug: 第一次 Esc 被 gridInputHandling 抢走 → 清 selection → 删除/快速查看按钮变灰
+    //   第二次 Esc 才真 dismiss (用户要按 2 次)
+    hasImmersivePhoto: model.grid.immersivePhoto != nil,
     onDelete: { model.grid.handleDelete() },
     onPrev: { model.grid.goPrev() },
     onNext: { model.grid.goNext() },

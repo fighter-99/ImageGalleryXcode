@@ -18,6 +18,15 @@ extension View {
         canPrev: Bool,
         canNext: Bool,
         hasSelection: Bool,
+        // V6.110.1 (Esc double-press bug fix): immersive 显示时 disable 整个 gridInputHandling
+        //   之前 bug: ImmersivePhotoView 是 .overlay, 底层 ContentView.gridInputHandling 仍持焦点
+        //     第一次 Esc → gridInputHandling 抢走事件 (清 selection, 返回 .handled)
+        //     第二次 Esc → bubble 到 ImmersivePhotoView.onKeyPress(.escape) 才真 dismiss
+        //     用户反馈: 第一次 Esc 后删除/快速查看按钮变灰 (因为 selection 清空)
+        //   V6.110 试错: ImmersivePhotoView 加 @FocusState 想抢焦点 — 失败, .overlay 不能抢 sibling 焦点
+        //   V6.110.1 正确: 让 gridInputHandling 知道 immersive state, 显示时整个 handler 返回 .ignored
+        //     Esc → bubble 到 ImmersivePhotoView → 一次就 dismiss (selection 不动, 按钮不变灰)
+        hasImmersivePhoto: Bool = false,
         onDelete: @escaping () -> Void,
         onPrev: @escaping () -> Void,
         onNext: @escaping () -> Void,
@@ -40,14 +49,21 @@ extension View {
             .onDeleteCommand(perform: onDelete)
             .focusable()
             .onKeyPress(.leftArrow) {
+                // V6.110.1: immersive 显示时不抢 keyboard 事件, 让 ImmersivePhotoView 处理 ←→
+                if hasImmersivePhoto { return .ignored }
                 if canPrev { onPrev() }
                 return .handled
             }
             .onKeyPress(.rightArrow) {
+                if hasImmersivePhoto { return .ignored }
                 if canNext { onNext() }
                 return .handled
             }
             .onKeyPress(.escape) {
+                // V6.110.1: immersive 显示时不响应 Esc, bubble 给 ImmersivePhotoView 一次就退出
+                //   之前: hasSelection 时返回 .handled → 抢走 Esc → 用户要按 2 次 + selection 被清空 (按钮变灰)
+                //   现在: 直接 .ignored → SwiftUI 把事件传给 sibling .overlay 内的 ImmersivePhotoView
+                if hasImmersivePhoto { return .ignored }
                 if hasSelection {
                     onEscape()
                     return .handled
@@ -56,6 +72,8 @@ extension View {
             }
             // V4.12.0: 空格键 QuickLook——无选中时不响应（macOS Finder 行为一致）
             .onKeyPress(.space) {
+                // V6.110.1: immersive 显示时空格 = ImmersivePhotoView.goNext (next photo)
+                if hasImmersivePhoto { return .ignored }
                 if hasSelectedPhoto {
                     onSpace()
                     return .handled

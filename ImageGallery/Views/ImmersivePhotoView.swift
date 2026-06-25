@@ -28,6 +28,14 @@ struct ImmersivePhotoView: View {
     //   photo.id 变化时自动取消旧 task
     @State private var loadedImage: NSImage?
     @State private var loadFailed = false
+    // V6.110.2 (focus + focus ring bug fix): immersive 显式拿焦点
+    //   V6.110 第一版加过 @FocusState 但忘了 .focusEffectDisabled → 用户反馈: 拿焦点后 macOS 系统
+    //     focus ring (淡蓝色边框) 包围整个 immersive view, 只有缩略图正常显示
+    //   V6.110.1 revert @FocusState → gridInputHandling 阻断 → 但 .overlay 内 view 没 first responder
+    //     AppKit 不送 key event 给它 → 用户必须先点鼠标, 才能触发 ←/→/Space/Esc
+    //   V6.110.2 正确: 阻断 gridInputHandling (V6.110.1) + @FocusState + .focusEffectDisabled
+    //     两者缺一不可: 阻断 = 让事件 bubble 出来, @FocusState = AppKit 把 first responder 转过来
+    @FocusState private var isImmersiveFocused: Bool
 
     /// 当前显示的图片
     private var currentPhoto: Photo? {
@@ -149,6 +157,23 @@ struct ImmersivePhotoView: View {
             }
         }
         .focusable()
+        // V6.110.2: 显式绑 @FocusState — 让 AppKit 把 first responder 转到 immersive view
+        //   V6.49 SettingsView 已验证 pattern: .focused + .onAppear DispatchQueue.main.async 设 true
+        //   延迟 0.05s 关键: window 刚 show 焦点未稳, 同步设焦点失败
+        .focused($isImmersiveFocused)
+        .onAppear {
+            // V6.49 pattern: asyncAfter 0.05s 等 window focus 稳定
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                isImmersiveFocused = true
+            }
+        }
+        .onDisappear {
+            isImmersiveFocused = false
+        }
+        // V6.110.2: 禁用 macOS 系统 focus ring (淡蓝色边框) — 跟 PhotoCellContent.swift:489 同 pattern
+        //   沉浸式全屏查看是 black background, focus ring 视觉破坏
+        //   类似 PhotoCellContent 因为有自定义选中边框所以也禁用 focus ring
+        .focusEffectDisabled(true)
         .onKeyPress(.leftArrow) {
             goPrev()
             return .handled
@@ -198,7 +223,6 @@ struct ImmersivePhotoView: View {
                     //   transl material pill 已经有底色——内嵌黑色圆形底是冗余
             }
             .buttonStyle(.plain)
-            .keyboardShortcut(.escape, modifiers: [])
         }
         // V6.12: chrome padding 旁路全 token 化 (Q11)
         //   16/10 → Spacing.lg / WindowModeMetrics.immersiveTopVerticalPadding
