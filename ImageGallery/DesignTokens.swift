@@ -748,6 +748,10 @@ enum WindowModeMetrics {
     static let immersiveBottomOuterHorizontal: CGFloat = 60
     /// 底部 chrome 外距——下
     static let immersiveBottomOuterBottom: CGFloat = Spacing.xxl
+    /// V6.111.1: 沉浸式详情抽屉宽度——大图右侧滑入的 detail panel
+    ///   仿 Photos.app Sonoma+ 模式: 320pt 跟 SheetMetrics.tallWidth 对齐
+    ///   抽屉打开时图片 .padding(.trailing) 这个值, 让大图缩小腾位置
+    static let immersiveDetailDrawerWidth: CGFloat = 320
 }
 
 // MARK: - V4.41.0 NEW: Popover 视觉 token

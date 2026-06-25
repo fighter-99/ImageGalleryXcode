@@ -17,10 +17,15 @@
 
 import SwiftUI
 
-struct ImmersivePhotoView: View {
+struct ImmersivePhotoView<DetailContent: View>: View {
     let photos: [Photo]
     @Binding var currentIndex: Int
     let onDismiss: () -> Void
+    // V6.111.1: 沉浸式详情抽屉 — Photos.app Sonoma+ 模式, 大图右侧滑入的 detail panel
+    //   closure 模式 (DetailPane 需要 25 props), ContentView 是 DetailPane 唯一构造点
+    //   nil = 旧行为 (无 drawer), 兼容 V6.110 ship 后的现有 call site
+    //   closure 内部读 model.grid.immersivePhoto, ←/→ 翻页时 drawer 自动跟新
+    let detailContent: (() -> DetailContent)?
 
     @State private var isChromeVisible = true
     // V4.38.0: 异步大图加载——避免 4000px 大图在主线程解码卡 UI
@@ -36,6 +41,8 @@ struct ImmersivePhotoView: View {
     //   V6.110.2 正确: 阻断 gridInputHandling (V6.110.1) + @FocusState + .focusEffectDisabled
     //     两者缺一不可: 阻断 = 让事件 bubble 出来, @FocusState = AppKit 把 first responder 转过来
     @FocusState private var isImmersiveFocused: Bool
+    // V6.111.1: detail drawer 状态 — 默认隐藏保持沉浸感, ⓘ 按钮 toggle
+    @State private var isDrawerOpen = false
 
     /// 当前显示的图片
     private var currentPhoto: Photo? {
@@ -210,6 +217,23 @@ struct ImmersivePhotoView: View {
                 .font(Typography.body)
             }
             Spacer()
+            // V6.111.1: ⓘ 按钮 — toggle 详情抽屉 (仅当 detailContent closure 存在时显示)
+            //   仿 Photos.app Sonoma+ 真版, 顶部 chrome ⓘ 切换右侧 detail drawer
+            //   不破坏 V6.74.5 决定 (toolbar ⓘ 删), 这是沉浸式 chrome 独立 surface
+            //   V6.111.2 才会接 isDrawerOpen + drawer view; 本 commit 只加按钮 + state wiring
+            if detailContent != nil {
+                Button {
+                    // V6.111.2: 接 drawer view 后, withAnimation 包裹 toggle
+                    isDrawerOpen.toggle()
+                } label: {
+                    Image(systemName: isDrawerOpen ? "info.circle.fill" : "info.circle")
+                        .font(Typography.detailCount)
+                        .foregroundStyle(.white.opacity(0.9))
+                }
+                .buttonStyle(.plain)
+                .help("Show photo details")
+                .accessibilityLabel("Show photo details")
+            }
             // 关闭按钮
             Button {
                 onDismiss()

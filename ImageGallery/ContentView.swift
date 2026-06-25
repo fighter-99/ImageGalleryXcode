@@ -368,7 +368,10 @@ struct ContentView: View {
             onImmersiveDismiss: { model.grid.immersivePhoto = nil },
             // V6.21.1 (Phase 1.2): toast close button → 用户主动 dismiss
             //   调 model.scheduleDismissToast() 移除队首 + 触发 next toast 显示
-            onToastDismiss: { model.scheduleDismissToast() }
+            onToastDismiss: { model.scheduleDismissToast() },
+            // V6.111.1: 沉浸式详情抽屉 closure — 让 ImmersivePhotoView 顶部 chrome 显示 ⓘ 按钮
+            //   closure 读 model.grid.immersivePhoto, ←/→ 翻页时 drawer 自动跟新
+            immersiveDetailContent: immersiveDetailContent
         )
         // V6.74.6: 删 .onChange(of: isBoxSelecting) marquee hint dismiss 逻辑 — hint 整撤掉
     }
@@ -626,9 +629,19 @@ struct ContentView: View {
     }
 
     private var detailPane: some View {
+        // V6.111.1: 抽 makeDetailPane helper — grid + immersive drawer 共用, 避免 25 props 重复
+        makeDetailPane(for: model.grid.singleSelectedPhoto)
+    }
+
+    /// V6.111.1: DetailPane 工厂方法 — grid 主视图 + immersive 详情抽屉共用
+    ///   photo 传 nil 时走 .empty branch (DetailPane 内部), 跟之前 detailPane 行为一致
+    ///   photo 传具体值时走 .photo-{id} branch, immersive drawer 用此保持显示当前 photo
+    ///   singleSelectedPhoto / immersivePhoto 都是 SwiftData @Model, 值类型 capture 安全
+    private func makeDetailPane(for photo: Photo?) -> DetailPane {
         DetailPane(
             // V6.28: grid 业务走 model.grid
-            singleSelectedPhoto: model.grid.singleSelectedPhoto,
+            // V6.111.1: photo 参数 — 让 caller 决定显示哪个 photo (singleSelectedPhoto / immersivePhoto)
+            singleSelectedPhoto: photo ?? model.grid.singleSelectedPhoto,
             isMultiSelect: model.grid.isMultiSelect,
             // V3.6.52: 用 model.grid.selection.selectedIDs.count 替直接字段
             count: model.grid.filterInTrash ? model.grid.trashedCount : (model.grid.filterInDuplicates ? model.grid.duplicatePurgeableCount : model.grid.selection.selectedIDs.count),
@@ -673,6 +686,15 @@ struct ContentView: View {
             // V6.08: 详情面板错误回调 (rename 失败等) — show toast
             onError: { model.showToast($0, type: .error) }
         )
+    }
+
+    /// V6.111.1: 沉浸式详情抽屉 closure — closure 内部读 model.grid.immersivePhoto
+    ///   这样 ←/→ 翻页时 drawer 自动跟新 (因为 immersivePhoto 跟着 currentIndex 变)
+    ///   返回 AnyView 因为 ImmersivePhotoView 接收 (() -> AnyView)? — 不强制 caller 知道具体类型
+    private var immersiveDetailContent: () -> AnyView {
+        { [model] in
+            AnyView(makeDetailPane(for: model.grid.immersivePhoto))
+        }
     }
 
 

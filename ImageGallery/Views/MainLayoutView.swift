@@ -42,6 +42,10 @@ struct MainLayoutView<PathBar: View, Split: View>: View {
     let onImmersiveDismiss: () -> Void
     // V6.21.1 (Phase 1.2 UX polish): toast 用户主动 dismiss (close button) → caller 移除队首
     let onToastDismiss: () -> Void
+    // V6.111.1: 沉浸式详情抽屉 closure — Photos.app Sonoma+ 真版
+    //   closure 模式 (DetailPane 需要 25 props), ContentView 是唯一构造点
+    //   nil = 旧行为 (无 drawer ⓘ 按钮), 兼容 V6.110 现有 call site
+    let immersiveDetailContent: (() -> AnyView)?
 
     init(
         @ViewBuilder pathBar: () -> PathBar,
@@ -56,7 +60,9 @@ struct MainLayoutView<PathBar: View, Split: View>: View {
         // V6.21.4 (audit fix #8): 删默认 `{}` — 漏传 silent fail 隐患
         //   caller 必须传, 否则 nil pointer / 编译错误强制修复
         //   之前默认 `{}` 让 caller 漏传时 button 点了没反应, 用户感知 "X 不工作"
-        onToastDismiss: @escaping () -> Void
+        onToastDismiss: @escaping () -> Void,
+        // V6.111.1: 透传 immersive 详情抽屉 closure — nil = 无 drawer
+        immersiveDetailContent: (() -> AnyView)? = nil
     ) {
         self.pathBar = pathBar()
         self.split = split()
@@ -68,6 +74,7 @@ struct MainLayoutView<PathBar: View, Split: View>: View {
         self.visiblePhotos = visiblePhotos
         self.onImmersiveDismiss = onImmersiveDismiss
         self.onToastDismiss = onToastDismiss
+        self.immersiveDetailContent = immersiveDetailContent
     }
 
     var body: some View {
@@ -101,7 +108,9 @@ struct MainLayoutView<PathBar: View, Split: View>: View {
                     // V6.08: 用 snapshot 不用 live visiblePhotos——避免 filter 变化时越界
                     photos: immersivePhotosSnapshot,
                     currentIndex: $immersiveIndex,
-                    onDismiss: onImmersiveDismiss
+                    onDismiss: onImmersiveDismiss,
+                    // V6.111.1: 透传 detail drawer closure — nil 时 ImmersivePhotoView 不显示 ⓘ
+                    detailContent: immersiveDetailContent
                 )
                 .transition(.opacity)
                 .zIndex(1000)
