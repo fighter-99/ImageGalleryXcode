@@ -321,8 +321,10 @@ struct PhotoCellContent: View {
                 _ = cacheMarkupHash  // placeholder for future cache key extension
                 return cached
             }
-            // cache miss → markup compose 先 (overlay), crop compose 后 (extract)
+// cache miss → markup compose 先 (overlay), crop compose 后 (extract)
             //   跟 ImmersivePhotoView L48-54 顺序完全一致 (V6.97.1 链顺序)
+            // V6.108: MarkupService.compose 现在自带 try-catch + 极值检测 (单 path 失败隔离)
+            //   任何崩溃 fallback baseImage, 不会让 thumbnail 渲染崩溃
             let markedImage = MarkupService.compose(baseImage: nsImage, markupData: photo.markupData)
             let composed = PhotoCropService.compose(baseImage: markedImage, cropData: photo.cropRect)
             if let cropData = cacheCropData {
