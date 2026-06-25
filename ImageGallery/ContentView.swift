@@ -408,7 +408,8 @@ struct ContentView: View {
     //   跟 photoGrid 内部 rect 略差; V1 接受, 后续 V2 polish 把 overlay 也搬进去)
     private var mainSplitPane: some View {
         MainSplitView(
-            showDetail: Bindable(model.settings).showDetail,
+            // V6.113: 删 showDetail binding — 主页面详情面板完全移除
+            //   想看详情: 走 immersive ⓘ drawer (V6.111 实施)
             isDropTargeted: $isDropTargeted,
             isBoxSelecting: $isBoxSelecting,
             onDrop: { providers in model.importVM.handleDrop(providers: providers) },
@@ -450,8 +451,8 @@ struct ContentView: View {
             //   MainSplitView @State columnVisibility (NS 自己 manage)
             showSidebar: Bindable(model.settings).showSidebar,
             sidebar: { sidebarPane },
-            center: { gridPane },
-            detail: { detailPane }
+            center: { gridPane }
+            // V6.113: 删 detail: { detailPane } — 主页面详情面板完全移除
         )
         // V6.17.0.2: overlay 搬进 photoGrid — rect 跟 overlay 同 space (photoGrid),
         //   视觉精准跟手 (用户报告 V6.17.0.1 矩形不跟手就是这里)
@@ -628,10 +629,8 @@ struct ContentView: View {
         .animation(Animations.standard, value: model.viewMode)
     }
 
-    private var detailPane: some View {
-        // V6.111.1: 抽 makeDetailPane helper — grid + immersive drawer 共用, 避免 25 props 重复
-        makeDetailPane(for: model.grid.singleSelectedPhoto)
-    }
+    // V6.113: 删 detailPane private var — 主页面详情面板完全移除
+    //   makeDetailPane(for:hideBigImage:) factory 仍保留, 给 immersiveDetailContent 用
 
     /// V6.111.1: DetailPane 工厂方法 — grid 主视图 + immersive 详情抽屉共用
     ///   photo 传 nil 时走 .empty branch (DetailPane 内部), 跟之前 detailPane 行为一致

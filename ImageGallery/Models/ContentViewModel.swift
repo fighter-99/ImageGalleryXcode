@@ -99,15 +99,12 @@ final class ContentViewModel {
 
     var undoManager = ImageGalleryUndoManager()
 
-    /// V5.59-2: sidebarColumnWidth/detailColumnWidth 改为 computed 绑 settings
+    /// V5.59-2: sidebarColumnWidth 改为 computed 绑 settings
+    /// V6.113: detailColumnWidth 字段已删 (主页面详情面板完全移除)
     ///   dragStartWidth 是临时态, 保留 stored
     var sidebarColumnWidth: CGFloat {
         get { CGFloat(settings.sidebarColumnWidth) }
         set { settings.sidebarColumnWidth = Double(newValue) }
-    }
-    var detailColumnWidth: CGFloat {
-        get { CGFloat(settings.detailColumnWidth) }
-        set { settings.detailColumnWidth = Double(newValue) }
     }
     var sidebarDragStartWidth: CGFloat = 220
     var detailDragStartWidth: CGFloat = 360

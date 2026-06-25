@@ -207,8 +207,8 @@ enum Copy {
     static let openRecent = String(localized: "openRecent", defaultValue: "最近打开")
     /// View 菜单 Toggle
     static let showSidebar = String(localized: "showSidebar", defaultValue: "显示侧边栏")
-    static let showDetailPanel = String(localized: "showDetailPanel", defaultValue: "显示详情面板")
-    static let showInfoPanel = String(localized: "showInfoPanel", defaultValue: "显示信息面板")
+    // V6.113: 删 showDetailPanel + showInfoPanel — 主页面详情面板完全移除
+    //   想看详情: 走 immersive ⓘ drawer (V6.111 实施)
     /// Edit 菜单 Undo/Redo (无 action 描述时)
     static let undo = String(localized: "undo", defaultValue: "撤销")
     static let redo = String(localized: "redo", defaultValue: "重做")

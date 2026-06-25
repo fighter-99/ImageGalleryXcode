@@ -23,10 +23,10 @@ struct ContentViewModelInitTests {
     @MainActor
     private static let isolatedDefaults: UserDefaults = FakeUserDefaults()
     private static let userSettingsKeys: [String] = [
-        "viewModeRaw", "showSidebar", "showDetail", "accentColorID",
+        "viewModeRaw", "showSidebar", "accentColorID",
         "trashRetentionDays", "appearanceMode", "thumbnailSize",
         "sidebarSelection", "sortOption", "thumbnailLayoutMode",
-        "sidebarColumnWidth", "detailColumnWidth", "autoDeduplicate",
+        "sidebarColumnWidth", "autoDeduplicate",
         "autoGenerateThumbnails", "defaultExportFormat",
         "defaultExportQuality", "scrollAnchorPhotoID"
     ]
@@ -40,10 +40,10 @@ struct ContentViewModelInitTests {
     // 测试 setup/teardown——隔离 UserDefaults 防污染其他 test
     private func clearUserDefaults() {
         for key in [
-            "viewModeRaw", "showSidebar", "showDetail", "accentColorID",
+            "viewModeRaw", "showSidebar", "accentColorID",
             "trashRetentionDays", "appearanceMode", "thumbnailSize",
             "sidebarSelection", "sortOption", "thumbnailLayoutMode",
-            "sidebarColumnWidth", "detailColumnWidth", "scrollAnchorPhotoID"
+            "sidebarColumnWidth", "scrollAnchorPhotoID"
         ] {
             UserDefaults.standard.removeObject(forKey: key)
         }

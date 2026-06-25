@@ -97,7 +97,7 @@ extension View {
             .onChange(of: allTags) { _, new in model.grid.allTags = new }
             // P4.1.1: smartFolders 推 model.grid.smartFoldersCache (createSmartFolder 用 max+1 算 order)
             .onChange(of: smartFolders) { _, new in model.grid.smartFoldersCache = new }
-            // V6.74.2: 删 .onChange(of: showDetail) sync — SwiftUI .toolbar .primaryAction 自动 re-render ⓘ icon
+            // V6.113: 删 showDetail 相关 sync — 字段已删
             // V5.62-2: filterState 变化推送, child popover update (现在 SwiftUI 直接读 binding)
             .onChange(of: filterState) { _, _ in
                 if !selection.isEmpty {

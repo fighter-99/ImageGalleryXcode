@@ -27,10 +27,10 @@ struct UserSettingsTests {
     @MainActor
     private static let isolatedDefaults: UserDefaults = FakeUserDefaults()
     private static let userSettingsKeys: [String] = [
-        "viewModeRaw", "showSidebar", "showDetail", "accentColorID",
+        "viewModeRaw", "showSidebar", "accentColorID",
         "trashRetentionDays", "appearanceMode", "thumbnailSize",
         "sidebarSelection", "sortOption", "thumbnailLayoutMode",
-        "sidebarColumnWidth", "detailColumnWidth", "autoDeduplicate",
+        "sidebarColumnWidth", "autoDeduplicate",
         "autoGenerateThumbnails", "defaultExportFormat",
         "defaultExportQuality", "scrollAnchorPhotoID"
     ]
@@ -47,9 +47,7 @@ struct UserSettingsTests {
         let settings = Self.isolatedSettings()
         #expect(settings.viewModeRaw == ViewMode.grid.rawValue)
         #expect(settings.showSidebar == true)
-        // V6.112: showDetail 默认改 false (用户要求"主页面默认不显示详情面板")
-        //   走 immersive 时用 ⓘ drawer (V6.111) 查看详情
-        #expect(settings.showDetail == false)
+        // V6.113: 删 showDetail + detailColumnWidth 字段 — 主页面详情面板完全移除
         #expect(settings.accentColorID == AccentColor.system.rawValue)
         #expect(settings.trashRetentionDays == TrashRetentionDays.defaultValue.rawValue)
         #expect(settings.appearanceMode == AppearanceMode.defaultValue.rawValue)
@@ -58,7 +56,6 @@ struct UserSettingsTests {
         #expect(settings.sortOption == SortOption.filenameAsc.rawValue)
         #expect(settings.thumbnailLayoutMode == ThumbnailLayoutMode.defaultValue.rawValue)
         #expect(settings.sidebarColumnWidth == 220.0)
-        #expect(settings.detailColumnWidth == 360.0)
         #expect(settings.scrollAnchorPhotoID == nil)
     }
 
@@ -67,7 +64,6 @@ struct UserSettingsTests {
         let defaults = Self.isolatedDefaults
         defaults.set(ViewMode.list.rawValue, forKey: "viewModeRaw")
         defaults.set(false, forKey: "showSidebar")
-        defaults.set(true, forKey: "showDetail")
         defaults.set(AccentColor.purple.rawValue, forKey: "accentColorID")
         defaults.set(150.0, forKey: "thumbnailSize")
         defaults.set("uuid-12345", forKey: "scrollAnchorPhotoID")
@@ -75,7 +71,6 @@ struct UserSettingsTests {
         let settings = UserSettings(defaults: defaults)
         #expect(settings.viewModeRaw == ViewMode.list.rawValue, "viewModeRaw 应读 UserDefaults")
         #expect(settings.showSidebar == false, "showSidebar 应读 UserDefaults")
-        #expect(settings.showDetail == true, "showDetail 应读 UserDefaults")
         #expect(settings.accentColorID == AccentColor.purple.rawValue, "accentColorID 应读 UserDefaults")
         #expect(settings.thumbnailSize == 150.0, "thumbnailSize 应读 UserDefaults")
         #expect(settings.scrollAnchorPhotoID == "uuid-12345", "scrollAnchorPhotoID 应读 UserDefaults")
@@ -112,7 +107,6 @@ struct UserSettingsTests {
         // 改一堆值 (非默认)
         settings.viewModeRaw = ViewMode.timeline.rawValue
         settings.showSidebar = false
-        settings.showDetail = true
         settings.accentColorID = AccentColor.red.rawValue
         settings.trashRetentionDays = 90
         settings.appearanceMode = AppearanceMode.dark.rawValue
@@ -121,14 +115,12 @@ struct UserSettingsTests {
         settings.sortOption = SortOption.fileSizeDesc.rawValue
         settings.thumbnailLayoutMode = ThumbnailLayoutMode.squareFit.rawValue
         settings.sidebarColumnWidth = 300.0
-        settings.detailColumnWidth = 500.0
 
         settings.reset()
 
         #expect(settings.viewModeRaw == ViewMode.grid.rawValue)
         #expect(settings.showSidebar == true)
-        // V6.112: reset() 同步 showDetail 回新默认 false (跟 init 一致)
-        #expect(settings.showDetail == false)
+        // V6.113: 删 showDetail + detailColumnWidth reset 测试 — 字段已删
         #expect(settings.accentColorID == AccentColor.system.rawValue)
         #expect(settings.trashRetentionDays == TrashRetentionDays.defaultValue.rawValue)
         #expect(settings.appearanceMode == AppearanceMode.defaultValue.rawValue)
@@ -137,7 +129,6 @@ struct UserSettingsTests {
         #expect(settings.sortOption == SortOption.filenameAsc.rawValue)
         #expect(settings.thumbnailLayoutMode == ThumbnailLayoutMode.defaultValue.rawValue)
         #expect(settings.sidebarColumnWidth == 220.0)
-        #expect(settings.detailColumnWidth == 360.0)
     }
 
     @Test func reset_preservesScrollAnchorPhotoID() {

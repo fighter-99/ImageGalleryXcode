@@ -26,10 +26,10 @@ struct ContentViewModelStateTests {
     private static let isolatedDefaults: UserDefaults = FakeUserDefaults()
     /// UserSettings 读过的所有 key——任何被读过的 key 都得清, 防漏
     private static let userSettingsKeys: [String] = [
-        "viewModeRaw", "showSidebar", "showDetail", "accentColorID",
+        "viewModeRaw", "showSidebar", "accentColorID",
         "trashRetentionDays", "appearanceMode", "thumbnailSize",
         "sidebarSelection", "sortOption", "thumbnailLayoutMode",
-        "sidebarColumnWidth", "detailColumnWidth", "autoDeduplicate",
+        "sidebarColumnWidth", "autoDeduplicate",
         "autoGenerateThumbnails", "defaultExportFormat",
         "defaultExportQuality", "scrollAnchorPhotoID"
     ]
@@ -285,11 +285,7 @@ struct ContentViewModelStateTests {
         #expect(model.sidebarColumnWidth == 300)
     }
 
-    @Test func detailColumnWidth_canBeAdjusted() {
-        let model = Self.isolatedModel()
-        model.detailColumnWidth = 420
-        #expect(model.detailColumnWidth == 420)
-    }
+    // V6.113: 删 detailColumnWidth_canBeAdjusted 测试 — 字段已删
 
     @Test func batchDeleteTitle_zeroSelected_returnsDefault() {
         let model = Self.isolatedModel()

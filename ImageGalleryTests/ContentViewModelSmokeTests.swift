@@ -21,10 +21,10 @@ struct ContentViewModelSmokeTests {
     @MainActor
     private static let isolatedDefaults: UserDefaults = FakeUserDefaults()
     private static let userSettingsKeys: [String] = [
-        "viewModeRaw", "showSidebar", "showDetail", "accentColorID",
+        "viewModeRaw", "showSidebar", "accentColorID",
         "trashRetentionDays", "appearanceMode", "thumbnailSize",
         "sidebarSelection", "sortOption", "thumbnailLayoutMode",
-        "sidebarColumnWidth", "detailColumnWidth", "autoDeduplicate",
+        "sidebarColumnWidth", "autoDeduplicate",
         "autoGenerateThumbnails", "defaultExportFormat",
         "defaultExportQuality", "scrollAnchorPhotoID"
     ]
@@ -61,7 +61,7 @@ struct ContentViewModelSmokeTests {
         #expect(model.toastTask == nil)
         #expect(model.importVM.importProgress == nil)
         #expect(model.sidebarColumnWidth == 220)
-        #expect(model.detailColumnWidth == 360)
+        // V6.113: 删 model.detailColumnWidth 检查 — 字段已删
     }
 
     @Test func init_settingsHaveCorrectDefaults() {
@@ -69,8 +69,7 @@ struct ContentViewModelSmokeTests {
         let model = Self.isolatedModel()
         #expect(model.settings.viewModeRaw == ViewMode.grid.rawValue)
         #expect(model.settings.showSidebar == true)
-        // V6.112: showDetail 默认改 false (用户要求"主页面默认不显示详情面板")
-        #expect(model.settings.showDetail == false)
+        // V6.113: 删 showDetail 检查 — 字段已删
         #expect(model.settings.accentColorID == AccentColor.system.rawValue)
         #expect(model.settings.trashRetentionDays == TrashRetentionDays.defaultValue.rawValue)
         #expect(model.settings.appearanceMode == AppearanceMode.defaultValue.rawValue)
@@ -79,7 +78,7 @@ struct ContentViewModelSmokeTests {
         #expect(model.settings.sortOption == SortOption.filenameAsc.rawValue)
         #expect(model.settings.thumbnailLayoutMode == ThumbnailLayoutMode.defaultValue.rawValue)
         #expect(model.settings.sidebarColumnWidth == 220)
-        #expect(model.settings.detailColumnWidth == 360)
+        // V6.113: 删 detailColumnWidth 检查 — 字段已删
     }
 
     @Test func init_modelContextIsNil() {

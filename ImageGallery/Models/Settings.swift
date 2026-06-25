@@ -58,16 +58,9 @@ final class UserSettings {
         didSet { defaults.set(showSidebar, forKey: "showSidebar") }
     }
 
-    /// V3.6.13: 详情面板可见性 (ImageGalleryApp 菜单 ⌃⌘D / ⌘I 写)
-    /// V5.60-1: 默认 true (V5.22 改 false, V5.60-1 改回 true——用户要求"详情面板常驻")
-    /// V6.112: 默认改 false — 用户要求"主页面默认不显示详情面板"
-    ///   老用户 @AppStorage 已有 stored showDetail=true 不动 (保留用户偏好)
-    ///   新装用户 / reset 走新默认 false
-    ///   手动 ⌘I / ⌘⌃D / View menu Toggle 仍可 toggle——不锁死
-    ///   想看详情进 immersive 用 ⓘ drawer (V6.111 实施) 即可
-    var showDetail: Bool = false {
-        didSet { defaults.set(showDetail, forKey: "showDetail") }
-    }
+    // V6.113: 彻底删除 showDetail + detailColumnWidth 字段 — 主页面详情面板完全移除
+    //   想看详情: 走 immersive ⓘ drawer (V6.111 实施)
+    //   "showDetail" / "detailColumnWidth" UserDefaults keys 变 orphan, 无害
 
     /// V3.6.13: 强调色 (SettingsView AccentSettingsView 写)
     var accentColorID: String = AccentColor.system.rawValue {
@@ -146,11 +139,6 @@ final class UserSettings {
     // MARK: - V6.22.3 (P2 #10): 是否显示过 onboarding 3-card sheet
     ///   V6.70: 删 — 新手引导取消, 字段不再使用
     ///   老 UserDefaults key "hasSeenOnboarding" 变 orphan (无害, 不读不写)
-
-    /// 详情列宽持久化
-    var detailColumnWidth: Double = 360 {
-        didSet { defaults.set(detailColumnWidth, forKey: "detailColumnWidth") }
-    }
 
     // MARK: - V5.55-2: P0 滚动位置保留
     // 存当前 ScrollView 顶部可见 photo 的 UUID——下次启动恢复
@@ -233,9 +221,7 @@ final class UserSettings {
         if defaults.object(forKey: "showSidebar") != nil {
             self.showSidebar = defaults.bool(forKey: "showSidebar")
         }
-        if defaults.object(forKey: "showDetail") != nil {
-            self.showDetail = defaults.bool(forKey: "showDetail")
-        }
+        // V6.113: 删 showDetail init 读 — 字段已删
         if let stored = defaults.string(forKey: "accentColorID") {
             self.accentColorID = stored
         }
@@ -260,9 +246,7 @@ final class UserSettings {
         if defaults.object(forKey: "sidebarColumnWidth") != nil {
             self.sidebarColumnWidth = defaults.double(forKey: "sidebarColumnWidth")
         }
-        if defaults.object(forKey: "detailColumnWidth") != nil {
-            self.detailColumnWidth = defaults.double(forKey: "detailColumnWidth")
-        }
+        // V6.113: 删 detailColumnWidth init 读 — 字段已删
         // V5.90: 4 个导入/导出偏好
         if defaults.object(forKey: "autoDeduplicate") != nil {
             self.autoDeduplicate = defaults.bool(forKey: "autoDeduplicate")
@@ -318,9 +302,7 @@ final class UserSettings {
     func reset() {
         viewModeRaw = ViewMode.grid.rawValue
         showSidebar = true
-        // V5.60-1: showDetail 默认改为 true, reset 也回到 true
-        // V6.112: 改回 false — 配合 init 默认值, reset 也走 false
-        showDetail = false
+        // V6.113: 删 showDetail reset — 字段已删
         accentColorID = AccentColor.system.rawValue
         trashRetentionDays = TrashRetentionDays.defaultValue.rawValue
         appearanceMode = AppearanceMode.defaultValue.rawValue
@@ -329,7 +311,7 @@ final class UserSettings {
         sortOption = SortOption.filenameAsc.rawValue  // V5.31 default
         thumbnailLayoutMode = ThumbnailLayoutMode.defaultValue.rawValue
         sidebarColumnWidth = 220.0
-        detailColumnWidth = 360.0
+        // V6.113: 删 detailColumnWidth reset — 字段已删
         // V6.12.16: language 也 reset 到默认 (.zhHans)
         language = Language.zhHans.rawValue
         defaultExportQuality = 0.9

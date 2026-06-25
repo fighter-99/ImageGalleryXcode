@@ -9288,54 +9288,6 @@
     "Show photo details" : {
 
     },
-    "showDetailPanel" : {
-      "comment" : "V6.12.17: V Copy.showDetailPanel → 显示详情面板",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Show Detail Panel"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "显示详情面板"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示详情麵板"
-          }
-        }
-      }
-    },
-    "showInfoPanel" : {
-      "comment" : "V6.12.17: V Copy.showInfoPanel → 显示信息面板",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Show Info Panel"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "显示信息面板"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示資訊麵板"
-          }
-        }
-      }
-    },
     "showSidebar" : {
       "comment" : "V6.12.17: V Copy.showSidebar → 显示侧边栏",
       "extractionState" : "manual",

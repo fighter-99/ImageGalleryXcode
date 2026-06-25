@@ -22,10 +22,10 @@ struct GridViewModelRecordRecentSearchTests {
     // V6.74.4: 共享 isolatedDefaults 防 cfprefsd 拖累 (V6.12.21 pattern)
     private static let isolatedDefaults: UserDefaults = FakeUserDefaults()
     private static let userSettingsKeys: [String] = [
-        "viewModeRaw", "showSidebar", "showDetail", "accentColorID",
+        "viewModeRaw", "showSidebar", "accentColorID",
         "trashRetentionDays", "appearanceMode", "thumbnailSize",
         "sidebarSelection", "sortOption", "thumbnailLayoutMode",
-        "sidebarColumnWidth", "detailColumnWidth", "autoDeduplicate",
+        "sidebarColumnWidth", "autoDeduplicate",
         "autoGenerateThumbnails", "defaultExportFormat",
         "defaultExportQuality", "scrollAnchorPhotoID", "appLanguage",
         "fontScale", "doubleClickAction", "lastSettingsCategory"

@@ -597,17 +597,12 @@ struct ImageGalleryApp: App {
             }
             // macOS 原生 View 菜单（在 View 菜单里加 Toggle 项）
             // V5.59-3: 3 Toggle + 3 Button 改用 $sharedSettings.X 替代已删的 3 userDefaults bindings
+            // V6.113: 删 showDetail Toggle (⌘I / ⌘⌃D) — 主页面详情面板完全移除
+            //   想看详情: 走 immersive ⓘ drawer (V6.111 实施)
             CommandGroup(after: .sidebar) {
                 Toggle(Copy.showSidebar, isOn: $sharedSettings.showSidebar)
                     // V6.58 (audit P1.7): ⌃⌘S → ⌘\ 避开 ⌘⇧S (sort) 撞 's' 字面冲突
                     .keyboardShortcut("\\", modifiers: [.command])
-                Toggle(Copy.showDetailPanel, isOn: $sharedSettings.showDetail)
-                    .keyboardShortcut("d", modifiers: [.command, .control])
-                // V4.37.0: macOS Photos 标准 ⌘I = Show Info Panel
-                //   与 ⌘Ctrl+D 同一动作（toggle 详情面板）——Photos.app ⌘I 行为
-                //   ⌘Ctrl+D 保留为项目传统快捷键不破坏现有用户习惯
-                Toggle(Copy.showInfoPanel, isOn: $sharedSettings.showDetail)
-                    .keyboardShortcut("i", modifiers: .command)
                 // V4.37.1: ⌘Y 快速查看——macOS Finder/Photos 标准 Quick Look 入口
                 //   与 toolbar .quickLook 按钮 + 空格键共用 ContentView.showQuickLook()
                 //   disable 状态由 NSToolbar.validateToolbarItem 单选时启用控制
