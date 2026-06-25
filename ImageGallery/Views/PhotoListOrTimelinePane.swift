@@ -47,6 +47,15 @@ struct PhotoListOrTimelinePane: View {
     let kind: PhotoListOrTimelineKind  // V5.60-3: 决定转发目标 (list vs timeline)
     let onTap: (Photo) -> Void
     let onDoubleTap: (Photo) -> Void
+    // V6.114: timeline 复用 grid layout 参 — 跟 PhotoGridPane 保持一致
+    let thumbnailSize: CGFloat
+    let layoutMode: ThumbnailLayoutMode
+    let folders: [Folder]
+    let allTags: [Tag]
+    let retentionDays: Int
+    let onRotate: (Photo, Bool) -> Void
+    let onMarkup: () -> Void
+    let onCrop: (Photo) -> Void
 
     var body: some View {
         // V5.60-3: kind 路由到具体 view——1 个 Pane 替代之前的 2 个
@@ -64,7 +73,16 @@ struct PhotoListOrTimelinePane: View {
                 photos: photos,
                 selection: selection,
                 onTap: onTap,
-                onDoubleTap: onDoubleTap
+                onDoubleTap: onDoubleTap,
+                // V6.114: 透传 grid layout 参
+                thumbnailSize: thumbnailSize,
+                layoutMode: layoutMode,
+                folders: folders,
+                allTags: allTags,
+                retentionDays: retentionDays,
+                onRotate: onRotate,
+                onMarkup: onMarkup,
+                onCrop: onCrop
             )
         }
     }

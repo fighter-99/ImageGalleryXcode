@@ -576,6 +576,8 @@ struct ContentView: View {
             // V5.60-3: 合并 PhotoListPane + PhotoTimelinePane → PhotoListOrTimelinePane
             //   1 个 Pane + kind 路由替代 2 个 Pane——节省 88 行
             // V6.28: grid 业务走 model.grid
+            // V6.114: list 不实际用 thumbnailSize/layoutMode 等 grid layout 参, 但 SwiftUI Group switch
+            //   推断要求所有 branch 类型一致, 必须传占位 props (no-op)
             PhotoListOrTimelinePane(
                 selection: bindableGrid.selection,
                 folder: model.grid.currentFolder,
@@ -596,7 +598,16 @@ struct ContentView: View {
                 photos: model.grid.visiblePhotos,
                 kind: .list,
                 onTap: { model.grid.handleTap($0) },
-                onDoubleTap: { handlePhotoDoubleTap($0) }
+                onDoubleTap: { handlePhotoDoubleTap($0) },
+                // V6.114: list 不实际用这些 grid layout 参, 传占位让 SwiftUI Group switch 推断过
+                thumbnailSize: model.grid.thumbnailSize,
+                layoutMode: model.layoutMode,
+                folders: folders,
+                allTags: allTags,
+                retentionDays: model.settings.trashRetentionDays,
+                onRotate: { _, _ in },
+                onMarkup: {},
+                onCrop: { _ in }
             )
         case .timeline:
             PhotoListOrTimelinePane(
@@ -619,7 +630,22 @@ struct ContentView: View {
                 photos: model.grid.visiblePhotos,
                 kind: .timeline,
                 onTap: { model.grid.handleTap($0) },
-                onDoubleTap: { handlePhotoDoubleTap($0) }
+                onDoubleTap: { handlePhotoDoubleTap($0) },
+                // V6.114: timeline 复用 grid layout — 缩略图大小跟 thumbnailSize slider 联动
+                thumbnailSize: model.grid.thumbnailSize,
+                layoutMode: model.layoutMode,
+                folders: folders,
+                allTags: allTags,
+                retentionDays: model.settings.trashRetentionDays,
+                onRotate: { photo, clockwise in
+                    model.grid.selection = model.grid.selection.selectingSingle(photo.id)
+                    model.grid.rotateSelected(clockwise: clockwise)
+                },
+                onMarkup: { NotificationCenter.default.post(name: .markupRequested, object: nil) },
+                onCrop: { photo in
+                    model.grid.selection = model.grid.selection.selectingSingle(photo.id)
+                    NotificationCenter.default.post(name: .cropRequested, object: nil)
+                }
             )
             }
         }

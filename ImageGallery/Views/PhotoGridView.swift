@@ -288,7 +288,16 @@ struct PhotoGridView: View {
                 photos: photos,
                 selection: selection,
                 onTap: handleTap,
-                onDoubleTap: onDoubleTap
+                onDoubleTap: onDoubleTap,
+                // V6.114: 透传 grid layout 参 — timeline 复用 masonryRowsView 同样 engine
+                thumbnailSize: thumbnailSize,
+                layoutMode: layoutMode,
+                folders: folders,
+                allTags: allTags,
+                retentionDays: retentionDays,
+                onRotate: onRotate,  // 跟 PhotoGridLayoutView 签名一致 (Photo, clockwise) -> Void
+                onMarkup: onMarkup,
+                onCrop: onCrop
             )
             .transition(.opacity)
         }
