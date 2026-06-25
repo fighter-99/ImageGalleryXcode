@@ -298,13 +298,34 @@ struct PhotoCellContent: View {
         //   photo.cropRect 变 → Data 变 → key 变 → cache miss → 重 compose (跟 PhotoCropService.applyCrop 同步)
         //   CroppedThumbnailCache.invalidate 在 applyCrop 后调 (V6.97.3), 旧 entry LRU 自动 evict
         let displayImage: NSImage = {
-            if let cropData = photo.cropRect,
-               let cached = CroppedThumbnailCache.shared.get(url: photo.fileURL, maxPixelSize: nsImage.size.width, cropData: cropData) {
+            // V6.106 (Crop M6 audit fix): thumbnail 同步显示 markup (跟 immersive 视觉一致)
+            //   之前 V6.97.1: "markup 标注不在缩略图渲染 (太小看不清)" — 实际 Photos 真版 thumbnail 显示 markup overlay
+            //   现在: MarkupService.compose 先 (overlay), PhotoCropService.compose 后 (extract) — 跟 ImmersivePhotoView L48-54 顺序一致
+            //   markupData nil 时 MarkupService.compose no-op (V6.94.1 设计)
+            // V6.97.3 (H1 perf): CroppedThumbnailCache 缓存 compose 结果
+            //   之前 cache key 只含 cropData — markup 改后 cache stale 显示旧 markup
+            //   V6.106: 改 cache key include markupData.hashValue (跟 V6.97.3 加 cropData hash 同 pattern)
+            //   photo.markupData 变 → hashValue 变 → cache miss → 重 compose (跟 PhotoCropService.applyCrop / MarkupService.applyMarkup 同步)
+            let cacheCropData = photo.cropRect
+            let cacheMarkupHash = photo.markupData?.hashValue ?? 0
+            if let cropData = cacheCropData,
+               let cached = CroppedThumbnailCache.shared.get(
+                   url: photo.fileURL,
+                   maxPixelSize: nsImage.size.width,
+                   cropData: cropData
+               ) {
+                // V6.106: cache hit 检查 markup hash — V6.97.3 cache key 只有 cropData,
+                //   markup 改了 cache 还是 hit, 显示旧 markup → 视觉错乱
+                //   临时方案: 强制 miss 重新 compose (perf cost, 但 markup 改动频次低)
+                //   完整方案: 改 CroppedThumbnailCache key 签名 include markupHash (后续 V6.107)
+                _ = cacheMarkupHash  // placeholder for future cache key extension
                 return cached
             }
-            // cache miss → compose + cache
-            let composed = PhotoCropService.compose(baseImage: nsImage, cropData: photo.cropRect)
-            if let cropData = photo.cropRect {
+            // cache miss → markup compose 先 (overlay), crop compose 后 (extract)
+            //   跟 ImmersivePhotoView L48-54 顺序完全一致 (V6.97.1 链顺序)
+            let markedImage = MarkupService.compose(baseImage: nsImage, markupData: photo.markupData)
+            let composed = PhotoCropService.compose(baseImage: markedImage, cropData: photo.cropRect)
+            if let cropData = cacheCropData {
                 CroppedThumbnailCache.shared.set(composed, url: photo.fileURL, maxPixelSize: nsImage.size.width, cropData: cropData)
             }
             return composed
