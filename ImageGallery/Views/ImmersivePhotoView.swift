@@ -81,6 +81,11 @@ struct ImmersivePhotoView<DetailContent: View>: View {
                         // V6.10: 用 WindowModeMetrics.viewerImagePadding 替 hardcode 40
                         //   DesignTokens.swift:423 已定义同名 token, 本处旁路
                         .padding(WindowModeMetrics.viewerImagePadding)
+                        // V6.111.2: 抽屉开时图片 .padding(.trailing) 缩小腾位置
+                        //   抽屉宽 320pt + drawer 外距 = 380pt 总共让出
+                        //   .animation 跟 value: isDrawerOpen 配套, 平滑过渡
+                        .padding(.trailing, isDrawerOpen ? WindowModeMetrics.immersiveDetailDrawerWidth + WindowModeMetrics.immersiveBottomOuterHorizontal : 0)
+                        .animation(Animations.standard, value: isDrawerOpen)
                 } else if loadFailed {
                     // V6.96 P2 #2: ErrorStateView 范式统一——自绘 fallback 改 EmptyStateView(.destructive)
                     //   之前自绘: icon + 文件名 (视觉跟空状态/加载态区分弱)
@@ -137,12 +142,49 @@ struct ImmersivePhotoView<DetailContent: View>: View {
             }
             .opacity(isChromeVisible ? 1 : 0)
             .animation(Animations.standard, value: isChromeVisible)
+
+            // V6.111.2: 沉浸式详情抽屉 — Photos.app Sonoma+ 真版
+            //   大图右侧滑入 320pt 详情面板, 同时让图片 .padding(.trailing) 缩小腾位置
+            //   5th ZStack layer 必须在 chrome 之后 — 不然 chrome pill 会盖在 drawer 上
+            //   .zIndex(5) 兜底确保 drawer 永远在最上层
+            if isDrawerOpen, let content = detailContent {
+                HStack(spacing: 0) {
+                    Spacer(minLength: 0)
+                    content()
+                        .frame(width: WindowModeMetrics.immersiveDetailDrawerWidth)
+                        .frame(maxHeight: .infinity)
+                        .background(VisualEffectMaterial())
+                        .clipShape(RoundedRectangle(cornerRadius: Radius.inspector, style: .continuous))
+                        // V6.111.2: 0.5pt 白色 8% opacity border — 跟 chrome transl material 一致
+                        .overlay(
+                            RoundedRectangle(cornerRadius: Radius.inspector, style: .continuous)
+                                .strokeBorder(Color.white.opacity(0.08), lineWidth: 0.5)
+                        )
+                        .padding(.trailing, WindowModeMetrics.immersiveBottomOuterHorizontal)
+                        .padding(.top, WindowModeMetrics.immersiveTopOuterTop + 60)  // 避开顶部 chrome
+                        .padding(.bottom, WindowModeMetrics.immersiveBottomOuterBottom + 60)  // 避开底部 chrome
+                        // V6.111.2: drawer 吞 tap — 防止 tap 冒泡到 body 关掉 drawer
+                        //   跟 V6.110 focus pattern 同思路: 局部吞事件, 不让 sibling 处理
+                        //   drawer 内部 interactive controls (button/tag/text field) 仍响应 — 它们优先于 outer .onTapGesture
+                        .contentShape(Rectangle())
+                        .onTapGesture { }
+                        .transition(.move(edge: .trailing).combined(with: .opacity))
+                }
+                .zIndex(5)
+            }
         }
         .contentShape(Rectangle())
+        // V6.111.2: body tap 改条件 — 抽屉开时关抽屉, 否则 toggle chrome
+        //   之前 V6.110 ship: 无脑 toggle chrome, 抽屉加后行为错乱
         .onTapGesture {
-            // 点击图片区域切换 chrome
-            withAnimation {
-                isChromeVisible.toggle()
+            if isDrawerOpen {
+                withAnimation(Animations.standard) {
+                    isDrawerOpen = false
+                }
+            } else {
+                withAnimation {
+                    isChromeVisible.toggle()
+                }
             }
         }
         // V4.38.0: 异步大图加载——currentPhoto 变化时自动取消旧 task
@@ -220,11 +262,12 @@ struct ImmersivePhotoView<DetailContent: View>: View {
             // V6.111.1: ⓘ 按钮 — toggle 详情抽屉 (仅当 detailContent closure 存在时显示)
             //   仿 Photos.app Sonoma+ 真版, 顶部 chrome ⓘ 切换右侧 detail drawer
             //   不破坏 V6.74.5 决定 (toolbar ⓘ 删), 这是沉浸式 chrome 独立 surface
-            //   V6.111.2 才会接 isDrawerOpen + drawer view; 本 commit 只加按钮 + state wiring
+            //   V6.111.2 接 drawer view + 图片 padding 缩小腾位置
             if detailContent != nil {
                 Button {
-                    // V6.111.2: 接 drawer view 后, withAnimation 包裹 toggle
-                    isDrawerOpen.toggle()
+                    withAnimation(Animations.standard) {
+                        isDrawerOpen.toggle()
+                    }
                 } label: {
                     Image(systemName: isDrawerOpen ? "info.circle.fill" : "info.circle")
                         .font(Typography.detailCount)
