@@ -47,8 +47,9 @@ struct UserSettingsTests {
         let settings = Self.isolatedSettings()
         #expect(settings.viewModeRaw == ViewMode.grid.rawValue)
         #expect(settings.showSidebar == true)
-        // V5.60-1: showDetail 默认改 true (用户要求"详情面板常驻")
-        #expect(settings.showDetail == true)
+        // V6.112: showDetail 默认改 false (用户要求"主页面默认不显示详情面板")
+        //   走 immersive 时用 ⓘ drawer (V6.111) 查看详情
+        #expect(settings.showDetail == false)
         #expect(settings.accentColorID == AccentColor.system.rawValue)
         #expect(settings.trashRetentionDays == TrashRetentionDays.defaultValue.rawValue)
         #expect(settings.appearanceMode == AppearanceMode.defaultValue.rawValue)
@@ -126,8 +127,8 @@ struct UserSettingsTests {
 
         #expect(settings.viewModeRaw == ViewMode.grid.rawValue)
         #expect(settings.showSidebar == true)
-        // V5.60-1: reset() 同步 showDetail 回新默认 true
-        #expect(settings.showDetail == true)
+        // V6.112: reset() 同步 showDetail 回新默认 false (跟 init 一致)
+        #expect(settings.showDetail == false)
         #expect(settings.accentColorID == AccentColor.system.rawValue)
         #expect(settings.trashRetentionDays == TrashRetentionDays.defaultValue.rawValue)
         #expect(settings.appearanceMode == AppearanceMode.defaultValue.rawValue)
