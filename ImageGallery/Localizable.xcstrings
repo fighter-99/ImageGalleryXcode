@@ -1548,6 +1548,9 @@
     "Crop Photo" : {
 
     },
+    "Crop selected photo to ${aspect}" : {
+
+    },
     "Crop the currently selected photo to a specific aspect ratio" : {
 
     },
@@ -6116,6 +6119,9 @@
 
     },
     "Search photos by filename, tag, or folder" : {
+
+    },
+    "Search photos for ${query}" : {
 
     },
     "searchHint" : {
