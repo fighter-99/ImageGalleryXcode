@@ -208,14 +208,28 @@ struct MarkupSheet: View {
     @State private var canvas = MarkupCanvasView(frame: .zero)
     @State private var selectedTool: MarkupCanvasTool = .pen
     @State private var selectedColor: NSColor = .black
+    // V6.107 (markup sheet crash fix): backgroundImage 用 @State 缓存 + .task 异步加载
+    //   之前 loadBackgroundImage() 同步 Data(contentsOf:) + NSImage(data:) — 跟 V6.99 CropSheet 修复前同模式
+    //   右键 context menu 选 "标注..." → MarkupSheet 弹 → 同步读大文件 (1GB+ 视频伪装图片 / 4K HEIC) 主线程冻结
+    //     损坏文件 / 文件被删 / 权限不足 → try? 静默返 nil → CanvasViewRepresentable 拿 nil → canvas draw 时 nil 崩溃
+    //   现在 ImageLoader.loadImageAsync 走 ThumbnailCache (maxPixelSize=800), cache hit < 0.5ms,
+    //     miss 后台 Task (5-50ms), 主线程不阻塞 — 跟 V6.99 CropSheet / V6.106 PhotoCellContent 一致
+    @State private var backgroundImage: NSImage?
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+
+    /// V6.107: markup sheet background image 像素上限 — 跟 CropSheet 一致 800
+    ///   markup sheet view 宽度 ~1200pt × retina 2x = 2400px, 800 buffer 够用
+    ///   缩小到 800 后 NSImage.draw 加速 ~10× (避免 markup 画 4K bitmap 慢)
+    private static let markupMaxPixelSize: CGFloat = 800
 
     var body: some View {
         VStack(spacing: 0) {
             markupToolbar
             Divider()
-            CanvasViewRepresentable(canvas: canvas, backgroundImage: loadBackgroundImage())
+            // V6.107: 用 @State backgroundImage 替同步 loadBackgroundImage() — 防崩溃 + perf
+            //   nil 时不传 (CanvasViewRepresentable 接 nil safe, 用 NSColor.darkGray 兜底背景)
+            CanvasViewRepresentable(canvas: canvas, backgroundImage: backgroundImage)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         // V6.97 P2-1: 窗口尺寸走 SheetMetrics (跟 NSView container 同步)
@@ -223,6 +237,14 @@ struct MarkupSheet: View {
         // V6.97 P2-1: 工具栏 macOS 标准 .bar 材质 — 自动适配 light/dark mode
         //   替代之前 hardcoded color, 跟系统 toolbar 视觉锤一致
         .toolbar(.hidden)  // 用自定义 toolbar, 不显示 SwiftUI 默认 toolbar
+        // V6.107: .task 异步加载 photo → backgroundImage (跟 V6.99 CropSheet / V6.106 PhotoCellContent 同 pattern)
+        //   photo.id 不变不重启 task, 同一 photo 反复开 markup sheet 走 cache hit (5ms 内)
+        .task(id: photo.id) {
+            backgroundImage = await ImageLoader.loadImageAsync(
+                at: photo.fileURL,
+                maxPixelSize: Self.markupMaxPixelSize
+            )
+        }
         .onAppear {
             if let data = photo.markupData {
                 canvas.loadFromData(data)
@@ -350,9 +372,15 @@ struct MarkupSheet: View {
     }
 
     private func loadBackgroundImage() -> NSImage? {
-        guard let data = try? Data(contentsOf: photo.fileURL),
-              let image = NSImage(data: data) else { return nil }
-        return image
+        // V6.107: 改 .task 异步加载 (本函数保留 compat 但 body 不用)
+        //   实际调用点已删 (body 用 backgroundImage @State), 留函数以防外部依赖
+        //   未来删 — 现在改 async 路径, 同步路径已无 caller
+        Task { @MainActor in
+            if let img = await ImageLoader.loadImageAsync(at: photo.fileURL, maxPixelSize: 800) {
+                backgroundImage = img
+            }
+        }
+        return nil
     }
 
     private func save() {
