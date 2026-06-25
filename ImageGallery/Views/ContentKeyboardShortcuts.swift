@@ -81,9 +81,9 @@ extension View {
                 // V6.58 (audit P1.7): 改用 ⌘\ 避开 ⌘⇧S (sort) 的 s 字面冲突
                 //   之前两个 hidden Button 都绑 `s` (不同 modifier) — SwiftUI 在某些 macOS 版本
                 //   modifier-disambiguation 不稳, last-registered wins, 1 个 shortcut 静默失效
-                Button("") { onToggleSidebar() }
-                    .keyboardShortcut("\\", modifiers: [.command])
-                    .hidden()
+                // V6.103.4: 删 hidden button — ImageGalleryApp.swift:601 Toggle menu item 已绑 ⌘\,
+                //   双触发让 showSidebar toggle 2 次 = 净效果 0, sidebar 不动 (V6.103.1/2/3 修错地方)
+                //   现在只留 menu Toggle (macOS 真版范式: View 菜单 Toggle + ⌘\)
 
                 // V5.12: ⌘0 清除评分 + ⌘1-⌘5 设为 N 星（仿 macOS Photos 标准）
                 // V5.15: ⌘1-6 sidebar 已删——⌘0-5 独占

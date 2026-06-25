@@ -435,9 +435,11 @@ struct ContentView: View {
             onSearchSubmit: { model.grid.recordRecentSearch($0) },
             allFolders: folders,
             allTags: allTags,
-            // V6.103.3: 传 showSidebar binding (单向 → MainSplitView columnVisibility)
-            //   toolbar ⌘\ 改 model.settings.showSidebar → NavigationSplitView 跟着收 sidebar
-            //   MainSplitView 不反向写 showSidebar → sidebar 交互不受干扰
+            // V6.103.5: 重新传 showSidebar @Binding (跟 @State columnVisibility 双向 onChange 同步)
+            //   之前 V6.103.5 试过 @State + 闭包, ContentView 不能访问 MainSplitView 私有 @State → 失败
+            //   现在用 @Binding + 双向 onChange 同步 (条件判断避免循环)
+            //   ContentView 真相源 (toolbar ⌘\ 改 model.settings.showSidebar) ↔
+            //   MainSplitView @State columnVisibility (NS 自己 manage)
             showSidebar: Bindable(model.settings).showSidebar,
             sidebar: { sidebarPane },
             center: { gridPane },

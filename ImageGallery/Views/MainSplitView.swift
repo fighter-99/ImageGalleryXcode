@@ -34,10 +34,18 @@ struct MainSplitView<Sidebar: View, Center: View, Detail: View>: View {
     let toolbarActions: ToolbarActions
     
     @Binding var showDetail: Bool
-    // V6.103.3: 重新加 @Binding showSidebar (单向, 不 set 反向)
-    //   V6.103.2 双向 binding → set 闭包干扰 sidebar 交互 (点 sidebar 没反应)
-    //   V6.103.3 单向 binding: showSidebar 改 → columnVisibility 跟着改 (toolbar ⌘\ 生效)
-    //                       但 columnVisibility 改 → 不反向写 showSidebar (保护 sidebar 交互)
+    // V6.103.5: @State columnVisibility 本地源 + @Binding showSidebar 双向同步
+    //   之前 4 commit (V6.103.1/2/3/4) 失败根因:
+    //   - V6.103.1: columnWidth 没传 binding → 不知 sidebar 隐藏
+    //   - V6.103.2/3: binding 双向/单向干扰 NS 内部交互
+    //   - V6.103.4: 删 ⌘\ 双触发, 根因不在快捷键
+    //   V6.103.5 (Phase 3 方案 A + showSidebar binding 同步):
+    //     - columnVisibility @State (NS 自己 manage + 拖边缘按钮 work)
+    //     - showSidebar @Binding (ContentView 真相源)
+    //     - onChange(of: showSidebar) 同步 columnVisibility (toolbar ⌘\ → showSidebar → columnVisibility)
+    //     - onChange(of: columnVisibility) 同步 showSidebar (NS 拖边缘 → columnVisibility → showSidebar)
+    //     - 同步条件: 新值 ≠ 当前值 (避免 NS 内部 set → onChange → set 死循环)
+    @State private var columnVisibility: NavigationSplitViewVisibility = .all
     @Binding var showSidebar: Bool
     @Binding var searchText: String
     @Binding var sortOption: SortOption
@@ -81,7 +89,10 @@ struct MainSplitView<Sidebar: View, Center: View, Detail: View>: View {
         onSearchSubmit: @escaping (String) -> Void = { _ in },
         allFolders: [Folder] = [],
         allTags: [Tag] = [],
-        // V6.103.3: 重新加 showSidebar binding (单向, ContentView 传 model.settings.showSidebar)
+        // V6.103.5: 重新加 showSidebar @Binding (跟 @State columnVisibility 双向 onChange 同步)
+        //   之前 V6.103.5 试过 @State + onToggleSidebar 闭包, 但 ContentView 不能访问
+        //   MainSplitView 私有 @State → 闭包无法直接同步 columnVisibility, 失败
+        //   现在用 @Binding + onChange 双向同步 (条件判断避免循环)
         showSidebar: Binding<Bool> = .constant(true),
         @ViewBuilder sidebar: () -> Sidebar,
         @ViewBuilder center: () -> Center,
@@ -110,25 +121,11 @@ struct MainSplitView<Sidebar: View, Center: View, Detail: View>: View {
         self.detail = detail()
     }
 
-    /// V6.103.3: 单向 columnVisibilityBinding — 只让 showSidebar 流向 NavigationSplitView
-    ///   get: showSidebar 派生 .all / .detailOnly
-    ///   set: 空 (no-op) — 不让 NavigationSplitView 反向写 showSidebar
-    ///   V6.103.2 双向 binding → set 闭包设 showSidebar → 干扰 NavigationSplitView 自身 sidebar 交互
-    ///   V6.103.3 单向: toolbar ⌘\ 改 showSidebar → columnVisibility 跟随 → NS 收 sidebar
-    ///                但 NS 自己 manage 内部交互 (不依赖 set 写回)
-    ///   Photos 真版 sidebar 行为: NS 自动管理 (默认显示, 用户拖边缘按钮收)
-    private var columnVisibilityBinding: Binding<NavigationSplitViewVisibility> {
-        Binding(
-            get: {
-                showSidebar ? .all : .detailOnly
-            },
-            set: { _ in
-                // no-op: 单向 binding, 不反向写 showSidebar
-                //   让 NavigationSplitView 自己管 sidebar 交互 (点 row, 拖边缘按钮等)
-                //   toolbar ⌘\ 改 showSidebar → 自动同步 columnVisibility (单向)
-            }
-        )
-    }
+    /// V6.103.5: 改 columnVisibility @State 本地源 (NS 自己 manage)
+    ///   之前 4 commit 用 binding 链都失败, Phase 3 方案 A: @State + onChange 反向同步
+    ///   toolbar ⌘\ → onToggleSidebar 闭包 → ContentView 改 model.settings.showSidebar
+    ///   闭包同步调 columnVisibility = .detailOnly / .all (绕过 binding)
+    ///   onChange 反向写回 model.settings.showSidebar (持久化)
 
     // V6.84: toolbar items 抽成 @ToolbarContentBuilder computed — 减少 body 链 type-check 压力
     //   .toolbarBackground(.bar) + .toolbarRole(.editor) 触发 SwiftUI 推断递归, 拆开避免 60s 超时
@@ -265,10 +262,10 @@ struct MainSplitView<Sidebar: View, Center: View, Detail: View>: View {
     }
 
     var body: some View {
-        // V6.103.3: 单向 columnVisibilityBinding — toolbar ⌘\ 改 showSidebar → NS 跟着收 sidebar
-        //   set 闭包 no-op → 不干扰 NavigationSplitView 自身 sidebar 交互 (点 row, 拖边缘)
-        //   center ideal:800 仍生效 (V6.103.1 修复, columnWidth 跟 visibility 独立)
-        NavigationSplitView(columnVisibility: columnVisibilityBinding) {
+        // V6.103.5: @State columnVisibility 本地源 — NS 自己 manage, toolbar ⌘\ 通过
+        //   onToggleSidebar 闭包直接改 columnVisibility (绕过 binding 链)
+        //   center ideal:800 仍生效 (V6.103.1 修复)
+        NavigationSplitView(columnVisibility: $columnVisibility) {
             sidebar
                 .navigationSplitViewColumnWidth(min: 160, ideal: 220, max: 320)
         } content: {
@@ -307,6 +304,25 @@ struct MainSplitView<Sidebar: View, Center: View, Detail: View>: View {
             }
         }
         .onSubmit(of: .search) { onSearchSubmit(searchText) }
+        // V6.103.5: 双向 onChange 同步 — 解决 toolbar ⌘\ + NS 拖边缘按钮 两路径同步问题
+        //   showSidebar (ContentView) ↔ columnVisibility (NS @State)
+        //   toolbar ⌘\ → ContentView 改 showSidebar → onChange → columnVisibility = ...
+        //   NS 拖边缘 → 内部改 columnVisibility → onChange → showSidebar = ...
+        //   关键: onChange 内部判断新值 ≠ 当前值才写, 避免 NS set → onChange → set 死循环
+        //   NS 用 $columnVisibility binding 接受外部 set (V6.103.1/2 失败原因)
+        //   现在 NS 仍然 manage 内部状态 (拖边缘按钮), 但通过 onChange 反向同步到 showSidebar
+        .onChange(of: showSidebar) { _, newValue in
+            let newVisibility: NavigationSplitViewVisibility = newValue ? .all : .detailOnly
+            if columnVisibility != newVisibility {
+                columnVisibility = newVisibility
+            }
+        }
+        .onChange(of: columnVisibility) { _, newValue in
+            let newShowSidebar = (newValue != .detailOnly)
+            if showSidebar != newShowSidebar {
+                showSidebar = newShowSidebar
+            }
+        }
         .scrollDisabled(isBoxSelecting)
         // V6.85: 取消 toolbar 磨砂玻璃效果
         //   V6.84 加的 .toolbarBackground(.bar, for: .windowToolbar) 用户实测仍觉得磨砂感过重
