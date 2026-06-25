@@ -36,14 +36,12 @@ struct MainSplitView<Sidebar: View, Center: View>: View {
     // V6.113: 删 @Binding showDetail — 主页面详情面板完全移除
     //   想看详情: 走 immersive ⓘ drawer (V6.111 实施)
 
-    // V6.113: 删 @State columnVisibility — NavigationSplitView 替换成 HStack
-    //   showSidebar @Binding 直接控制 sidebar 显示, 不再需要 columnVisibility 双向同步
-    //   toolbar ⌘\ → ContentView 改 showSidebar → .frame(条件) → sidebar 隐藏
+    // V6.116: 改回 NavigationSplitView 2-column (V6.113 改 HStack 漏 3 个 NS 系统渲染 UI)
+    //   columnVisibility @State + showSidebar @Binding 双向 onChange 同步 (V6.103.5 pattern, verbatim reapply)
+    //   V6.103.1-3 失败根因: unconditional binding.write 跟 NS 内部 diff 冲突 → 死循环
+    //   V6.103.5 fix: 条件判断 newValue ≠ 当前值才写
+    @State private var columnVisibility: NavigationSplitViewVisibility = .all
     @Binding var showSidebar: Bool
-    // V6.115: library status bar closure — toolbar .principal 段显示 "全部 92张 27.1MB"
-    //   closure 模式 (跟 V6.111 immersiveDetailContent 同 pattern) — MainSplitView 不直接依赖 libraryStats
-    //   nil = toolbar 不显示 status bar (向后兼容)
-    let libraryStatusBar: (() -> AnyView)?
     @Binding var searchText: String
     @Binding var sortOption: SortOption
     @Binding var viewMode: ViewMode
@@ -93,11 +91,9 @@ struct MainSplitView<Sidebar: View, Center: View>: View {
         //   现在用 @Binding + onChange 双向同步 (条件判断避免循环)
         showSidebar: Binding<Bool> = .constant(true),
         @ViewBuilder sidebar: () -> Sidebar,
-        @ViewBuilder center: () -> Center,
-        // V6.115: library status bar closure — toolbar .principal 段显示 "全部 92张 27.1MB"
-        //   nil = 不显示 status bar (向后兼容 V6.113 call site)
-        libraryStatusBar: (() -> AnyView)? = nil
+        @ViewBuilder center: () -> Center
         // V6.113: 删 detail: () -> Detail 参数
+        // V6.116: 删 libraryStatusBar: (() -> AnyView)? = nil — NS 系统渲染 status bar
     ) {
         self.toolbarActions = toolbarActions
         // V6.113: 删 self._showDetail = showDetail
@@ -120,7 +116,7 @@ struct MainSplitView<Sidebar: View, Center: View>: View {
         self.sidebar = sidebar()
         self.center = center()
         // V6.113: 删 self.detail = detail() — 字段已删
-        self.libraryStatusBar = libraryStatusBar
+        // V6.116: 删 self.libraryStatusBar = libraryStatusBar — NS 系统渲染 status bar
     }
 
     /// V6.103.5: 改 columnVisibility @State 本地源 (NS 自己 manage)
@@ -132,36 +128,11 @@ struct MainSplitView<Sidebar: View, Center: View>: View {
     // V6.84: toolbar items 抽成 @ToolbarContentBuilder computed — 减少 body 链 type-check 压力
     //   .toolbarBackground(.bar) + .toolbarRole(.editor) 触发 SwiftUI 推断递归, 拆开避免 60s 超时
     //   (memory V6.28 ContentView type-check timeout 同源教训 — 拆 modifier 链)
-    // V6.115: toolbar 加 sidebar toggle button (.navigation 段) + library stats label (.principal 中段)
-    //   V6.113 改 HStack 后 NavigationSplitView 系统渲染的 toggle 按钮消失
-    //   现在 toolbar .navigation 段放自定义 sidebar toggle button (Photos 范式)
-    //   library stats "全部 92张 27.1MB" 原本在 toolbar .principal 段, V6.113 删 detail 时忘了重建
-    //   现在用 SidebarStatusBar stats 透传 (闭包注入避免 MainSplitView 直接依赖 libraryStats)
+    // V6.116: 删 V6.115 锦上添花 — NavigationSplitView 2-col 系统自动渲染 sidebar toggle + status bar
+    //   toolbar .navigation 段系统渲染 sidebar toggle button (Photos 真版视觉)
+    //   toolbar .principal 段系统渲染 sidebar status bar ("N selected" / total count)
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
-        ToolbarItem(placement: .navigation) {
-            // V6.115: sidebar toggle button — 替回 NavigationSplitView 自动渲染的 toggle
-            //   sidebar 隐藏时: 显示 "sidebar.right" 图标 (点开 sidebar)
-            //   sidebar 显示时: 显示 "sidebar.left" 图标 (点关 sidebar) — Photos 真版视觉
-            Button {
-                withAnimation(Animations.standard) {
-                    showSidebar.toggle()
-                }
-            } label: {
-                Image(systemName: showSidebar ? "sidebar.left" : "sidebar.right")
-                    .font(.system(size: 14, weight: .medium))
-            }
-            .buttonStyle(.plain)
-            .help(showSidebar ? Copy.hideSidebar : Copy.showSidebar)
-        }
-        ToolbarItem(placement: .principal) {
-            // V6.115: library stats label — "全部 92张 27.1MB" 原本在 NavigationSplitView 系统渲染
-            //   V6.113 改 HStack 后系统不渲染, 现在 toolbar .principal 段重建
-            //   nil 时 toolbar 显示空 (而不是 hidden — Photos 范式)
-            if let libraryStatusBar {
-                libraryStatusBar()
-            }
-        }
         ToolbarItem {
             Button { toolbarActions.onExport() } label: {
                 Label("导出", systemImage: "square.and.arrow.up").labelStyle(.iconOnly)
@@ -292,26 +263,33 @@ struct MainSplitView<Sidebar: View, Center: View>: View {
     }
 
     var body: some View {
-        // V6.103.5: @State columnVisibility 本地源 — NS 自己 manage, toolbar ⌘\ 通过
-        //   onToggleSidebar 闭包直接改 columnVisibility (绕过 binding 链)
-        //   center ideal:800 仍生效 (V6.103.1 修复)
-        // V6.113: 主页面详情面板完全移除 — 改用 HStack { sidebar + center } 简化布局
-        //   走 immersive ⓘ drawer (V6.111 实施) 查看详情
-        //   保留 @State columnVisibility (columnWidth 显示逻辑兼容, 实际 NavigationSplitView 已删)
-        //   保留 sidebar 拖拽 / showSidebar ⌘\ toggle 行为
-        HStack(spacing: 0) {
-            // Sidebar — showSidebar 控显示, 跟 V6.103.5 ⌘\ / 拖边缘行为兼容
-            if showSidebar {
-                sidebar
-                    .frame(minWidth: 160, idealWidth: 220, maxWidth: 320)
-                    .transition(.opacity)
-            }
-            // Center — 永远占满剩余宽度
+        // V6.116: 改回 NavigationSplitView 2-column (V6.113 改 HStack 漏 NS 系统 UI)
+        //   NS 系统自动渲染: sidebar toggle 按钮 (toolbar .navigation 段) + sidebar status bar (toolbar .principal 段) + sidebar 右边框
+        //   双向 onChange 同步 columnVisibility ↔ showSidebar (V6.103.5 pattern, verbatim reapply)
+        //   条件判断 newValue ≠ 当前值才写, 避免 NS set → onChange → set 死循环
+        NavigationSplitView(columnVisibility: $columnVisibility) {
+            sidebar
+                .navigationSplitViewColumnWidth(min: 160, ideal: 220, max: 320)
+        } content: {
+            // V6.103.1 fix: sidebar 隐藏时缩略图区域宽度扩展
+            //   之前 center 没设 width — SwiftUI 给 center 默认宽度, sidebar 隐藏时
+            //   释放的宽度全给 detail (因 detail 有 ideal:280)
+            //   现在 center 给 min:400 ideal:800 无 max (吸满剩余), V6.113 删 detail 后
+            //   center 占满 sidebar 隐藏后释放的全部空间
+            //   NavigationSplitView 2-column 时 SwiftUI 按 ideal 比例分配总宽度
+            //   sidebar 隐藏 → 释放 220 ideal 给 center → 缩略图扩展
             center
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .navigationSplitViewColumnWidth(min: 400, ideal: 800)
+        } detail: {
+            // V6.116: 2-column NavigationSplitView 必须有 detail 闭包 (SwiftUI 14+ 限制)
+            //   V6.113 删 detail 后, V6.116 改回 NS 2-col 也需要占位 detail
+            //   用 Color.clear 占位 — 不渲染任何内容, 不影响 layout
+            //   NS 系统仍会渲染 sidebar status bar 在 toolbar .principal 段
+            Color.clear
         }
-        .animation(Animations.standard, value: showSidebar)
-        // V6.113: 删 } detail: { if showDetail { detail... } } — 主页面详情面板完全移除
+        // V6.116: 删 detail: { detailPane } — 主页面详情面板完全移除 (V6.113)
+        //   NS 2-col 改用 Color.clear 占位 (SwiftUI 14+ API 必须)
+        // V6.93: 删 L243-247 重复的导出 ToolbarItem — toolbarContent 已包含导出 button (L111-113)
         // V6.93: 删 L243-247 重复的导出 ToolbarItem — toolbarContent 已包含导出 button (L111-113)
         //   V6.83 revert toolbar 分组时遗留的兜底代码, 一直未清, 导致 toolbar 有 2 个相同导出 button
         //   toolbarContent 是私有 @ToolbarContentBuilder 包含 9 个 ToolbarItem (导出/删除/预览/筛选/排序/视图/slider/导入/回退 export 兜底)
@@ -333,13 +311,23 @@ struct MainSplitView<Sidebar: View, Center: View>: View {
             }
         }
         .onSubmit(of: .search) { onSearchSubmit(searchText) }
-        // V6.103.5: 双向 onChange 同步 — 解决 toolbar ⌘\ + NS 拖边缘按钮 两路径同步问题
-        //   showSidebar (ContentView) ↔ columnVisibility (NS @State)
-        //   toolbar ⌘\ → ContentView 改 showSidebar → onChange → columnVisibility = ...
+        // V6.116: 改回 NavigationSplitView + reapply V6.103.5 columnVisibility ↔ showSidebar 双向 sync
+        //   V6.103.1-3 失败根因: unconditional binding.write 跟 NS 内部 diff 冲突 → 死循环
+        //   V6.103.5 fix: 条件判断 newValue ≠ 当前值才写, 避免 NS set → onChange → set 死循环
         //   NS 拖边缘 → 内部改 columnVisibility → onChange → showSidebar = ...
-        //   关键: onChange 内部判断新值 ≠ 当前值才写, 避免 NS set → onChange → set 死循环
-        //   NS 用 $columnVisibility binding 接受外部 set (V6.103.1/2 失败原因)
-        //   现在 NS 仍然 manage 内部状态 (拖边缘按钮), 但通过 onChange 反向同步到 showSidebar
+        //   toolbar ⌘\ → ContentView 改 showSidebar → onChange → columnVisibility = ...
+        .onChange(of: showSidebar) { _, newValue in
+            let newVisibility: NavigationSplitViewVisibility = newValue ? .all : .detailOnly
+            if columnVisibility != newVisibility {
+                columnVisibility = newVisibility
+            }
+        }
+        .onChange(of: columnVisibility) { _, newValue in
+            let newShowSidebar = (newValue != .detailOnly)
+            if showSidebar != newShowSidebar {
+                showSidebar = newShowSidebar
+            }
+        }
         // V6.113: 删 onChange 双向同步 columnVisibility — NavigationSplitView 替换成 HStack
         //   showSidebar 直接控制 sidebar 显示, .animation(value: showSidebar) 在 HStack 自动 animate
         .scrollDisabled(isBoxSelecting)

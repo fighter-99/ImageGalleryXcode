@@ -451,15 +451,9 @@ struct ContentView: View {
             //   MainSplitView @State columnVisibility (NS 自己 manage)
             showSidebar: Bindable(model.settings).showSidebar,
             sidebar: { sidebarPane },
-            center: { gridPane },
-            // V6.115: toolbar .principal 段 library status bar closure — "全部 92张 27.1MB"
-            //   之前 NavigationSplitView 系统渲染, V6.113 改 HStack 后系统不渲染
-            //   现在用 SidebarStatusBar View 通过 closure 注入, 跟 V6.111 immersiveDetailContent 同 pattern
-            //   closure 内部读 model.grid.libraryStats (V6.20 缓存, V6.28 移到 model.grid)
-            libraryStatusBar: { [model] in
-                AnyView(SidebarStatusBar(libraryStats: model.grid.libraryStats))
-            }
+            center: { gridPane }
             // V6.113: 删 detail: { detailPane } — 主页面详情面板完全移除
+            // V6.116: 删 libraryStatusBar closure — NS 系统渲染 sidebar status bar
         )
         // V6.17.0.2: overlay 搬进 photoGrid — rect 跟 overlay 同 space (photoGrid),
         //   视觉精准跟手 (用户报告 V6.17.0.1 矩形不跟手就是这里)
