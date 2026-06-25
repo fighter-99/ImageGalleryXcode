@@ -174,17 +174,14 @@ struct ImmersivePhotoView<DetailContent: View>: View {
             }
         }
         .contentShape(Rectangle())
-        // V6.111.2: body tap 改条件 — 抽屉开时关抽屉, 否则 toggle chrome
-        //   之前 V6.110 ship: 无脑 toggle chrome, 抽屉加后行为错乱
+        // V6.111.5: body tap 只 toggle chrome — 不管 drawer 状态
+        //   V6.111.2 ship 后用户反馈: drawer 开时点图片误关 drawer, 正常应该只点 ⓘ 或 Esc 关
+        //   Photos.app Sonoma+ 真版: drawer / chrome 完全解耦, 点图片只 toggle chrome
+        //   drawer 关闭路径单一: ⓘ 按钮 (toggle) / Esc (V6.111.3 已 ship)
+        //   chrome toggle 仍然 work — drawer 开时用户仍可点图片隐藏 chrome
         .onTapGesture {
-            if isDrawerOpen {
-                withAnimation(Animations.standard) {
-                    isDrawerOpen = false
-                }
-            } else {
-                withAnimation {
-                    isChromeVisible.toggle()
-                }
+            withAnimation {
+                isChromeVisible.toggle()
             }
         }
         // V4.38.0: 异步大图加载——currentPhoto 变化时自动取消旧 task
